@@ -5,8 +5,8 @@
 - Start date: 2026-04-01
 - Last updated: 2026-04-01
 - Current phase: `implementation`
-- Overall completion: `65%`
-- Current focus: release-baseline completion through Git initialization, private GitHub repository linkage, and verified CI on every push for the storefront running on port `3056`
+- Overall completion: `66%`
+- Current focus: release-hardening completion through custom fallback surfaces, manifest readiness, and verified browser-facing failure behavior for the storefront running on port `3056`
 - Forecast status: `date not committed yet`
 - Working estimate: `12-16 weeks for an MVP after stack, catalog model, and integration scope are frozen`
 
@@ -19,8 +19,8 @@ Progress is tracked against SkyWave phases, not by ad-hoc task count.
 | Discovery | 15% | In Progress | 69% | Brief, sitemap, user flows, MVP boundary, backlog, open decisions |
 | Design and Architecture | 20% | In Progress | 57% | Design system direction, page architecture, stack and data decisions |
 | Implementation | 35% | In Progress | 85% | Public storefront and required internal surfaces implemented |
-| Validation | 10% | In Progress | 66% | Lint, typecheck, tests, UX QA, SEO/schema QA, accessibility QA |
-| Release | 10% | In Progress | 22% | Deployment target, configs, monitoring, legal/trust gates, rollback path |
+| Validation | 10% | In Progress | 68% | Lint, typecheck, tests, UX QA, SEO/schema QA, accessibility QA |
+| Release | 10% | In Progress | 30% | Deployment target, configs, monitoring, legal/trust gates, rollback path |
 | Growth and Automation | 10% | In Progress | 45% | CRM flows, SEO growth loops, analytics maturity, post-launch automations |
 
 ## Current Discovery Checklist
@@ -84,6 +84,8 @@ Progress is tracked against SkyWave phases, not by ad-hoc task count.
 - [x] Verified live internal ops and supporting transactional routes on port `3056`
 - [x] Initialized Git in the project root and connected a GitHub remote
 - [x] Added GitHub Actions CI and verified a successful run on push
+- [x] Added branded `not-found` and `global-error` fallback surfaces
+- [x] Added `manifest.webmanifest` and release-facing browser metadata
 - [ ] Freeze MVP scope vs later phases
 - [ ] Freeze hosting direction
 - [ ] Freeze commerce architecture and admin boundary
@@ -101,7 +103,7 @@ Progress is tracked against SkyWave phases, not by ad-hoc task count.
 | Performance / CWV | In Progress | Next.js foundation is in place; runtime and asset optimization still pending |
 | Analytics / Conversion | In Progress | Page views, global navigation, core CTA instrumentation, internal search submit/result events including ingredient result groups, collection `filter_apply`, ingredient route links, `add_to_cart`, `cart_update`, `checkout_start`, `checkout_complete`, `track_order_lookup`, and internal `ops_order_status_update` are now wired; real payment completion and lifecycle notifications are still pending |
 | Content system | In Progress | Editorial, concern, routine, product, collection, trust, FAQ, contact, about, and terms shells exist, but voice remains provisional until real samples exist |
-| Release / Ops | In Progress | Local runtime is stable on port `3056`, local order references now exist for confirmation and tracking, an internal `/ops/orders` surface can advance local order states for rehearsal, and the codebase is now on GitHub with CI verified on push; hosting, production CD, and real order backend ownership are not selected yet |
+| Release / Ops | In Progress | Local runtime is stable on port `3056`, local order references now exist for confirmation and tracking, an internal `/ops/orders` surface can advance local order states for rehearsal, the codebase is now on GitHub with CI verified on push, and branded fallback plus manifest surfaces now exist; hosting, production CD, and real order backend ownership are not selected yet |
 
 ## Milestone Log
 
@@ -173,13 +175,15 @@ Progress is tracked against SkyWave phases, not by ad-hoc task count.
 - Git was initialized in the project root and the codebase was pushed to a new private GitHub repository under `ireda8041-lab/ksa-cozmateks`.
 - A GitHub Actions CI workflow now runs `npm ci`, `npm run lint`, and `npm run build` on every push and pull request to `main`.
 - The first two CI runs completed successfully after the initial push and workflow upgrade.
+- Branded `not-found` and `global-error` surfaces were added so public fallback states no longer rely on default framework responses.
+- A generated `manifest.webmanifest` plus browser-facing metadata were added to strengthen install/readiness signals before deployment.
 
 ## Immediate Next Actions
 
 1. Freeze the MVP cut so the roadmap does not expand into one oversized first build.
 2. Freeze the commerce/admin boundary and hosting direction before deeper platform work.
 3. Replace the local order-handoff plus local ops rehearsal flow with real payment, shipping, notification, and order-routing ownership.
-4. Replace provisional trust, support, legal, and discovery copy with approved business data, final support channels, and legal review before launch claims.
+4. Add hosting selection, deployment CD, and production monitoring so release work moves beyond CI-only readiness.
 
 ## Tracking Rules
 

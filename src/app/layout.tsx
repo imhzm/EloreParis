@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Sans_Arabic, Noto_Naskh_Arabic } from "next/font/google";
 import { AnalyticsProvider } from "@/components/analytics-provider";
 import { CartProvider } from "@/components/cart-provider";
@@ -26,6 +26,7 @@ export const metadata: Metadata = {
     template: `%s | ${siteName}`,
   },
   description: defaultDescription,
+  manifest: "/manifest.webmanifest",
   keywords: [
     "متجر مكياج في السعودية",
     "عناية بالبشرة السعودية",
@@ -41,8 +42,28 @@ export const metadata: Metadata = {
     locale: "ar_SA",
     type: "website",
   },
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/favicon.ico",
+    shortcut: "/favicon.ico",
+  },
+  appleWebApp: {
+    capable: true,
+    title: siteName,
+    statusBarStyle: "default",
+  },
+  formatDetection: {
+    address: false,
+    email: false,
+    telephone: false,
+  },
   applicationName: siteName,
   category: "beauty ecommerce",
+};
+
+export const viewport: Viewport = {
+  colorScheme: "light",
+  themeColor: "#2b1c28",
 };
 
 export default function RootLayout({

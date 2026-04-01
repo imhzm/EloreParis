@@ -21,7 +21,7 @@
 | SW-07 | Keyword strategy, page mapping, and ecommerce SEO direction | `15-21` | `in-progress` | Discovery | Keyword clusters, page-to-intent map, technical SEO direction, and ecommerce SEO priorities are locked for MVP |
 | SW-08 | Structured data, internal linking, search, and discoverability systems | `22-26` | `in-progress` | Design / Implementation | Schema inventory, internal linking model, search requirements, and snippet-control strategy are specified and implemented |
 | SW-09 | Post-purchase flows, CRM segmentation, analytics, and KPI model | `30-31` | `in-progress` | Growth and Automation | Core lifecycle flows, analytics plan, and measurement model are implemented and validated |
-| SW-10 | Launch gate, QA, and executive readiness | `32-33` | `not-started` | Validation / Release | Launch checklist, QA evidence, release readiness, and unresolved risks are explicitly tracked |
+| SW-10 | Launch gate, QA, and executive readiness | `32-33` | `in-progress` | Validation / Release | Launch checklist, QA evidence, release readiness, and unresolved risks are explicitly tracked |
 
 ## MVP Cut
 
@@ -73,15 +73,16 @@
 - The new server-side collection filters and ingredient discovery surfaces are intentionally narrow and data-backed; any deeper merchandising model must be decided explicitly instead of being improvised inside the current product content.
 - Cart, checkout handoff, confirmation, track-order, and internal order-ops now exist as real UI surfaces, but they still rely on local storage until payment, order routing, stock, and notification ownership are fixed.
 - The roadmap assumes Saudi legal/compliance readiness; this must be validated against the actual business setup before launch claims are made.
+- Release hardening has started through CI, manifest, and fallback surfaces, but deployment target and monitoring are still undefined.
 - FAQ, contact, about, and terms surfaces now exist, but approved business data, final support channels, and legal review are still missing from the complete Saudi-ready launch set described in the roadmap.
 
 ## Next Backlog Move
 
-The local order-operations slice is now complete for the current storefront scope. The next task is to convert `SW-05`, `SW-09`, and `SW-10` into the next implementation pack:
+The release-hardening slice is now in progress for the current storefront scope. The next task is to convert `SW-05`, `SW-09`, and `SW-10` into the next implementation pack:
 
 1. freeze the remaining discovery surface for MVP now that concern-led, routine-led, and ingredient-led hubs are live
 2. commerce/admin boundary recommendation, including who owns cart persistence, order state, payment orchestration, and order routing
 3. replace the local checkout handoff plus local ops rehearsal with real payment, shipping, notifications, and order instrumentation
-4. replace provisional trust, support, and legal copy with real approved business data and final support channels
-5. content model and ownership freeze
+4. choose the deployment target and wire continuous deployment plus monitoring
+5. replace provisional trust, support, and legal copy with real approved business data and final support channels
 6. complete legal review and operating approvals before any launch claims
