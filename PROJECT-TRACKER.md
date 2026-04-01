@@ -5,8 +5,8 @@
 - Start date: 2026-04-01
 - Last updated: 2026-04-01
 - Current phase: `release`
-- Overall completion: `70%`
-- Current focus: validation and release hardening through automated smoke regression checks for key storefront, SEO, and transactional surfaces
+- Overall completion: `71%`
+- Current focus: deploy-ready release hardening through environment-safe absolute URLs, a Vercel deployment workflow, and an explicit deployment runbook
 - Forecast status: `date not committed yet`
 - Working estimate: `12-16 weeks for an MVP after stack, catalog model, and integration scope are frozen`
 
@@ -20,7 +20,7 @@ Progress is tracked against SkyWave phases, not by ad-hoc task count.
 | Design and Architecture | 20% | In Progress | 57% | Design system direction, page architecture, stack and data decisions |
 | Implementation | 35% | In Progress | 85% | Public storefront and required internal surfaces implemented |
 | Validation | 10% | In Progress | 80% | Lint, typecheck, tests, UX QA, SEO/schema QA, accessibility QA |
-| Release | 10% | In Progress | 55% | Deployment target, configs, monitoring, legal/trust gates, rollback path |
+| Release | 10% | In Progress | 63% | Deployment target, configs, monitoring, legal/trust gates, rollback path |
 | Growth and Automation | 10% | In Progress | 45% | CRM flows, SEO growth loops, analytics maturity, post-launch automations |
 
 ## Current Discovery Checklist
@@ -92,6 +92,9 @@ Progress is tracked against SkyWave phases, not by ad-hoc task count.
 - [x] Added page-specific social preview surfaces for product and article detail pages
 - [x] Added automated smoke regression checks for key public, SEO, and transactional routes
 - [x] Verified smoke regression checks locally and on GitHub Actions
+- [x] Added deploy-safe public URL resolution for hosted environments
+- [x] Added a secrets-gated Vercel deployment workflow for future continuous deployment
+- [x] Added a deployment runbook covering secrets, rollout, rollback, and watchpoints
 - [ ] Freeze MVP scope vs later phases
 - [ ] Freeze hosting direction
 - [ ] Freeze commerce architecture and admin boundary
@@ -102,14 +105,14 @@ Progress is tracked against SkyWave phases, not by ad-hoc task count.
 | Layer | Status | Notes |
 | --- | --- | --- |
 | UX / IA | In Progress | Home, skincare, makeup, search, ingredient hub/detail, concern hub/detail, routine hub/detail, product, cart, checkout handoff, checkout success, track-order, internal ops/orders, FAQ, contact, about, terms, journal, article, and trust surfaces now exist as real routes, and collection pages support real filter states with zero-result recovery |
-| SEO / AEO / GEO | In Progress | Metadata, route structure, internal links, journal flow, robots, sitemap, and release-facing share metadata now cover collection, ingredient, concern, routine, product, trust, FAQ, contact, about, terms, and internal search discovery templates, with dedicated commerce/editorial social previews on PDPs and articles, filtered collection states canonicalized back to the main category URL, and transactional `cart` / `checkout` routes marked `noindex,nofollow` |
+| SEO / AEO / GEO | In Progress | Metadata, route structure, internal links, journal flow, robots, sitemap, and release-facing share metadata now cover collection, ingredient, concern, routine, product, trust, FAQ, contact, about, terms, and internal search discovery templates, with dedicated commerce/editorial social previews on PDPs and articles, deploy-safe absolute URL resolution for hosted environments, filtered collection states canonicalized back to the main category URL, and transactional `cart` / `checkout` routes marked `noindex,nofollow` |
 | Schema strategy | In Progress | JSON-LD foundations exist on home, category, ingredient, concern, routine, product, journal, article, trust, FAQ, contact, about, and terms routes, and filtered collection plus ingredient discovery states now emit result-aware `ItemList` markup |
 | Accessibility | In Progress | Semantic layout and skip-link exist; full QA is still pending, but smoke coverage now protects core route rendering from silent regressions |
 | Security / Privacy | In Progress | Trust, privacy, shipping, returns, authenticity, FAQ, contact, about, and terms surfaces now exist as real public routes, track-order now uses order reference plus phone last-4 instead of exposing full customer details, and the app now emits safe default security headers; real business data, final support channels, and legal review are still pending |
 | Performance / CWV | In Progress | Next.js foundation is in place; runtime and asset optimization still pending |
 | Analytics / Conversion | In Progress | Page views, global navigation, core CTA instrumentation, internal search submit/result events including ingredient result groups, collection `filter_apply`, ingredient route links, `add_to_cart`, `cart_update`, `checkout_start`, `checkout_complete`, `track_order_lookup`, and internal `ops_order_status_update` are now wired; real payment completion and lifecycle notifications are still pending |
 | Content system | In Progress | Editorial, concern, routine, product, collection, trust, FAQ, contact, about, and terms shells exist, but voice remains provisional until real samples exist |
-| Release / Ops | In Progress | Local runtime is stable on port `3056`, local order references now exist for confirmation and tracking, an internal `/ops/orders` surface can advance local order states for rehearsal, the codebase is now on GitHub with CI verified on push, branded fallback plus manifest surfaces now exist, `/api/health` is available for deployment checks, dedicated share-preview assets now exist at both site and high-value surface level for release distribution, and smoke checks now guard critical release surfaces in CI; hosting, production CD, monitoring ownership, and real order backend ownership are not selected yet |
+| Release / Ops | In Progress | Local runtime is stable on port `3056`, local order references now exist for confirmation and tracking, an internal `/ops/orders` surface can advance local order states for rehearsal, the codebase is now on GitHub with CI verified on push, branded fallback plus manifest surfaces now exist, `/api/health` is available for deployment checks, dedicated share-preview assets now exist at both site and high-value surface level for release distribution, smoke checks now guard critical release surfaces in CI, and a secret-gated Vercel deployment workflow plus explicit runbook now exist; first live deployment, monitoring ownership, and real order backend ownership are still pending |
 
 ## Milestone Log
 
@@ -189,13 +192,15 @@ Progress is tracked against SkyWave phases, not by ad-hoc task count.
 - Product and journal detail pages now point to dedicated commerce and editorial share-preview assets instead of inheriting one generic site-wide share card.
 - A production smoke runner now boots the built app, checks health, verifies critical routes, confirms transactional noindex behavior, and validates page-level share-preview assets.
 - GitHub Actions now execute the smoke runner after the production build so runtime regressions are caught before future release claims.
+- Site URL resolution now respects hosted environment variables so metadata, sitemap, and robots no longer depend on a localhost fallback in real deployments.
+- A secret-gated Vercel deployment workflow and an explicit deployment runbook now exist, so the repository is prepared for continuous deployment once credentials are supplied.
 
 ## Immediate Next Actions
 
 1. Freeze the MVP cut so the roadmap does not expand into one oversized first build.
-2. Freeze the commerce/admin boundary and hosting direction before deeper platform work.
-3. Replace the local order-handoff plus local ops rehearsal flow with real payment, shipping, notification, and order-routing ownership.
-4. Add hosting selection, deployment CD, and production monitoring so release work moves beyond CI-only readiness.
+2. Supply Vercel credentials and execute the first real deployment from this repository.
+3. Freeze the commerce/admin boundary before deeper platform work.
+4. Replace the local order-handoff plus local ops rehearsal flow with real payment, shipping, notification, and order-routing ownership.
 
 ## Tracking Rules
 

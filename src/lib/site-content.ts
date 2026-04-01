@@ -1,7 +1,52 @@
 import { supportRouteLinks } from "@/lib/support-content";
 
-export const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3056";
+const localSiteUrl = "http://localhost:3056";
+
+function normalizeSiteUrl(candidate?: string | null) {
+  if (!candidate) {
+    return null;
+  }
+
+  const trimmed = candidate.trim();
+
+  if (!trimmed) {
+    return null;
+  }
+
+  const withProtocol = /^https?:\/\//i.test(trimmed)
+    ? trimmed
+    : `https://${trimmed}`;
+
+  return withProtocol.replace(/\/+$/, "");
+}
+
+function resolveSiteUrl() {
+  const vercelProductionUrl =
+    process.env.VERCEL_ENV === "production"
+      ? process.env.VERCEL_PROJECT_PRODUCTION_URL
+      : undefined;
+
+  const candidates = [
+    process.env.NEXT_PUBLIC_SITE_URL,
+    process.env.RENDER_EXTERNAL_URL,
+    vercelProductionUrl,
+    process.env.VERCEL_BRANCH_URL,
+    process.env.VERCEL_URL,
+    localSiteUrl,
+  ];
+
+  for (const candidate of candidates) {
+    const normalized = normalizeSiteUrl(candidate);
+
+    if (normalized) {
+      return normalized;
+    }
+  }
+
+  return localSiteUrl;
+}
+
+export const siteUrl = resolveSiteUrl();
 
 export const siteName = "Cozmateks";
 export const siteTagline = "بيت الجمال السعودي المختار بعناية";
