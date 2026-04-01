@@ -176,10 +176,10 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
               <p className={styles.eyebrow}>What search supports</p>
               <h2>أنماط نية نغطيها الآن</h2>
               <ul className={styles.statusList}>
-                <li>اسم منتج أو فئة مثل فاونديشن أو سيروم.</li>
+                <li>اسم منتج أو فئة مثل فاونديشن أو سيروم أو عناية بالشعر.</li>
                 <li>مكوّن مثل فيتامين C أو نياسيناميد.</li>
                 <li>مشكلة مثل التصبغات أو ثبات المكياج.</li>
-                <li>روتين مثل روتين صباحي أو روتين مناسبة.</li>
+                <li>روتين مثل روتين صباحي أو روتين مناسبة أو مسار هدية جاهز.</li>
               </ul>
             </article>
           </section>

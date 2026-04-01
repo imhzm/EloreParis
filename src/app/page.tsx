@@ -18,7 +18,7 @@ export default function Home() {
         name: "Cozmateks",
         url: absoluteUrl("/"),
         description:
-          "Saudi premium beauty house with curated skincare, makeup, routines, and editorial commerce.",
+          "Saudi premium beauty house with curated skincare, makeup, haircare, bodycare, tools, sets, and editorial commerce.",
       },
       {
         "@type": "WebSite",
@@ -47,17 +47,18 @@ export default function Home() {
               <h1>جمالك يبدأ من اختيار أذكى، لا من ازدحام الخيارات.</h1>
               <p className={styles.heroText}>
                 نؤسس تجربة شراء عربية راقية تجمع بين الاكتشاف الذكي، صفحات بيع
-                مقنعة، وبنية SEO وSchema جاهزة للتوسع من أول يوم.
+                مقنعة، وتوسعة واضحة إلى haircare وbodycare والأدوات والمجموعات،
+                مع بنية SEO وSchema جاهزة من أول يوم.
               </p>
               <div className={styles.heroActions}>
                 <TrackedLink
                   className={styles.primaryAction}
-                  href="/shop/skincare"
-                  analyticsLabel="hero_shop_skincare"
+                  href="/shop"
+                  analyticsLabel="hero_shop_hub"
                   analyticsSurface="home_hero"
-                  analyticsDestinationType="collection"
+                  analyticsDestinationType="shop_index"
                 >
-                  اكتشفي العناية بالبشرة
+                  اكتشفي المتجر
                 </TrackedLink>
                 <TrackedLink
                   className={styles.secondaryAction}
@@ -102,7 +103,7 @@ export default function Home() {
                 </div>
                 <div>
                   <p>نواة التحويل</p>
-                  <strong>Home + Collections + Journal + Trust</strong>
+                  <strong>Home + Shop hub + Collections + Journal + Trust</strong>
                 </div>
               </div>
             </aside>
@@ -111,7 +112,7 @@ export default function Home() {
           <section className={styles.section} id="categories">
             <div className={styles.sectionHead}>
               <p>Shop architecture</p>
-              <h2>مداخل واضحة تسرّع القرار وتدعم الربح والبحث العضوي معًا.</h2>
+              <h2>أطلس متجر أوضح يوسّع الفئات من دون كسر منطق القرار أو الـ SEO.</h2>
             </div>
             <div className={styles.entryGrid}>
               {homeEntryPoints.map((entry) => (

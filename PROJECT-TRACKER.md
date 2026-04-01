@@ -4,9 +4,9 @@
 
 - Start date: 2026-04-01
 - Last updated: 2026-04-01
-- Current phase: `release`
-- Overall completion: `71%`
-- Current focus: deploy-ready release hardening through environment-safe absolute URLs, a Vercel deployment workflow, and an explicit deployment runbook
+- Current phase: `implementation`
+- Overall completion: `74%`
+- Current focus: expanded shop IA through a real `/shop` hub plus editorial collection routes for haircare, bodycare, tools, and beauty sets, wired into search, sitemap, and smoke validation
 - Forecast status: `date not committed yet`
 - Working estimate: `12-16 weeks for an MVP after stack, catalog model, and integration scope are frozen`
 
@@ -16,12 +16,12 @@ Progress is tracked against SkyWave phases, not by ad-hoc task count.
 
 | Phase | Weight | Status | Progress | Exit gate |
 | --- | ---: | --- | ---: | --- |
-| Discovery | 15% | In Progress | 69% | Brief, sitemap, user flows, MVP boundary, backlog, open decisions |
-| Design and Architecture | 20% | In Progress | 57% | Design system direction, page architecture, stack and data decisions |
-| Implementation | 35% | In Progress | 85% | Public storefront and required internal surfaces implemented |
-| Validation | 10% | In Progress | 80% | Lint, typecheck, tests, UX QA, SEO/schema QA, accessibility QA |
+| Discovery | 15% | In Progress | 74% | Brief, sitemap, user flows, MVP boundary, backlog, open decisions |
+| Design and Architecture | 20% | In Progress | 63% | Design system direction, page architecture, stack and data decisions |
+| Implementation | 35% | In Progress | 89% | Public storefront and required internal surfaces implemented |
+| Validation | 10% | In Progress | 84% | Lint, typecheck, tests, UX QA, SEO/schema QA, accessibility QA |
 | Release | 10% | In Progress | 63% | Deployment target, configs, monitoring, legal/trust gates, rollback path |
-| Growth and Automation | 10% | In Progress | 45% | CRM flows, SEO growth loops, analytics maturity, post-launch automations |
+| Growth and Automation | 10% | In Progress | 46% | CRM flows, SEO growth loops, analytics maturity, post-launch automations |
 
 ## Current Discovery Checklist
 
@@ -95,6 +95,11 @@ Progress is tracked against SkyWave phases, not by ad-hoc task count.
 - [x] Added deploy-safe public URL resolution for hosted environments
 - [x] Added a secrets-gated Vercel deployment workflow for future continuous deployment
 - [x] Added a deployment runbook covering secrets, rollout, rollback, and watchpoints
+- [x] Added a real `/shop` atlas route for the broader catalog roadmap
+- [x] Expanded the route graph with editorial collection pages for `haircare`, `bodycare`, `tools`, and `beauty-sets`
+- [x] Expanded internal search coverage to return the new collection surfaces
+- [x] Expanded sitemap and smoke regression coverage for the new shop routes
+- [x] Verified live `/shop`, `/shop/haircare`, search, and sitemap responses on port `3056`
 - [ ] Freeze MVP scope vs later phases
 - [ ] Freeze hosting direction
 - [ ] Freeze commerce architecture and admin boundary
@@ -104,8 +109,8 @@ Progress is tracked against SkyWave phases, not by ad-hoc task count.
 
 | Layer | Status | Notes |
 | --- | --- | --- |
-| UX / IA | In Progress | Home, skincare, makeup, search, ingredient hub/detail, concern hub/detail, routine hub/detail, product, cart, checkout handoff, checkout success, track-order, internal ops/orders, FAQ, contact, about, terms, journal, article, and trust surfaces now exist as real routes, and collection pages support real filter states with zero-result recovery |
-| SEO / AEO / GEO | In Progress | Metadata, route structure, internal links, journal flow, robots, sitemap, and release-facing share metadata now cover collection, ingredient, concern, routine, product, trust, FAQ, contact, about, terms, and internal search discovery templates, with dedicated commerce/editorial social previews on PDPs and articles, deploy-safe absolute URL resolution for hosted environments, filtered collection states canonicalized back to the main category URL, and transactional `cart` / `checkout` routes marked `noindex,nofollow` |
+| UX / IA | In Progress | Home, `/shop`, skincare, makeup, haircare, bodycare, tools, beauty sets, search, ingredient hub/detail, concern hub/detail, routine hub/detail, product, cart, checkout handoff, checkout success, track-order, internal ops/orders, FAQ, contact, about, terms, journal, article, and trust surfaces now exist as real routes, and the main collection pages support real filter states with zero-result recovery |
+| SEO / AEO / GEO | In Progress | Metadata, route structure, internal links, journal flow, robots, sitemap, and release-facing share metadata now cover the broader shop atlas plus collection, ingredient, concern, routine, product, trust, FAQ, contact, about, terms, and internal search discovery templates, with dedicated commerce/editorial social previews on PDPs and articles, deploy-safe absolute URL resolution for hosted environments, filtered collection states canonicalized back to the main category URL, and transactional `cart` / `checkout` routes marked `noindex,nofollow` |
 | Schema strategy | In Progress | JSON-LD foundations exist on home, category, ingredient, concern, routine, product, journal, article, trust, FAQ, contact, about, and terms routes, and filtered collection plus ingredient discovery states now emit result-aware `ItemList` markup |
 | Accessibility | In Progress | Semantic layout and skip-link exist; full QA is still pending, but smoke coverage now protects core route rendering from silent regressions |
 | Security / Privacy | In Progress | Trust, privacy, shipping, returns, authenticity, FAQ, contact, about, and terms surfaces now exist as real public routes, track-order now uses order reference plus phone last-4 instead of exposing full customer details, and the app now emits safe default security headers; real business data, final support channels, and legal review are still pending |
@@ -194,10 +199,12 @@ Progress is tracked against SkyWave phases, not by ad-hoc task count.
 - GitHub Actions now execute the smoke runner after the production build so runtime regressions are caught before future release claims.
 - Site URL resolution now respects hosted environment variables so metadata, sitemap, and robots no longer depend on a localhost fallback in real deployments.
 - A secret-gated Vercel deployment workflow and an explicit deployment runbook now exist, so the repository is prepared for continuous deployment once credentials are supplied.
+- A real `/shop` atlas route now exposes the broader catalog direction from the roadmap instead of limiting the public IA to skincare and makeup only.
+- Editorial collection routes now exist for `haircare`, `bodycare`, `tools`, and `beauty-sets`, and those routes are wired into search, sitemap, and smoke regression coverage.
 
 ## Immediate Next Actions
 
-1. Freeze the MVP cut so the roadmap does not expand into one oversized first build.
+1. Freeze which of the new editorial collections remain in MVP versus phase 2 catalog expansion.
 2. Supply Vercel credentials and execute the first real deployment from this repository.
 3. Freeze the commerce/admin boundary before deeper platform work.
 4. Replace the local order-handoff plus local ops rehearsal flow with real payment, shipping, notification, and order-routing ownership.

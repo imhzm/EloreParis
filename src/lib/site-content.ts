@@ -66,8 +66,9 @@ export const trustPoints = [
 
 export const primaryNavigation = [
   { href: "/", label: "الرئيسية" },
-  { href: "/shop/skincare", label: "العناية بالبشرة" },
-  { href: "/shop/makeup", label: "المكياج" },
+  { href: "/shop", label: "المتجر" },
+  { href: "/concerns", label: "حسب المشكلة" },
+  { href: "/routines", label: "الروتينات" },
   { href: "/search", label: "البحث" },
   { href: "/journal", label: "المجلة" },
   { href: "/trust", label: "الثقة" },
@@ -107,6 +108,30 @@ export const homeEntryPoints = [
       "ألوان مختارة ودرجات قابلة للفهم مع توجيه واضح للـ finish والثبات والمناسبة.",
   },
   {
+    title: "العناية بالشعر",
+    subtitle: "Haircare",
+    href: "/shop/haircare",
+    destinationType: "collection",
+    description:
+      "مسارات تركز على الفروة، الترطيب، ومقاومة الهيشان بدل تكديس منتجات متشابهة.",
+  },
+  {
+    title: "العناية بالجسم",
+    subtitle: "Bodycare",
+    href: "/shop/bodycare",
+    destinationType: "collection",
+    description:
+      "اختيارات يومية للراحة والملمس والرائحة الهادئة مع منطق شراء مناسب للهدايا والاستخدام المستمر.",
+  },
+  {
+    title: "الأدوات",
+    subtitle: "Tools",
+    href: "/shop/tools",
+    destinationType: "collection",
+    description:
+      "فرش وإكسسوارات وتطبيق عملي يشرح متى تحتاجين الأداة ومتى لا تضيف قيمة حقيقية.",
+  },
+  {
     title: "حسب المشكلة",
     subtitle: "Concern-led",
     href: "/concerns",
@@ -122,23 +147,70 @@ export const homeEntryPoints = [
     description:
       "رحلات صباحية ومسائية وموسمية تبني السلة بطريقة أذكى وترفع التحويل بثقة.",
   },
+  {
+    title: "بيوتي سِتس",
+    subtitle: "Beauty Sets",
+    href: "/shop/beauty-sets",
+    destinationType: "collection",
+    description:
+      "مجموعات جاهزة للهدايا أو البداية الذكية، مبنية على مناسبة واضحة لا على تجميع عشوائي.",
+  },
 ];
 
-export type CollectionSlug = "skincare" | "makeup";
+export type CollectionSlug =
+  | "skincare"
+  | "makeup"
+  | "haircare"
+  | "bodycare"
+  | "tools"
+  | "beauty-sets";
+
+type CollectionDirectoryEntry = {
+  title: string;
+  href: string;
+  subtitle: string;
+  mode: "filtered" | "editorial";
+};
 
 export const collectionDirectory: Record<
   CollectionSlug,
-  { title: string; href: string; subtitle: string }
+  CollectionDirectoryEntry
 > = {
   skincare: {
     title: "العناية بالبشرة",
     href: "/shop/skincare",
     subtitle: "Skincare Collection",
+    mode: "filtered",
   },
   makeup: {
     title: "المكياج",
     href: "/shop/makeup",
     subtitle: "Makeup Collection",
+    mode: "filtered",
+  },
+  haircare: {
+    title: "العناية بالشعر",
+    href: "/shop/haircare",
+    subtitle: "Haircare Collection",
+    mode: "editorial",
+  },
+  bodycare: {
+    title: "العناية بالجسم",
+    href: "/shop/bodycare",
+    subtitle: "Bodycare Collection",
+    mode: "editorial",
+  },
+  tools: {
+    title: "الأدوات والإكسسوارات",
+    href: "/shop/tools",
+    subtitle: "Tools Collection",
+    mode: "editorial",
+  },
+  "beauty-sets": {
+    title: "الهدايا والمجموعات",
+    href: "/shop/beauty-sets",
+    subtitle: "Beauty Sets",
+    mode: "editorial",
   },
 };
 
@@ -859,6 +931,484 @@ export const makeupCategory = {
   ],
 };
 
+type ShopCollectionDiscoveryLink = {
+  title: string;
+  label: string;
+  href: string;
+  description: string;
+  destinationType: string;
+};
+
+export type ShopCollectionPage = {
+  slug: CollectionSlug;
+  mode: "filtered" | "editorial";
+  title: string;
+  subtitle: string;
+  href: string;
+  description: string;
+  introduction: string;
+  entryDescription: string;
+  searchTerms: string[];
+  shoppingSignals: string[];
+  focusCards: Array<{ title: string; label: string; body: string }>;
+  discoveryLinks: ShopCollectionDiscoveryLink[];
+  faqs: Array<{ question: string; answer: string }>;
+};
+
+export const editorialCollectionSlugs: CollectionSlug[] = [
+  "haircare",
+  "bodycare",
+  "tools",
+  "beauty-sets",
+];
+
+export const shopCollections: ShopCollectionPage[] = [
+  {
+    slug: "skincare",
+    mode: "filtered",
+    title: skincareCategory.title,
+    subtitle: skincareCategory.subtitle,
+    href: "/shop/skincare",
+    description: skincareCategory.description,
+    introduction: skincareCategory.introduction,
+    entryDescription:
+      "فئة أساسية تربط الفلاتر الحية بالمشكلة والمكوّن والروتين لتقليل التشتت ورفع وضوح القرار.",
+    searchTerms: [
+      "skincare",
+      "العناية بالبشرة",
+      "سيروم",
+      "مرطب",
+      "واقي شمس",
+      "فيتامين c",
+    ],
+    shoppingSignals: [
+      "عندما تكون النية مرتبطة بنوع البشرة أو المشكلة قبل اسم المنتج نفسه.",
+      "عندما تحتاج الزائرة إلى فلترة عملية تعيد ترتيب النتائج حسب التوقيت والملمس والاحتياج.",
+      "عندما يكون القرار أقرب إلى روتين يومي واضح لا إلى منتج منفرد فقط.",
+    ],
+    focusCards: skincareCategory.featuredCards,
+    discoveryLinks: [
+      {
+        title: "الدخول إلى صفحة الفئة المفلترة",
+        label: "Filtered collection",
+        href: "/shop/skincare",
+        description:
+          "ابدئي من صفحة الفئة الأساسية عندما تكون الحاجة إلى تصفية النتائج ومقارنتها بسرعة.",
+        destinationType: "collection",
+      },
+      {
+        title: "التصبغات",
+        label: "Concern-led",
+        href: "/concerns/pigmentation",
+        description:
+          "انتقلي إلى صفحة المشكلة عندما يكون السؤال أقرب إلى النتيجة أو الاحتياج من اسم المنتج.",
+        destinationType: "concern",
+      },
+      {
+        title: "فيتامين C",
+        label: "Ingredient-led",
+        href: "/ingredients/vitamin-c",
+        description:
+          "هذا المسار يخدم نية البحث عندما تبدأ من المكوّن وترغبين في فهم الروتين المرتبط به.",
+        destinationType: "ingredient",
+      },
+      {
+        title: "دليل الواقي الخفيف",
+        label: "Editorial support",
+        href: "/journal/best-light-sunscreen-oily-skin-saudi-weather",
+        description:
+          "المقال التحريري هنا يدعم قرار الشراء بدل أن يبقى محتوى منفصلًا عن التصفح التجاري.",
+        destinationType: "article",
+      },
+    ],
+    faqs: skincareCategory.faqs,
+  },
+  {
+    slug: "makeup",
+    mode: "filtered",
+    title: makeupCategory.title,
+    subtitle: makeupCategory.subtitle,
+    href: "/shop/makeup",
+    description: makeupCategory.description,
+    introduction: makeupCategory.introduction,
+    entryDescription:
+      "فئة مبنية على finish والتغطية والثبات وسياق الاستخدام بدل ترك القرار معلقًا على أسماء منتجات متشابهة.",
+    searchTerms: [
+      "makeup",
+      "المكياج",
+      "foundation",
+      "كونسيلر",
+      "ثبات المكياج",
+      "soft glam",
+    ],
+    shoppingSignals: [
+      "عندما تبدأ الحيرة من التغطية أو الثبات أو الـ finish وليس من البراند.",
+      "عندما تحتاج الزائرة إلى فهم الدرجات والملمس وسياق الاستخدام اليومي أو المناسبات.",
+      "عندما يجب ربط القاعدة بالمقال والروتين والثقة بدل صفحة بيع منفصلة عن باقي الرحلة.",
+    ],
+    focusCards: makeupCategory.featuredCards,
+    discoveryLinks: [
+      {
+        title: "الدخول إلى صفحة المكياج المفلترة",
+        label: "Filtered collection",
+        href: "/shop/makeup",
+        description:
+          "هذا هو السطح الأنسب عندما تكون الحاجة إلى فلترة النتيجة النهائية والتغطية بسرعة.",
+        destinationType: "collection",
+      },
+      {
+        title: "ثبات المكياج",
+        label: "Concern-led",
+        href: "/concerns/makeup-longwear",
+        description:
+          "صفحة المشكلة تساعد عندما يكون السؤال مرتبطًا بثبات الإطلالة أو ملاءمتها للمناسبة.",
+        destinationType: "concern",
+      },
+      {
+        title: "روتين قاعدة للمناسبات",
+        label: "Routine-led",
+        href: "/routines/occasion-base-routine",
+        description:
+          "هذا المسار يشرح ترتيب الخطوات قبل التحول إلى المنتج أو السلة.",
+        destinationType: "routine",
+      },
+      {
+        title: "اختيار finish الفاونديشن",
+        label: "Editorial support",
+        href: "/journal/how-to-choose-foundation-finish-for-events",
+        description:
+          "المقال التحريري يفسر لغة الـ finish والثبات ويختصر وقت التجربة والخطأ.",
+        destinationType: "article",
+      },
+    ],
+    faqs: makeupCategory.faqs,
+  },
+  {
+    slug: "haircare",
+    mode: "editorial",
+    title: "العناية بالشعر",
+    subtitle: "Haircare Collection",
+    href: "/shop/haircare",
+    description:
+      "صفحة فئة مهيأة للفهرسة والاكتشاف التجاري تقود الزائرة إلى منطق اختيار أوضح في العناية بالشعر: الفروة، الترطيب، مقاومة الهيشان، والحرارة اليومية داخل الأجواء السعودية.",
+    introduction:
+      "هذه ليست صفحة منتجات فارغة. هي سطح قرار يشرح متى تبدأين من الفروة، متى يكون الاحتياج مرتبطًا بالأطراف أو الهيشان، وكيف تختارين بين روتين يومي خفيف أو معالجة أعمق قبل توسيع الكتالوج الفعلي.",
+    entryDescription:
+      "مسار واضح للفروة، الترطيب، مقاومة الهيشان، والعناية اليومية في الأجواء الحارة أو الرطبة.",
+    searchTerms: [
+      "haircare",
+      "العناية بالشعر",
+      "شامبو",
+      "ماسك شعر",
+      "فروة الرأس",
+      "هيشان الشعر",
+    ],
+    shoppingSignals: [
+      "ابدئي من هذه الفئة عندما تكون الحاجة مرتبطة بالفروة أو الأطراف أو ملمس الشعر بعد التصفيف.",
+      "هذا السطح مناسب للنية التي تبدأ من المشكلة اليومية مثل الهيشان أو الجفاف بدل اسم المنتج وحده.",
+      "الهدف هنا هو بناء منطق شراء واضح قبل توسيع الكتالوج وربط المنتجات الفعلية لاحقًا.",
+    ],
+    focusCards: [
+      {
+        title: "Scalp-first Logic",
+        label: "Root health",
+        body: "عندما يبدأ الإزعاج من الفروة، يجب أن تسبقها لغة واضحة حول التوازن والتنظيف والراحة قبل أي وعود مبالغ فيها.",
+      },
+      {
+        title: "Humidity Control",
+        label: "Saudi climate",
+        body: "اختيار العناية بالشعر داخل الأجواء الحارة أو الرطبة يحتاج شرحًا للهيشان والملمس والثبات بعد التصفيف، لا مجرد أسماء منتجات.",
+      },
+      {
+        title: "Treatment vs Daily Care",
+        label: "Routine clarity",
+        body: "الصفحة الجيدة تفرّق بين روتين يومي خفيف وماسكات أو معالجات أعمق حتى تبقى السلة منطقية وقابلة للاستخدام.",
+      },
+    ],
+    discoveryLinks: [
+      {
+        title: "ابدئي من البحث الداخلي",
+        label: "Search-led",
+        href: "/search?q=العناية%20بالشعر",
+        description:
+          "البحث الحالي يدعم هذا المسار تمهيدًا لربطه لاحقًا بمنتجات وفلاتر أكثر تفصيلًا.",
+        destinationType: "search",
+      },
+      {
+        title: "التعلّم من المجلة",
+        label: "Editorial support",
+        href: "/journal",
+        description:
+          "المجلة هي الذراع المناسب الآن لبناء الثقة قبل اكتمال طبقة الكتالوج الخاصة بالشعر.",
+        destinationType: "journal_index",
+      },
+      {
+        title: "مركز الثقة",
+        label: "Trust layer",
+        href: "/trust",
+        description:
+          "بما أن الفئة ما زالت في مرحلة التوسعة، تبقى الثقة والسياسات جزءًا واضحًا من قرار الشراء.",
+        destinationType: "trust",
+      },
+    ],
+    faqs: [
+      {
+        question: "لماذا أُطلقت هذه الفئة قبل اكتمال كتالوج الشعر نفسه؟",
+        answer:
+          "لأن roadmap تطلب IA تجارية أوسع من المنتجين الحاليين، ومن الأفضل بناء المسار القابل للفهرسة والربط الداخلي الآن بدل تأجيله حتى تتراكم الفجوة بين الهيكل والمحتوى.",
+      },
+      {
+        question: "هل هذه الصفحة تدّعي وجود منتجات شعر كثيرة الآن؟",
+        answer:
+          "لا. هذه صفحة تأسيسية صادقة توضّح اتجاه الفئة وكيف سيُبنى الاكتشاف والربط الداخلي عندما يكتمل الكتالوج الفعلي.",
+      },
+    ],
+  },
+  {
+    slug: "bodycare",
+    mode: "editorial",
+    title: "العناية بالجسم",
+    subtitle: "Bodycare Collection",
+    href: "/shop/bodycare",
+    description:
+      "سطح تجاري وتحضيري لفئة العناية بالجسم يركز على الروتين اليومي، الراحة بعد الاستحمام، ملمس اللوشن أو الزيوت، وفئات الهدايا العملية داخل السوق السعودي.",
+    introduction:
+      "الهدف من هذه الصفحة هو تحويل bodycare من فئة هامشية إلى مسار شراء واضح: متى تبدأين من الترطيب، متى يحتاج الروتين إلى تقشير أو عناية لليدين، وكيف تُقدَّم الفئة كهديّة أو عادة يومية.",
+    entryDescription:
+      "عناية يومية للجسم مبنية على الراحة والملمس والرائحة الهادئة والهدايا العملية.",
+    searchTerms: [
+      "bodycare",
+      "العناية بالجسم",
+      "لوشن",
+      "زبدة جسم",
+      "سكراب",
+      "هدية عناية",
+    ],
+    shoppingSignals: [
+      "ابدئي من هذه الفئة عندما يكون الهدف مرتبطًا براحة الاستخدام اليومي أو تقديم مجموعة هادئة كهدية.",
+      "التمييز هنا بين الترطيب والتقشير والرائحة والتغليف أهم من أسماء المنتجات فقط.",
+      "هذه الفئة تخدم أيضًا نوايا الشراء الموسمية مثل السفر والضيافة والمجموعات الجاهزة.",
+    ],
+    focusCards: [
+      {
+        title: "Daily Comfort",
+        label: "After-shower routine",
+        body: "العناية بالجسم هنا مبنية على الاستمرارية: قوام مريح، امتصاص واضح، وإحساس مرتب بعد الاستخدام.",
+      },
+      {
+        title: "Giftable Bodycare",
+        label: "Set logic",
+        body: "الصفحة الجيدة تشرح كيف تتحول bodycare إلى هدية عملية بتغليف واضح وفكرة استخدام مناسبة.",
+      },
+      {
+        title: "Texture-first Editing",
+        label: "Decision support",
+        body: "القرار يبدأ من ملمس المنتج على الجلد وسهولة دمجه داخل اليوم، لا من عناوين عامة ومتشابهة.",
+      },
+    ],
+    discoveryLinks: [
+      {
+        title: "بحث bodycare",
+        label: "Search-led",
+        href: "/search?q=bodycare",
+        description:
+          "البحث الحالي يفتح الباب لهذا المسار إلى أن تكتمل طبقة المنتجات والفلاتر الخاصة بالجسم.",
+        destinationType: "search",
+      },
+      {
+        title: "الهدايا والمجموعات",
+        label: "Cross-sell",
+        href: "/shop/beauty-sets",
+        description:
+          "هذا هو الامتداد المنطقي عندما تتحول نية العناية اليومية إلى شراء جاهز أو هدية مرتبة.",
+        destinationType: "collection",
+      },
+      {
+        title: "تواصل معنا",
+        label: "Support",
+        href: "/contact",
+        description:
+          "تبقى صفحة التواصل مساحة صادقة لأي استفسار مرتبط بالمخزون أو خيارات الشحن أو تفاصيل الهدايا.",
+        destinationType: "contact",
+      },
+    ],
+    faqs: [
+      {
+        question: "هل bodycare هنا موجهة للاستخدام اليومي أم للهدايا؟",
+        answer:
+          "الصفحة مصممة لتغطي المسارين معًا، لكن منطق الشراء يبدأ من المناسبة الفعلية: استخدام يومي، ضيافة، أو هدية جاهزة.",
+      },
+      {
+        question: "لماذا يوجد ربط مباشر بينها وبين beauty sets؟",
+        answer:
+          "لأن bodycare من أكثر الفئات التي تتحول طبيعيًا إلى مجموعات جاهزة، ومن الأفضل بناء هذا الربط من الآن داخل IA بدل تركه متأخرًا كترقية شكلية.",
+      },
+    ],
+  },
+  {
+    slug: "tools",
+    mode: "editorial",
+    title: "الأدوات والإكسسوارات",
+    subtitle: "Tools Collection",
+    href: "/shop/tools",
+    description:
+      "فئة تأسيسية للأدوات والإكسسوارات تشرح متى تضيف الأداة قيمة حقيقية داخل الروتين أو المكياج، وكيف نميّز بين أداة لازمة وأخرى ترفع السعر بلا أثر واضح على التجربة.",
+    introduction:
+      "هذه الفئة تمنع الأدوات من أن تصبح قسمًا هامشيًا بلا معنى. الهدف هو تقديمها كمكمل منطقي للروتين أو المكياج: فرش، إسفنجات، أدوات حفظ، أو إكسسوارات تساعد على التطبيق اليومي المرتب.",
+    entryDescription:
+      "أدوات وإكسسوارات تشرح قيمة كل قطعة داخل الروتين بدل عرضها كإضافات عشوائية.",
+    searchTerms: [
+      "tools",
+      "الأدوات",
+      "فرش مكياج",
+      "اسفنجة",
+      "إكسسوارات",
+      "beauty tools",
+    ],
+    shoppingSignals: [
+      "هذه الفئة مناسبة عندما تحتاج الزائرة إلى فهم دور الأداة قبل إضافتها إلى السلة.",
+      "أفضل IA هنا تربط الأداة بالاستخدام الفعلي: تطبيق، حفظ، تنظيف، أو ترتيب الخطوات.",
+      "الفئة تساعد على رفع قيمة السلة بشكل منطقي فقط عندما يكون الاستخدام واضحًا ومفسرًا.",
+    ],
+    focusCards: [
+      {
+        title: "Use-case First",
+        label: "Utility clarity",
+        body: "الأداة الجيدة يجب أن تُقدَّم من خلال ما تضيفه فعليًا في التطبيق أو الترتيب، لا بمجرد كونها accessory جذابة.",
+      },
+      {
+        title: "Routine Companion",
+        label: "Cross-sell",
+        body: "أفضل طريقة لبيع الأدوات هي ربطها بروتين أو منتج أو نوع استخدام واضح بدل عرضها كمجموعة منفصلة بلا سياق.",
+      },
+      {
+        title: "Care and Longevity",
+        label: "Trust signal",
+        body: "الفئة الاحترافية تشرح أيضًا كيف تُحفظ الأدوات وتُنظف ومتى تستحق الشراء أو الاستبدال.",
+      },
+    ],
+    discoveryLinks: [
+      {
+        title: "ابحثي عن فرش مكياج",
+        label: "Search-led",
+        href: "/search?q=فرش%20مكياج",
+        description:
+          "هذا المسار الحالي يخدم نية الأدوات حتى قبل اكتمال طبقة المنتجات الخاصة بها.",
+        destinationType: "search",
+      },
+      {
+        title: "الرجوع إلى المكياج",
+        label: "Collection bridge",
+        href: "/shop/makeup",
+        description:
+          "الأدوات هنا امتداد منطقي لفئة المكياج، لذا يبقى الجسر بينها وبين صفحة المكياج أساسيًا في التحويل.",
+        destinationType: "collection",
+      },
+      {
+        title: "مركز الثقة",
+        label: "Trust layer",
+        href: "/trust/authenticity",
+        description:
+          "صفحات الثقة تدعم قرار شراء الإكسسوارات أيضًا عندما يكون السؤال حول الجودة أو المصدر أو الشحن.",
+        destinationType: "trust_policy",
+      },
+    ],
+    faqs: [
+      {
+        question: "هل الأدوات هنا جزء من الـ MVP فعلًا أم مجرد placeholder؟",
+        answer:
+          "هي جزء من IA الـ MVP كما تنص الخطة، لكن السطح الحالي يقدمها بشكل تأسيسي صادق إلى أن يكتمل كتالوج الأدوات والمنتجات المرتبطة بها.",
+      },
+      {
+        question: "لماذا لا تُعرض الأدوات فقط كاقتراحات داخل صفحات المنتج؟",
+        answer:
+          "لأن roadmap تتطلب فئة مستقلة قابلة للفهرسة والبحث والربط الداخلي، لا مجرد cross-sell مخفي داخل PDPs.",
+      },
+    ],
+  },
+  {
+    slug: "beauty-sets",
+    mode: "editorial",
+    title: "الهدايا والمجموعات",
+    subtitle: "Beauty Sets",
+    href: "/shop/beauty-sets",
+    description:
+      "صفحة هدايا ومجموعات Beauty Sets تبني منطق شراء واضح للمناسبات، البدايات الذكية، والمجموعات الجاهزة بدل تركها كملحق موسمي بلا بنية دائمة.",
+    introduction:
+      "هذه الصفحة تُعرّف كيف تتحول المجموعة إلى مسار شراء محترم: لمن هي، متى تُشترى، وما الفرق بين set موجهة للتجربة الأولى أو gifting أو routine starter pack.",
+    entryDescription:
+      "مجموعات جاهزة للهدايا أو البداية الذكية، مبنية على مناسبة واضحة وتغليف مفهوم.",
+    searchTerms: [
+      "beauty sets",
+      "هدايا",
+      "مجموعات",
+      "gift set",
+      "starter kit",
+      "bridal gift",
+    ],
+    shoppingSignals: [
+      "هذه الفئة تخدم نية شراء سريعة عندما تكون المناسبة واضحة لكن تفاصيل المنتجات الفردية أقل أهمية.",
+      "المجموعات ترفع التحويل عندما يُشرح السيناريو: هدية، بداية روتين، أو مناسبة خاصة.",
+      "الهدف ليس تجميع المنتجات معًا فقط، بل تقديم منطق واضح للتنسيق والتغليف والسعر.",
+    ],
+    focusCards: [
+      {
+        title: "Gift Logic",
+        label: "Occasion-ready",
+        body: "المجموعة الناجحة تبدأ من مناسبة واضحة: زيارة، هدية أنيقة، أو تحضير لمناسبة خاصة، لا مجرد جمع منتجات متقاربة.",
+      },
+      {
+        title: "Starter Routine",
+        label: "New-to-category",
+        body: "بعض الزائرات تحتجن نقطة بداية أبسط من اختيار كل منتج على حدة، وهنا تصبح المجموعة مسار قرار ذكي.",
+      },
+      {
+        title: "Packaging Matters",
+        label: "Premium detail",
+        body: "في هذا النوع من الصفحات، التغليف، وضوح المكونات، وسياسة الاسترجاع عناصر أساسية داخل القرار وليست تفاصيل هامشية.",
+      },
+    ],
+    discoveryLinks: [
+      {
+        title: "ابحثي عن مجموعة هدية",
+        label: "Search-led",
+        href: "/search?q=gift%20set",
+        description:
+          "البحث الداخلي يلتقط نية gifting حتى قبل اكتمال طبقة المجموعات والمنتجات الموسعة.",
+        destinationType: "search",
+      },
+      {
+        title: "العناية بالجسم",
+        label: "Collection bridge",
+        href: "/shop/bodycare",
+        description:
+          "العناية بالجسم من أكثر الفئات القابلة للتحول إلى sets جاهزة، لذا يبقى الربط بينهما مقصودًا داخل IA.",
+        destinationType: "collection",
+      },
+      {
+        title: "سياسة الشحن والتوصيل",
+        label: "Trust layer",
+        href: "/trust/shipping",
+        description:
+          "قرار الهدية يعتمد بشدة على وضوح الشحن والتوصيل والتغليف، لذلك يبقى هذا المسار أساسيًا.",
+        destinationType: "trust_policy",
+      },
+    ],
+    faqs: [
+      {
+        question: "هل يمكن اعتبار beauty sets مجرد surface موسمية فقط؟",
+        answer:
+          "لا. في هذا المشروع تُعامل كمكوّن ثابت داخل IA لأن نية الهدايا والبدايات الذكية جزء من نموذج التجارة نفسه، لا مجرد حملة موسمية عابرة.",
+      },
+      {
+        question: "لماذا تُربط المجموعات بالشحن والثقة بشكل مباشر؟",
+        answer:
+          "لأن قرار شراء الهدية لا يعتمد على المنتج فقط، بل على وضوح التوصيل والتغليف وسياسات الاسترجاع، وهذا ما يجعل الربط مع طبقة trust أساسيًا.",
+      },
+    ],
+  },
+];
+
 export const journalArticles: JournalArticle[] = [
   {
     collection: "skincare",
@@ -1259,6 +1809,10 @@ export function getProductsBySlugs(slugs: string[]) {
 export function getProductByHref(href: string) {
   const slug = extractSlugFromHref(href);
   return slug ? getProductBySlug(slug) : undefined;
+}
+
+export function getShopCollectionBySlug(slug: string) {
+  return shopCollections.find((collection) => collection.slug === slug);
 }
 
 export function getConcernByHref(href: string) {

@@ -50,6 +50,10 @@ export function getPageType(pathname: string) {
     return "journal_index";
   }
 
+  if (pathname === "/shop") {
+    return "shop_index";
+  }
+
   if (pathname.startsWith("/journal/")) {
     return "article";
   }

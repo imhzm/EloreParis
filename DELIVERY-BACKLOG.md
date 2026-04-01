@@ -70,6 +70,7 @@
 - The roadmap spans storefront, editorial, admin, SEO, analytics, operations, and launch readiness; without an MVP cut it will sprawl.
 - Brand polish is limited until real sample copy or brand assets are available.
 - Stack, commerce engine, CMS, and supplier integration details are not frozen yet.
+- The broader shop atlas is now live with editorial collection routes for haircare, bodycare, tools, and beauty sets, but those surfaces are still IA/SEO shells until real catalog ownership and merchandising rules are frozen.
 - The new server-side collection filters and ingredient discovery surfaces are intentionally narrow and data-backed; any deeper merchandising model must be decided explicitly instead of being improvised inside the current product content.
 - Cart, checkout handoff, confirmation, track-order, and internal order-ops now exist as real UI surfaces, but they still rely on local storage until payment, order routing, stock, and notification ownership are fixed.
 - The roadmap assumes Saudi legal/compliance readiness; this must be validated against the actual business setup before launch claims are made.
@@ -79,9 +80,9 @@
 
 ## Next Backlog Move
 
-The release-hardening slice is now in progress for the current storefront scope. The next task is to convert `SW-05`, `SW-09`, and `SW-10` into the next implementation pack:
+The broader public IA slice is now in progress for the current storefront scope. The next task is to convert `SW-03`, `SW-05`, `SW-09`, and `SW-10` into the next implementation pack:
 
-1. freeze the remaining discovery surface for MVP now that concern-led, routine-led, and ingredient-led hubs are live
+1. freeze which of the new editorial collections remain in MVP now that the shop atlas and broader category routes are live
 2. commerce/admin boundary recommendation, including who owns cart persistence, order state, payment orchestration, and order routing
 3. replace the local checkout handoff plus local ops rehearsal with real payment, shipping, notifications, and order instrumentation
 4. inject Vercel credentials, execute the first deployment, and wire monitoring around the new `/api/health` endpoint

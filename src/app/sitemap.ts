@@ -5,6 +5,7 @@ import {
   journalArticles,
   products,
   routines,
+  shopCollections,
   siteUrl,
   trustPolicies,
 } from "@/lib/site-content";
@@ -18,8 +19,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/faq",
     "/ingredients",
     "/routines",
-    "/shop/skincare",
-    "/shop/makeup",
+    "/shop",
     "/journal",
     "/terms",
     "/trust",
@@ -28,6 +28,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     lastModified: "2026-04-01",
     changeFrequency: "weekly" as const,
     priority: path === "" ? 1 : 0.8,
+  }));
+
+  const collectionPages = shopCollections.map((collection) => ({
+    url: `${siteUrl}${collection.href}`,
+    lastModified: "2026-04-01",
+    changeFrequency: "weekly" as const,
+    priority: collection.mode === "filtered" ? 0.84 : 0.74,
   }));
 
   const articlePages = journalArticles.map((article) => ({
@@ -74,6 +81,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   return [
     ...staticPages,
+    ...collectionPages,
     ...articlePages,
     ...concernPages,
     ...ingredientPages,

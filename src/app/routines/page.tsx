@@ -26,7 +26,7 @@ export default function RoutinesHubPage() {
       collection,
       items: routines.filter((routine) => routine.collection === collectionSlug),
     }),
-  );
+  ).filter(({ items }) => items.length);
 
   const structuredData = {
     "@context": "https://schema.org",

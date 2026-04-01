@@ -109,7 +109,27 @@ function assertIncludes(body, marker, pathname) {
 const smokeChecks = [
   {
     pathname: "/",
-    markers: ["nav_search", "/manifest.webmanifest", "/opengraph-image"],
+    markers: [
+      "nav_search",
+      "home_entry_haircare",
+      "/manifest.webmanifest",
+      "/opengraph-image",
+    ],
+  },
+  {
+    pathname: "/shop",
+    markers: [
+      "shop_hub_collection_haircare",
+      "shop_hub_to_trust",
+      "shop_hub_to_concerns",
+    ],
+  },
+  {
+    pathname: "/shop/haircare",
+    markers: [
+      "collection_haircare_to_primary",
+      "collection_haircare_to_shop_hub",
+    ],
   },
   {
     pathname: "/products/radiant-dew-serum",
@@ -129,6 +149,8 @@ const smokeChecks = [
   {
     pathname: "/sitemap.xml",
     markers: [
+      "/shop/haircare",
+      "/shop/beauty-sets",
       "/products/radiant-dew-serum",
       "/journal/niacinamide-vs-vitamin-c-which-fits-your-routine",
     ],

@@ -3,10 +3,9 @@ import {
   concerns,
   ingredients,
   journalArticles,
-  makeupCategory,
   products,
   routines,
-  skincareCategory,
+  shopCollections,
   type CollectionSlug,
 } from "@/lib/site-content";
 
@@ -37,14 +36,19 @@ type SearchRecord = SearchResult & {
 export const popularSearchQueries = [
   { label: "فاونديشن مخملي", query: "فاونديشن مخملي", slug: "foundation_velvet" },
   { label: "فيتامين C", query: "فيتامين C", slug: "vitamin_c" },
-  { label: "البشرة الدهنية", query: "البشرة الدهنية", slug: "oily_skin" },
-  { label: "ثبات المكياج", query: "ثبات المكياج", slug: "makeup_longwear" },
+  { label: "العناية بالشعر", query: "العناية بالشعر", slug: "haircare" },
+  { label: "لوشن جسم", query: "لوشن جسم", slug: "bodycare_lotion" },
+  { label: "فرش مكياج", query: "فرش مكياج", slug: "makeup_tools" },
   { label: "روتين صباحي", query: "روتين صباحي", slug: "morning_routine" },
 ];
 
 const synonymGroups = [
   ["skincare", "العناية بالبشرة", "عناية بالبشرة", "بشرة", "بشره"],
   ["makeup", "مكياج", "ميك اب"],
+  ["haircare", "العناية بالشعر", "عناية بالشعر", "شعر", "هير كير"],
+  ["bodycare", "العناية بالجسم", "بودي كير", "body care", "جسم"],
+  ["tools", "الأدوات", "فرش", "فرش مكياج", "beauty tools", "ادوات"],
+  ["beauty sets", "بيوتي سيتس", "مجموعات", "هدايا", "gift set", "starter kit"],
   ["foundation", "فاونديشن", "كريم اساس", "base", "base makeup"],
   ["concealer", "كونسيلر"],
   ["routine", "روتين", "routine-led"],
@@ -112,46 +116,38 @@ function expandSearchTerms(query: string) {
 }
 
 function createSearchRecords(): SearchRecord[] {
-  const collectionRecords: SearchRecord[] = [
-    {
-      kind: "collection",
-      slug: "skincare",
-      href: collectionDirectory.skincare.href,
-      title: skincareCategory.title,
-      description: skincareCategory.description,
-      collection: "skincare",
-      eyebrow: skincareCategory.subtitle,
-      metadata: "فئة رئيسية",
-      priority: 3,
-      searchText: [
-        skincareCategory.title,
-        skincareCategory.subtitle,
-        skincareCategory.description,
-        skincareCategory.introduction,
-        ...skincareCategory.filters,
-        ...skincareCategory.concerns,
-        ...skincareCategory.routines,
-      ].join(" "),
-    },
-    {
-      kind: "collection",
-      slug: "makeup",
-      href: collectionDirectory.makeup.href,
-      title: makeupCategory.title,
-      description: makeupCategory.description,
-      collection: "makeup",
-      eyebrow: makeupCategory.subtitle,
-      metadata: "فئة رئيسية",
-      priority: 3,
-      searchText: [
-        makeupCategory.title,
-        makeupCategory.subtitle,
-        makeupCategory.description,
-        makeupCategory.introduction,
-        ...makeupCategory.filters,
-      ].join(" "),
-    },
-  ];
+  const collectionRecords: SearchRecord[] = shopCollections.map((collection) => ({
+    kind: "collection",
+    slug: collection.slug,
+    href: collection.href,
+    title: collection.title,
+    description: collection.description,
+    collection: collection.slug,
+    eyebrow: collection.subtitle,
+    metadata:
+      collection.mode === "filtered" ? "فئة رئيسية" : "فئة قابلة للتوسع",
+    priority: collection.mode === "filtered" ? 3 : 2,
+    searchText: [
+      collection.title,
+      collection.subtitle,
+      collection.description,
+      collection.introduction,
+      collection.entryDescription,
+      ...collection.searchTerms,
+      ...collection.shoppingSignals,
+      ...collection.focusCards.flatMap((card) => [
+        card.title,
+        card.label,
+        card.body,
+      ]),
+      ...collection.discoveryLinks.flatMap((link) => [
+        link.title,
+        link.label,
+        link.description,
+      ]),
+      ...collection.faqs.flatMap((faq) => [faq.question, faq.answer]),
+    ].join(" "),
+  }));
 
   const productRecords = products.map<SearchRecord>((product) => ({
     kind: "product",

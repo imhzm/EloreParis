@@ -26,7 +26,7 @@ export default function ConcernsHubPage() {
       collection,
       items: concerns.filter((concern) => concern.collection === collectionSlug),
     }),
-  );
+  ).filter(({ items }) => items.length);
 
   const structuredData = {
     "@context": "https://schema.org",
