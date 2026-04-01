@@ -8,7 +8,6 @@ on:
 
 jobs:
   deploy:
-    if: ${{ secrets.VERCEL_TOKEN != '' && secrets.VERCEL_ORG_ID != '' && secrets.VERCEL_PROJECT_ID != '' }}
     runs-on: ubuntu-latest
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
@@ -16,39 +15,62 @@ jobs:
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
     steps:
+      - name: Check deploy credentials
+        id: credentials
+        run: |
+          if [ -z "$VERCEL_TOKEN" ] || [ -z "$VERCEL_ORG_ID" ] || [ -z "$VERCEL_PROJECT_ID" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "configured=true" >> "$GITHUB_OUTPUT"
+
+      - name: Skip deploy when Vercel secrets are missing
+        if: steps.credentials.outputs.configured != 'true'
+        run: echo "Skipping Vercel deployment because required GitHub secrets are not configured yet."
+
       - name: Checkout repository
+        if: steps.credentials.outputs.configured == 'true'
         uses: actions/checkout@v6
 
       - name: Setup Node.js
+        if: steps.credentials.outputs.configured == 'true'
         uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: npm
 
       - name: Install dependencies
+        if: steps.credentials.outputs.configured == 'true'
         run: npm ci
 
       - name: Run lint
+        if: steps.credentials.outputs.configured == 'true'
         run: npm run lint
 
       - name: Run production build
+        if: steps.credentials.outputs.configured == 'true'
         run: npm run build
 
       - name: Run smoke checks
+        if: steps.credentials.outputs.configured == 'true'
         run: npm run test:smoke
 
       - name: Pull Vercel environment
+        if: steps.credentials.outputs.configured == 'true'
         run: npx vercel@latest pull --yes --environment=production --token="$VERCEL_TOKEN"
 
       - name: Build Vercel artifacts
+        if: steps.credentials.outputs.configured == 'true'
         run: npx vercel@latest build --prod --token="$VERCEL_TOKEN"
 
       - name: Deploy to Vercel
+        if: steps.credentials.outputs.configured == 'true'
         id: deploy
         run: |
           deployment_url=$(npx vercel@latest deploy --prebuilt --prod --token="$VERCEL_TOKEN")
           echo "deployment_url=$deployment_url" >> "$GITHUB_OUTPUT"
 
       - name: Verify deployed health endpoint
+        if: steps.credentials.outputs.configured == 'true'
         run: |
           curl --fail --silent --show-error "${{ steps.deploy.outputs.deployment_url }}/api/health"
