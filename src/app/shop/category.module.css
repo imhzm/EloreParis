@@ -1,0 +1,390 @@
+.page {
+  display: grid;
+  gap: 24px;
+}
+
+.hero,
+.contentCard,
+.faqCard,
+.guideCard {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  backdrop-filter: blur(14px);
+  box-shadow: var(--shadow);
+  border-radius: 30px;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.8fr);
+  gap: 24px;
+  padding: 34px;
+}
+
+.eyebrow,
+.sectionTitle {
+  color: var(--mauve-stone);
+  font-size: 0.83rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.hero h1,
+.contentCard h2,
+.faqCard h2 {
+  margin-top: 14px;
+  color: var(--aubergine-ink);
+  line-height: 1.12;
+}
+
+.hero h1 {
+  font-size: clamp(2.4rem, 5vw, 4rem);
+  max-width: 12ch;
+}
+
+.hero p,
+.contentCard p,
+.faqCard p,
+.chipList span,
+.chipList a,
+.checkList li,
+.checkList a,
+.guideCard p,
+.guideCard a {
+  color: var(--muted);
+  line-height: 1.9;
+}
+
+.heroIntro {
+  margin-top: 16px;
+  max-width: 44rem;
+}
+
+.heroSide {
+  display: grid;
+  gap: 14px;
+}
+
+.statCard {
+  padding: 18px;
+  border-radius: 22px;
+  background: rgba(43, 28, 40, 0.92);
+  color: #f8efe8;
+}
+
+.statCard strong {
+  display: block;
+  margin-top: 10px;
+  font-size: 1.35rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.contentCard,
+.faqCard {
+  padding: 26px;
+}
+
+.filterLead {
+  margin-top: 16px;
+}
+
+.contentCard {
+  grid-column: span 8;
+}
+
+.faqCard {
+  grid-column: span 4;
+}
+
+.filterSummaryRow,
+.sectionHeadInline {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.filterSummaryRow {
+  margin-top: 18px;
+}
+
+.filterHint {
+  margin: 0;
+  max-width: 52rem;
+}
+
+.resetLink,
+.secondaryLink {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.resetLink {
+  color: var(--aubergine-ink);
+  font-weight: 600;
+}
+
+.secondaryLink {
+  color: var(--mauve-stone);
+  font-weight: 600;
+}
+
+.activeFilterList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.activeFilterChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(43, 28, 40, 0.12);
+  background: rgba(199, 154, 88, 0.18);
+  color: var(--aubergine-ink);
+  text-decoration: none;
+}
+
+.activeFilterChip strong {
+  font-size: 0.92rem;
+}
+
+.filterGroupGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 22px;
+}
+
+.filterGroup {
+  padding: 18px;
+  border: 1px solid rgba(43, 28, 40, 0.08);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.54);
+}
+
+.filterGroupHead h3 {
+  margin: 0;
+  color: var(--aubergine-ink);
+  font-size: 1.05rem;
+}
+
+.filterGroupHead p {
+  margin: 8px 0 0;
+}
+
+.filterChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+
+.filterChip strong {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.9rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(43, 28, 40, 0.08);
+  color: var(--aubergine-ink);
+  line-height: 1;
+}
+
+.filterChipActive {
+  background: rgba(43, 28, 40, 0.94) !important;
+  border-color: rgba(43, 28, 40, 0.94) !important;
+  color: #f8efe8 !important;
+}
+
+.filterChipActive strong {
+  background: rgba(247, 241, 234, 0.18);
+  color: #f8efe8;
+}
+
+.chipList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.chipList span {
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.56);
+  border: 1px solid rgba(43, 28, 40, 0.08);
+}
+
+.chipList a {
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.56);
+  border: 1px solid rgba(43, 28, 40, 0.08);
+  text-decoration: none;
+}
+
+.chipList a[aria-current="true"] {
+  background: rgba(43, 28, 40, 0.92);
+  border-color: rgba(43, 28, 40, 0.92);
+  color: #f8efe8;
+}
+
+.checkList a {
+  text-decoration: none;
+}
+
+.filterDescription {
+  margin-top: 16px;
+  color: var(--muted);
+  line-height: 1.9;
+}
+
+.filterGroup + .filterGroup {
+  margin-top: 20px;
+}
+
+.filterSummary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.filterSummary span {
+  padding: 10px 14px;
+  border-radius: 16px;
+  background: rgba(43, 28, 40, 0.06);
+  color: var(--aubergine-ink);
+  font-size: 0.95rem;
+}
+
+.emptyState {
+  padding: 26px;
+  border: 1px dashed rgba(43, 28, 40, 0.16);
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.58);
+  box-shadow: var(--shadow);
+}
+
+.emptyState h2 {
+  margin-top: 12px;
+  color: var(--aubergine-ink);
+}
+
+.emptyState p {
+  color: var(--muted);
+  line-height: 1.9;
+}
+
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.guideCard {
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: var(--surface);
+}
+
+.guideCard h3 {
+  margin-top: 12px;
+  color: var(--aubergine-ink);
+  font-size: 1.4rem;
+}
+
+.guideCard a {
+  display: inline-flex;
+  margin-top: 16px;
+  color: var(--aubergine-ink);
+}
+
+.zeroStateCard {
+  padding: 24px;
+  border: 1px dashed rgba(43, 28, 40, 0.2);
+  border-radius: 24px;
+  background: linear-gradient(
+    135deg,
+    rgba(247, 241, 234, 0.92),
+    rgba(216, 181, 174, 0.18)
+  );
+}
+
+.zeroStateCard h3 {
+  margin-top: 14px;
+  color: var(--aubergine-ink);
+  font-size: 1.55rem;
+}
+
+.inlineActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 20px;
+}
+
+.faqList {
+  display: grid;
+  gap: 18px;
+  margin-top: 16px;
+}
+
+.faqItem {
+  padding-top: 16px;
+  border-top: 1px solid rgba(43, 28, 40, 0.08);
+}
+
+.faqItem h3 {
+  color: var(--aubergine-ink);
+  font-size: 1.15rem;
+}
+
+.checkList {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+  padding-right: 1rem;
+}
+
+@media (max-width: 980px) {
+  .hero,
+  .cardGrid,
+  .filterGroupGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .contentCard,
+  .faqCard {
+    grid-column: span 12;
+  }
+
+  .filterSummaryRow,
+  .sectionHeadInline {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 780px) {
+  .hero,
+  .contentCard,
+  .faqCard,
+  .guideCard {
+    padding: 22px;
+    border-radius: 24px;
+  }
+}

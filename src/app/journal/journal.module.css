@@ -1,0 +1,159 @@
+.page {
+  display: grid;
+  gap: 24px;
+}
+
+.hero,
+.articleCard,
+.articleLayout,
+.sidebar,
+.faqCard {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  backdrop-filter: blur(14px);
+  box-shadow: var(--shadow);
+  border-radius: 30px;
+}
+
+.hero,
+.articleLayout,
+.sidebar,
+.faqCard {
+  padding: 30px;
+}
+
+.hero p,
+.articleCard p,
+.sidebar p,
+.articleBody p,
+.faqCard p,
+.toc a,
+.meta span {
+  color: var(--muted);
+  line-height: 1.9;
+}
+
+.eyebrow,
+.meta span,
+.articleCard span {
+  color: var(--mauve-stone);
+  font-size: 0.83rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.hero h1,
+.articleCard h2,
+.articleTitle,
+.sidebar h2,
+.faqCard h2,
+.articleSection h2 {
+  margin-top: 14px;
+  color: var(--aubergine-ink);
+  line-height: 1.12;
+}
+
+.hero h1 {
+  max-width: 12ch;
+  font-size: clamp(2.4rem, 5vw, 4.2rem);
+}
+
+.articleGrid,
+.articleShell {
+  display: grid;
+  gap: 18px;
+}
+
+.articleGrid {
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+}
+
+.articleCard {
+  grid-column: span 4;
+  padding: 24px;
+}
+
+.articleCard a,
+.toc a {
+  color: var(--aubergine-ink);
+}
+
+.articleCard a {
+  display: inline-flex;
+  margin-top: 18px;
+}
+
+.articleShell {
+  grid-template-columns: minmax(0, 1.6fr) minmax(260px, 0.75fr);
+}
+
+.articleTitle {
+  font-size: clamp(2rem, 4vw, 3.2rem);
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.articleBody {
+  display: grid;
+  gap: 22px;
+  margin-top: 24px;
+}
+
+.articleSection h2 {
+  font-size: 1.7rem;
+  margin-bottom: 10px;
+}
+
+.sidebar {
+  display: grid;
+  gap: 18px;
+  align-content: start;
+}
+
+.toc {
+  display: grid;
+  gap: 12px;
+}
+
+.faqList {
+  display: grid;
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.faqItem {
+  padding-top: 16px;
+  border-top: 1px solid rgba(43, 28, 40, 0.08);
+}
+
+.faqItem h3 {
+  color: var(--aubergine-ink);
+  font-size: 1.15rem;
+}
+
+@media (max-width: 980px) {
+  .articleGrid,
+  .articleShell {
+    grid-template-columns: 1fr;
+  }
+
+  .articleCard {
+    grid-column: span 1;
+  }
+}
+
+@media (max-width: 780px) {
+  .hero,
+  .articleCard,
+  .articleLayout,
+  .sidebar,
+  .faqCard {
+    padding: 22px;
+    border-radius: 24px;
+  }
+}

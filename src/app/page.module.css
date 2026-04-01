@@ -1,0 +1,388 @@
+.page {
+  width: 100%;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.9fr);
+  gap: 28px;
+  align-items: stretch;
+}
+
+.heroCopy,
+.heroPanel,
+.entryCard,
+.productCard,
+.splitBlock,
+.journalCard,
+.foundationCard {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  backdrop-filter: blur(14px);
+  box-shadow: var(--shadow);
+}
+
+.heroCopy {
+  position: relative;
+  overflow: hidden;
+  padding: 42px;
+  border-radius: 36px;
+}
+
+.heroCopy::before {
+  content: "";
+  position: absolute;
+  inset: auto auto 20px -30px;
+  width: 220px;
+  height: 220px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(216, 181, 174, 0.45), transparent 70%);
+  pointer-events: none;
+}
+
+.eyebrow,
+.sectionHead p,
+.splitBlock > p,
+.panelBadge,
+.panelCard p,
+.panelStack p,
+.productCard span,
+.journalCard span,
+.foundationCard p {
+  color: var(--mauve-stone);
+  font-size: 0.83rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.heroCopy h1 {
+  max-width: 11ch;
+  margin-top: 18px;
+  font-size: clamp(3.1rem, 7vw, 5.8rem);
+  line-height: 1.04;
+  color: var(--aubergine-ink);
+  text-wrap: balance;
+}
+
+.heroText {
+  max-width: 44rem;
+  margin-top: 18px;
+  color: var(--muted);
+  font-size: 1.05rem;
+  line-height: 1.95;
+}
+
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 28px;
+}
+
+.primaryAction,
+.secondaryAction,
+.productCard a,
+.journalCard a,
+.foundationCard a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 20px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  transition:
+    transform 180ms ease,
+    background-color 180ms ease,
+    border-color 180ms ease;
+}
+
+.primaryAction {
+  background: var(--aubergine-ink);
+  color: #fff8f3;
+}
+
+.secondaryAction {
+  border-color: rgba(43, 28, 40, 0.14);
+  color: var(--aubergine-ink);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.metricList {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 36px;
+  list-style: none;
+}
+
+.metricList li {
+  display: grid;
+  gap: 8px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(43, 28, 40, 0.08);
+}
+
+.metricList strong {
+  font-size: 1rem;
+  color: var(--aubergine-ink);
+}
+
+.metricList span {
+  color: var(--muted);
+  line-height: 1.75;
+}
+
+.heroPanel {
+  display: grid;
+  gap: 18px;
+  padding: 28px;
+  border-radius: 32px;
+  background:
+    linear-gradient(180deg, rgba(43, 28, 40, 0.95), rgba(61, 44, 57, 0.88)),
+    var(--aubergine-ink);
+  color: #f8efe8;
+}
+
+.panelBadge {
+  color: rgba(247, 241, 234, 0.76);
+}
+
+.panelCard {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.panelCard h2 {
+  font-size: 2rem;
+}
+
+.panelCard span,
+.panelStack strong,
+.panelStack p {
+  line-height: 1.8;
+}
+
+.panelStack {
+  display: grid;
+  gap: 12px;
+}
+
+.panelStack > div {
+  padding: 16px 18px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.section,
+.featuredSection,
+.splitSection,
+.foundationSection {
+  margin-top: 26px;
+}
+
+.sectionHead {
+  display: grid;
+  gap: 10px;
+  padding: 0 4px 18px;
+}
+
+.sectionHead h2,
+.splitBlock h2,
+.foundationCard h2 {
+  max-width: 16ch;
+  font-size: clamp(2rem, 4vw, 3.1rem);
+  line-height: 1.12;
+  color: var(--aubergine-ink);
+}
+
+.entryGrid,
+.productGrid,
+.journalGrid,
+.foundationSection {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.entryCard,
+.productCard,
+.journalCard,
+.foundationCard {
+  position: relative;
+  overflow: hidden;
+  padding: 24px;
+  border-radius: 28px;
+}
+
+.entryCard {
+  grid-column: span 3;
+  min-height: 250px;
+}
+
+.entryCard span {
+  color: var(--mauve-stone);
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.entryCard h3,
+.productCard h3,
+.journalCard h3 {
+  margin-top: 18px;
+  font-size: 1.65rem;
+  color: var(--aubergine-ink);
+}
+
+.entryCard p,
+.productCard p,
+.journalCard p,
+.foundationCard span {
+  margin-top: 14px;
+  color: var(--muted);
+  line-height: 1.9;
+}
+
+.productCard {
+  grid-column: span 4;
+  min-height: 280px;
+}
+
+.productGlow {
+  position: absolute;
+  inset: -20% auto auto 55%;
+  width: 180px;
+  height: 180px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(199, 154, 88, 0.22), transparent 68%);
+  pointer-events: none;
+}
+
+.productCard a,
+.journalCard a,
+.foundationCard a {
+  margin-top: 20px;
+  width: fit-content;
+  background: rgba(255, 255, 255, 0.56);
+  border-color: rgba(43, 28, 40, 0.08);
+  color: var(--aubergine-ink);
+}
+
+.splitSection {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.splitBlock {
+  padding: 28px;
+  border-radius: 28px;
+}
+
+.ingredientList,
+.signalList {
+  display: grid;
+  gap: 18px;
+  margin-top: 22px;
+}
+
+.ingredientLink {
+  display: block;
+  text-decoration: none;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(43, 28, 40, 0.08);
+}
+
+.ingredientLink h3 {
+  font-size: 1.45rem;
+  color: var(--aubergine-ink);
+}
+
+.ingredientLink p,
+.signalList li {
+  margin-top: 10px;
+  color: var(--muted);
+  line-height: 1.85;
+}
+
+.signalList {
+  padding-right: 1.1rem;
+}
+
+.journalCard {
+  grid-column: span 4;
+  min-height: 250px;
+  background: var(--surface-strong);
+}
+
+.foundationCard {
+  grid-column: span 6;
+  min-height: 250px;
+  background:
+    linear-gradient(180deg, rgba(255, 250, 245, 0.95), rgba(247, 241, 234, 0.88));
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .primaryAction:hover,
+  .secondaryAction:hover,
+  .ingredientLink:hover,
+  .productCard a:hover,
+  .journalCard a:hover,
+  .foundationCard a:hover {
+    transform: translateY(-2px);
+  }
+
+  .entryCard:hover,
+  .productCard:hover,
+  .journalCard:hover {
+    transform: translateY(-4px);
+  }
+}
+
+@media (max-width: 1100px) {
+  .hero,
+  .splitSection {
+    grid-template-columns: 1fr;
+  }
+
+  .entryCard {
+    grid-column: span 6;
+  }
+}
+
+@media (max-width: 780px) {
+  .heroCopy,
+  .heroPanel,
+  .splitBlock,
+  .entryCard,
+  .productCard,
+  .journalCard,
+  .foundationCard {
+    padding: 22px;
+    border-radius: 24px;
+  }
+
+  .metricList,
+  .entryGrid,
+  .productGrid,
+  .journalGrid,
+  .foundationSection {
+    grid-template-columns: 1fr;
+  }
+
+  .entryCard,
+  .productCard,
+  .journalCard,
+  .foundationCard {
+    grid-column: span 1;
+  }
+
+  .heroCopy h1 {
+    max-width: none;
+    font-size: 3rem;
+  }
+}

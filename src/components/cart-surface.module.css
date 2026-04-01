@@ -1,0 +1,281 @@
+.page {
+  display: grid;
+  gap: 24px;
+}
+
+.hero,
+.mainCard,
+.summaryCard,
+.emptyCard,
+.noticeCard {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  backdrop-filter: blur(14px);
+  box-shadow: var(--shadow);
+  border-radius: 30px;
+  padding: 30px;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+  gap: 24px;
+}
+
+.eyebrow,
+.sectionTitle {
+  color: var(--mauve-stone);
+  font-size: 0.83rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.hero h1,
+.mainCard h2,
+.summaryCard h2,
+.emptyCard h2,
+.noticeCard h2 {
+  margin-top: 14px;
+  color: var(--aubergine-ink);
+  line-height: 1.12;
+}
+
+.hero h1 {
+  font-size: clamp(2.2rem, 5vw, 3.8rem);
+  max-width: 10ch;
+}
+
+.summary,
+.hero p,
+.mainCard p,
+.summaryCard p,
+.emptyCard p,
+.noticeCard p,
+.lineMeta,
+.lineMeta strong {
+  color: var(--muted);
+  line-height: 1.9;
+}
+
+.heroAside {
+  display: grid;
+  gap: 14px;
+}
+
+.metricCard {
+  padding: 22px;
+  border-radius: 24px;
+  background: rgba(43, 28, 40, 0.94);
+  color: #fff8f3;
+}
+
+.metricCard strong {
+  display: block;
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  margin-top: 10px;
+}
+
+.metricCard span {
+  display: block;
+  margin-top: 10px;
+  color: rgba(255, 248, 243, 0.76);
+  line-height: 1.8;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(300px, 0.7fr);
+  gap: 18px;
+}
+
+.lineList {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.lineItem {
+  padding: 20px;
+  border-radius: 24px;
+  border: 1px solid rgba(43, 28, 40, 0.08);
+  background: rgba(255, 255, 255, 0.58);
+  display: grid;
+  gap: 16px;
+}
+
+.lineHead,
+.lineFooter,
+.summaryRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.lineHead h3,
+.linePrice,
+.lineTotal,
+.summaryValue {
+  color: var(--aubergine-ink);
+}
+
+.linePrice,
+.lineTotal,
+.summaryValue {
+  font-weight: 700;
+}
+
+.lineMeta {
+  display: grid;
+  gap: 6px;
+}
+
+.badgeRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.badgeRow span {
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(43, 28, 40, 0.08);
+  color: var(--aubergine-ink);
+  font-size: 0.88rem;
+}
+
+.quantityControl {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(43, 28, 40, 0.12);
+  background: rgba(255, 255, 255, 0.68);
+}
+
+.quantityControl button,
+.ghostButton {
+  cursor: pointer;
+}
+
+.quantityControl button {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--aubergine-ink);
+  color: #fff8f3;
+}
+
+.ghostButton {
+  border: 1px solid rgba(43, 28, 40, 0.12);
+  background: rgba(255, 255, 255, 0.58);
+  color: var(--aubergine-ink);
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 999px;
+}
+
+.summaryCard {
+  display: grid;
+  gap: 16px;
+  align-self: start;
+}
+
+.summaryList {
+  display: grid;
+  gap: 14px;
+}
+
+.summaryRow {
+  padding-top: 12px;
+  border-top: 1px solid rgba(43, 28, 40, 0.08);
+}
+
+.summaryRow:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.actionColumn {
+  display: grid;
+  gap: 12px;
+}
+
+.primaryLink,
+.secondaryLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  border-radius: 999px;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.primaryLink {
+  background: var(--aubergine-ink);
+  color: #fff8f3;
+}
+
+.secondaryLink {
+  border: 1px solid rgba(43, 28, 40, 0.12);
+  background: rgba(255, 255, 255, 0.58);
+  color: var(--aubergine-ink);
+}
+
+.linkList {
+  display: grid;
+  gap: 10px;
+}
+
+.linkList a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(43, 28, 40, 0.08);
+  background: rgba(255, 255, 255, 0.58);
+  color: var(--aubergine-ink);
+  text-decoration: none;
+}
+
+.linkList a span:last-child {
+  color: var(--mauve-stone);
+  font-size: 0.78rem;
+}
+
+.emptyCard,
+.noticeCard {
+  display: grid;
+  gap: 16px;
+}
+
+@media (max-width: 1080px) {
+  .hero,
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 780px) {
+  .hero,
+  .mainCard,
+  .summaryCard,
+  .emptyCard,
+  .noticeCard {
+    padding: 22px;
+    border-radius: 24px;
+  }
+
+  .lineHead,
+  .lineFooter,
+  .summaryRow {
+    align-items: flex-start;
+  }
+}

@@ -1,0 +1,58 @@
+.form {
+  display: grid;
+  gap: 12px;
+}
+
+.label {
+  color: var(--mauve-stone);
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.fieldRow {
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.fieldRow input {
+  flex: 1;
+  min-height: 52px;
+  padding: 0 18px;
+  border: 1px solid rgba(72, 51, 70, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--aubergine-ink);
+  outline: none;
+}
+
+.fieldRow input::placeholder {
+  color: rgba(72, 51, 70, 0.58);
+}
+
+.fieldRow input:focus {
+  border-color: rgba(72, 51, 70, 0.28);
+  box-shadow: 0 0 0 3px rgba(199, 154, 88, 0.16);
+}
+
+.fieldRow button {
+  min-width: 132px;
+  min-height: 52px;
+  padding: 0 20px;
+  border: none;
+  border-radius: 999px;
+  background: var(--aubergine-ink);
+  color: #fff8f3;
+  cursor: pointer;
+}
+
+@media (max-width: 780px) {
+  .fieldRow {
+    flex-direction: column;
+  }
+
+  .fieldRow button {
+    width: 100%;
+  }
+}

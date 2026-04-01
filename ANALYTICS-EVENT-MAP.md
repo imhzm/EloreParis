@@ -1,0 +1,246 @@
+# Analytics Event Map
+
+## Purpose
+
+This project now tracks the minimum event set needed to answer early-stage storefront questions without creating noisy telemetry.
+
+## Business Questions
+
+1. Which public surfaces generate the strongest movement into collection, ingredient, concern, routine, product, and article routes?
+2. Which discovery paths lead users from editorial or educational content into ingredient and commercial pages?
+3. Which global navigation zones are used most often during early browsing?
+4. Which collection filter states narrow browsing most effectively before the user moves into product, routine, or concern detail?
+5. Which product selections and cart changes actually move users from product detail into checkout review?
+6. Which checkout handoff choices convert cart intent into a saved order reference, and how often do users return to track that order?
+7. How often does the internal operations layer advance local order states before a real backoffice is selected?
+
+## Event Set
+
+### `page_view`
+
+- Fires on route change through the global analytics provider.
+- Answers route-level traffic questions for the public storefront.
+
+Tracked properties:
+
+- `page_path`
+- `page_type`
+- `has_query`
+
+### `navigation_click`
+
+- Fires on header, brand, and footer policy navigation.
+- Answers how users move through global navigation and trust surfaces.
+
+Tracked properties:
+
+- `label`
+- `surface`
+- `source_path`
+- `source_page_type`
+- `destination_path`
+- `destination_type`
+
+### `cta_click`
+
+- Fires on commercial and editorial CTA links across home, collection, ingredient, product, concern, routine, journal, and trust surfaces.
+- Answers which conversion-oriented surfaces generate discovery and deeper browsing.
+
+Tracked properties:
+
+- `label`
+- `surface`
+- `source_path`
+- `source_page_type`
+- `destination_path`
+- `destination_type`
+
+### `search_submit`
+
+- Fires on the internal search form submit.
+- Answers how often users actively use search and whether the query shape is Arabic, English, or empty.
+
+Tracked properties:
+
+- `surface`
+- `source_path`
+- `source_page_type`
+- `query_length`
+- `query_token_count`
+- `has_arabic`
+- `has_latin`
+- `is_empty`
+
+### `search_result_click`
+
+- Fires when a user opens a result from the internal search page.
+- Answers which result type and rank most often move users into deeper discovery or purchase paths.
+
+Tracked properties:
+
+- `label`
+- `surface`
+- `source_path`
+- `source_page_type`
+- `destination_path`
+- `destination_type`
+- `result_kind`
+- `result_rank`
+
+### `filter_apply`
+
+- Fires when a user applies, swaps, or clears a data-backed filter on a collection page.
+- Answers which decision paths are actually used on collection surfaces before deeper browsing, and which states end in zero-result recovery.
+
+Tracked properties:
+
+- `label`
+- `surface`
+- `source_path`
+- `source_page_type`
+- `destination_path`
+- `destination_type`
+- `filter_key`
+- `filter_value`
+- `filter_state`
+- `result_count`
+
+### `add_to_cart`
+
+- Fires when a user adds a selected product variant to the local cart from a product page.
+- Answers which PDP selections create real purchase intent before cart review.
+
+Tracked properties:
+
+- `source_path`
+- `source_page_type`
+- `product_slug`
+- `sku`
+- `quantity`
+- `unit_price`
+- `cart_count`
+
+### `cart_update`
+
+- Fires when a user changes quantity, removes a line, or clears the current cart review.
+- Answers how users edit intent after landing in the cart and which lines are dropped before checkout.
+
+Tracked properties:
+
+- `source_path`
+- `source_page_type`
+- `product_slug`
+- `sku`
+- `quantity`
+- `cart_count`
+
+### `checkout_start`
+
+- Fires when a user moves from the cart into the checkout review step.
+- Answers whether the cart is strong enough to move users into the pre-payment flow.
+
+Tracked properties:
+
+- `label`
+- `surface`
+- `source_path`
+- `source_page_type`
+- `destination_path`
+- `destination_type`
+- `cart_count`
+- `subtotal`
+
+### `checkout_complete`
+
+- Fires when a user submits the checkout handoff form and a local order reference is created.
+- Answers whether the current pre-integration checkout is converting cart intent into a saved order state.
+
+Tracked properties:
+
+- `source_path`
+- `source_page_type`
+- `order_reference`
+- `cart_count`
+- `subtotal`
+- `shipping_method`
+- `payment_method`
+- `total_estimate`
+
+### `track_order_lookup`
+
+- Fires when a user searches for an existing order from the tracking page.
+- Answers whether post-checkout users return for order-state visibility and whether lookups succeed.
+
+Tracked properties:
+
+- `source_path`
+- `source_page_type`
+- `has_reference`
+- `has_phone_last4`
+- `lookup_found`
+- `order_status`
+
+### `ops_order_status_update`
+
+- Fires when the internal `/ops/orders` surface advances a locally stored order from one status to the next valid state.
+- Answers whether the current rehearsal layer is sufficient to test order-state transitions before a real admin/backend exists.
+
+Tracked properties:
+
+- `source_path`
+- `source_page_type`
+- `order_reference`
+- `previous_status`
+- `next_status`
+- `payment_method`
+
+## Current Instrumented Surfaces
+
+- Header brand and primary navigation
+- Footer policy links
+- Homepage hero CTAs
+- Homepage featured product cards
+- Homepage journal cards
+- Homepage trust/schema cards
+- Collection links to concern, routine, product, and article surfaces
+- Collection filter chips and zero-result recovery links on skincare and makeup pages
+- Product purchase panels and sticky add-to-cart CTA on product detail pages
+- Cart quantity controls, line removal, cart clear action, and checkout CTA
+- Checkout handoff form submission with shipping and payment selection
+- Order confirmation route CTAs back into tracking and shopping
+- Track-order lookup form and tracking result surface
+- Internal `/ops/orders` queue actions and tracking shortcuts
+- FAQ route links into tracking, trust policies, and contact
+- Contact route links into FAQ, tracking, and trust support paths
+- About route links into trust, terms, contact, and shopping discovery
+- Terms route links into privacy, shipping, returns, and contact reference paths
+- Product hero, pairings, and editorial support links
+- Concern hero, sidebar, related products, and related articles
+- Routine hero, steps, related products, related articles, and sidebar pairings
+- Journal index article cards
+- Journal article sidebar commerce links
+- Internal search form submissions
+- Internal search result clicks across collection, product, ingredient, concern, routine, and article result groups
+- Homepage ingredient story links and ingredient hub CTA
+- Ingredient hub cards and ingredient detail route links
+- Concern key-ingredient chips that now open ingredient pages
+- Product ingredient-story links that now connect PDPs to ingredient routes
+- Journal article sidebar links into ingredient discovery when a product match exists
+- Trust notice return-to-shopping CTA
+- Trust hub links to individual policy pages
+- Trust policy sidebar links back to the hub, related policies, journal, and collection
+
+## Deliberately Deferred
+
+- `wishlist_add`
+- notification delivery events
+- post-purchase CRM and lifecycle events
+
+These remain deferred until payment, order routing, notifications, CRM surfaces, and a real authenticated backoffice exist instead of placeholders.
+
+## Data Safety Rules
+
+- No personal data or free-form customer content is tracked.
+- No raw search terms or private identifiers are sent.
+- Event labels are developer-defined machine-friendly strings, not UI copy.
+- The data layer remains vendor-neutral and currently supports `window.dataLayer` and `gtag` when present.

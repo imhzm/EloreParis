@@ -1,0 +1,114 @@
+.page {
+  display: grid;
+  gap: 24px;
+}
+
+.hero,
+.notice,
+.sectionCard {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  backdrop-filter: blur(14px);
+  box-shadow: var(--shadow);
+  border-radius: 30px;
+  padding: 30px;
+}
+
+.hero p,
+.notice p,
+.sectionCard p,
+.sectionCard li {
+  color: var(--muted);
+  line-height: 1.9;
+}
+
+.notice a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-top: 18px;
+  padding: 0 18px;
+  border-radius: 999px;
+  color: #f8efe8;
+  background: var(--aubergine-ink);
+  text-decoration: none;
+}
+
+.eyebrow {
+  color: var(--mauve-stone);
+  font-size: 0.83rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.hero h1,
+.notice h2,
+.sectionCard h2 {
+  margin-top: 14px;
+  color: var(--aubergine-ink);
+  line-height: 1.12;
+}
+
+.hero h1 {
+  max-width: 12ch;
+  font-size: clamp(2.4rem, 5vw, 4rem);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.sectionCard {
+  grid-column: span 6;
+  display: grid;
+  gap: 12px;
+}
+
+.sectionCardLink {
+  color: inherit;
+  text-decoration: none;
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    background 0.18s ease;
+}
+
+.sectionCardLink:hover {
+  transform: translateY(-2px);
+  border-color: rgba(72, 51, 70, 0.22);
+  background: rgba(255, 252, 248, 0.96);
+}
+
+.sectionCard ul {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+  padding-right: 1rem;
+}
+
+.sectionCardAction {
+  margin-top: auto;
+  color: var(--aubergine-ink);
+  font-weight: 600;
+}
+
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sectionCard {
+    grid-column: span 1;
+  }
+}
+
+@media (max-width: 780px) {
+  .hero,
+  .notice,
+  .sectionCard {
+    padding: 22px;
+    border-radius: 24px;
+  }
+}
