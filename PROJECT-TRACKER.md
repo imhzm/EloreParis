@@ -5,8 +5,8 @@
 - Start date: 2026-04-01
 - Last updated: 2026-04-01
 - Current phase: `implementation`
-- Overall completion: `64%`
-- Current focus: local order-operations completion through a real internal `/ops/orders` surface, status progression controls, and analytics coverage on top of the verified multi-route storefront running on port `3056`
+- Overall completion: `65%`
+- Current focus: release-baseline completion through Git initialization, private GitHub repository linkage, and verified CI on every push for the storefront running on port `3056`
 - Forecast status: `date not committed yet`
 - Working estimate: `12-16 weeks for an MVP after stack, catalog model, and integration scope are frozen`
 
@@ -20,7 +20,7 @@ Progress is tracked against SkyWave phases, not by ad-hoc task count.
 | Design and Architecture | 20% | In Progress | 57% | Design system direction, page architecture, stack and data decisions |
 | Implementation | 35% | In Progress | 85% | Public storefront and required internal surfaces implemented |
 | Validation | 10% | In Progress | 66% | Lint, typecheck, tests, UX QA, SEO/schema QA, accessibility QA |
-| Release | 10% | In Progress | 10% | Deployment target, configs, monitoring, legal/trust gates, rollback path |
+| Release | 10% | In Progress | 22% | Deployment target, configs, monitoring, legal/trust gates, rollback path |
 | Growth and Automation | 10% | In Progress | 45% | CRM flows, SEO growth loops, analytics maturity, post-launch automations |
 
 ## Current Discovery Checklist
@@ -82,6 +82,8 @@ Progress is tracked against SkyWave phases, not by ad-hoc task count.
 - [x] Added local order status progression helpers and a minimal operating queue surface
 - [x] Added analytics coverage for internal order status updates
 - [x] Verified live internal ops and supporting transactional routes on port `3056`
+- [x] Initialized Git in the project root and connected a GitHub remote
+- [x] Added GitHub Actions CI and verified a successful run on push
 - [ ] Freeze MVP scope vs later phases
 - [ ] Freeze hosting direction
 - [ ] Freeze commerce architecture and admin boundary
@@ -99,7 +101,7 @@ Progress is tracked against SkyWave phases, not by ad-hoc task count.
 | Performance / CWV | In Progress | Next.js foundation is in place; runtime and asset optimization still pending |
 | Analytics / Conversion | In Progress | Page views, global navigation, core CTA instrumentation, internal search submit/result events including ingredient result groups, collection `filter_apply`, ingredient route links, `add_to_cart`, `cart_update`, `checkout_start`, `checkout_complete`, `track_order_lookup`, and internal `ops_order_status_update` are now wired; real payment completion and lifecycle notifications are still pending |
 | Content system | In Progress | Editorial, concern, routine, product, collection, trust, FAQ, contact, about, and terms shells exist, but voice remains provisional until real samples exist |
-| Release / Ops | In Progress | Local runtime is stable on port `3056`, local order references now exist for confirmation and tracking, and an internal `/ops/orders` surface can advance local order states for rehearsal; hosting, CI/CD, and real order backend ownership are not selected yet |
+| Release / Ops | In Progress | Local runtime is stable on port `3056`, local order references now exist for confirmation and tracking, an internal `/ops/orders` surface can advance local order states for rehearsal, and the codebase is now on GitHub with CI verified on push; hosting, production CD, and real order backend ownership are not selected yet |
 
 ## Milestone Log
 
@@ -168,6 +170,9 @@ Progress is tracked against SkyWave phases, not by ad-hoc task count.
 - Local order helpers now expose the next valid status and update order state safely inside the current browser storage model.
 - `ops_order_status_update` analytics was added so internal ops rehearsal has measurable state transitions before real backend ownership is selected.
 - `npm run lint` and `npm run build` passed again after shipping the internal order-operations slice.
+- Git was initialized in the project root and the codebase was pushed to a new private GitHub repository under `ireda8041-lab/ksa-cozmateks`.
+- A GitHub Actions CI workflow now runs `npm ci`, `npm run lint`, and `npm run build` on every push and pull request to `main`.
+- The first two CI runs completed successfully after the initial push and workflow upgrade.
 
 ## Immediate Next Actions
 
