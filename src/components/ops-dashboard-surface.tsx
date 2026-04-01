@@ -263,6 +263,15 @@ export function OpsDashboardSurface() {
                 <span>Stock + SEO + supplier map</span>
               </TrackedLink>
               <TrackedLink
+                href="/ops/fulfillment"
+                analyticsLabel="ops_dashboard_to_fulfillment"
+                analyticsSurface="ops_dashboard_links"
+                analyticsDestinationType="ops_fulfillment"
+              >
+                <span>إدارة fulfillment</span>
+                <span>Routing + notifications</span>
+              </TrackedLink>
+              <TrackedLink
                 href="/track-order"
                 analyticsLabel="ops_dashboard_to_tracking"
                 analyticsSurface="ops_dashboard_links"

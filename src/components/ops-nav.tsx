@@ -19,6 +19,12 @@ const opsLinks = [
     destinationType: "ops_orders",
   },
   {
+    href: "/ops/fulfillment",
+    label: "Fulfillment",
+    analyticsLabel: "ops_nav_fulfillment",
+    destinationType: "ops_fulfillment",
+  },
+  {
     href: "/ops/catalog",
     label: "Catalog",
     analyticsLabel: "ops_nav_catalog",

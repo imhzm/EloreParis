@@ -163,6 +163,14 @@ const smokeChecks = [
     ],
   },
   {
+    pathname: "/ops/fulfillment",
+    markers: [
+      "Fulfillment routing",
+      "ops_fulfillment_to_orders",
+      'content="noindex, nofollow"',
+    ],
+  },
+  {
     pathname: "/sitemap.xml",
     markers: [
       "/shop/haircare",

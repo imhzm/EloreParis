@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { TrackedLink } from "@/components/tracked-link";
+import { getOrderFulfillmentPlan } from "@/lib/fulfillment";
 import {
   getOrderTimeline,
   getPaymentMethodById,
@@ -10,7 +12,6 @@ import {
   sanitizeStoredOrders,
   type StoredOrder,
 } from "@/lib/orders";
-import { TrackedLink } from "@/components/tracked-link";
 import { footerPolicyLinks } from "@/lib/site-content";
 import styles from "./order-flow.module.css";
 
@@ -27,6 +28,7 @@ export function OrderConfirmation({ orderNumber }: OrderConfirmationProps) {
       const rawOrders = window.localStorage.getItem(ORDER_STORAGE_KEY);
       const parsedOrders = rawOrders ? JSON.parse(rawOrders) : [];
       const orders = sanitizeStoredOrders(parsedOrders);
+
       setOrder(
         orders.find(
           (candidate) => candidate.orderNumber === orderNumber.trim().toUpperCase(),
@@ -44,7 +46,9 @@ export function OrderConfirmation({ orderNumber }: OrderConfirmationProps) {
       <section className={styles.emptyCard}>
         <p className={styles.eyebrow}>Order confirmation</p>
         <h1>جاري استعادة مرجع الطلب</h1>
-        <p>يتم الآن تحميل الطلب المحفوظ محليًا على هذا المتصفح حتى تظهر صفحة التأكيد.</p>
+        <p>
+          يتم الآن تحميل الطلب المحفوظ محليًا على هذا المتصفح حتى تظهر صفحة التأكيد.
+        </p>
       </section>
     );
   }
@@ -55,7 +59,7 @@ export function OrderConfirmation({ orderNumber }: OrderConfirmationProps) {
         <p className={styles.eyebrow}>Order confirmation</p>
         <h1>لم يتم العثور على الطلب على هذا المتصفح</h1>
         <p>
-          قد يكون تم فتح الرابط من جهاز آخر أو بعد مسح التخزين المحلي. يمكنك متابعة
+          قد يكون الرابط فُتح من جهاز آخر أو بعد مسح التخزين المحلي. يمكنك متابعة
           الرحلة عبر صفحة تتبع الطلب أو إنشاء طلب جديد.
         </p>
         <div className={styles.actionColumn}>
@@ -87,16 +91,17 @@ export function OrderConfirmation({ orderNumber }: OrderConfirmationProps) {
   const paymentMethod =
     getPaymentMethodById(order.paymentMethodId) ?? getPaymentMethodById("payment_link");
   const timeline = getOrderTimeline(order);
+  const fulfillmentPlan = getOrderFulfillmentPlan(order);
 
   return (
     <div className={styles.page}>
       <section className={styles.hero}>
         <div>
           <p className={styles.eyebrow}>Order confirmed locally</p>
-          <h1>تم تثبيت الطلب وإنشاء مرجع متابعة واضح</h1>
+          <h1>تم تثبيت الطلب وإنشاء مرجع متابعة أوضح</h1>
           <p className={styles.summary}>
             تم حفظ الطلب محليًا على هذا المتصفح كخطوة تأسيسية قابلة للربط. المرجع
-            التالي هو ما سيستخدم لاحقًا في تتبع الحالة وربط الإشعارات.
+            التالي هو ما سيُستخدم لاحقًا في التتبع وربط الإشعارات والتشغيل الداخلي.
           </p>
         </div>
 
@@ -110,9 +115,9 @@ export function OrderConfirmation({ orderNumber }: OrderConfirmationProps) {
           </div>
 
           <div className={styles.noticeCard}>
-            <p className={styles.eyebrow}>Next step</p>
-            <h2>{timeline.find((step) => step.state === "current")?.label}</h2>
-            <p>{timeline.find((step) => step.state === "current")?.description}</p>
+            <p className={styles.eyebrow}>Fulfillment route</p>
+            <h2>{fulfillmentPlan.recommendedCarrier}</h2>
+            <p>{fulfillmentPlan.estimatedDispatchWindow}</p>
           </div>
         </div>
       </section>
@@ -176,6 +181,12 @@ export function OrderConfirmation({ orderNumber }: OrderConfirmationProps) {
 
           <div className={styles.referenceCard}>
             <div className={styles.referenceRow}>
+              <span>منطقة الخدمة</span>
+              <strong className={styles.referenceValue}>
+                {fulfillmentPlan.deliveryZoneLabel}
+              </strong>
+            </div>
+            <div className={styles.referenceRow}>
               <span>طريقة الشحن</span>
               <strong className={styles.referenceValue}>{shippingMethod?.label}</strong>
             </div>
@@ -184,20 +195,31 @@ export function OrderConfirmation({ orderNumber }: OrderConfirmationProps) {
               <strong className={styles.referenceValue}>{paymentMethod?.label}</strong>
             </div>
             <div className={styles.referenceRow}>
-              <span>الشحن التقديري</span>
-              <strong className={styles.referenceValue}>
-                {order.shippingFeeEstimate} ر.س
-              </strong>
-            </div>
-            <div className={styles.referenceRow}>
               <span>الإجمالي التقديري</span>
               <strong className={styles.referenceValue}>{order.totalEstimate} ر.س</strong>
             </div>
           </div>
 
-          <div className={styles.inlineNotice}>
-            هذا المرجع محفوظ محليًا داخل المتصفح الحالي حتى يتم ربط قاعدة طلبات
-            فعلية. لذلك يظل مسار التتبع الحالي مناسبًا للنسخة التأسيسية فقط.
+          {fulfillmentPlan.requiresManualReview ? (
+            <div className={styles.inlineError}>
+              {fulfillmentPlan.manualReviewReasons.join(" ")}
+            </div>
+          ) : (
+            <div className={styles.inlineNotice}>
+              مسار التنفيذ الحالي لا يحتاج مراجعة يدوية إضافية داخل النموذج المحلي.
+            </div>
+          )}
+
+          <div className={styles.summaryList}>
+            {fulfillmentPlan.notifications.map((notification) => (
+              <div key={notification.key} className={styles.referenceCard}>
+                <div className={styles.referenceRow}>
+                  <span>{notification.label}</span>
+                  <strong className={styles.referenceValue}>{notification.status}</strong>
+                </div>
+                <p>{notification.note}</p>
+              </div>
+            ))}
           </div>
 
           <div className={styles.actionColumn}>
@@ -211,13 +233,13 @@ export function OrderConfirmation({ orderNumber }: OrderConfirmationProps) {
               تتبع الطلب
             </TrackedLink>
             <TrackedLink
-              href="/shop/makeup"
+              href="/ops/fulfillment"
               className={styles.secondaryLink}
-              analyticsLabel="order_success_to_makeup"
+              analyticsLabel="order_success_to_ops_fulfillment"
               analyticsSurface="order_success_summary"
-              analyticsDestinationType="collection"
+              analyticsDestinationType="ops_fulfillment"
             >
-              متابعة التصفح
+              مراجعة fulfillment الداخلي
             </TrackedLink>
           </div>
 

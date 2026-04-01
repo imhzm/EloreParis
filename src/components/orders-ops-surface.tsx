@@ -423,6 +423,15 @@ export function OrdersOpsSurface() {
               مراجعة checkout الحالي
             </TrackedLink>
             <TrackedLink
+              href="/ops/fulfillment"
+              className={styles.secondaryLink}
+              analyticsLabel="ops_to_fulfillment"
+              analyticsSurface="ops_orders_sidebar"
+              analyticsDestinationType="ops_fulfillment"
+            >
+              مراجعة fulfillment الحالي
+            </TrackedLink>
+            <TrackedLink
               href="/track-order"
               className={styles.secondaryLink}
               analyticsLabel="ops_to_tracking"

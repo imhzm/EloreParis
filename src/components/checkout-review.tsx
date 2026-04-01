@@ -4,10 +4,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { useCart } from "@/components/cart-provider";
 import { TrackedLink } from "@/components/tracked-link";
-import {
-  getPageType,
-  trackAnalyticsEvent,
-} from "@/lib/analytics";
+import { getPageType, trackAnalyticsEvent } from "@/lib/analytics";
+import { getCheckoutRules, type CheckoutRules } from "@/lib/fulfillment";
 import {
   createStoredOrder,
   getPaymentMethodById,
@@ -44,7 +42,10 @@ const initialFormState: CheckoutFormState = {
   acceptUpdates: false,
 };
 
-function validateCheckoutForm(formState: CheckoutFormState) {
+function validateCheckoutForm(
+  formState: CheckoutFormState,
+  checkoutRules: CheckoutRules,
+) {
   const normalizedPhone = formState.phone.replace(/\D/g, "");
 
   if (formState.fullName.trim().length < 4) {
@@ -74,6 +75,26 @@ function validateCheckoutForm(formState: CheckoutFormState) {
     return "يلزم تأكيد مراجعة سياسات الشحن والخصوصية والاسترجاع قبل تثبيت الطلب.";
   }
 
+  const selectedShipping = checkoutRules.shippingOptions.find(
+    (option) => option.id === formState.shippingMethodId,
+  );
+  if (!selectedShipping?.enabled) {
+    return (
+      selectedShipping?.reason ??
+      "خيار الشحن المختار غير متاح للمدينة أو لطبيعة عناصر السلة الحالية."
+    );
+  }
+
+  const selectedPayment = checkoutRules.paymentOptions.find(
+    (option) => option.id === formState.paymentMethodId,
+  );
+  if (!selectedPayment?.enabled) {
+    return (
+      selectedPayment?.reason ??
+      "طريقة الدفع المختارة غير متاحة وفق قواعد التشغيل الحالية للطلب."
+    );
+  }
+
   return null;
 }
 
@@ -85,10 +106,25 @@ export function CheckoutReview() {
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   const { cartCount, clearCart, isHydrated, lines, subtotal } = useCart();
 
+  const checkoutRules = useMemo(
+    () => getCheckoutRules(lines, formState.city, subtotal),
+    [formState.city, lines, subtotal],
+  );
+
+  const effectiveShippingMethodId =
+    checkoutRules.shippingOptions.find(
+      (option) => option.id === formState.shippingMethodId && option.enabled,
+    )?.id ?? checkoutRules.recommendedShippingMethodId;
+
+  const effectivePaymentMethodId =
+    checkoutRules.paymentOptions.find(
+      (option) => option.id === formState.paymentMethodId && option.enabled,
+    )?.id ?? checkoutRules.recommendedPaymentMethodId;
+
   const selectedShipping =
-    getShippingMethodById(formState.shippingMethodId) ?? shippingMethods[0];
+    getShippingMethodById(effectiveShippingMethodId) ?? shippingMethods[0];
   const selectedPayment =
-    getPaymentMethodById(formState.paymentMethodId) ?? paymentMethods[0];
+    getPaymentMethodById(effectivePaymentMethodId) ?? paymentMethods[0];
   const totalEstimate = useMemo(
     () => subtotal + selectedShipping.estimatedFee,
     [selectedShipping.estimatedFee, subtotal],
@@ -104,12 +140,56 @@ export function CheckoutReview() {
     }));
   }
 
+  function handleShippingSelection(methodId: ShippingMethodId) {
+    const option = checkoutRules.shippingOptions.find(
+      (candidate) => candidate.id === methodId,
+    );
+
+    if (!option?.enabled || formState.shippingMethodId === methodId) {
+      return;
+    }
+
+    trackAnalyticsEvent("checkout_option_change", {
+      source_path: pathname,
+      source_page_type: getPageType(pathname),
+      option_group: "shipping",
+      option_value: methodId,
+      delivery_zone: checkoutRules.deliveryZoneId,
+      express_eligible: checkoutRules.expressEligible,
+    });
+
+    updateField("shippingMethodId", methodId);
+  }
+
+  function handlePaymentSelection(methodId: PaymentMethodId) {
+    const option = checkoutRules.paymentOptions.find(
+      (candidate) => candidate.id === methodId,
+    );
+
+    if (!option?.enabled || formState.paymentMethodId === methodId) {
+      return;
+    }
+
+    trackAnalyticsEvent("checkout_option_change", {
+      source_path: pathname,
+      source_page_type: getPageType(pathname),
+      option_group: "payment",
+      option_value: methodId,
+      delivery_zone: checkoutRules.deliveryZoneId,
+      cod_eligible: checkoutRules.codEligible,
+    });
+
+    updateField("paymentMethodId", methodId);
+  }
+
   if (!isHydrated) {
     return (
       <section className={styles.emptyCard}>
         <p className={styles.eyebrow}>Checkout</p>
         <h1>جاري تحميل خطوة تثبيت الطلب</h1>
-        <p>يتم الآن استعادة السلة حتى تظهر تفاصيل الطلب ونموذج التسليم بالشكل الصحيح.</p>
+        <p>
+          يتم الآن استعادة السلة حتى تظهر تفاصيل الطلب ونموذج التسليم بالشكل الصحيح.
+        </p>
       </section>
     );
   }
@@ -150,7 +230,15 @@ export function CheckoutReview() {
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    const validationError = validateCheckoutForm(formState);
+    const effectiveFormState = {
+      ...formState,
+      shippingMethodId: effectiveShippingMethodId,
+      paymentMethodId: effectivePaymentMethodId,
+    };
+    const validationError = validateCheckoutForm(
+      effectiveFormState,
+      checkoutRules,
+    );
 
     if (validationError) {
       setSubmissionError(validationError);
@@ -164,16 +252,17 @@ export function CheckoutReview() {
       const order = createStoredOrder({
         lines,
         customer: {
-          fullName: formState.fullName,
-          phone: formState.phone,
-          email: formState.email,
-          city: formState.city,
-          district: formState.district,
-          addressLine: formState.addressLine,
-          notes: formState.notes,
+          fullName: effectiveFormState.fullName,
+          phone: effectiveFormState.phone,
+          email: effectiveFormState.email,
+          city: effectiveFormState.city,
+          district: effectiveFormState.district,
+          addressLine: effectiveFormState.addressLine,
+          notes: effectiveFormState.notes,
         },
-        shippingMethodId: formState.shippingMethodId,
-        paymentMethodId: formState.paymentMethodId,
+        shippingMethodId: effectiveFormState.shippingMethodId,
+        paymentMethodId: effectiveFormState.paymentMethodId,
+        allowOperationalUpdates: effectiveFormState.acceptUpdates,
       });
 
       window.localStorage.setItem(
@@ -193,6 +282,9 @@ export function CheckoutReview() {
         shipping_method: order.shippingMethodId,
         payment_method: order.paymentMethodId,
         total_estimate: order.totalEstimate,
+        delivery_zone: checkoutRules.deliveryZoneId,
+        cod_eligible: checkoutRules.codEligible,
+        express_eligible: checkoutRules.expressEligible,
       });
 
       startTransition(() => {
@@ -212,8 +304,8 @@ export function CheckoutReview() {
           <p className={styles.eyebrow}>Checkout handoff</p>
           <h1>ثبّتي الطلب بمرجع واضح وخطوة تشغيل قابلة للمتابعة</h1>
           <p className={styles.summary}>
-            انتقلت هذه الخطوة من مراجعة ثابتة إلى handoff حقيقي: بيانات التسليم،
-            تفضيل الشحن، آلية الدفع المناسبة لهذه المرحلة، ثم إنشاء مرجع طلب يمكن تتبعه.
+            هذه الخطوة لم تعد مراجعة ساكنة. الآن هي handoff حقيقي يطبّق قواعد المدينة
+            والشحن والدفع على عناصر السلة الحالية قبل إنشاء مرجع الطلب.
           </p>
         </div>
 
@@ -222,17 +314,18 @@ export function CheckoutReview() {
             <p>إجمالي العناصر</p>
             <strong>{cartCount}</strong>
             <span>
-              يتم استخدام نفس عناصر السلة الحالية لتكوين الطلب، ثم حفظ مرجعه محليًا
-              على هذا المتصفح لحين ربط backend فعلي.
+              يتم استخدام عناصر السلة الحالية لبناء قرار تشغيلي أوضح: نافذة خدمة، أهلية
+              COD، وحدود fulfillment قبل تثبيت المرجع.
             </span>
           </div>
 
           <div className={styles.noticeCard}>
-            <p className={styles.eyebrow}>Operational note</p>
-            <h2>الرسوم والتسليم هنا تقديرية وليست claim نهائيًا</h2>
+            <p className={styles.eyebrow}>Route rules</p>
+            <h2>{checkoutRules.deliveryZoneLabel}</h2>
             <p>
-              هذه الطبقة صادقة: اختيار الشحن والدفع موجودان، لكن التثبيت النهائي
-              لبوابات الدفع ومزودات الشحن سيأتي في المرحلة التشغيلية التالية.
+              {checkoutRules.codEligible
+                ? "الدفع عند الاستلام متاح لهذا الطلب ضمن القواعد الحالية."
+                : "هذا الطلب يميل حاليًا إلى رابط دفع تشغيلي بسبب المدينة أو نوع العناصر أو قيمة الطلب."}
             </p>
           </div>
         </div>
@@ -243,8 +336,8 @@ export function CheckoutReview() {
           <p className={styles.sectionTitle}>Order details</p>
           <h2>بيانات الطلب والتسليم</h2>
           <p>
-            الهدف هنا هو جمع الحد الأدنى الصحيح لتحويل قرار الشراء إلى طلب يمكن
-            تأكيده وتتبع حالته لاحقًا دون طلب بيانات غير لازمة.
+            الهدف هنا هو جمع الحد الأدنى الصحيح لتحويل قرار الشراء إلى طلب يمكن تأكيده
+            وتتبع حالته لاحقًا دون طلب بيانات غير لازمة.
           </p>
 
           <div className={styles.lineList}>
@@ -262,6 +355,7 @@ export function CheckoutReview() {
                   <span>{line.variant.size}</span>
                   <span>الكمية: {line.quantity}</span>
                   <span>{line.product.shippingNote}</span>
+                  <span>{line.variant.availability === "PreOrder" ? "PreOrder" : "InStock"}</span>
                 </div>
               </article>
             ))}
@@ -300,7 +394,9 @@ export function CheckoutReview() {
                 inputMode="email"
                 dir="ltr"
               />
-              <span className={styles.helperText}>اختياري، ويفيد في مشاركة التحديثات لاحقًا.</span>
+              <span className={styles.helperText}>
+                اختياري، لكنه يجعل الرسائل التشغيلية أوضح إذا اخترتِ استقبالها.
+              </span>
             </label>
 
             <label className={styles.field}>
@@ -328,7 +424,9 @@ export function CheckoutReview() {
               <textarea
                 className={styles.textArea}
                 value={formState.addressLine}
-                onChange={(event) => updateField("addressLine", event.currentTarget.value)}
+                onChange={(event) =>
+                  updateField("addressLine", event.currentTarget.value)
+                }
                 autoComplete="street-address"
               />
             </label>
@@ -337,12 +435,18 @@ export function CheckoutReview() {
               <span className={styles.fieldLabel}>اختيار الشحن</span>
               <div className={styles.radioGrid}>
                 {shippingMethods.map((method) => {
-                  const isActive = method.id === formState.shippingMethodId;
+                  const availability = checkoutRules.shippingOptions.find(
+                    (option) => option.id === method.id,
+                  );
+                  const isActive = method.id === effectiveShippingMethodId;
+                  const isDisabled = !availability?.enabled;
 
                   return (
                     <label
                       key={method.id}
-                      className={`${styles.optionCard} ${isActive ? styles.optionCardActive : ""}`}
+                      className={`${styles.optionCard} ${
+                        isActive ? styles.optionCardActive : ""
+                      } ${isDisabled ? styles.optionCardDisabled : ""}`}
                     >
                       <div className={styles.optionHead}>
                         <div>
@@ -354,14 +458,17 @@ export function CheckoutReview() {
                           type="radio"
                           name="shipping-method"
                           checked={isActive}
-                          onChange={() => updateField("shippingMethodId", method.id)}
+                          disabled={isDisabled}
+                          onChange={() => handleShippingSelection(method.id)}
                         />
                       </div>
                       <div className={styles.badgeRow}>
                         <span>{method.deliveryWindow}</span>
                         <span>تقدير الشحن: {method.estimatedFee} ر.س</span>
                       </div>
-                      <p className={styles.optionNote}>{method.note}</p>
+                      <p className={styles.optionNote}>
+                        {availability?.reason ?? method.note}
+                      </p>
                     </label>
                   );
                 })}
@@ -372,12 +479,18 @@ export function CheckoutReview() {
               <span className={styles.fieldLabel}>اختيار الدفع</span>
               <div className={styles.radioGrid}>
                 {paymentMethods.map((method) => {
-                  const isActive = method.id === formState.paymentMethodId;
+                  const availability = checkoutRules.paymentOptions.find(
+                    (option) => option.id === method.id,
+                  );
+                  const isActive = method.id === effectivePaymentMethodId;
+                  const isDisabled = !availability?.enabled;
 
                   return (
                     <label
                       key={method.id}
-                      className={`${styles.optionCard} ${isActive ? styles.optionCardActive : ""}`}
+                      className={`${styles.optionCard} ${
+                        isActive ? styles.optionCardActive : ""
+                      } ${isDisabled ? styles.optionCardDisabled : ""}`}
                     >
                       <div className={styles.optionHead}>
                         <div>
@@ -389,10 +502,13 @@ export function CheckoutReview() {
                           type="radio"
                           name="payment-method"
                           checked={isActive}
-                          onChange={() => updateField("paymentMethodId", method.id)}
+                          disabled={isDisabled}
+                          onChange={() => handlePaymentSelection(method.id)}
                         />
                       </div>
-                      <p className={styles.optionNote}>{method.note}</p>
+                      <p className={styles.optionNote}>
+                        {availability?.reason ?? method.note}
+                      </p>
                     </label>
                   );
                 })}
@@ -421,8 +537,8 @@ export function CheckoutReview() {
                   }
                 />
                 <span>
-                  راجعت سياسات الشحن والخصوصية والاسترجاع وأفهم أن هذه النسخة
-                  التأسيسية تحفظ الطلب محليًا على هذا المتصفح.
+                  راجعت سياسات الشحن والخصوصية والاسترجاع وأفهم أن هذه النسخة التأسيسية
+                  تحفظ الطلب محليًا على هذا المتصفح.
                 </span>
               </span>
             </label>
@@ -442,6 +558,24 @@ export function CheckoutReview() {
               </span>
             </label>
           </div>
+
+          <div className={styles.inlineNotice}>
+            منطقة الخدمة الحالية: <strong>{checkoutRules.deliveryZoneLabel}</strong>.
+            {" "}
+            {checkoutRules.expressEligible
+              ? "الشحن السريع متاح."
+              : "الشحن السريع غير متاح حاليًا."}
+            {" "}
+            {checkoutRules.codEligible
+              ? "الدفع عند الاستلام متاح."
+              : "الدفع عند الاستلام غير متاح لهذا الطلب الآن."}
+          </div>
+
+          {checkoutRules.manualReviewReasons.length ? (
+            <div className={styles.inlineNotice}>
+              {checkoutRules.manualReviewReasons.join(" ")}
+            </div>
+          ) : null}
 
           {submissionError ? (
             <div className={styles.inlineError}>{submissionError}</div>
@@ -484,6 +618,10 @@ export function CheckoutReview() {
               <strong className={styles.summaryValue}>{totalEstimate} ر.س</strong>
             </div>
             <div className={styles.summaryRow}>
+              <span>منطقة الخدمة</span>
+              <strong className={styles.summaryValue}>{checkoutRules.deliveryZoneLabel}</strong>
+            </div>
+            <div className={styles.summaryRow}>
               <span>نافذة التسليم</span>
               <strong className={styles.summaryValue}>{selectedShipping.deliveryWindow}</strong>
             </div>
@@ -494,8 +632,8 @@ export function CheckoutReview() {
           </div>
 
           <div className={styles.inlineNotice}>
-            يتم إنشاء مرجع الطلب على هذا المتصفح فقط في هذه المرحلة، ثم يمكن استخدامه
-            داخل صفحة تتبع الطلب لمراجعة الحالة الحالية.
+            سيتم إنشاء مرجع الطلب على هذا المتصفح فقط في هذه المرحلة، لكن القرار
+            التشغيلي الحالي أصبح أوضح بخصوص COD والشحن السريع وحدود المدينة.
           </div>
 
           <div className={styles.linkList}>

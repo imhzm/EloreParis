@@ -6,6 +6,7 @@ export type AnalyticsEventName =
   | "cta_click"
   | "add_to_cart"
   | "cart_update"
+  | "checkout_option_change"
   | "checkout_start"
   | "checkout_complete"
   | "filter_apply"
@@ -120,6 +121,10 @@ export function getPageType(pathname: string) {
 
   if (pathname === "/ops/catalog") {
     return "ops_catalog";
+  }
+
+  if (pathname === "/ops/fulfillment") {
+    return "ops_fulfillment";
   }
 
   if (pathname === "/ops/orders") {

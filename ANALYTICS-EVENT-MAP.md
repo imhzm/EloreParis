@@ -11,8 +11,10 @@ This project now tracks the minimum event set needed to answer early-stage store
 3. Which global navigation zones are used most often during early browsing?
 4. Which collection filter states narrow browsing most effectively before the user moves into product, routine, or concern detail?
 5. Which product selections and cart changes actually move users from product detail into checkout review?
-6. Which checkout handoff choices convert cart intent into a saved order reference, and how often do users return to track that order?
-7. How often does the internal operations layer advance local order states before a real backoffice is selected?
+6. Which shipping and payment choices stay eligible at checkout after city and cart rules are applied?
+7. Which checkout handoff choices convert cart intent into a saved order reference, and how often do users return to track that order?
+8. How often does the internal operations layer advance local order states before a real backoffice is selected?
+9. Which locally saved orders require manual review, split-shipment coordination, or COD fallback inside the rehearsal layer?
 
 ## Event Set
 
@@ -150,6 +152,21 @@ Tracked properties:
 - `cart_count`
 - `subtotal`
 
+### `checkout_option_change`
+
+- Fires when a user changes shipping or payment selection inside the checkout handoff form.
+- Answers which checkout choices remain preferred after city and cart rules are applied.
+
+Tracked properties:
+
+- `source_path`
+- `source_page_type`
+- `option_group`
+- `option_value`
+- `delivery_zone`
+- `express_eligible`
+- `cod_eligible`
+
 ### `checkout_complete`
 
 - Fires when a user submits the checkout handoff form and a local order reference is created.
@@ -165,6 +182,9 @@ Tracked properties:
 - `shipping_method`
 - `payment_method`
 - `total_estimate`
+- `delivery_zone`
+- `cod_eligible`
+- `express_eligible`
 
 ### `track_order_lookup`
 
@@ -207,9 +227,11 @@ Tracked properties:
 - Product purchase panels and sticky add-to-cart CTA on product detail pages
 - Cart quantity controls, line removal, cart clear action, and checkout CTA
 - Checkout handoff form submission with shipping and payment selection
+- Checkout shipping and payment option changes after eligibility rules are applied
 - Order confirmation route CTAs back into tracking and shopping
 - Track-order lookup form and tracking result surface
 - Internal `/ops/orders` queue actions and tracking shortcuts
+- Internal `/ops/fulfillment` routing queue, notification review, and order-tracking shortcuts
 - FAQ route links into tracking, trust policies, and contact
 - Contact route links into FAQ, tracking, and trust support paths
 - About route links into trust, terms, contact, and shopping discovery

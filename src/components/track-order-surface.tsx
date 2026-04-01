@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { TrackedLink } from "@/components/tracked-link";
 import { getPageType, trackAnalyticsEvent } from "@/lib/analytics";
+import { getOrderFulfillmentPlan } from "@/lib/fulfillment";
 import {
   findStoredOrder,
   getOrderTimeline,
@@ -56,7 +57,11 @@ export function TrackOrderSurface({
     const order = findStoredOrder(orders, normalizedOrder, normalizedLastFour);
 
     setMatch(order);
-    setError(order ? null : "لم يتم العثور على طلب مطابق لهذه البيانات على هذا المتصفح.");
+    setError(
+      order
+        ? null
+        : "لم يتم العثور على طلب مطابق لهذه البيانات على هذا المتصفح.",
+    );
 
     trackAnalyticsEvent("track_order_lookup", {
       source_path: "/track-order",
@@ -68,6 +73,8 @@ export function TrackOrderSurface({
     });
   };
 
+  const fulfillmentPlan = match ? getOrderFulfillmentPlan(match) : null;
+
   return (
     <div className={styles.page}>
       <section className={styles.hero}>
@@ -76,7 +83,8 @@ export function TrackOrderSurface({
           <h1>تتبعي الحالة الحالية بمرجع واضح بدل الرسائل المبهمة</h1>
           <p className={styles.summary}>
             صفحة تتبع الطلب هنا تربط بين مرجع الطلب وآخر 4 أرقام من الجوال حتى تعرض
-            حالة واضحة داخل النسخة التأسيسية الحالية.
+            حالة واضحة داخل النسخة التأسيسية الحالية، مع مسار fulfillment مفهوم وليس
+            مجرد status label فقط.
           </p>
         </div>
 
@@ -85,7 +93,8 @@ export function TrackOrderSurface({
             <p>ما الذي تحتاجينه؟</p>
             <strong>مرجع الطلب + آخر 4 أرقام</strong>
             <span>
-              هذا يقلل الاعتماد على معلومات شخصية كاملة ويجعل التتبع أوضح في المرحلة الحالية.
+              هذا يقلل الاعتماد على معلومات شخصية كاملة ويجعل التتبع أوضح في المرحلة
+              الحالية.
             </span>
           </div>
 
@@ -105,8 +114,8 @@ export function TrackOrderSurface({
           <p className={styles.sectionTitle}>Lookup</p>
           <h2>البحث عن الطلب</h2>
           <p>
-            إذا خرجتِ من صفحة التأكيد، يمكنك العودة إلى الحالة الحالية من هنا متى
-            كان المرجع متاحًا لديك.
+            إذا خرجتِ من صفحة التأكيد، يمكنك العودة إلى الحالة الحالية من هنا متى كان
+            المرجع متاحًا لديك.
           </p>
 
           <div className={styles.formGrid}>
@@ -173,7 +182,7 @@ export function TrackOrderSurface({
         </aside>
       </section>
 
-      {match ? (
+      {match && fulfillmentPlan ? (
         <section className={styles.layout}>
           <article className={styles.mainCard}>
             <p className={styles.sectionTitle}>Current status</p>
@@ -207,20 +216,21 @@ export function TrackOrderSurface({
             </div>
 
             <div className={styles.lineList}>
-              {match.lines.map((line) => (
+              {fulfillmentPlan.linePlans.map((line) => (
                 <article key={line.key} className={styles.lineItem}>
                   <div className={styles.lineHead}>
                     <div>
                       <h3>{line.productName}</h3>
-                      <p className={styles.lineMeta}>{line.productSubtitle}</p>
+                      <p className={styles.lineMeta}>{line.routeLabel}</p>
                     </div>
-                    <div className={styles.linePrice}>{line.lineTotal} ر.س</div>
+                    <div className={styles.linePrice}>{line.sku}</div>
                   </div>
 
                   <div className={styles.badgeRow}>
-                    <span>{line.variantLabel}</span>
-                    <span>{line.size}</span>
-                    <span>الكمية: {line.quantity}</span>
+                    <span>{line.supplierName}</span>
+                    <span>{line.availability}</span>
+                    <span>{line.shippingClass}</span>
+                    <span>{line.codEligible ? "COD yes" : "COD no"}</span>
                   </div>
                 </article>
               ))}
@@ -232,6 +242,12 @@ export function TrackOrderSurface({
             <h2>الملخص المرتبط بالتتبع</h2>
 
             <div className={styles.referenceCard}>
+              <div className={styles.referenceRow}>
+                <span>منطقة الخدمة</span>
+                <strong className={styles.referenceValue}>
+                  {fulfillmentPlan.deliveryZoneLabel}
+                </strong>
+              </div>
               <div className={styles.referenceRow}>
                 <span>الشحن</span>
                 <strong className={styles.referenceValue}>
@@ -245,14 +261,37 @@ export function TrackOrderSurface({
                 </strong>
               </div>
               <div className={styles.referenceRow}>
+                <span>Carrier المقترح</span>
+                <strong className={styles.referenceValue}>
+                  {fulfillmentPlan.recommendedCarrier}
+                </strong>
+              </div>
+              <div className={styles.referenceRow}>
                 <span>الإجمالي التقديري</span>
                 <strong className={styles.referenceValue}>{match.totalEstimate} ر.س</strong>
               </div>
             </div>
 
-            <div className={styles.inlineNotice}>
-              الحالة الحالية مرتبطة بمرجع محلي محفوظ على هذا المتصفح، ولذلك تظل
-              مناسبة للنسخة التأسيسية قبل ربط نظام طلبات مركزي.
+            {fulfillmentPlan.requiresManualReview ? (
+              <div className={styles.inlineError}>
+                {fulfillmentPlan.manualReviewReasons.join(" ")}
+              </div>
+            ) : (
+              <div className={styles.inlineNotice}>
+                لا توجد مراجعة يدوية إضافية مطلوبة لهذا الطلب داخل النموذج الحالي.
+              </div>
+            )}
+
+            <div className={styles.summaryList}>
+              {fulfillmentPlan.notifications.map((notification) => (
+                <div key={notification.key} className={styles.referenceCard}>
+                  <div className={styles.referenceRow}>
+                    <span>{notification.label}</span>
+                    <strong className={styles.referenceValue}>{notification.status}</strong>
+                  </div>
+                  <p>{notification.note}</p>
+                </div>
+              ))}
             </div>
 
             <div className={styles.actionColumn}>

@@ -5,43 +5,22 @@ import {
   type CollectionSlug,
 } from "@/lib/site-content";
 import type { StoredOrder } from "@/lib/orders";
+import {
+  getSupplierRecord,
+  getSupplierRecords as getSharedSupplierRecords,
+  getVariantOperationsByProduct,
+  type ShippingClass,
+  type SupplierId,
+  type SupplierRecord,
+  type VariantOperationsRecord,
+} from "@/lib/variant-operations";
 
-export type SupplierId = "atelier-core" | "desert-distribution";
-
-export type SupplierRecord = {
-  id: SupplierId;
-  name: string;
-  fulfillmentModel: "direct" | "dropship" | "hybrid";
-  leadTime: string;
-  defaultMarginTarget: number;
-  note: string;
-};
-
-export type ShippingClass = "serum-light" | "foundation-standard";
-
-export type CatalogAdminVariant = {
-  sku: string;
-  supplierSku: string;
-  barcode: string;
-  stockOnHand: number;
-  lowStockThreshold: number;
-  cost: number;
-  supplierId: SupplierId;
-  shippingClass: ShippingClass;
-  codEligible: boolean;
-  hidden: boolean;
+export type CatalogAdminVariant = VariantOperationsRecord & {
   availability: "InStock" | "PreOrder";
   retailPrice: number;
   compareAtPrice?: number;
   estimatedMargin: number;
-  shadeSortOrder?: number;
-  swatchLabel?: string;
 };
-
-type CatalogAdminVariantSeed = Omit<
-  CatalogAdminVariant,
-  "availability" | "retailPrice" | "compareAtPrice" | "estimatedMargin"
->;
 
 export type CatalogAdminProduct = {
   productSlug: string;
@@ -88,27 +67,6 @@ export type SupplierException = {
   productSlug: string;
   title: string;
   note: string;
-};
-
-const supplierDirectory: Record<SupplierId, SupplierRecord> = {
-  "atelier-core": {
-    id: "atelier-core",
-    name: "Atelier Core Distribution",
-    fulfillmentModel: "hybrid",
-    leadTime: "1-2 يوم عمل",
-    defaultMarginTarget: 0.44,
-    note:
-      "المورد الأساسي للمنتجات المتاحة محليًا، ويغطي جزءًا من المخزون المباشر مع مرونة في الـ replenishment.",
-  },
-  "desert-distribution": {
-    id: "desert-distribution",
-    name: "Desert Distribution Network",
-    fulfillmentModel: "dropship",
-    leadTime: "3-5 أيام عمل",
-    defaultMarginTarget: 0.38,
-    note:
-      "مسار احتياطي لبعض الـ preorder والدرجات الممتدة، مع حساسية أعلى تجاه تقلبات المخزون والسعر.",
-  },
 };
 
 const catalogOverrides: Record<
@@ -163,70 +121,11 @@ const catalogOverrides: Record<
     canonicalPath: "/products/velvet-base-foundation",
     metaTitle: "Velvet Base Foundation | فاونديشن مخملي للمناسبات والدوام",
     metaDescription:
-      "فاونديشن مخملي بتغطية قابلة للبناء وثبات عملي يربط finish المناسب بالمناسبة بوضوح.",
+      "فاونديشن مخملي بتغطية قابلة للبناء وثبات عملي يربط finish المناسبة بالمناسبة بوضوح.",
     ogImagePath: "/og-product.svg",
     relatedProductSlugs: ["radiant-dew-serum"],
     routinePairingHrefs: ["/routines/occasion-base-routine"],
   },
-};
-
-const variantAdminDirectory: Record<string, CatalogAdminVariantSeed[]> = {
-  "radiant-dew-serum": [
-    {
-      sku: "RD-30",
-      supplierSku: "AT-RDS-30",
-      barcode: "6287000010011",
-      stockOnHand: 14,
-      lowStockThreshold: 8,
-      cost: 69,
-      supplierId: "atelier-core",
-      shippingClass: "serum-light",
-      codEligible: true,
-      hidden: false,
-    },
-    {
-      sku: "RD-50",
-      supplierSku: "DD-RDS-50",
-      barcode: "6287000010012",
-      stockOnHand: 3,
-      lowStockThreshold: 5,
-      cost: 104,
-      supplierId: "desert-distribution",
-      shippingClass: "serum-light",
-      codEligible: false,
-      hidden: false,
-    },
-  ],
-  "velvet-base-foundation": [
-    {
-      sku: "VBF-02",
-      supplierSku: "AT-VBF-02",
-      barcode: "6287000010091",
-      stockOnHand: 9,
-      lowStockThreshold: 6,
-      cost: 92,
-      supplierId: "atelier-core",
-      shippingClass: "foundation-standard",
-      codEligible: true,
-      hidden: false,
-      shadeSortOrder: 2,
-      swatchLabel: "Neutral Sand 02",
-    },
-    {
-      sku: "VBF-04",
-      supplierSku: "DD-VBF-04",
-      barcode: "6287000010094",
-      stockOnHand: 2,
-      lowStockThreshold: 4,
-      cost: 96,
-      supplierId: "desert-distribution",
-      shippingClass: "foundation-standard",
-      codEligible: false,
-      hidden: false,
-      shadeSortOrder: 4,
-      swatchLabel: "Golden Beige 04",
-    },
-  ],
 };
 
 const supplierSyncLogs: SupplierSyncLog[] = [
@@ -257,20 +156,20 @@ const supplierSyncLogs: SupplierSyncLog[] = [
 ];
 
 export function getSupplierRecords() {
-  return Object.values(supplierDirectory);
+  return getSharedSupplierRecords();
 }
 
 export function getCatalogAdminProducts(): CatalogAdminProduct[] {
   return products
     .map((product): CatalogAdminProduct | null => {
       const overrides = catalogOverrides[product.slug];
-      const variantAdmins = variantAdminDirectory[product.slug];
+      const variantOperations = getVariantOperationsByProduct(product.slug);
 
-      if (!overrides || !variantAdmins) {
+      if (!overrides || variantOperations.length === 0) {
         return null;
       }
 
-      const variants = variantAdmins
+      const variants = variantOperations
         .map((variantAdmin): CatalogAdminVariant | null => {
           const storefrontVariant = product.variants.find(
             (variant) => variant.sku === variantAdmin.sku,
@@ -281,7 +180,8 @@ export function getCatalogAdminProducts(): CatalogAdminProduct[] {
           }
 
           const retailPrice = storefrontVariant.price;
-          const nextVariant: CatalogAdminVariant = {
+
+          return {
             ...variantAdmin,
             stockOnHand:
               storefrontVariant.availability === "PreOrder"
@@ -295,18 +195,14 @@ export function getCatalogAdminProducts(): CatalogAdminProduct[] {
                 ? (retailPrice - variantAdmin.cost) / retailPrice
                 : 0,
           };
-
-          return nextVariant;
         })
         .filter((variant): variant is CatalogAdminVariant => Boolean(variant));
 
-      const nextProduct: CatalogAdminProduct = {
+      return {
         ...overrides,
         collection: product.collection,
         variants,
       };
-
-      return nextProduct;
     })
     .filter((product): product is CatalogAdminProduct => Boolean(product));
 }
@@ -351,9 +247,10 @@ export function getSupplierExceptionQueue(
       if (variant.stockOnHand <= variant.lowStockThreshold) {
         exceptions.push({
           id: `${variant.sku}-stock`,
-          severity: variant.stockOnHand <= Math.max(1, variant.lowStockThreshold - 2)
-            ? "critical"
-            : "warning",
+          severity:
+            variant.stockOnHand <= Math.max(1, variant.lowStockThreshold - 2)
+              ? "critical"
+              : "warning",
           supplierId: variant.supplierId,
           sku: variant.sku,
           productSlug: product.productSlug,
@@ -362,12 +259,9 @@ export function getSupplierExceptionQueue(
         });
       }
 
-      const margin = variant.estimatedMargin;
+      const supplier = getSupplierRecord(variant.supplierId);
 
-      if (
-        variant.estimatedMargin <
-        supplierDirectory[variant.supplierId].defaultMarginTarget
-      ) {
+      if (variant.estimatedMargin < supplier.defaultMarginTarget) {
         exceptions.push({
           id: `${variant.sku}-margin`,
           severity: "warning",
@@ -375,9 +269,7 @@ export function getSupplierExceptionQueue(
           sku: variant.sku,
           productSlug: product.productSlug,
           title: "هامش أقل من الهدف",
-          note: `الهامش الحالي التقريبي ${(margin * 100).toFixed(0)}% أقل من هدف المورد ${(
-            supplierDirectory[variant.supplierId].defaultMarginTarget * 100
-          ).toFixed(0)}%.`,
+          note: `الهامش الحالي التقريبي ${(variant.estimatedMargin * 100).toFixed(0)}% أقل من هدف المورد ${(supplier.defaultMarginTarget * 100).toFixed(0)}%.`,
         });
       }
     }
@@ -402,9 +294,11 @@ function isOrderInMonth(order: StoredOrder, referenceDate: Date) {
 function isOrderToday(order: StoredOrder, referenceDate: Date) {
   const createdAt = new Date(order.createdAt);
 
-  return createdAt.getFullYear() === referenceDate.getFullYear() &&
+  return (
+    createdAt.getFullYear() === referenceDate.getFullYear() &&
     createdAt.getMonth() === referenceDate.getMonth() &&
-    createdAt.getDate() === referenceDate.getDate();
+    createdAt.getDate() === referenceDate.getDate()
+  );
 }
 
 function normalizePhone(phone: string) {
@@ -427,13 +321,20 @@ export function getOpsDashboardSnapshot(
   >();
   const cityCounter = new Map<string, number>();
   const collectionCounter = new Map<CollectionSlug, number>();
-  const customerCounter = new Map<string, { name: string; orderCount: number; ltv: number }>();
+  const customerCounter = new Map<
+    string,
+    { name: string; orderCount: number; ltv: number }
+  >();
 
   for (const order of orders) {
     cityCounter.set(order.customer.city, (cityCounter.get(order.customer.city) ?? 0) + 1);
 
-    const customerKey = normalizePhone(order.customer.phone) || order.customer.email || order.orderNumber;
+    const customerKey =
+      normalizePhone(order.customer.phone) ||
+      order.customer.email ||
+      order.orderNumber;
     const existingCustomer = customerCounter.get(customerKey);
+
     if (existingCustomer) {
       existingCustomer.orderCount += 1;
       existingCustomer.ltv += order.totalEstimate;
@@ -448,8 +349,8 @@ export function getOpsDashboardSnapshot(
     for (const line of order.lines) {
       const product = getProductBySlug(line.productSlug);
       const collection = product?.collection ?? "skincare";
-
       const existingProduct = productCounter.get(line.productSlug);
+
       if (existingProduct) {
         existingProduct.quantity += line.quantity;
         existingProduct.revenue += line.lineTotal;
@@ -532,3 +433,5 @@ export function getOpsDashboardSnapshot(
     },
   };
 }
+
+export type { ShippingClass, SupplierId, SupplierRecord };

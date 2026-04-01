@@ -314,6 +314,16 @@
   background: rgba(151, 160, 149, 0.16);
 }
 
+.optionCardDisabled {
+  opacity: 0.62;
+  cursor: not-allowed;
+  background: rgba(247, 241, 234, 0.72);
+}
+
+.optionCardDisabled:hover {
+  transform: none;
+}
+
 .optionRadio {
   inline-size: 18px;
   block-size: 18px;

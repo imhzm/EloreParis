@@ -60,6 +60,7 @@ export type StoredOrder = {
   totalEstimate: number;
   shippingMethodId: ShippingMethodId;
   paymentMethodId: PaymentMethodId;
+  allowOperationalUpdates: boolean;
   customer: CheckoutCustomerDetails;
   lines: StoredOrderLine[];
 };
@@ -196,6 +197,7 @@ export function createStoredOrder(input: {
   customer: CheckoutCustomerDetails;
   shippingMethodId: ShippingMethodId;
   paymentMethodId: PaymentMethodId;
+  allowOperationalUpdates: boolean;
 }) {
   const shippingMethod =
     getShippingMethodById(input.shippingMethodId) ?? shippingMethods[0];
@@ -214,6 +216,7 @@ export function createStoredOrder(input: {
     totalEstimate: subtotal + shippingFeeEstimate,
     shippingMethodId: shippingMethod.id,
     paymentMethodId: paymentMethod.id,
+    allowOperationalUpdates: input.allowOperationalUpdates,
     customer: {
       fullName: normalizeText(input.customer.fullName),
       phone: normalizePhone(input.customer.phone),
@@ -254,6 +257,8 @@ function normalizeStoredOrder(value: unknown): StoredOrder | null {
     typeof value.subtotal !== "number" ||
     typeof value.shippingFeeEstimate !== "number" ||
     typeof value.totalEstimate !== "number" ||
+    typeof value.allowOperationalUpdates !== "boolean" &&
+      typeof value.allowOperationalUpdates !== "undefined" ||
     !customer ||
     !lines
   ) {
@@ -322,6 +327,10 @@ function normalizeStoredOrder(value: unknown): StoredOrder | null {
     totalEstimate: value.totalEstimate,
     shippingMethodId: shippingMethod.id,
     paymentMethodId: paymentMethod.id,
+    allowOperationalUpdates:
+      typeof value.allowOperationalUpdates === "boolean"
+        ? value.allowOperationalUpdates
+        : false,
     customer: {
       fullName: normalizeText(customer.fullName),
       phone: normalizePhone(customer.phone),
