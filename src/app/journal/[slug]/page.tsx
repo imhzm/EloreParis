@@ -31,11 +31,38 @@ export async function generateMetadata({
     return {};
   }
 
+  const title = article.title;
+  const description = article.excerpt;
+  const pageUrl = absoluteUrl(`/journal/${article.slug}`);
+  const imageUrl = absoluteUrl("/og-journal.svg");
+
   return {
-    title: article.title,
-    description: article.excerpt,
+    title,
+    description,
     alternates: {
       canonical: `/journal/${article.slug}`,
+    },
+    openGraph: {
+      title,
+      description,
+      url: pageUrl,
+      type: "article",
+      publishedTime: article.publishedAt,
+      modifiedTime: article.updatedAt,
+      images: [
+        {
+          url: imageUrl,
+          width: 1200,
+          height: 630,
+          alt: article.title,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [imageUrl],
     },
   };
 }

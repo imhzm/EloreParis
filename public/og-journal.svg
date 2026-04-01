@@ -1,0 +1,15 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="630" fill="#2B1C28"/>
+  <circle cx="152" cy="98" r="194" fill="#D8B5AE" fill-opacity="0.18"/>
+  <circle cx="1090" cy="560" r="214" fill="#C79A58" fill-opacity="0.14"/>
+  <text x="64" y="92" fill="#F7F1EA" fill-opacity="0.74" font-family="Arial, sans-serif" font-size="24" letter-spacing="3">EDITORIAL COMMERCE</text>
+  <text x="64" y="188" fill="#FFF8F3" font-family="Arial, sans-serif" font-size="76" font-weight="700">Cozmateks Journal</text>
+  <text x="64" y="278" fill="#FFF8F3" font-family="Arial, sans-serif" font-size="42" font-weight="700">Arabic-first beauty content</text>
+  <text x="64" y="330" fill="#FFF8F3" font-family="Arial, sans-serif" font-size="42" font-weight="700">built to support trust and discovery.</text>
+  <rect x="64" y="476" width="204" height="50" rx="25" fill="white" fill-opacity="0.08" stroke="#FFF8F324"/>
+  <rect x="284" y="476" width="214" height="50" rx="25" fill="white" fill-opacity="0.08" stroke="#FFF8F324"/>
+  <rect x="514" y="476" width="260" height="50" rx="25" fill="white" fill-opacity="0.08" stroke="#FFF8F324"/>
+  <text x="96" y="508" fill="#FFF8F3" font-family="Arial, sans-serif" font-size="22">Search intent</text>
+  <text x="315" y="508" fill="#FFF8F3" font-family="Arial, sans-serif" font-size="22">Trust support</text>
+  <text x="546" y="508" fill="#FFF8F3" font-family="Arial, sans-serif" font-size="22">Conversion-aware linking</text>
+</svg>

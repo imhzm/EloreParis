@@ -1,0 +1,22 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="630" fill="#F7F1EA"/>
+  <circle cx="133" cy="97" r="190" fill="#D8B5AE" fill-opacity="0.34"/>
+  <circle cx="1094" cy="548" r="210" fill="#97A095" fill-opacity="0.22"/>
+  <rect x="856" y="54" width="278" height="250" rx="30" fill="#2B1C28"/>
+  <text x="64" y="92" fill="#7A5F6C" font-family="Arial, sans-serif" font-size="24" letter-spacing="3">CURATED PRODUCT</text>
+  <text x="64" y="188" fill="#2B1C28" font-family="Arial, sans-serif" font-size="76" font-weight="700">Cozmateks</text>
+  <text x="64" y="270" fill="#2B1C28" font-family="Arial, sans-serif" font-size="68" font-weight="700">Product Page</text>
+  <text x="64" y="338" fill="#4B4046" font-family="Arial, sans-serif" font-size="30">Saudi-first product storytelling with conversion-ready structure.</text>
+  <rect x="64" y="476" width="194" height="50" rx="25" fill="white" fill-opacity="0.72" stroke="#2B1C2814"/>
+  <rect x="274" y="476" width="208" height="50" rx="25" fill="white" fill-opacity="0.72" stroke="#2B1C2814"/>
+  <rect x="498" y="476" width="191" height="50" rx="25" fill="white" fill-opacity="0.72" stroke="#2B1C2814"/>
+  <text x="91" y="508" fill="#2B1C28" font-family="Arial, sans-serif" font-size="22">Concern-led</text>
+  <text x="301" y="508" fill="#2B1C28" font-family="Arial, sans-serif" font-size="22">Ingredient-led</text>
+  <text x="529" y="508" fill="#2B1C28" font-family="Arial, sans-serif" font-size="22">Routine-linked</text>
+  <text x="888" y="100" fill="#F7F1EA" fill-opacity="0.74" font-family="Arial, sans-serif" font-size="18" letter-spacing="2">COMMERCE SURFACE</text>
+  <text x="888" y="162" fill="#FFF8F3" font-family="Arial, sans-serif" font-size="42" font-weight="700">Premium</text>
+  <text x="888" y="214" fill="#FFF8F3" font-family="Arial, sans-serif" font-size="42" font-weight="700">Beauty</text>
+  <text x="888" y="266" fill="#FFF8F3" font-family="Arial, sans-serif" font-size="42" font-weight="700">Storefront</text>
+  <text x="888" y="346" fill="#FFF8F3" fill-opacity="0.82" font-family="Arial, sans-serif" font-size="22">Structured for pricing, trust,</text>
+  <text x="888" y="382" fill="#FFF8F3" fill-opacity="0.82" font-family="Arial, sans-serif" font-size="22">fit clarity, and add-to-cart intent.</text>
+</svg>

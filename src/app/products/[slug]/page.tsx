@@ -31,11 +31,36 @@ export async function generateMetadata({
     return {};
   }
 
+  const title = `${product.name} | ${product.category}`;
+  const description = product.description;
+  const pageUrl = absoluteUrl(`/products/${product.slug}`);
+  const imageUrl = absoluteUrl("/og-product.svg");
+
   return {
-    title: `${product.name} | ${product.category}`,
-    description: product.description,
+    title,
+    description,
     alternates: {
       canonical: `/products/${product.slug}`,
+    },
+    openGraph: {
+      title,
+      description,
+      url: pageUrl,
+      type: "website",
+      images: [
+        {
+          url: imageUrl,
+          width: 1200,
+          height: 630,
+          alt: `${product.name} | ${product.category}`,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [imageUrl],
     },
   };
 }
