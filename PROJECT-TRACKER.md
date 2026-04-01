@@ -5,8 +5,8 @@
 - Start date: 2026-04-01
 - Last updated: 2026-04-01
 - Current phase: `release`
-- Overall completion: `67%`
-- Current focus: release-hardening completion through security headers, a live health endpoint, and verified release-facing browser behavior for the storefront running on port `3056`
+- Overall completion: `68%`
+- Current focus: release-hardening completion through share-surface metadata, generated social preview imagery, and verified browser-facing release behavior for the storefront running on port `3056`
 - Forecast status: `date not committed yet`
 - Working estimate: `12-16 weeks for an MVP after stack, catalog model, and integration scope are frozen`
 
@@ -19,8 +19,8 @@ Progress is tracked against SkyWave phases, not by ad-hoc task count.
 | Discovery | 15% | In Progress | 69% | Brief, sitemap, user flows, MVP boundary, backlog, open decisions |
 | Design and Architecture | 20% | In Progress | 57% | Design system direction, page architecture, stack and data decisions |
 | Implementation | 35% | In Progress | 85% | Public storefront and required internal surfaces implemented |
-| Validation | 10% | In Progress | 70% | Lint, typecheck, tests, UX QA, SEO/schema QA, accessibility QA |
-| Release | 10% | In Progress | 40% | Deployment target, configs, monitoring, legal/trust gates, rollback path |
+| Validation | 10% | In Progress | 71% | Lint, typecheck, tests, UX QA, SEO/schema QA, accessibility QA |
+| Release | 10% | In Progress | 46% | Deployment target, configs, monitoring, legal/trust gates, rollback path |
 | Growth and Automation | 10% | In Progress | 45% | CRM flows, SEO growth loops, analytics maturity, post-launch automations |
 
 ## Current Discovery Checklist
@@ -88,6 +88,7 @@ Progress is tracked against SkyWave phases, not by ad-hoc task count.
 - [x] Added `manifest.webmanifest` and release-facing browser metadata
 - [x] Added a live `/api/health` endpoint for deployment checks and monitoring
 - [x] Added safe default security headers at the framework level
+- [x] Added generated Open Graph and Twitter share metadata for release-facing previews
 - [ ] Freeze MVP scope vs later phases
 - [ ] Freeze hosting direction
 - [ ] Freeze commerce architecture and admin boundary
@@ -98,14 +99,14 @@ Progress is tracked against SkyWave phases, not by ad-hoc task count.
 | Layer | Status | Notes |
 | --- | --- | --- |
 | UX / IA | In Progress | Home, skincare, makeup, search, ingredient hub/detail, concern hub/detail, routine hub/detail, product, cart, checkout handoff, checkout success, track-order, internal ops/orders, FAQ, contact, about, terms, journal, article, and trust surfaces now exist as real routes, and collection pages support real filter states with zero-result recovery |
-| SEO / AEO / GEO | In Progress | Metadata, route structure, internal links, journal flow, robots, and sitemap now cover collection, ingredient, concern, routine, product, trust, FAQ, contact, about, terms, and internal search discovery templates, with filtered collection states canonicalized back to the main category URL and transactional `cart` / `checkout` routes marked `noindex,nofollow` |
+| SEO / AEO / GEO | In Progress | Metadata, route structure, internal links, journal flow, robots, sitemap, and release-facing share metadata now cover collection, ingredient, concern, routine, product, trust, FAQ, contact, about, terms, and internal search discovery templates, with filtered collection states canonicalized back to the main category URL and transactional `cart` / `checkout` routes marked `noindex,nofollow` |
 | Schema strategy | In Progress | JSON-LD foundations exist on home, category, ingredient, concern, routine, product, journal, article, trust, FAQ, contact, about, and terms routes, and filtered collection plus ingredient discovery states now emit result-aware `ItemList` markup |
 | Accessibility | In Progress | Semantic layout and skip-link exist; full QA is still pending |
 | Security / Privacy | In Progress | Trust, privacy, shipping, returns, authenticity, FAQ, contact, about, and terms surfaces now exist as real public routes, track-order now uses order reference plus phone last-4 instead of exposing full customer details, and the app now emits safe default security headers; real business data, final support channels, and legal review are still pending |
 | Performance / CWV | In Progress | Next.js foundation is in place; runtime and asset optimization still pending |
 | Analytics / Conversion | In Progress | Page views, global navigation, core CTA instrumentation, internal search submit/result events including ingredient result groups, collection `filter_apply`, ingredient route links, `add_to_cart`, `cart_update`, `checkout_start`, `checkout_complete`, `track_order_lookup`, and internal `ops_order_status_update` are now wired; real payment completion and lifecycle notifications are still pending |
 | Content system | In Progress | Editorial, concern, routine, product, collection, trust, FAQ, contact, about, and terms shells exist, but voice remains provisional until real samples exist |
-| Release / Ops | In Progress | Local runtime is stable on port `3056`, local order references now exist for confirmation and tracking, an internal `/ops/orders` surface can advance local order states for rehearsal, the codebase is now on GitHub with CI verified on push, branded fallback plus manifest surfaces now exist, and `/api/health` is now available for deployment checks; hosting, production CD, monitoring ownership, and real order backend ownership are not selected yet |
+| Release / Ops | In Progress | Local runtime is stable on port `3056`, local order references now exist for confirmation and tracking, an internal `/ops/orders` surface can advance local order states for rehearsal, the codebase is now on GitHub with CI verified on push, branded fallback plus manifest surfaces now exist, `/api/health` is available for deployment checks, and generated share-preview metadata now exists for release distribution; hosting, production CD, monitoring ownership, and real order backend ownership are not selected yet |
 
 ## Milestone Log
 
@@ -181,6 +182,7 @@ Progress is tracked against SkyWave phases, not by ad-hoc task count.
 - A generated `manifest.webmanifest` plus browser-facing metadata were added to strengthen install/readiness signals before deployment.
 - A live `/api/health` route was added for deployment checks, uptime probes, and future monitoring hooks.
 - Safe default security headers are now emitted on app responses through Next.js config instead of leaving the public surface without framework-level hardening.
+- A generated Open Graph preview image plus root Twitter/Open Graph metadata were added so the storefront has a controlled share surface instead of generic unfurled links.
 
 ## Immediate Next Actions
 

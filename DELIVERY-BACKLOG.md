@@ -74,7 +74,7 @@
 - Cart, checkout handoff, confirmation, track-order, and internal order-ops now exist as real UI surfaces, but they still rely on local storage until payment, order routing, stock, and notification ownership are fixed.
 - The roadmap assumes Saudi legal/compliance readiness; this must be validated against the actual business setup before launch claims are made.
 - Release hardening has started through CI, manifest, and fallback surfaces, but deployment target and monitoring are still undefined.
-- Release hardening now also includes framework-level security headers and a health endpoint, but deployment target and monitoring are still undefined.
+- Release hardening now also includes framework-level security headers, a health endpoint, and controlled share-preview metadata, but deployment target and monitoring are still undefined.
 - FAQ, contact, about, and terms surfaces now exist, but approved business data, final support channels, and legal review are still missing from the complete Saudi-ready launch set described in the roadmap.
 
 ## Next Backlog Move

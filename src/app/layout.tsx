@@ -19,6 +19,8 @@ const displayFont = Noto_Naskh_Arabic({
   display: "swap",
 });
 
+const socialImageUrl = new URL("/opengraph-image", siteUrl).toString();
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
@@ -36,11 +38,26 @@ export const metadata: Metadata = {
     "makeup store saudi arabia",
   ],
   openGraph: {
+    url: siteUrl,
     title: `${siteName} | ${siteTagline}`,
     description: defaultDescription,
     siteName,
     locale: "ar_SA",
     type: "website",
+    images: [
+      {
+        url: socialImageUrl,
+        width: 1200,
+        height: 630,
+        alt: `${siteName} | Saudi premium beauty storefront`,
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${siteName} | ${siteTagline}`,
+    description: defaultDescription,
+    images: [socialImageUrl],
   },
   icons: {
     icon: "/favicon.ico",
