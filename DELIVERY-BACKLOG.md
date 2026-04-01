@@ -16,7 +16,7 @@
 | SW-02 | Saudi legal, trust, and compliance surfaces | `5` | `in-progress` | Discovery / Design | Required legal pages, footer trust data, privacy requirements, compliance assumptions, and support surfaces are documented and routed into product requirements |
 | SW-03 | Commerce model, taxonomy, sitemap, and home IA | `6-8` | `in-progress` | Discovery | The public IA and home structure are accepted as the working MVP map |
 | SW-04 | Category, product, and conversion experience | `9-11`, `27-29` | `in-progress` | Design / Implementation | PLP/PDP patterns, CRO blocks, and advanced merchandising rules are defined and implemented for MVP |
-| SW-05 | Admin, catalog, data model, supplier ops, and order operations | `12-13` | `in-progress` | Design / Implementation | The admin scope, product data model, supplier sync assumptions, and order operations flow are explicitly designed and scoped |
+| SW-05 | Admin, catalog, data model, supplier ops, and order operations | `12-13` | `in-progress` | Design / Implementation | The admin scope, product data model, supplier sync assumptions, and order operations flow are explicitly designed, surfaced, and testable through internal rehearsal routes |
 | SW-06 | Content system, editorial style, and commercial copy framework | `14`, `18`, `28-29` | `in-progress` | Discovery / Design | Editorial templates, page copy rules, article model, and content ownership are defined; content status remains honest |
 | SW-07 | Keyword strategy, page mapping, and ecommerce SEO direction | `15-21` | `in-progress` | Discovery | Keyword clusters, page-to-intent map, technical SEO direction, and ecommerce SEO priorities are locked for MVP |
 | SW-08 | Structured data, internal linking, search, and discoverability systems | `22-26` | `in-progress` | Design / Implementation | Schema inventory, internal linking model, search requirements, and snippet-control strategy are specified and implemented |
@@ -66,13 +66,14 @@
 
 ## Active Risks
 
-- The current codebase now covers the main public discovery surface, including concern-led, routine-led, and ingredient-led navigation, and it now includes a local internal order-ops surface, but implementation estimates are still low-confidence until commerce, admin, and hosting boundaries are frozen.
+- The current codebase now covers the main public discovery surface, including concern-led, routine-led, and ingredient-led navigation, and it now includes internal `/ops`, `/ops/catalog`, and `/ops/orders` rehearsal surfaces, but implementation estimates are still low-confidence until commerce, admin, and hosting boundaries are frozen.
 - The roadmap spans storefront, editorial, admin, SEO, analytics, operations, and launch readiness; without an MVP cut it will sprawl.
 - Brand polish is limited until real sample copy or brand assets are available.
 - Stack, commerce engine, CMS, and supplier integration details are not frozen yet.
 - The broader shop atlas is now live with editorial collection routes for haircare, bodycare, tools, and beauty sets, but those surfaces are still IA/SEO shells until real catalog ownership and merchandising rules are frozen.
 - The new server-side collection filters and ingredient discovery surfaces are intentionally narrow and data-backed; any deeper merchandising model must be decided explicitly instead of being improvised inside the current product content.
-- Cart, checkout handoff, confirmation, track-order, and internal order-ops now exist as real UI surfaces, but they still rely on local storage until payment, order routing, stock, and notification ownership are fixed.
+- Cart, checkout handoff, confirmation, track-order, internal order-ops, and internal catalog rehearsal now exist as real UI surfaces, but they still rely on local storage and hand-curated operational data until payment, order routing, stock, supplier sync, and notification ownership are fixed.
+- The new ops catalog surface makes gaps in auth, role separation, and persistent admin ownership more visible; those boundaries must be decided before any real backoffice claims.
 - The roadmap assumes Saudi legal/compliance readiness; this must be validated against the actual business setup before launch claims are made.
 - Release hardening has started through CI, manifest, and fallback surfaces, but deployment target and monitoring are still undefined.
 - Release hardening now also includes framework-level security headers, a health endpoint, controlled share-preview assets at both site and key surface level, automated smoke regression gates, and a deploy-ready Vercel path, but the first live deployment and monitoring are still undefined.
@@ -80,11 +81,12 @@
 
 ## Next Backlog Move
 
-The broader public IA slice is now in progress for the current storefront scope. The next task is to convert `SW-03`, `SW-05`, `SW-09`, and `SW-10` into the next implementation pack:
+The broader public IA slice and internal ops rehearsal slice are now in progress for the current storefront scope. The next task is to convert `SW-05`, `SW-09`, and `SW-10` into the next implementation pack:
 
 1. freeze which of the new editorial collections remain in MVP now that the shop atlas and broader category routes are live
-2. commerce/admin boundary recommendation, including who owns cart persistence, order state, payment orchestration, and order routing
-3. replace the local checkout handoff plus local ops rehearsal with real payment, shipping, notifications, and order instrumentation
-4. inject Vercel credentials, execute the first deployment, and wire monitoring around the new `/api/health` endpoint
-5. replace provisional trust, support, and legal copy with real approved business data and final support channels
-6. complete legal review and operating approvals before any launch claims
+2. commerce/admin boundary recommendation, including who owns cart persistence, catalog authority, stock truth, supplier sync, order state, payment orchestration, and order routing
+3. replace the local checkout handoff plus local ops rehearsal with real payment, shipping, notifications, stock ownership, and order instrumentation
+4. add auth and role separation for internal ops only after the ownership model is frozen
+5. inject Vercel credentials, execute the first deployment, and wire monitoring around the new `/api/health` endpoint
+6. replace provisional trust, support, and legal copy with real approved business data and final support channels
+7. complete legal review and operating approvals before any launch claims

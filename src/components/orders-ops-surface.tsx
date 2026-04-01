@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
+import { OpsNav } from "@/components/ops-nav";
 import { TrackedLink } from "@/components/tracked-link";
 import { getPageType, trackAnalyticsEvent } from "@/lib/analytics";
 import {
@@ -175,6 +176,8 @@ export function OrdersOpsSurface() {
 
   return (
     <div className={styles.page}>
+      <OpsNav activeHref="/ops/orders" />
+
       <section className={styles.hero}>
         <div>
           <p className={styles.eyebrow}>Internal order ops</p>

@@ -3,6 +3,30 @@
   gap: 24px;
 }
 
+.opsNav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.opsNavLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(43, 28, 40, 0.12);
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--aubergine-ink);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.opsNavLinkActive {
+  background: rgba(151, 160, 149, 0.18);
+  border-color: rgba(43, 28, 40, 0.22);
+}
+
 .hero,
 .mainCard,
 .summaryCard,
@@ -129,6 +153,12 @@
   display: grid;
   gap: 16px;
   margin-top: 18px;
+}
+
+.catalogPanelGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
 }
 
 .lineItem,
@@ -472,7 +502,8 @@
 @media (max-width: 1080px) {
   .hero,
   .layout,
-  .statusSummaryGrid {
+  .statusSummaryGrid,
+  .catalogPanelGrid {
     grid-template-columns: 1fr;
   }
 }

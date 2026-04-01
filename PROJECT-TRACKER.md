@@ -3,10 +3,10 @@
 ## Snapshot
 
 - Start date: 2026-04-01
-- Last updated: 2026-04-01
+- Last updated: 2026-04-02
 - Current phase: `implementation`
-- Overall completion: `74%`
-- Current focus: expanded shop IA through a real `/shop` hub plus editorial collection routes for haircare, bodycare, tools, and beauty sets, wired into search, sitemap, and smoke validation
+- Overall completion: `77%`
+- Current focus: internal ops expansion through real `/ops` and `/ops/catalog` surfaces, backed by a local catalog/admin rehearsal model, analytics page typing, and smoke validation
 - Forecast status: `date not committed yet`
 - Working estimate: `12-16 weeks for an MVP after stack, catalog model, and integration scope are frozen`
 
@@ -16,12 +16,12 @@ Progress is tracked against SkyWave phases, not by ad-hoc task count.
 
 | Phase | Weight | Status | Progress | Exit gate |
 | --- | ---: | --- | ---: | --- |
-| Discovery | 15% | In Progress | 74% | Brief, sitemap, user flows, MVP boundary, backlog, open decisions |
-| Design and Architecture | 20% | In Progress | 63% | Design system direction, page architecture, stack and data decisions |
-| Implementation | 35% | In Progress | 89% | Public storefront and required internal surfaces implemented |
-| Validation | 10% | In Progress | 84% | Lint, typecheck, tests, UX QA, SEO/schema QA, accessibility QA |
+| Discovery | 15% | In Progress | 76% | Brief, sitemap, user flows, MVP boundary, backlog, open decisions |
+| Design and Architecture | 20% | In Progress | 67% | Design system direction, page architecture, stack and data decisions |
+| Implementation | 35% | In Progress | 92% | Public storefront and required internal surfaces implemented |
+| Validation | 10% | In Progress | 86% | Lint, typecheck, tests, UX QA, SEO/schema QA, accessibility QA |
 | Release | 10% | In Progress | 63% | Deployment target, configs, monitoring, legal/trust gates, rollback path |
-| Growth and Automation | 10% | In Progress | 46% | CRM flows, SEO growth loops, analytics maturity, post-launch automations |
+| Growth and Automation | 10% | In Progress | 48% | CRM flows, SEO growth loops, analytics maturity, post-launch automations |
 
 ## Current Discovery Checklist
 
@@ -100,6 +100,11 @@ Progress is tracked against SkyWave phases, not by ad-hoc task count.
 - [x] Expanded internal search coverage to return the new collection surfaces
 - [x] Expanded sitemap and smoke regression coverage for the new shop routes
 - [x] Verified live `/shop`, `/shop/haircare`, search, and sitemap responses on port `3056`
+- [x] Added a real internal `/ops` dashboard route for KPI, fulfillment, and supplier-risk rehearsal
+- [x] Added a real internal `/ops/catalog` route for catalog, supplier, stock, and margin review
+- [x] Added a local catalog/admin data layer for supplier ownership, sync logs, low-stock checks, and exception queues
+- [x] Expanded analytics page typing and smoke regression coverage for the new internal ops routes
+- [x] Verified live `/ops` and `/ops/catalog` responses and noindex behavior on port `3056`
 - [ ] Freeze MVP scope vs later phases
 - [ ] Freeze hosting direction
 - [ ] Freeze commerce architecture and admin boundary
@@ -109,15 +114,15 @@ Progress is tracked against SkyWave phases, not by ad-hoc task count.
 
 | Layer | Status | Notes |
 | --- | --- | --- |
-| UX / IA | In Progress | Home, `/shop`, skincare, makeup, haircare, bodycare, tools, beauty sets, search, ingredient hub/detail, concern hub/detail, routine hub/detail, product, cart, checkout handoff, checkout success, track-order, internal ops/orders, FAQ, contact, about, terms, journal, article, and trust surfaces now exist as real routes, and the main collection pages support real filter states with zero-result recovery |
+| UX / IA | In Progress | Home, `/shop`, skincare, makeup, haircare, bodycare, tools, beauty sets, search, ingredient hub/detail, concern hub/detail, routine hub/detail, product, cart, checkout handoff, checkout success, track-order, internal `/ops`, internal `/ops/catalog`, internal ops/orders, FAQ, contact, about, terms, journal, article, and trust surfaces now exist as real routes, and the main collection pages support real filter states with zero-result recovery |
 | SEO / AEO / GEO | In Progress | Metadata, route structure, internal links, journal flow, robots, sitemap, and release-facing share metadata now cover the broader shop atlas plus collection, ingredient, concern, routine, product, trust, FAQ, contact, about, terms, and internal search discovery templates, with dedicated commerce/editorial social previews on PDPs and articles, deploy-safe absolute URL resolution for hosted environments, filtered collection states canonicalized back to the main category URL, and transactional `cart` / `checkout` routes marked `noindex,nofollow` |
 | Schema strategy | In Progress | JSON-LD foundations exist on home, category, ingredient, concern, routine, product, journal, article, trust, FAQ, contact, about, and terms routes, and filtered collection plus ingredient discovery states now emit result-aware `ItemList` markup |
 | Accessibility | In Progress | Semantic layout and skip-link exist; full QA is still pending, but smoke coverage now protects core route rendering from silent regressions |
 | Security / Privacy | In Progress | Trust, privacy, shipping, returns, authenticity, FAQ, contact, about, and terms surfaces now exist as real public routes, track-order now uses order reference plus phone last-4 instead of exposing full customer details, and the app now emits safe default security headers; real business data, final support channels, and legal review are still pending |
 | Performance / CWV | In Progress | Next.js foundation is in place; runtime and asset optimization still pending |
-| Analytics / Conversion | In Progress | Page views, global navigation, core CTA instrumentation, internal search submit/result events including ingredient result groups, collection `filter_apply`, ingredient route links, `add_to_cart`, `cart_update`, `checkout_start`, `checkout_complete`, `track_order_lookup`, and internal `ops_order_status_update` are now wired; real payment completion and lifecycle notifications are still pending |
+| Analytics / Conversion | In Progress | Page views, global navigation, core CTA instrumentation, internal search submit/result events including ingredient result groups, collection `filter_apply`, ingredient route links, `add_to_cart`, `cart_update`, `checkout_start`, `checkout_complete`, `track_order_lookup`, internal ops route page typing, and internal `ops_order_status_update` are now wired; real payment completion and lifecycle notifications are still pending |
 | Content system | In Progress | Editorial, concern, routine, product, collection, trust, FAQ, contact, about, and terms shells exist, but voice remains provisional until real samples exist |
-| Release / Ops | In Progress | Local runtime is stable on port `3056`, local order references now exist for confirmation and tracking, an internal `/ops/orders` surface can advance local order states for rehearsal, the codebase is now on GitHub with CI verified on push, branded fallback plus manifest surfaces now exist, `/api/health` is available for deployment checks, dedicated share-preview assets now exist at both site and high-value surface level for release distribution, smoke checks now guard critical release surfaces in CI, and a secret-gated Vercel deployment workflow plus explicit runbook now exist; first live deployment, monitoring ownership, and real order backend ownership are still pending |
+| Release / Ops | In Progress | Local runtime is stable on port `3056`, local order references now exist for confirmation and tracking, internal `/ops`, `/ops/catalog`, and `/ops/orders` surfaces now rehearse KPI review, catalog ownership, supplier exceptions, and order progression without claiming a real backoffice, the codebase is now on GitHub with CI verified on push, branded fallback plus manifest surfaces now exist, `/api/health` is available for deployment checks, dedicated share-preview assets now exist at both site and high-value surface level for release distribution, smoke checks now guard critical release surfaces in CI, and a secret-gated Vercel deployment workflow plus explicit runbook now exist; first live deployment, monitoring ownership, auth, and real order backend ownership are still pending |
 
 ## Milestone Log
 
@@ -202,12 +207,20 @@ Progress is tracked against SkyWave phases, not by ad-hoc task count.
 - A real `/shop` atlas route now exposes the broader catalog direction from the roadmap instead of limiting the public IA to skincare and makeup only.
 - Editorial collection routes now exist for `haircare`, `bodycare`, `tools`, and `beauty-sets`, and those routes are wired into search, sitemap, and smoke regression coverage.
 
+### 2026-04-02
+
+- A real internal `/ops` route now exposes KPIs, top collections, low-stock risks, supplier sync status, and operational watchpoints over the current local order model.
+- A real internal `/ops/catalog` route now exposes catalog ownership, supplier relationships, stock thresholds, COD eligibility, shipping classes, and estimated margin at the variant level.
+- A local catalog/admin rehearsal layer now models supplier records, low-stock detection, supplier exception queues, and sync log recency without pretending a backend admin already exists.
+- Smoke regression coverage now checks `/ops` and `/ops/catalog`, and analytics page typing now distinguishes those internal surfaces from storefront pages.
+- `npm run lint`, `npx tsc --noEmit`, `npm run build`, and `npm run test:smoke` all passed again after shipping the ops dashboard and ops catalog slice.
+
 ## Immediate Next Actions
 
 1. Freeze which of the new editorial collections remain in MVP versus phase 2 catalog expansion.
-2. Supply Vercel credentials and execute the first real deployment from this repository.
-3. Freeze the commerce/admin boundary before deeper platform work.
-4. Replace the local order-handoff plus local ops rehearsal flow with real payment, shipping, notification, and order-routing ownership.
+2. Freeze the commerce/admin boundary now that `/ops`, `/ops/catalog`, and `/ops/orders` are all live rehearsal surfaces.
+3. Replace the local order-handoff plus local ops rehearsal flow with real payment, shipping, notification, stock, and order-routing ownership.
+4. Supply Vercel credentials and execute the first real deployment from this repository.
 
 ## Tracking Rules
 

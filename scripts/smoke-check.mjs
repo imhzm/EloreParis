@@ -147,6 +147,22 @@ const smokeChecks = [
     markers: ['content="noindex, nofollow"', "footer_support_cart"],
   },
   {
+    pathname: "/ops",
+    markers: [
+      "Internal ops dashboard",
+      "ops_dashboard_to_catalog",
+      'content="noindex, nofollow"',
+    ],
+  },
+  {
+    pathname: "/ops/catalog",
+    markers: [
+      "Catalog operations",
+      "ops_catalog_product_radiant-dew-serum",
+      'content="noindex, nofollow"',
+    ],
+  },
+  {
     pathname: "/sitemap.xml",
     markers: [
       "/shop/haircare",

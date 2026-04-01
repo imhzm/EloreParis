@@ -114,6 +114,14 @@ export function getPageType(pathname: string) {
     return "order_tracking";
   }
 
+  if (pathname === "/ops") {
+    return "ops_dashboard";
+  }
+
+  if (pathname === "/ops/catalog") {
+    return "ops_catalog";
+  }
+
   if (pathname === "/ops/orders") {
     return "ops_orders";
   }
