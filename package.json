@@ -6,7 +6,8 @@
     "dev": "next dev --port 3056",
     "build": "next build",
     "start": "next start --port 3056",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test:smoke": "node scripts/smoke-check.mjs"
   },
   "dependencies": {
     "next": "16.2.2",

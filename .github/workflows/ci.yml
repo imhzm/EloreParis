@@ -30,3 +30,6 @@ jobs:
 
       - name: Run production build
         run: npm run build
+
+      - name: Run smoke checks
+        run: npm run test:smoke
