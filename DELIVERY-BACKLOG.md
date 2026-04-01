@@ -74,6 +74,7 @@
 - Cart, checkout handoff, confirmation, track-order, and internal order-ops now exist as real UI surfaces, but they still rely on local storage until payment, order routing, stock, and notification ownership are fixed.
 - The roadmap assumes Saudi legal/compliance readiness; this must be validated against the actual business setup before launch claims are made.
 - Release hardening has started through CI, manifest, and fallback surfaces, but deployment target and monitoring are still undefined.
+- Release hardening now also includes framework-level security headers and a health endpoint, but deployment target and monitoring are still undefined.
 - FAQ, contact, about, and terms surfaces now exist, but approved business data, final support channels, and legal review are still missing from the complete Saudi-ready launch set described in the roadmap.
 
 ## Next Backlog Move
@@ -83,6 +84,6 @@ The release-hardening slice is now in progress for the current storefront scope.
 1. freeze the remaining discovery surface for MVP now that concern-led, routine-led, and ingredient-led hubs are live
 2. commerce/admin boundary recommendation, including who owns cart persistence, order state, payment orchestration, and order routing
 3. replace the local checkout handoff plus local ops rehearsal with real payment, shipping, notifications, and order instrumentation
-4. choose the deployment target and wire continuous deployment plus monitoring
+4. choose the deployment target and wire continuous deployment plus monitoring around the new `/api/health` endpoint
 5. replace provisional trust, support, and legal copy with real approved business data and final support channels
 6. complete legal review and operating approvals before any launch claims
