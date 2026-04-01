@@ -15,6 +15,7 @@ This project now tracks the minimum event set needed to answer early-stage store
 7. Which checkout handoff choices convert cart intent into a saved order reference, and how often do users return to track that order?
 8. How often does the internal operations layer advance local order states before a real backoffice is selected?
 9. Which locally saved orders require manual review, split-shipment coordination, or COD fallback inside the rehearsal layer?
+10. Are protected internal ops surfaces still reachable and reviewable after the access gate is enabled?
 
 ## Event Set
 
@@ -232,6 +233,7 @@ Tracked properties:
 - Track-order lookup form and tracking result surface
 - Internal `/ops/orders` queue actions and tracking shortcuts
 - Internal `/ops/fulfillment` routing queue, notification review, and order-tracking shortcuts
+- Internal `/ops-access` gate plus logout action through the protected ops navigation
 - FAQ route links into tracking, trust policies, and contact
 - Contact route links into FAQ, tracking, and trust support paths
 - About route links into trust, terms, contact, and shopping discovery

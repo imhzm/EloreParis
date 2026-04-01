@@ -202,11 +202,12 @@ export function OrdersOpsSurface() {
 
           <div className={styles.noticeCard}>
             <p className={styles.eyebrow}>Operational scope</p>
-            <h2>طلبات محلية + لا auth + noindex</h2>
+            <h2>طلبات داخلية + gate + noindex</h2>
             <p>
               هذه الصفحة داخلية ومقصودة للتشغيل المحلي فقط في هذه المرحلة. ما
-              زال auth وbackend orders وownership الفعلية للشحن والدفع غير
-              محسومين.
+              زال backend orders وownership الفعلية للشحن والدفع غير
+              محسومين، لكن surface نفسها أصبحت خلف access gate بدل البقاء
+              مكشوفة.
             </p>
           </div>
         </div>

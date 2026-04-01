@@ -32,6 +32,10 @@ Without these three secrets, the deploy workflow remains intentionally inactive.
 
 - `NEXT_PUBLIC_SITE_URL`
   Use this when you want a fixed canonical production URL such as `https://cozmateks.com`.
+- `OPS_ACCESS_CODE`
+  Required for protecting `/ops/*` in production. Use a strong internal-only value and do not expose it client-side.
+- `ENFORCE_OPS_ACCESS`
+  Optional local/staging override. Set to `true` when you want to test the ops gate outside production.
 
 If `NEXT_PUBLIC_SITE_URL` is absent, the app now falls back in this order:
 
@@ -48,7 +52,8 @@ If `NEXT_PUBLIC_SITE_URL` is absent, the app now falls back in this order:
 3. Set `NEXT_PUBLIC_SITE_URL` in Vercel if the project already has a stable production domain.
 4. Push to `main` or trigger the workflow manually.
 5. Confirm the deployment URL returns `200` on `/api/health`.
-6. Confirm the homepage, product page, article page, `cart`, and `sitemap.xml` render correctly after deployment.
+6. Confirm unauthenticated `/ops` redirects to `/ops-access`.
+7. Confirm the homepage, product page, article page, `cart`, and `sitemap.xml` render correctly after deployment.
 
 ## Rollback Path
 
@@ -60,6 +65,8 @@ If `NEXT_PUBLIC_SITE_URL` is absent, the app now falls back in this order:
 
 - `/api/health` returns `status=ok`
 - homepage response and metadata
+- unauthenticated `/ops` redirects to `/ops-access`
+- authenticated `/ops` dashboard still loads correctly
 - product and journal share-preview tags
 - `cart` and `checkout` still marked `noindex, nofollow`
 - smoke-critical routes still load correctly

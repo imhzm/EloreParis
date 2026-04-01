@@ -3,6 +3,14 @@
   gap: 24px;
 }
 
+.opsNavWrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
 .opsNav {
   display: flex;
   flex-wrap: wrap;
@@ -25,6 +33,31 @@
 .opsNavLinkActive {
   background: rgba(151, 160, 149, 0.18);
   border-color: rgba(43, 28, 40, 0.22);
+}
+
+.opsNavActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.opsNavButton {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(43, 28, 40, 0.12);
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--aubergine-ink);
+  font: inherit;
+  font-weight: 600;
+}
+
+.opsNavMeta {
+  color: var(--muted);
+  font-size: 0.82rem;
 }
 
 .hero,

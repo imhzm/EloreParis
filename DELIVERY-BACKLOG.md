@@ -73,7 +73,7 @@
 - The broader shop atlas is now live with editorial collection routes for haircare, bodycare, tools, and beauty sets, but those surfaces are still IA/SEO shells until real catalog ownership and merchandising rules are frozen.
 - The new server-side collection filters and ingredient discovery surfaces are intentionally narrow and data-backed; any deeper merchandising model must be decided explicitly instead of being improvised inside the current product content.
 - Cart, checkout handoff, checkout eligibility rules, confirmation, track-order, internal `/ops`, `/ops/catalog`, `/ops/fulfillment`, and internal order-ops now exist as real rehearsal surfaces, but they still rely on local storage and hand-curated operational data until payment, order routing, stock truth, supplier sync, and notification ownership are fixed.
-- The new ops catalog surface makes gaps in auth, role separation, and persistent admin ownership more visible; those boundaries must be decided before any real backoffice claims.
+- The new ops catalog surface made gaps in auth, role separation, and persistent admin ownership more visible; a production-safe access gate now exists for `/ops/*`, but real RBAC and backend ownership are still unresolved.
 - The roadmap assumes Saudi legal/compliance readiness; this must be validated against the actual business setup before launch claims are made.
 - Release hardening has started through CI, manifest, and fallback surfaces, but deployment target and monitoring are still undefined.
 - Release hardening now also includes framework-level security headers, a health endpoint, controlled share-preview assets at both site and key surface level, automated smoke regression gates, and a deploy-ready Vercel path, but the first live deployment and monitoring are still undefined.
@@ -84,9 +84,9 @@
 The broader public IA slice and internal ops rehearsal slice are now in progress for the current storefront scope. The next task is to convert `SW-05`, `SW-09`, and `SW-10` into the next implementation pack:
 
 1. freeze which of the new editorial collections remain in MVP now that the shop atlas and broader category routes are live
-2. commerce/admin boundary recommendation, including who owns cart persistence, catalog authority, stock truth, supplier sync, fulfillment routing, notification ownership, order state, payment orchestration, and order routing
+2. replace the frozen ownership map with real backend authority for cart persistence, catalog authority, stock truth, supplier sync, fulfillment routing, notification ownership, order state, payment orchestration, and order routing
 3. replace the local checkout handoff plus local ops rehearsal with real payment, shipping, notifications, stock ownership, fulfillment orchestration, and order instrumentation
-4. add auth and role separation for internal ops only after the ownership model is frozen
+4. upgrade the new ops access gate into real RBAC and audited internal auth after the backend ownership model is active
 5. inject Vercel credentials, execute the first deployment, and wire monitoring around the new `/api/health` endpoint
 6. replace provisional trust, support, and legal copy with real approved business data and final support channels
 7. complete legal review and operating approvals before any launch claims

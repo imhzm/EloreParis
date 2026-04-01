@@ -1,3 +1,4 @@
+import { OpsSessionActions } from "@/components/ops-session-actions";
 import { TrackedLink } from "@/components/tracked-link";
 import styles from "./order-flow.module.css";
 
@@ -34,27 +35,31 @@ const opsLinks = [
 
 export function OpsNav({ activeHref }: OpsNavProps) {
   return (
-    <nav className={styles.opsNav} aria-label="Internal operations navigation">
-      {opsLinks.map((link) => {
-        const isActive =
-          link.href === "/ops"
-            ? activeHref === "/ops"
-            : activeHref.startsWith(link.href);
+    <div className={styles.opsNavWrap}>
+      <nav className={styles.opsNav} aria-label="Internal operations navigation">
+        {opsLinks.map((link) => {
+          const isActive =
+            link.href === "/ops"
+              ? activeHref === "/ops"
+              : activeHref.startsWith(link.href);
 
-        return (
-          <TrackedLink
-            key={link.href}
-            href={link.href}
-            analyticsLabel={link.analyticsLabel}
-            analyticsSurface="ops_nav"
-            analyticsDestinationType={link.destinationType}
-            className={`${styles.opsNavLink} ${isActive ? styles.opsNavLinkActive : ""}`}
-            aria-current={isActive ? "page" : undefined}
-          >
-            {link.label}
-          </TrackedLink>
-        );
-      })}
-    </nav>
+          return (
+            <TrackedLink
+              key={link.href}
+              href={link.href}
+              analyticsLabel={link.analyticsLabel}
+              analyticsSurface="ops_nav"
+              analyticsDestinationType={link.destinationType}
+              className={`${styles.opsNavLink} ${isActive ? styles.opsNavLinkActive : ""}`}
+              aria-current={isActive ? "page" : undefined}
+            >
+              {link.label}
+            </TrackedLink>
+          );
+        })}
+      </nav>
+
+      <OpsSessionActions />
+    </div>
   );
 }

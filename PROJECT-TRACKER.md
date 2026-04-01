@@ -5,8 +5,8 @@
 - Start date: 2026-04-01
 - Last updated: 2026-04-02
 - Current phase: `implementation`
-- Overall completion: `80%`
-- Current focus: fulfillment expansion through real checkout eligibility rules plus internal `/ops/fulfillment`, connected to routing, COD decisions, and notification planning
+- Overall completion: `83%`
+- Current focus: frozen commerce boundary plus protected `/ops` access over the existing fulfillment, catalog, and order rehearsal layer
 - Forecast status: `date not committed yet`
 - Working estimate: `12-16 weeks for an MVP after stack, catalog model, and integration scope are frozen`
 
@@ -16,11 +16,11 @@ Progress is tracked against SkyWave phases, not by ad-hoc task count.
 
 | Phase | Weight | Status | Progress | Exit gate |
 | --- | ---: | --- | ---: | --- |
-| Discovery | 15% | In Progress | 78% | Brief, sitemap, user flows, MVP boundary, backlog, open decisions |
-| Design and Architecture | 20% | In Progress | 70% | Design system direction, page architecture, stack and data decisions |
+| Discovery | 15% | In Progress | 82% | Brief, sitemap, user flows, MVP boundary, backlog, open decisions |
+| Design and Architecture | 20% | In Progress | 75% | Design system direction, page architecture, stack and data decisions |
 | Implementation | 35% | In Progress | 94% | Public storefront and required internal surfaces implemented |
-| Validation | 10% | In Progress | 88% | Lint, typecheck, tests, UX QA, SEO/schema QA, accessibility QA |
-| Release | 10% | In Progress | 63% | Deployment target, configs, monitoring, legal/trust gates, rollback path |
+| Validation | 10% | In Progress | 90% | Lint, typecheck, tests, UX QA, SEO/schema QA, accessibility QA |
+| Release | 10% | In Progress | 70% | Deployment target, configs, monitoring, legal/trust gates, rollback path |
 | Growth and Automation | 10% | In Progress | 50% | CRM flows, SEO growth loops, analytics maturity, post-launch automations |
 
 ## Current Discovery Checklist
@@ -110,9 +110,11 @@ Progress is tracked against SkyWave phases, not by ad-hoc task count.
 - [x] Added a real internal `/ops/fulfillment` route for routing, split-shipment, and notification rehearsal
 - [x] Expanded order confirmation and track-order surfaces to expose fulfillment and notification state instead of bare status only
 - [x] Expanded analytics and smoke regression coverage for fulfillment and checkout-option behavior
-- [ ] Freeze MVP scope vs later phases
+- [x] Freeze MVP scope vs later phases
 - [ ] Freeze hosting direction
-- [ ] Freeze commerce architecture and admin boundary
+- [x] Freeze commerce architecture and admin boundary
+- [x] Added a production-safe access gate for `/ops/*` plus a dedicated `/ops-access` entry surface
+- [x] Added smoke coverage for unauthenticated redirect plus authenticated access to the protected ops routes
 - [ ] Freeze content ownership and sample requirements
 
 ## Current Status by Quality Layer
@@ -127,7 +129,7 @@ Progress is tracked against SkyWave phases, not by ad-hoc task count.
 | Performance / CWV | In Progress | Next.js foundation is in place; runtime and asset optimization still pending |
 | Analytics / Conversion | In Progress | Page views, global navigation, core CTA instrumentation, internal search submit/result events including ingredient result groups, collection `filter_apply`, ingredient route links, `add_to_cart`, `cart_update`, `checkout_start`, `checkout_option_change`, `checkout_complete`, `track_order_lookup`, internal ops route page typing, and internal `ops_order_status_update` are now wired; real payment completion and lifecycle notifications are still pending |
 | Content system | In Progress | Editorial, concern, routine, product, collection, trust, FAQ, contact, about, and terms shells exist, but voice remains provisional until real samples exist |
-| Release / Ops | In Progress | Local runtime is stable on port `3056`, local order references now exist for confirmation and tracking, internal `/ops`, `/ops/catalog`, `/ops/fulfillment`, and `/ops/orders` surfaces now rehearse KPI review, catalog ownership, routing, supplier exceptions, notification planning, and order progression without claiming a real backoffice, the codebase is now on GitHub with CI verified on push, branded fallback plus manifest surfaces now exist, `/api/health` is available for deployment checks, dedicated share-preview assets now exist at both site and high-value surface level for release distribution, smoke checks now guard critical release surfaces in CI, and a secret-gated Vercel deployment workflow plus explicit runbook now exist; first live deployment, monitoring ownership, auth, and real order backend ownership are still pending |
+| Release / Ops | In Progress | Local runtime is stable on port `3056`, local order references now exist for confirmation and tracking, internal `/ops`, `/ops/catalog`, `/ops/fulfillment`, and `/ops/orders` surfaces now rehearse KPI review, catalog ownership, routing, supplier exceptions, notification planning, and order progression without claiming a real backoffice, `/ops-access` plus middleware now gate those internal routes in production-safe environments, the codebase is now on GitHub with CI verified on push, branded fallback plus manifest surfaces now exist, `/api/health` is available for deployment checks, dedicated share-preview assets now exist at both site and high-value surface level for release distribution, smoke checks now guard critical release surfaces in CI, and a secret-gated Vercel deployment workflow plus explicit runbook now exist; first live deployment, monitoring ownership, real RBAC, and real order backend ownership are still pending |
 
 ## Milestone Log
 
@@ -223,13 +225,19 @@ Progress is tracked against SkyWave phases, not by ad-hoc task count.
 - A real internal `/ops/fulfillment` route now exposes carrier recommendation, split-shipment logic, COD eligibility, and notification planning for locally saved orders.
 - Order confirmation and track-order surfaces now explain fulfillment state and notification readiness instead of showing the order status alone.
 - Shared supplier and variant operations data now feed both catalog rehearsal and fulfillment rules, reducing duplication between checkout and internal ops.
+- A frozen commerce boundary now separates the transactional MVP from editorial collection expansion, so `haircare`, `bodycare`, `tools`, and `beauty-sets` remain live IA/SEO surfaces without being misrepresented as full catalog authority.
+- A new `/ops-access` surface plus production-safe middleware now protect `/ops`, `/ops/orders`, `/ops/catalog`, and `/ops/fulfillment` instead of leaving the internal rehearsal layer publicly open.
+- Smoke regression now covers the full protected flow: unauthenticated redirect to `/ops-access`, authenticated login, and post-login access back into the protected ops surfaces.
+- A frozen ownership document now separates transactional MVP scope from editorial shop expansion so storefront work does not drift into unsupported catalog claims.
+- `/ops-access` now acts as the internal entry surface for `/ops/*`, and middleware protects dashboard, catalog, fulfillment, and order rehearsal routes in production-safe environments.
+- Smoke regression now verifies unauthenticated redirects into `/ops-access` and authenticated access back into the protected ops routes.
 
 ## Immediate Next Actions
 
-1. Freeze which of the new editorial collections remain in MVP versus phase 2 catalog expansion.
-2. Freeze the commerce/admin boundary now that `/ops`, `/ops/catalog`, `/ops/fulfillment`, and `/ops/orders` are all live rehearsal surfaces.
-3. Replace the local order-handoff plus local fulfillment rehearsal flow with real payment, shipping, notification, stock, and order-routing ownership.
-4. Supply Vercel credentials and execute the first real deployment from this repository.
+1. Replace the frozen local ownership map with real backend authority for orders, stock, supplier sync, payment, shipping, and notifications.
+2. Upgrade the new `/ops-access` gate into real RBAC and audited internal auth after backend ownership is active.
+3. Supply Vercel credentials and execute the first real deployment from this repository.
+4. Replace provisional legal/business/support data with approved operating details before launch claims.
 
 ## Tracking Rules
 

@@ -74,11 +74,11 @@ export function OpsDashboardSurface() {
 
           <div className={styles.noticeCard}>
             <p className={styles.eyebrow}>Boundary note</p>
-            <h2>Dashboard محلية + noindex + بلا auth</h2>
+            <h2>Dashboard داخلية + noindex + gate في الإنتاج</h2>
             <p>
               هذه طبقة تشغيلية rehearsal وليست backoffice production. الهدف هنا
-              تثبيت الشكل والمنطق والـ KPIs قبل ربط auth وbackend orders والموردين
-              الفعليين.
+              تثبيت الشكل والمنطق والـ KPIs قبل ربط auth/accounts وbackend orders والموردين
+              الفعليين، مع بقاء `/ops` محمية افتراضيًا عند التهيئة الإنتاجية.
             </p>
           </div>
         </div>

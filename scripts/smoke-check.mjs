@@ -9,6 +9,7 @@ const require = createRequire(import.meta.url);
 const port = Number(process.env.SMOKE_PORT ?? 3066);
 const host = process.env.SMOKE_HOST ?? "127.0.0.1";
 const baseUrl = `http://${host}:${port}`;
+const opsAccessCode = process.env.SMOKE_OPS_ACCESS_CODE ?? "smoke-ops-access";
 const nextCliPath = require.resolve("next/dist/bin/next");
 
 if (!existsSync(".next/BUILD_ID")) {
@@ -74,28 +75,43 @@ async function waitForServer() {
   throw new Error(`Timed out waiting for smoke server readiness at ${baseUrl}.`);
 }
 
-async function fetchText(pathname) {
+async function fetchText(pathname, init = {}) {
   const response = await fetch(`${baseUrl}${pathname}`, {
     cache: "no-store",
+    ...init,
   });
 
   const body = await response.text();
   return { response, body };
 }
 
-async function fetchJson(pathname) {
+async function fetchJson(pathname, init = {}) {
   const response = await fetch(`${baseUrl}${pathname}`, {
     cache: "no-store",
+    ...init,
   });
 
   const body = await response.json();
   return { response, body };
 }
 
-async function fetchHead(pathname) {
+async function fetchHead(pathname, init = {}) {
   return fetch(`${baseUrl}${pathname}`, {
     method: "HEAD",
     cache: "no-store",
+    ...init,
+  });
+}
+
+async function postJson(pathname, body, init = {}) {
+  return fetchJson(pathname, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(init.headers ?? {}),
+    },
+    body: JSON.stringify(body),
+    ...init,
   });
 }
 
@@ -106,7 +122,14 @@ function assertIncludes(body, marker, pathname) {
   );
 }
 
-const smokeChecks = [
+function extractCookie(response) {
+  const setCookieHeader = response.headers.get("set-cookie");
+
+  assert.ok(setCookieHeader, "Expected auth response to include a session cookie");
+  return setCookieHeader.split(";")[0];
+}
+
+const publicSmokeChecks = [
   {
     pathname: "/",
     markers: [
@@ -147,10 +170,38 @@ const smokeChecks = [
     markers: ['content="noindex, nofollow"', "footer_support_cart"],
   },
   {
+    pathname: "/ops-access?next=%2Fops",
+    markers: [
+      "Ops access gate",
+      "ops_access_to_dashboard",
+      'content="noindex, nofollow"',
+    ],
+  },
+  {
+    pathname: "/sitemap.xml",
+    markers: [
+      "/shop/haircare",
+      "/shop/beauty-sets",
+      "/products/radiant-dew-serum",
+      "/journal/niacinamide-vs-vitamin-c-which-fits-your-routine",
+    ],
+  },
+];
+
+const protectedOpsChecks = [
+  {
     pathname: "/ops",
     markers: [
       "Internal ops dashboard",
       "ops_dashboard_to_catalog",
+      'content="noindex, nofollow"',
+    ],
+  },
+  {
+    pathname: "/ops/orders",
+    markers: [
+      "Internal order ops",
+      "ops_to_fulfillment",
       'content="noindex, nofollow"',
     ],
   },
@@ -170,15 +221,6 @@ const smokeChecks = [
       'content="noindex, nofollow"',
     ],
   },
-  {
-    pathname: "/sitemap.xml",
-    markers: [
-      "/shop/haircare",
-      "/shop/beauty-sets",
-      "/products/radiant-dew-serum",
-      "/journal/niacinamide-vs-vitamin-c-which-fits-your-routine",
-    ],
-  },
 ];
 
 const assetChecks = ["/og-product.svg", "/og-journal.svg"];
@@ -196,6 +238,8 @@ server = spawn(process.execPath, [nextCliPath, "start", "--port", String(port)],
   env: {
     ...process.env,
     NEXT_PUBLIC_SITE_URL: baseUrl,
+    OPS_ACCESS_CODE: opsAccessCode,
+    ENFORCE_OPS_ACCESS: "true",
   },
   stdio: ["ignore", "pipe", "pipe"],
 });
@@ -211,6 +255,16 @@ try {
   assert.equal(healthResponse.status, 200);
   assert.equal(healthResponse.headers.get("cache-control"), "no-store");
 
+  const opsRedirectResponse = await fetch(`${baseUrl}/ops`, {
+    cache: "no-store",
+    redirect: "manual",
+  });
+  assert.equal(opsRedirectResponse.status, 307);
+  assert.ok(
+    (opsRedirectResponse.headers.get("location") ?? "").includes("/ops-access"),
+    "Expected /ops to redirect to /ops-access before authentication",
+  );
+
   for (const pathname of assetChecks) {
     const response = await fetchHead(pathname);
     assert.equal(response.status, 200, `Expected ${pathname} to return 200`);
@@ -221,12 +275,42 @@ try {
     );
   }
 
-  for (const check of smokeChecks) {
+  for (const check of publicSmokeChecks) {
     const { response, body } = await fetchText(check.pathname);
     assert.equal(
       response.status,
       200,
       `Expected ${check.pathname} to return 200`,
+    );
+
+    for (const marker of check.markers) {
+      assertIncludes(body, marker, check.pathname);
+    }
+  }
+
+  const { response: loginResponse, body: loginBody } = await postJson(
+    "/api/ops-access/login",
+    {
+      accessCode: opsAccessCode,
+      nextPath: "/ops",
+    },
+  );
+  assert.equal(loginResponse.status, 200);
+  assert.equal(loginBody.ok, true);
+  assert.equal(loginBody.redirectTo, "/ops");
+
+  const opsCookie = extractCookie(loginResponse);
+
+  for (const check of protectedOpsChecks) {
+    const { response, body } = await fetchText(check.pathname, {
+      headers: {
+        Cookie: opsCookie,
+      },
+    });
+    assert.equal(
+      response.status,
+      200,
+      `Expected ${check.pathname} to return 200 with ops session`,
     );
 
     for (const marker of check.markers) {

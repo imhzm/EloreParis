@@ -217,10 +217,10 @@ export function OpsFulfillmentSurface() {
 
           <div className={styles.noticeCard}>
             <p className={styles.eyebrow}>Scope</p>
-            <h2>Routing محلية + noindex + بلا auth</h2>
+            <h2>Routing محلية + noindex + gate في الإنتاج</h2>
             <p>
               هذه surface داخلية للتجربة التشغيلية فقط، وليست backoffice production أو
-              order orchestration فعلية.
+              order orchestration فعلية، لكنها لم تعد surface مفتوحة في النشر الإنتاجي.
             </p>
           </div>
         </div>

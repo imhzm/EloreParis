@@ -115,6 +115,10 @@ export function getPageType(pathname: string) {
     return "order_tracking";
   }
 
+  if (pathname === "/ops-access") {
+    return "ops_access";
+  }
+
   if (pathname === "/ops") {
     return "ops_dashboard";
   }
