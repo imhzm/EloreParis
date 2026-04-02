@@ -17,6 +17,7 @@ const auditFilters: AuditFilter[] = [
   "ops_logout",
   "ops_order_status_update",
   "ops_notification_status_update",
+  "ops_release_evidence_publish",
 ];
 
 function formatTimestamp(value: string) {
@@ -44,6 +45,8 @@ function getAuditActionLabel(action: OpsAuditAction) {
       return "تحديث حالة طلب";
     case "ops_notification_status_update":
       return "تحديث حالة إشعار";
+    case "ops_release_evidence_publish":
+      return "نشر evidence الإطلاق";
   }
 }
 
@@ -89,6 +92,9 @@ export function OpsAuditSurface() {
       notificationUpdates: auditEntries.filter(
         (entry) => entry.action === "ops_notification_status_update",
       ).length,
+      releaseEvidencePublishes: auditEntries.filter(
+        (entry) => entry.action === "ops_release_evidence_publish",
+      ).length,
       loginEvents: auditEntries.filter(
         (entry) =>
           entry.action === "ops_login_success" ||
@@ -121,7 +127,7 @@ export function OpsAuditSurface() {
             <span>
               {isLoading
                 ? "جارٍ تحميل سجل المراجعة."
-                : `${metrics.loginEvents} أحداث جلسات و${metrics.statusUpdates} تحديثات طلب و${metrics.notificationUpdates} تحديثات إشعار مسجلة.`}
+                : `${metrics.loginEvents} أحداث جلسات و${metrics.statusUpdates} تحديثات طلب و${metrics.notificationUpdates} تحديثات إشعار و${metrics.releaseEvidencePublishes} أحداث release evidence مسجلة.`}
             </span>
           </div>
 

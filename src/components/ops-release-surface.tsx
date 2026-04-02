@@ -25,6 +25,15 @@ function getStatusLabel(status: ReleaseReadinessGate["status"]) {
   }
 }
 
+function getVerificationModeLabel(mode: ReleaseEvidenceReport["verificationMode"]) {
+  switch (mode) {
+    case "live_postdeploy":
+      return "Live post-deploy";
+    case "local_smoke":
+      return "Local smoke";
+  }
+}
+
 function formatTimestamp(value: string) {
   try {
     return new Intl.DateTimeFormat("ar-SA", {
@@ -188,39 +197,31 @@ export function OpsReleaseSurface() {
                 <div className={styles.infoBullet}>
                   <strong>{formatTimestamp(evidence.generatedAt)}</strong>
                   <br />
-                  آخر تقرير محفوظ من smoke verification.
+                  {getVerificationModeLabel(evidence.verificationMode)} verification against{" "}
+                  {evidence.targetBaseUrl}.
                 </div>
                 <div className={styles.referenceCard}>
-                  <div className={styles.referenceRow}>
-                    <span>Public routes</span>
-                    <strong className={styles.referenceValue}>
-                      {evidence.summary.publicRouteChecks}
-                    </strong>
-                  </div>
-                  <div className={styles.referenceRow}>
-                    <span>Protected ops routes</span>
-                    <strong className={styles.referenceValue}>
-                      {evidence.summary.protectedRouteChecks}
-                    </strong>
-                  </div>
-                  <div className={styles.referenceRow}>
-                    <span>API checks</span>
-                    <strong className={styles.referenceValue}>
-                      {evidence.summary.apiChecks}
-                    </strong>
-                  </div>
-                  <div className={styles.referenceRow}>
-                    <span>Assets</span>
-                    <strong className={styles.referenceValue}>
-                      {evidence.summary.assetChecks}
-                    </strong>
-                  </div>
+                  {evidence.checks.map((check) => (
+                    <div key={check.id} className={styles.referenceRow}>
+                      <span>{check.title}</span>
+                      <strong className={styles.referenceValue}>{check.count}</strong>
+                    </div>
+                  ))}
                 </div>
+                {evidence.notes.length ? (
+                  <div className={styles.summaryList}>
+                    {evidence.notes.map((note) => (
+                      <div key={note} className={styles.infoBullet}>
+                        {note}
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
               </div>
             ) : (
               <div className={styles.infoBullet}>
-                لا يوجد evidence محفوظة بعد في هذه البيئة. شغّل smoke verification أو
-                انتظر artifact الـ CI التالية.
+                لا يوجد evidence محفوظة بعد في هذه البيئة. شغّل smoke verification محليًا
+                أو نفّذ مسار الـ Render live verification بعد أول deploy.
               </div>
             )}
           </article>
@@ -257,7 +258,7 @@ export function OpsReleaseSurface() {
                 analyticsDestinationType="other"
               >
                 <span>Evidence API</span>
-                <span>Latest smoke report</span>
+                <span>Latest stored release evidence</span>
               </TrackedLink>
               <TrackedLink
                 href="/ops/content"

@@ -11,7 +11,7 @@ import type {
   ReleaseReadinessSnapshot,
   ReleaseReadinessStatus,
 } from "@/lib/release-readiness-types";
-import { siteUrl } from "@/lib/site-content";
+import { getSiteUrl } from "@/lib/site-content";
 
 function isLocalCanonicalUrl(url: string) {
   try {
@@ -47,6 +47,7 @@ function getOverallStatus(gates: ReleaseReadinessGate[]): ReleaseReadinessStatus
 }
 
 export function getReleaseReadinessSnapshot(): ReleaseReadinessSnapshot {
+  const siteUrl = getSiteUrl();
   const authorityStorage = getAuthorityStorageInfo();
   const contentSummary = getContentGovernanceSummary();
   const hostingDirection = getHostingDirection();
@@ -144,7 +145,7 @@ export function getReleaseReadinessSnapshot(): ReleaseReadinessSnapshot {
     canonicalUrl: siteUrl,
     gates,
     nextActions: [
-      "Create the primary Render web service from render.yaml, attach the persistent disk, and bind the production domain.",
+      "Create the primary Render web service from render.yaml, attach the persistent disk, and set the deploy-hook plus live-base-url secrets for the manual Render workflow.",
       "Keep the current SQLite-backed authority only as a single-host launch path; replace it with a shared durable backend for orders, notifications, and audit data when the backend ownership phase starts.",
       "Upgrade the current signed-session ops gate into provider-backed auth and real RBAC.",
       "Clear the remaining sample-pack, legal, and business-input gates tracked in CONTENT-OWNERSHIP.md before public launch claims.",

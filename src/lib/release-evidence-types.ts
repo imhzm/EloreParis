@@ -1,3 +1,7 @@
+export type ReleaseEvidenceVerificationMode =
+  | "local_smoke"
+  | "live_postdeploy";
+
 export type ReleaseEvidenceCheck = {
   id: string;
   title: string;
@@ -6,6 +10,7 @@ export type ReleaseEvidenceCheck = {
 
 export type ReleaseEvidenceReport = {
   generatedAt: string;
+  verificationMode: ReleaseEvidenceVerificationMode;
   targetBaseUrl: string;
   environment: string;
   commitReference: string | null;
@@ -20,4 +25,5 @@ export type ReleaseEvidenceReport = {
     apiChecks: number;
   };
   checks: ReleaseEvidenceCheck[];
+  notes: string[];
 };

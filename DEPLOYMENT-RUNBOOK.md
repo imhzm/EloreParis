@@ -23,6 +23,7 @@
 - Health checks are exposed through [`/api/health`](D:/REDA/ksa%20cozmateks/src/app/api/health/route.ts).
 - Live launch blockers are exposed through [`/api/ops/release`](D:/REDA/ksa%20cozmateks/src/app/api/ops/release/route.ts) and [`/ops/release`](D:/REDA/ksa%20cozmateks/src/app/ops/release/page.tsx).
 - The latest executable smoke-evidence report is exposed through [`/api/ops/release/evidence`](D:/REDA/ksa%20cozmateks/src/app/api/ops/release/evidence/route.ts) and uploaded from CI as an artifact.
+- A manual Render deployment workflow now exists at [`deploy-render.yml`](D:/REDA/ksa%20cozmateks/.github/workflows/deploy-render.yml); it can trigger the deploy hook, wait for the live service to become healthy, and publish post-deploy evidence back into the deployed runtime.
 - Orders, notifications, and ops audit now share one SQLite-backed in-app authority with backward-compatible import from the older rehearsal JSON files.
 - Protected ops mutations require a trusted same-origin request instead of relying on signed cookies alone for write safety.
 - Repeated failed ops login attempts throttle durably inside the shared SQLite authority.
@@ -60,6 +61,21 @@
 - `RENDER_EXTERNAL_URL`
   Render sets this automatically. The app already uses it when `NEXT_PUBLIC_SITE_URL` is not present.
 
+## GitHub Secrets For The Manual Render Workflow
+
+The manual workflow at [`deploy-render.yml`](D:/REDA/ksa%20cozmateks/.github/workflows/deploy-render.yml) expects:
+
+- `RENDER_DEPLOY_HOOK_URL`
+  The deploy hook URL for the primary Render web service.
+- `RENDER_SERVICE_BASE_URL`
+  The live service base URL used for health, login, release, and evidence verification after deploy.
+- `RENDER_OPS_MANAGER_USERNAME`
+  A manager-level ops username that is allowed to access `/ops/release`.
+- `RENDER_OPS_MANAGER_PASSWORD`
+  The password for that manager identity.
+
+Without those secrets, the workflow exits cleanly in skip mode.
+
 ## Optional Secondary Vercel Path
 
 The workflow at [`deploy-vercel.yml`](D:/REDA/ksa%20cozmateks/.github/workflows/deploy-vercel.yml) is now manual-only and should be treated as a secondary experiment path, not the primary release target.
@@ -75,18 +91,19 @@ If you still want to use it for previews or one-off verification, it requires:
 1. Link the repository into Render and create the web service from [`render.yaml`](D:/REDA/ksa%20cozmateks/render.yaml).
 2. Confirm the persistent disk is attached at `/var/data`.
 3. Set `NEXT_PUBLIC_SITE_URL`, `OPS_AUTH_USERS_JSON`, `ORDER_AUTHORITY_SECRET`, and `OPS_ACCESS_SIGNING_SECRET`.
-4. Trigger the first build and wait for the service health check to pass on `/api/health`.
-5. Confirm `/ops/release` now reports the hosting-direction gate as ready and the canonical-runtime gate against the live domain instead of localhost.
-6. Confirm `/api/ops/release/evidence` reflects the latest smoke report for the deployed build.
-7. Confirm unauthenticated `/ops` redirects to `/ops-access`.
-8. Confirm the chosen ops identity can log in through username and password, reaches its allowed default route, and that a lower-privilege role cannot open unauthorized ops pages.
-9. Confirm origin-less or cross-origin attempts to mutate `/api/ops/*` and `/api/ops-access/logout` are rejected with `403`.
-10. Confirm repeated failed login attempts hit `429` throttling and recover only after the cooldown window.
-11. Confirm `/ops/notifications` can read queued delivery items and update a notification state without losing the shared authority database between requests or process restarts.
-12. Confirm `/ops/audit` can read recent login, order-state, notification-state, and throttling traces without losing the shared authority database between requests or process restarts.
-13. Confirm checkout can create an order and tracking can read it back in the chosen environment without losing the authority database between requests or process restarts.
-14. Confirm the homepage, product page, article page, `cart`, and `sitemap.xml` render correctly after deployment.
-15. Confirm public launch approval still matches [`CONTENT-OWNERSHIP.md`](D:/REDA/ksa%20cozmateks/CONTENT-OWNERSHIP.md), including sample-pack and business-input gates.
+4. Create the Render deploy hook, then store `RENDER_DEPLOY_HOOK_URL`, `RENDER_SERVICE_BASE_URL`, `RENDER_OPS_MANAGER_USERNAME`, and `RENDER_OPS_MANAGER_PASSWORD` in GitHub secrets.
+5. Trigger the manual [`Deploy to Render`](D:/REDA/ksa%20cozmateks/.github/workflows/deploy-render.yml) workflow and wait for it to finish its live verification path.
+6. Confirm `/ops/release` now reports the hosting-direction gate as ready and the canonical-runtime gate against the live domain instead of localhost.
+7. Confirm `/api/ops/release/evidence` now reflects the latest live post-deploy verification report for the deployed build instead of staying empty.
+8. Confirm unauthenticated `/ops` redirects to `/ops-access`.
+9. Confirm the chosen ops identity can log in through username and password, reaches its allowed default route, and that a lower-privilege role cannot open unauthorized ops pages.
+10. Confirm origin-less or cross-origin attempts to mutate `/api/ops/*` and `/api/ops-access/logout` are rejected with `403`.
+11. Confirm repeated failed login attempts hit `429` throttling and recover only after the cooldown window.
+12. Confirm `/ops/notifications` can read queued delivery items and update a notification state without losing the shared authority database between requests or process restarts.
+13. Confirm `/ops/audit` can read recent login, order-state, notification-state, throttling, and release-evidence publish traces without losing the shared authority database between requests or process restarts.
+14. Confirm checkout can create an order and tracking can read it back in the chosen environment without losing the authority database between requests or process restarts.
+15. Confirm the homepage, product page, article page, `cart`, and `sitemap.xml` render correctly after deployment.
+16. Confirm public launch approval still matches [`CONTENT-OWNERSHIP.md`](D:/REDA/ksa%20cozmateks/CONTENT-OWNERSHIP.md), including sample-pack and business-input gates.
 
 ## Rollback Path
 
@@ -99,7 +116,7 @@ If you still want to use it for previews or one-off verification, it requires:
 
 - `/api/health` returns `status=ok`
 - `/ops/release` still exposes runtime blockers honestly after deployment
-- `/api/ops/release/evidence` reflects the most recent successful smoke run
+- `/api/ops/release/evidence` reflects the most recent successful live post-deploy verification run
 - homepage response and metadata
 - unauthenticated `/ops` redirects to `/ops-access`
 - authenticated `/ops` dashboard still loads correctly
@@ -107,7 +124,7 @@ If you still want to use it for previews or one-off verification, it requires:
 - origin-less or cross-origin ops mutations fail closed
 - repeated failed ops logins move into throttled responses
 - `/ops/notifications` still loads and preserves queue state after login
-- `/ops/audit` still loads and shows recent traces after login
+- `/ops/audit` still loads and shows recent traces after login, including release-evidence publication
 - no public route is declared "final copy" while still blocked in [`CONTENT-OWNERSHIP.md`](D:/REDA/ksa%20cozmateks/CONTENT-OWNERSHIP.md)
 - product and journal share-preview tags
 - `cart` and `checkout` still marked `noindex, nofollow`

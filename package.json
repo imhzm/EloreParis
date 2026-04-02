@@ -11,6 +11,7 @@
     "start": "node scripts/start-standalone.mjs",
     "lint": "eslint .",
     "test:smoke": "node scripts/smoke-check.mjs",
+    "test:render-live": "node scripts/render-live-check.mjs",
     "ops:hash-password": "node scripts/generate-ops-password-hash.mjs"
   },
   "dependencies": {

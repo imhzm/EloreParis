@@ -810,6 +810,7 @@ try {
 
   const releaseEvidence = {
     generatedAt: new Date().toISOString(),
+    verificationMode: "local_smoke",
     targetBaseUrl: baseUrl,
     environment: health.environment,
     commitReference: health.commitReference ?? null,
@@ -844,6 +845,10 @@ try {
         title: "Release-facing assets and social preview surfaces",
         count: assetChecks.length,
       },
+    ],
+    notes: [
+      "Generated from the standalone smoke suite before any live deploy claim.",
+      `Health authority engine: ${health.authorityStorage.engine}.`,
     ],
   };
 

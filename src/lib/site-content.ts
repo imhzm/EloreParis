@@ -2,6 +2,10 @@ import { supportRouteLinks } from "@/lib/support-content";
 
 const localSiteUrl = "http://localhost:3056";
 
+function readEnv(name: string) {
+  return process.env[name];
+}
+
 function normalizeSiteUrl(candidate?: string | null) {
   if (!candidate) {
     return null;
@@ -22,16 +26,16 @@ function normalizeSiteUrl(candidate?: string | null) {
 
 function resolveSiteUrl() {
   const vercelProductionUrl =
-    process.env.VERCEL_ENV === "production"
-      ? process.env.VERCEL_PROJECT_PRODUCTION_URL
+    readEnv("VERCEL_ENV") === "production"
+      ? readEnv("VERCEL_PROJECT_PRODUCTION_URL")
       : undefined;
 
   const candidates = [
-    process.env.NEXT_PUBLIC_SITE_URL,
-    process.env.RENDER_EXTERNAL_URL,
+    readEnv("NEXT_PUBLIC_SITE_URL"),
+    readEnv("RENDER_EXTERNAL_URL"),
     vercelProductionUrl,
-    process.env.VERCEL_BRANCH_URL,
-    process.env.VERCEL_URL,
+    readEnv("VERCEL_BRANCH_URL"),
+    readEnv("VERCEL_URL"),
     localSiteUrl,
   ];
 
@@ -46,7 +50,11 @@ function resolveSiteUrl() {
   return localSiteUrl;
 }
 
-export const siteUrl = resolveSiteUrl();
+export function getSiteUrl() {
+  return resolveSiteUrl();
+}
+
+export const siteUrl = getSiteUrl();
 
 export const siteName = "Cozmateks";
 export const siteTagline = "بيت الجمال السعودي المختار بعناية";
@@ -54,7 +62,7 @@ export const defaultDescription =
   "متجر تجميل سعودي فاخر يجمع بين الاكتشاف الذكي، المحتوى العربي الأنيق، وصفحات بيع جاهزة للتوسع عبر SEO وAEO وGEO.";
 
 export function absoluteUrl(path = "/") {
-  return new URL(path, siteUrl).toString();
+  return new URL(path, getSiteUrl()).toString();
 }
 
 export const trustPoints = [
