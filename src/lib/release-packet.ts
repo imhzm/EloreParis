@@ -1,6 +1,7 @@
 import "server-only";
 
 import { getContentGovernanceSummary } from "@/lib/content-governance";
+import { buildReleaseDecisionReview } from "@/lib/release-decision-review";
 import { readReleaseDecisionHistory } from "@/lib/release-decision-history";
 import { buildReleasePackageComparison } from "@/lib/release-package-comparison";
 import {
@@ -34,6 +35,8 @@ function buildExecutiveSummary(packet: ReleasePacketArtifact) {
       "No protected release decision has been recorded yet for the latest package trail.",
     );
   }
+
+  summary.push(packet.latestDecisionReview.summary);
 
   if (packet.comparison.status === "unchanged") {
     summary.push(
@@ -123,6 +126,11 @@ export function buildReleasePacketArtifact(): ReleasePacketArtifact {
     currentArtifact,
     latestPublishedRecord,
     latestDecision,
+    latestDecisionReview: buildReleaseDecisionReview(
+      latestDecision,
+      latestPublishedRecord,
+      reviewToken,
+    ),
     comparison,
     contentGovernance,
   };

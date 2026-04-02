@@ -104,6 +104,25 @@ function getDecisionVerdictLabel(verdict: ReleaseDecisionRecord["verdict"]) {
   }
 }
 
+function getDecisionReviewStatusLabel(
+  status: ReleasePacketArtifact["latestDecisionReview"]["status"],
+) {
+  switch (status) {
+    case "unpublished":
+      return "Package missing";
+    case "missing":
+      return "Decision missing";
+    case "stale_package":
+      return "Package changed";
+    case "stale_packet":
+      return "Packet changed";
+    case "expired_review":
+      return "Review expired";
+    case "current":
+      return "Current";
+  }
+}
+
 function formatToken(value: string) {
   if (value.length <= 14) {
     return value;
@@ -546,6 +565,12 @@ export function OpsReleaseSurface() {
                     </strong>
                   </div>
                   <div className={styles.referenceRow}>
+                    <span>Decision review</span>
+                    <strong className={styles.referenceValue}>
+                      {getDecisionReviewStatusLabel(releasePacket.latestDecisionReview.status)}
+                    </strong>
+                  </div>
+                  <div className={styles.referenceRow}>
                     <span>Runtime drift</span>
                     <strong className={styles.referenceValue}>
                       {getComparisonStatusLabel(releasePacket.comparison.status)}
@@ -579,6 +604,17 @@ export function OpsReleaseSurface() {
 
                 <div className={styles.summaryList}>
                   {releasePacket.executiveSummary.map((item) => (
+                    <div key={item} className={styles.infoBullet}>
+                      {item}
+                    </div>
+                  ))}
+                </div>
+
+                <div className={styles.summaryList}>
+                  <div className={styles.infoBullet}>
+                    {releasePacket.latestDecisionReview.summary}
+                  </div>
+                  {releasePacket.latestDecisionReview.details.map((item) => (
                     <div key={item} className={styles.infoBullet}>
                       {item}
                     </div>
@@ -1034,6 +1070,10 @@ export function OpsReleaseSurface() {
                     {getComparisonStatusLabel(releasePacket.comparison.status)}
                   </strong>
                 </div>
+              </div>
+
+              <div className={styles.inlineNotice}>
+                {releasePacket.latestDecisionReview.summary}
               </div>
 
               {approvalDisabledReason ? (

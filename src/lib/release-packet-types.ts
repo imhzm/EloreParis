@@ -7,6 +7,23 @@ import type {
 } from "@/lib/release-package-types";
 import type { ReleaseReadinessStatus } from "@/lib/release-readiness-types";
 
+export type ReleasePacketDecisionReviewStatus =
+  | "unpublished"
+  | "missing"
+  | "stale_package"
+  | "stale_packet"
+  | "expired_review"
+  | "current";
+
+export type ReleasePacketDecisionReview = {
+  evaluatedAt: string;
+  status: ReleasePacketDecisionReviewStatus;
+  summary: string;
+  details: string[];
+  latestDecisionId: string | null;
+  reviewExpiresAt: string | null;
+};
+
 export type ReleasePacketArtifact = {
   generatedAt: string;
   reviewToken: string;
@@ -23,6 +40,7 @@ export type ReleasePacketArtifact = {
   currentArtifact: ReleasePackageArtifact;
   latestPublishedRecord: ReleasePackageRecord | null;
   latestDecision: ReleaseDecisionRecord | null;
+  latestDecisionReview: ReleasePacketDecisionReview;
   comparison: ReleasePackageComparison;
   contentGovernance: ContentGovernanceSummary;
 };

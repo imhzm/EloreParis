@@ -309,11 +309,18 @@ function renderReleasePacketMarkdown(releasePacket) {
     `- Canonical URL: ${releasePacket.canonicalUrl}`,
     `- Latest published record: ${releasePacket.latestPublishedRecord?.id ?? "none"}`,
     `- Latest decision: ${releasePacket.latestDecision?.verdict ?? "none"}`,
+    `- Latest decision review: ${releasePacket.latestDecisionReview.status}`,
     `- Comparison status: ${releasePacket.comparison.status}`,
     `- Content launch blockers: ${releasePacket.contentGovernance.launchBlocked}`,
     "",
     "## Executive Summary",
     executiveSummary || "- None.",
+    "",
+    "## Latest Decision Review",
+    `- ${releasePacket.latestDecisionReview.summary}`,
+    ...(releasePacket.latestDecisionReview.details.length
+      ? releasePacket.latestDecisionReview.details.map((item) => `- ${item}`)
+      : ["- No additional detail."]),
     "",
     "## Blocker Highlights",
     blockerHighlights || "- None.",
@@ -1249,6 +1256,11 @@ try {
     200,
     "Expected ops release packet API to return 200 before decision publication",
   );
+  assert.equal(
+    preDecisionPacketBody.releasePacket.latestDecisionReview.status,
+    "missing",
+    "Expected the executive release packet to report a missing decision before the first verdict is recorded",
+  );
 
   const {
     response: staleDecisionResponse,
@@ -1475,6 +1487,15 @@ try {
   );
   assert.equal(
     releasePacketBody.releasePacket.latestDecision?.id,
+    publishReleaseDecisionBody.releaseDecisionRecord.id,
+  );
+  assert.equal(
+    releasePacketBody.releasePacket.latestDecisionReview.status,
+    "current",
+    "Expected the executive release packet to report the latest decision as current after publication",
+  );
+  assert.equal(
+    releasePacketBody.releasePacket.latestDecisionReview.latestDecisionId,
     publishReleaseDecisionBody.releaseDecisionRecord.id,
   );
   assert.equal(
