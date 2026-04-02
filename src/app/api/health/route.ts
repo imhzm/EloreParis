@@ -1,5 +1,7 @@
+import { getAuthorityStorageInfo } from "@/lib/authority-database";
 import { NextResponse } from "next/server";
 
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 function getEnvironmentLabel() {
@@ -19,12 +21,18 @@ function getCommitReference() {
 }
 
 export function GET() {
+  const authorityStorage = getAuthorityStorageInfo();
+
   return NextResponse.json(
     {
       status: "ok",
       service: "cozmateks-storefront",
       environment: getEnvironmentLabel(),
       commitReference: getCommitReference(),
+      authorityStorage: {
+        engine: authorityStorage.engine,
+        durability: authorityStorage.durability,
+      },
       timestamp: new Date().toISOString(),
     },
     {

@@ -1,8 +1,15 @@
 import "server-only";
 
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 import type { NextRequest } from "next/server";
+import {
+  getAuthorityDatabase,
+  getAuthorityMetaValue,
+  getAuthorityTableCount,
+  runAuthorityTransaction,
+  setAuthorityMetaValue,
+} from "@/lib/authority-database";
 import {
   resolveCartLines,
   sanitizeCartItems,
@@ -20,16 +27,18 @@ import {
 import { syncNotificationQueueForOrders } from "@/lib/notification-authority";
 import {
   createStoredOrder,
-  findStoredOrder,
   getNextOrderStatus,
+  getPhoneLastFour,
   sanitizeStoredOrders,
-  updateStoredOrderStatus,
   type StoredOrder,
 } from "@/lib/orders";
 import { createSignedToken, verifySignedToken } from "@/lib/signed-token";
 
 export const RECENT_ORDER_COOKIE = "cozmateks-recent-order";
 export const RECENT_ORDER_MAX_AGE_SECONDS = 60 * 60 * 6;
+
+const ORDERS_LEGACY_IMPORT_META_KEY = "legacy_orders_import_v2";
+let authorityOrdersReadyPromise: Promise<void> | null = null;
 
 type RecentOrderPayload = {
   scope: "recent_order";
@@ -71,39 +80,110 @@ function getOrderAuthoritySecret() {
 }
 
 function isRecentOrderPayload(value: unknown): value is RecentOrderPayload {
-  return value !== null &&
+  return (
+    value !== null &&
     typeof value === "object" &&
     "scope" in value &&
     "orderNumber" in value &&
     "exp" in value &&
     value.scope === "recent_order" &&
     typeof value.orderNumber === "string" &&
-    typeof value.exp === "number";
+    typeof value.exp === "number"
+  );
 }
 
-async function writeAuthorityOrders(orders: StoredOrder[]) {
-  const filePath = getOrderAuthorityFilePath();
-  await mkdir(path.dirname(filePath), { recursive: true });
-  await writeFile(filePath, JSON.stringify(orders, null, 2), "utf8");
+function parseStoredOrderPayload(payloadJson: string) {
+  const parsedValue = JSON.parse(payloadJson) as unknown;
+  const orders = sanitizeStoredOrders([parsedValue]);
+  return orders[0] ?? null;
 }
 
-export async function readAuthorityOrders() {
-  const filePath = getOrderAuthorityFilePath();
+function upsertAuthorityOrder(order: StoredOrder) {
+  getAuthorityDatabase()
+    .prepare(`
+      INSERT INTO authority_orders (
+        order_number,
+        phone_last_four,
+        status,
+        created_at,
+        updated_at,
+        payload_json
+      )
+      VALUES (?, ?, ?, ?, ?, ?)
+      ON CONFLICT(order_number) DO UPDATE SET
+        phone_last_four = excluded.phone_last_four,
+        status = excluded.status,
+        created_at = excluded.created_at,
+        updated_at = excluded.updated_at,
+        payload_json = excluded.payload_json
+    `)
+    .run(
+      order.orderNumber,
+      getPhoneLastFour(order.customer.phone),
+      order.status,
+      order.createdAt,
+      new Date().toISOString(),
+      JSON.stringify(order),
+    );
+}
+
+function readPersistedOrder(orderNumber: string, phoneLastFour?: string) {
+  const normalizedOrderNumber = orderNumber.trim().toUpperCase();
+
+  if (!normalizedOrderNumber) {
+    return null;
+  }
+
+  const normalizedPhoneLastFour = phoneLastFour?.replace(/\D/g, "").slice(-4);
+  const row = normalizedPhoneLastFour
+    ? (getAuthorityDatabase()
+        .prepare(`
+          SELECT payload_json
+          FROM authority_orders
+          WHERE order_number = ?
+            AND phone_last_four = ?
+          LIMIT 1
+        `)
+        .get(normalizedOrderNumber, normalizedPhoneLastFour) as
+        | { payload_json: string }
+        | undefined)
+    : (getAuthorityDatabase()
+        .prepare(`
+          SELECT payload_json
+          FROM authority_orders
+          WHERE order_number = ?
+          LIMIT 1
+        `)
+        .get(normalizedOrderNumber) as { payload_json: string } | undefined);
+
+  if (!row) {
+    return null;
+  }
 
   try {
-    const rawValue = await readFile(filePath, "utf8");
-    const parsedValue = JSON.parse(rawValue) as unknown;
-    return sanitizeStoredOrders(parsedValue);
-  } catch (error) {
-    if (
-      error &&
-      typeof error === "object" &&
-      "code" in error &&
-      error.code === "ENOENT"
-    ) {
-      return [] as StoredOrder[];
-    }
+    return parseStoredOrderPayload(row.payload_json);
+  } catch {
+    throw new OrderAuthorityError(
+      "تعذر قراءة الطلب المطلوب من طبقة التخزين الحالية.",
+      500,
+    );
+  }
+}
 
+function readPersistedOrders() {
+  const rows = getAuthorityDatabase()
+    .prepare(`
+      SELECT payload_json
+      FROM authority_orders
+      ORDER BY created_at DESC
+    `)
+    .all() as { payload_json: string }[];
+
+  try {
+    return rows
+      .map((row) => parseStoredOrderPayload(row.payload_json))
+      .filter((order): order is StoredOrder => order !== null);
+  } catch {
     throw new OrderAuthorityError(
       "تعذر قراءة طبقة الطلبات الحالية من authority التطبيق.",
       500,
@@ -111,10 +191,66 @@ export async function readAuthorityOrders() {
   }
 }
 
+async function importLegacyOrdersIfNeeded() {
+  if (getAuthorityMetaValue(ORDERS_LEGACY_IMPORT_META_KEY) === "1") {
+    return;
+  }
+
+  if (getAuthorityTableCount("orders") > 0) {
+    setAuthorityMetaValue(ORDERS_LEGACY_IMPORT_META_KEY, "1");
+    return;
+  }
+
+  try {
+    const rawValue = await readFile(getOrderAuthorityFilePath(), "utf8");
+    const parsedValue = JSON.parse(rawValue) as unknown;
+    const orders = sanitizeStoredOrders(parsedValue);
+
+    if (orders.length > 0) {
+      runAuthorityTransaction(() => {
+        for (const order of orders) {
+          upsertAuthorityOrder(order);
+        }
+      });
+    }
+  } catch (error) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === "ENOENT"
+    ) {
+      setAuthorityMetaValue(ORDERS_LEGACY_IMPORT_META_KEY, "1");
+      return;
+    }
+
+    throw new OrderAuthorityError(
+      "تعذر استيراد بيانات الطلبات القديمة إلى authority الجديدة.",
+      500,
+    );
+  }
+
+  setAuthorityMetaValue(ORDERS_LEGACY_IMPORT_META_KEY, "1");
+}
+
+async function ensureAuthorityOrdersReady() {
+  if (!authorityOrdersReadyPromise) {
+    authorityOrdersReadyPromise = importLegacyOrdersIfNeeded();
+  }
+
+  await authorityOrdersReadyPromise;
+}
+
+export async function readAuthorityOrders() {
+  await ensureAuthorityOrdersReady();
+  return readPersistedOrders();
+}
+
 export async function createAuthorityOrder({
   items,
   checkout,
 }: CreateAuthorityOrderInput) {
+  await ensureAuthorityOrdersReady();
   const sanitizedItems = sanitizeCartItems(items);
   const lines = resolveCartLines(sanitizedItems);
 
@@ -149,8 +285,10 @@ export async function createAuthorityOrder({
     allowOperationalUpdates: checkout.acceptUpdates,
   });
 
-  const orders = await readAuthorityOrders();
-  await writeAuthorityOrders([order, ...orders]);
+  runAuthorityTransaction(() => {
+    upsertAuthorityOrder(order);
+  });
+
   await syncNotificationQueueForOrders([order]);
 
   const recentOrderToken = await createSignedToken(
@@ -172,8 +310,8 @@ export async function getAuthorityOrderForTracking(
   orderNumber: string,
   phoneLastFour: string,
 ) {
-  const orders = await readAuthorityOrders();
-  return findStoredOrder(orders, orderNumber, phoneLastFour);
+  await ensureAuthorityOrdersReady();
+  return readPersistedOrder(orderNumber, phoneLastFour);
 }
 
 export async function getAuthorityOrderForRecentAccess(
@@ -194,8 +332,8 @@ export async function getAuthorityOrderForRecentAccess(
     return null;
   }
 
-  const orders = await readAuthorityOrders();
-  return findStoredOrder(orders, orderNumber);
+  await ensureAuthorityOrdersReady();
+  return readPersistedOrder(orderNumber);
 }
 
 export async function listAuthorityOrders() {
@@ -203,27 +341,33 @@ export async function listAuthorityOrders() {
 }
 
 export async function advanceAuthorityOrderStatus(orderNumber: string) {
-  const orders = await readAuthorityOrders();
-  const order = findStoredOrder(orders, orderNumber);
+  await ensureAuthorityOrdersReady();
+  const order = readPersistedOrder(orderNumber);
 
   if (!order) {
-    throw new OrderAuthorityError("الطلب المطلوب غير موجود داخل authority الحالية.", 404);
+    throw new OrderAuthorityError(
+      "الطلب المطلوب غير موجود داخل authority الحالية.",
+      404,
+    );
   }
 
   const nextStatus = getNextOrderStatus(order);
 
   if (!nextStatus) {
-    throw new OrderAuthorityError("هذا الطلب وصل بالفعل إلى آخر حالة متاحة.", 409);
+    throw new OrderAuthorityError(
+      "هذا الطلب وصل بالفعل إلى آخر حالة متاحة.",
+      409,
+    );
   }
 
-  const updatedOrders = updateStoredOrderStatus(orders, order.orderNumber, nextStatus);
-  await writeAuthorityOrders(updatedOrders);
+  const updatedOrder: StoredOrder = {
+    ...order,
+    status: nextStatus,
+  };
 
-  const updatedOrder = findStoredOrder(updatedOrders, order.orderNumber);
-
-  if (!updatedOrder) {
-    throw new OrderAuthorityError("تعذر إعادة تحميل الطلب بعد تحديث حالته.", 500);
-  }
+  runAuthorityTransaction(() => {
+    upsertAuthorityOrder(updatedOrder);
+  });
 
   await syncNotificationQueueForOrders([updatedOrder]);
 

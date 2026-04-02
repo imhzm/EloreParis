@@ -41,7 +41,7 @@ These routes remain valid public surfaces for IA, SEO, and future merchandising,
 - discovery-to-product internal linking
 - local cart intent
 - checkout handoff UX
-- order creation through in-app authority APIs
+- order creation through SQLite-backed in-app authority APIs
 - tracking UX over the same authority
 - analytics markers and smoke validation
 
@@ -58,10 +58,10 @@ These routes remain valid public surfaces for IA, SEO, and future merchandising,
 - protected ops session and audit APIs
 - local KPI rehearsal
 - local supplier and stock rehearsal
-- centralized order queue review and status rehearsal
+- centralized SQLite-backed order queue review and status rehearsal
 - local fulfillment routing logic
-- centralized notification queue rehearsal
-- local session and order audit trace
+- centralized SQLite-backed notification queue rehearsal
+- SQLite-backed session and order audit trace
 
 ### Must Move To Real Backend Ownership Before Launch
 
@@ -86,11 +86,11 @@ This is not final authentication. It is a safe boundary that stops the internal 
 
 ## Release Implication
 
-Launch cannot be considered complete while these remain local or provisional:
+Launch cannot be considered complete while these remain local, single-host, or provisional:
 
-- file-backed order persistence
-- file-backed notification persistence
-- file-backed ops audit persistence
+- SQLite-backed order persistence without durable shared backend ownership
+- SQLite-backed notification persistence without provider-backed delivery ownership
+- SQLite-backed ops audit persistence without durable shared audit backend
 - payment provider handoff
 - shipment dispatch ownership
 - notification delivery ownership

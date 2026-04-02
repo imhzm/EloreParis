@@ -1,9 +1,20 @@
 import "server-only";
 
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import path from "node:path";
 import { randomUUID } from "node:crypto";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+import {
+  getAuthorityDatabase,
+  getAuthorityMetaValue,
+  getAuthorityTableCount,
+  runAuthorityTransaction,
+  setAuthorityMetaValue,
+} from "@/lib/authority-database";
 import type { OpsAuditAction, OpsAuditActor, OpsAuditEntry } from "@/lib/ops-types";
+
+const OPS_AUDIT_LEGACY_IMPORT_META_KEY = "legacy_ops_audit_import_v2";
+const OPS_AUDIT_RETENTION_LIMIT = 200;
+let opsAuditReadyPromise: Promise<void> | null = null;
 
 type LogOpsAuditEventInput = {
   action: OpsAuditAction;
@@ -85,27 +96,79 @@ function normalizeAuditEntry(value: unknown): OpsAuditEntry | null {
   };
 }
 
-async function writeAuditEntries(entries: OpsAuditEntry[]) {
-  const filePath = getOpsAuditFilePath();
-  await mkdir(path.dirname(filePath), { recursive: true });
-  await writeFile(filePath, JSON.stringify(entries, null, 2), "utf8");
+function parseAuditPayload(payloadJson: string) {
+  return normalizeAuditEntry(JSON.parse(payloadJson));
 }
 
-export async function readOpsAuditEntries() {
-  const filePath = getOpsAuditFilePath();
+function upsertAuditEntry(entry: OpsAuditEntry) {
+  getAuthorityDatabase()
+    .prepare(`
+      INSERT INTO authority_ops_audit (
+        id,
+        created_at,
+        action,
+        entity_type,
+        entity_id,
+        payload_json
+      )
+      VALUES (?, ?, ?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        created_at = excluded.created_at,
+        action = excluded.action,
+        entity_type = excluded.entity_type,
+        entity_id = excluded.entity_id,
+        payload_json = excluded.payload_json
+    `)
+    .run(
+      entry.id,
+      entry.createdAt,
+      entry.action,
+      entry.entityType,
+      entry.entityId,
+      JSON.stringify(entry),
+    );
+}
+
+function pruneAuditEntries() {
+  getAuthorityDatabase().prepare(`
+    DELETE FROM authority_ops_audit
+    WHERE id IN (
+      SELECT id
+      FROM authority_ops_audit
+      ORDER BY created_at DESC
+      LIMIT -1 OFFSET ${OPS_AUDIT_RETENTION_LIMIT}
+    )
+  `).run();
+}
+
+async function importLegacyAuditIfNeeded() {
+  if (getAuthorityMetaValue(OPS_AUDIT_LEGACY_IMPORT_META_KEY) === "1") {
+    return;
+  }
+
+  if (getAuthorityTableCount("audit") > 0) {
+    setAuthorityMetaValue(OPS_AUDIT_LEGACY_IMPORT_META_KEY, "1");
+    return;
+  }
 
   try {
-    const rawValue = await readFile(filePath, "utf8");
+    const rawValue = await readFile(getOpsAuditFilePath(), "utf8");
     const parsedValue = JSON.parse(rawValue) as unknown;
+    const entries = Array.isArray(parsedValue)
+      ? parsedValue
+          .map((entry) => normalizeAuditEntry(entry))
+          .filter((entry): entry is OpsAuditEntry => entry !== null)
+      : [];
 
-    if (!Array.isArray(parsedValue)) {
-      return [] as OpsAuditEntry[];
+    if (entries.length > 0) {
+      runAuthorityTransaction(() => {
+        for (const entry of entries) {
+          upsertAuditEntry(entry);
+        }
+
+        pruneAuditEntries();
+      });
     }
-
-    return parsedValue
-      .map((entry) => normalizeAuditEntry(entry))
-      .filter((entry): entry is OpsAuditEntry => entry !== null)
-      .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
   } catch (error) {
     if (
       error &&
@@ -113,11 +176,39 @@ export async function readOpsAuditEntries() {
       "code" in error &&
       error.code === "ENOENT"
     ) {
-      return [] as OpsAuditEntry[];
+      setAuthorityMetaValue(OPS_AUDIT_LEGACY_IMPORT_META_KEY, "1");
+      return;
     }
 
     throw error;
   }
+
+  setAuthorityMetaValue(OPS_AUDIT_LEGACY_IMPORT_META_KEY, "1");
+}
+
+async function ensureOpsAuditReady() {
+  if (!opsAuditReadyPromise) {
+    opsAuditReadyPromise = importLegacyAuditIfNeeded();
+  }
+
+  await opsAuditReadyPromise;
+}
+
+export async function readOpsAuditEntries() {
+  await ensureOpsAuditReady();
+  const rows = getAuthorityDatabase()
+    .prepare(`
+      SELECT payload_json
+      FROM authority_ops_audit
+      ORDER BY created_at DESC
+      LIMIT ?
+    `)
+    .all(OPS_AUDIT_RETENTION_LIMIT) as { payload_json: string }[];
+
+  return rows
+    .map((row) => parseAuditPayload(row.payload_json))
+    .filter((entry): entry is OpsAuditEntry => entry !== null)
+    .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
 }
 
 export async function logOpsAuditEvent({
@@ -128,7 +219,7 @@ export async function logOpsAuditEvent({
   summary,
   metadata = {},
 }: LogOpsAuditEventInput) {
-  const entries = await readOpsAuditEntries();
+  await ensureOpsAuditReady();
   const nextEntry: OpsAuditEntry = {
     id: randomUUID(),
     createdAt: new Date().toISOString(),
@@ -140,6 +231,10 @@ export async function logOpsAuditEvent({
     metadata,
   };
 
-  await writeAuditEntries([nextEntry, ...entries].slice(0, 200));
+  runAuthorityTransaction(() => {
+    upsertAuditEntry(nextEntry);
+    pruneAuditEntries();
+  });
+
   return nextEntry;
 }

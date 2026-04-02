@@ -15,6 +15,8 @@ const opsCatalogCode =
   process.env.SMOKE_OPS_CATALOG_CODE ?? "smoke-ops-catalog";
 const orderAuthoritySecret =
   process.env.SMOKE_ORDER_AUTHORITY_SECRET ?? "smoke-order-authority";
+const authorityDbFile =
+  process.env.SMOKE_AUTHORITY_DB_PATH ?? ".data/smoke-authority.sqlite";
 const orderAuthorityFile =
   process.env.SMOKE_ORDER_AUTHORITY_FILE ?? ".data/smoke-orders.json";
 const opsAuditFile =
@@ -44,24 +46,22 @@ function formatRecentLogs() {
   return outputBuffer.join("").trim();
 }
 
-function safeCleanupOrderStore() {
+function safeRemoveAuthorityArtifact(filePath) {
   try {
-    rmSync(orderAuthorityFile, { force: true });
+    rmSync(filePath, { force: true });
   } catch {
     // Ignore smoke cleanup failures.
   }
+}
 
-  try {
-    rmSync(opsAuditFile, { force: true });
-  } catch {
-    // Ignore smoke cleanup failures.
-  }
-
-  try {
-    rmSync(notificationAuthorityFile, { force: true });
-  } catch {
-    // Ignore smoke cleanup failures.
-  }
+function safeCleanupAuthorityArtifacts() {
+  safeRemoveAuthorityArtifact(authorityDbFile);
+  safeRemoveAuthorityArtifact(`${authorityDbFile}-shm`);
+  safeRemoveAuthorityArtifact(`${authorityDbFile}-wal`);
+  safeRemoveAuthorityArtifact(`${authorityDbFile}-journal`);
+  safeRemoveAuthorityArtifact(orderAuthorityFile);
+  safeRemoveAuthorityArtifact(opsAuditFile);
+  safeRemoveAuthorityArtifact(notificationAuthorityFile);
 }
 
 async function shutdownServer() {
@@ -300,7 +300,7 @@ process.on("SIGTERM", () => {
   void shutdownServer().finally(() => process.exit(1));
 });
 
-safeCleanupOrderStore();
+safeCleanupAuthorityArtifacts();
 
 server = spawn(process.execPath, [nextCliPath, "start", "--port", String(port)], {
   cwd: process.cwd(),
@@ -323,6 +323,7 @@ server = spawn(process.execPath, [nextCliPath, "start", "--port", String(port)],
     ]),
     OPS_ACCESS_SIGNING_SECRET: "smoke-ops-signing-secret",
     ENFORCE_OPS_ACCESS: "true",
+    AUTHORITY_DB_PATH: authorityDbFile,
     ORDER_AUTHORITY_SECRET: orderAuthoritySecret,
     ORDER_AUTHORITY_FILE: orderAuthorityFile,
     OPS_AUDIT_FILE: opsAuditFile,
@@ -337,6 +338,7 @@ server.stderr.on("data", appendLog);
 try {
   const health = await waitForServer();
   assert.equal(health.status, "ok");
+  assert.equal(health.authorityStorage?.engine, "sqlite");
 
   const { response: healthResponse } = await fetchJson("/api/health");
   assert.equal(healthResponse.status, 200);
@@ -668,5 +670,5 @@ try {
   process.exitCode = 1;
 } finally {
   await shutdownServer();
-  safeCleanupOrderStore();
+  safeCleanupAuthorityArtifacts();
 }
