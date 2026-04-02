@@ -1,76 +1,55 @@
 name: Deploy to Render
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    env:
+      RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+      RENDER_SERVICE_BASE_URL: ${{ secrets.RENDER_SERVICE_BASE_URL }}
+      RENDER_OPS_MANAGER_USERNAME: ${{ secrets.RENDER_OPS_MANAGER_USERNAME }}
+      RENDER_OPS_MANAGER_PASSWORD: ${{ secrets.RENDER_OPS_MANAGER_PASSWORD }}
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
-      - name: Check Render deploy secrets
+      - name: Check deploy credentials
         id: credentials
-        shell: bash
-        env:
-          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
-          RENDER_SERVICE_BASE_URL: ${{ secrets.RENDER_SERVICE_BASE_URL }}
-          RENDER_OPS_MANAGER_USERNAME: ${{ secrets.RENDER_OPS_MANAGER_USERNAME }}
-          RENDER_OPS_MANAGER_PASSWORD: ${{ secrets.RENDER_OPS_MANAGER_PASSWORD }}
         run: |
-          missing=()
-          for name in \
-            RENDER_DEPLOY_HOOK_URL \
-            RENDER_SERVICE_BASE_URL \
-            RENDER_OPS_MANAGER_USERNAME \
-            RENDER_OPS_MANAGER_PASSWORD; do
-            if [ -z "${!name}" ]; then
-              missing+=("$name")
-            fi
-          done
-
-          if [ ${#missing[@]} -gt 0 ]; then
+          if [ -z "$RENDER_DEPLOY_HOOK_URL" ] || [ -z "$RENDER_SERVICE_BASE_URL" ] || [ -z "$RENDER_OPS_MANAGER_USERNAME" ] || [ -z "$RENDER_OPS_MANAGER_PASSWORD" ]; then
             echo "configured=false" >> "$GITHUB_OUTPUT"
-            echo "missing=$(IFS=,; echo "${missing[*]}")" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-
           echo "configured=true" >> "$GITHUB_OUTPUT"
 
       - name: Skip deploy when Render secrets are missing
-        if: ${{ steps.credentials.outputs.configured != 'true' }}
-        run: echo "Skipping Render deployment because required GitHub secrets are missing: ${{ steps.credentials.outputs.missing }}"
+        if: steps.credentials.outputs.configured != 'true'
+        run: echo "Skipping Render deployment because required GitHub secrets are not configured."
 
       - name: Checkout repository
-        if: ${{ steps.credentials.outputs.configured == 'true' }}
+        if: steps.credentials.outputs.configured == 'true'
         uses: actions/checkout@v6
 
       - name: Setup Node.js
-        if: ${{ steps.credentials.outputs.configured == 'true' }}
+        if: steps.credentials.outputs.configured == 'true'
         uses: actions/setup-node@v6
         with:
           node-version: 22
 
       - name: Trigger Render deploy hook
-        if: ${{ steps.credentials.outputs.configured == 'true' }}
-        env:
-          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        if: steps.credentials.outputs.configured == 'true'
         run: curl --fail --silent --show-error --request POST "$RENDER_DEPLOY_HOOK_URL"
 
       - name: Verify live Render deployment
-        if: ${{ steps.credentials.outputs.configured == 'true' }}
+        if: steps.credentials.outputs.configured == 'true'
         env:
-          RENDER_SERVICE_BASE_URL: ${{ secrets.RENDER_SERVICE_BASE_URL }}
-          RENDER_OPS_MANAGER_USERNAME: ${{ secrets.RENDER_OPS_MANAGER_USERNAME }}
-          RENDER_OPS_MANAGER_PASSWORD: ${{ secrets.RENDER_OPS_MANAGER_PASSWORD }}
           LIVE_CHECK_TIMEOUT_SECONDS: 1200
           LIVE_EVIDENCE_ARTIFACT_PATH: .artifacts/render-live-evidence.json
         run: npm run test:render-live
 
       - name: Upload live release evidence artifact
-        if: ${{ always() && steps.credentials.outputs.configured == 'true' }}
-        env:
-          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+        if: steps.credentials.outputs.configured == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: render-live-evidence
