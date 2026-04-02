@@ -345,6 +345,24 @@ export function OpsAccessSurface({
               <span>Routing</span>
             </TrackedLink>
             <TrackedLink
+              href="/ops/content"
+              analyticsLabel="ops_access_to_content"
+              analyticsSurface="ops_access_links"
+              analyticsDestinationType="ops_content"
+            >
+              <span>حوكمة المحتوى</span>
+              <span>Content</span>
+            </TrackedLink>
+            <TrackedLink
+              href="/ops/release"
+              analyticsLabel="ops_access_to_release"
+              analyticsSurface="ops_access_links"
+              analyticsDestinationType="ops_release"
+            >
+              <span>جاهزية الإطلاق</span>
+              <span>Release</span>
+            </TrackedLink>
+            <TrackedLink
               href="/ops/notifications"
               analyticsLabel="ops_access_to_notifications"
               analyticsSurface="ops_access_links"

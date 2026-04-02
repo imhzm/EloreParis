@@ -75,7 +75,7 @@
 - Cart, checkout handoff, checkout eligibility rules, confirmation, track-order, internal `/ops`, `/ops/catalog`, `/ops/fulfillment`, `/ops/orders`, `/ops/notifications`, and `/ops/audit` now exist as real rehearsal surfaces, and order, notification, plus audit state now flow through centralized SQLite-backed app authorities instead of browser-only or JSON-only storage, but payment, durable multi-host order routing, stock truth, supplier sync, and external delivery ownership are still unresolved.
 - The new ops surfaces made gaps in auth, role separation, and persistent admin ownership more visible; a role-aware identity gate, trusted-origin mutation protection, durable login throttling, and local audit trail now exist for `/ops/*`, but provider-backed RBAC, durable shared audit storage, and backend ownership are still unresolved.
 - The roadmap assumes Saudi legal/compliance readiness; this must be validated against the actual business setup before launch claims are made.
-- Release hardening has started through CI, manifest, and fallback surfaces, but deployment target and monitoring are still undefined.
+- Release hardening has started through CI, manifest, fallback surfaces, and a live `/ops/release` plus `/api/ops/release` readiness layer, but deployment target credentials and monitoring are still undefined.
 - Release hardening now also includes framework-level security headers, a health endpoint, controlled share-preview assets at both site and key surface level, automated smoke regression gates, and a deploy-ready Vercel path, but the first live deployment and monitoring are still undefined.
 - FAQ, contact, about, and terms surfaces now exist, and content ownership is frozen through a dedicated ops surface plus `CONTENT-OWNERSHIP.md`, but approved business data, final support channels, and legal review are still missing from the complete Saudi-ready launch set described in the roadmap.
 
@@ -87,6 +87,6 @@ The broader public IA slice and internal ops rehearsal slice are now in progress
 2. replace the current SQLite-backed in-app authorities with real backend authority for cart persistence, catalog authority, stock truth, supplier sync, fulfillment routing, notification delivery, order state, payment orchestration, and order routing
 3. replace the current protected app-authority rehearsal with real payment, shipping, notification delivery, stock ownership, fulfillment orchestration, and order instrumentation
 4. upgrade the current env-backed identity gate into real RBAC, durable audit storage, and provider-backed internal auth after the backend ownership model is active
-5. inject Vercel credentials, execute the first deployment, and wire monitoring around the new `/api/health` endpoint
+5. inject Vercel credentials, execute the first deployment, confirm `/ops/release` reflects the live environment honestly, and wire monitoring around the new `/api/health` endpoint
 6. replace provisional trust, support, and legal copy with real approved business data, final support channels, and sample-based brand language
 7. complete legal review and operating approvals before any launch claims

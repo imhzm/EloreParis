@@ -61,12 +61,13 @@ const rolePathMap: Record<OpsRole, string[]> = {
     "/ops/fulfillment",
     "/ops/catalog",
     "/ops/content",
+    "/ops/release",
     "/ops/notifications",
     "/ops/audit",
   ],
   catalog_operator: ["/ops/catalog"],
   fulfillment_operator: ["/ops/orders", "/ops/fulfillment", "/ops/notifications"],
-  auditor: ["/ops/content", "/ops/audit"],
+  auditor: ["/ops/content", "/ops/release", "/ops/audit"],
 };
 
 function normalizeSecret(value: string | undefined) {

@@ -132,6 +132,10 @@ export function getPageType(pathname: string) {
     return "ops_content";
   }
 
+  if (pathname === "/ops/release") {
+    return "ops_release";
+  }
+
   if (pathname === "/ops/fulfillment") {
     return "ops_fulfillment";
   }

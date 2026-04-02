@@ -3,6 +3,7 @@ import type {
   StoredNotification,
 } from "@/lib/notification-types";
 import type { OpsAuditEntry, OpsSessionSummary } from "@/lib/ops-types";
+import type { ReleaseReadinessSnapshot } from "@/lib/release-readiness-types";
 
 async function parseApiError(response: Response, fallbackMessage: string) {
   try {
@@ -58,6 +59,22 @@ export async function fetchOpsNotifications() {
 
   return (await response.json()) as {
     notifications: StoredNotification[];
+  };
+}
+
+export async function fetchOpsReleaseReadiness() {
+  const response = await fetch("/api/ops/release", {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      await parseApiError(response, "تعذر تحميل حالة الجاهزية التشغيلية للإطلاق."),
+    );
+  }
+
+  return (await response.json()) as {
+    releaseReadiness: ReleaseReadinessSnapshot;
   };
 }
 

@@ -239,6 +239,14 @@ const publicSmokeChecks = [
     ],
   },
   {
+    pathname: "/ops-access?next=%2Fops%2Frelease",
+    markers: [
+      "Ops access gate",
+      "ops_access_to_release",
+      'content="noindex, nofollow"',
+    ],
+  },
+  {
     pathname: "/sitemap.xml",
     markers: [
       "/shop/haircare",
@@ -279,6 +287,14 @@ const protectedOpsChecks = [
     markers: [
       "Internal content governance",
       "ops_content_to_audit",
+      'content="noindex, nofollow"',
+    ],
+  },
+  {
+    pathname: "/ops/release",
+    markers: [
+      "Internal release readiness",
+      "ops_release_to_health",
       'content="noindex, nofollow"',
     ],
   },
@@ -524,6 +540,27 @@ try {
   assert.equal(opsSessionBody.session.authMethod, "identity_password");
   assert.equal(opsSessionBody.session.username, opsManagerUsername);
 
+  const { response: opsReleaseResponse, body: opsReleaseBody } = await fetchJson(
+    "/api/ops/release",
+    {
+      headers: {
+        Cookie: opsCookie,
+      },
+    },
+  );
+  assert.equal(
+    opsReleaseResponse.status,
+    200,
+    "Expected ops release API to return 200 for manager role",
+  );
+  assert.equal(opsReleaseBody.releaseReadiness.overallStatus, "blocked");
+  assert.ok(
+    opsReleaseBody.releaseReadiness.gates.some(
+      (gate) => gate.id === "transactional-backend",
+    ),
+    "Expected ops release API to include the transactional-backend gate",
+  );
+
   const { response: opsOrdersResponse, body: opsOrdersBody } = await fetchJson(
     "/api/ops/orders",
     {
@@ -739,6 +776,21 @@ try {
       "/ops/catalog",
     ),
     "Expected catalog operator to be redirected away from /ops/content",
+  );
+
+  const catalogReleaseRedirectResponse = await fetch(`${baseUrl}/ops/release`, {
+    cache: "no-store",
+    headers: {
+      Cookie: catalogCookie,
+    },
+    redirect: "manual",
+  });
+  assert.equal(catalogReleaseRedirectResponse.status, 307);
+  assert.ok(
+    (catalogReleaseRedirectResponse.headers.get("location") ?? "").includes(
+      "/ops/catalog",
+    ),
+    "Expected catalog operator to be redirected away from /ops/release",
   );
 
   const throttledIp = "198.51.100.42";

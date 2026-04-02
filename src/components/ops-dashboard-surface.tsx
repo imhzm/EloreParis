@@ -288,6 +288,15 @@ export function OpsDashboardSurface() {
                 <span>Owners + sample freeze</span>
               </TrackedLink>
               <TrackedLink
+                href="/ops/release"
+                analyticsLabel="ops_dashboard_to_release"
+                analyticsSurface="ops_dashboard_links"
+                analyticsDestinationType="ops_release"
+              >
+                <span>Release readiness</span>
+                <span>Live blockers + launch gates</span>
+              </TrackedLink>
+              <TrackedLink
                 href="/ops/fulfillment"
                 analyticsLabel="ops_dashboard_to_fulfillment"
                 analyticsSurface="ops_dashboard_links"

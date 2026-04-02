@@ -19,6 +19,7 @@
 - The repository now expects `Node.js 22+` because the shared application authority uses the built-in `node:sqlite` runtime.
 - A secret-gated workflow now exists at [deploy-vercel.yml](D:/REDA/ksa%20cozmateks/.github/workflows/deploy-vercel.yml).
 - Health checks are exposed through [`/api/health`](D:/REDA/ksa%20cozmateks/src/app/api/health/route.ts).
+- Live launch blockers are exposed through [`/api/ops/release`](D:/REDA/ksa%20cozmateks/src/app/api/ops/release/route.ts) and [`/ops/release`](D:/REDA/ksa%20cozmateks/src/app/ops/release/page.tsx).
 - Orders, notifications, and ops audit now share one SQLite-backed in-app authority with backward-compatible import from the older rehearsal JSON files.
 - Protected ops mutations now require a trusted same-origin request instead of relying on signed cookies alone for write safety.
 - Repeated failed ops login attempts now throttle durably inside the shared SQLite authority.
@@ -73,15 +74,16 @@ If `NEXT_PUBLIC_SITE_URL` is absent, the app now falls back in this order:
 3. Set `NEXT_PUBLIC_SITE_URL` in Vercel if the project already has a stable production domain.
 4. Push to `main` or trigger the workflow manually.
 5. Confirm the deployment URL returns `200` on `/api/health`.
-6. Confirm unauthenticated `/ops` redirects to `/ops-access`.
-7. Confirm the chosen ops identity can log in through username and password, reaches its allowed default route, and that a lower-privilege role cannot open unauthorized ops pages.
-8. Confirm origin-less or cross-origin attempts to mutate `/api/ops/*` and `/api/ops-access/logout` are rejected with `403`.
-9. Confirm repeated failed login attempts hit `429` throttling and recover only after the cooldown window.
-10. Confirm `/ops/notifications` can read queued delivery items and update a notification state without losing the shared authority database between requests or process restarts.
-11. Confirm `/ops/audit` can read recent login, order-state, notification-state, and throttling traces without losing the shared authority database between requests or process restarts.
-12. Confirm checkout can create an order and tracking can read it back in the chosen environment without losing the authority database between requests or process restarts.
-13. Confirm the homepage, product page, article page, `cart`, and `sitemap.xml` render correctly after deployment.
-14. Confirm public launch approval still matches `CONTENT-OWNERSHIP.md`, including sample-pack and business-input gates.
+6. Confirm `/ops/release` reflects the live environment honestly instead of showing localhost-only blockers by mistake.
+7. Confirm unauthenticated `/ops` redirects to `/ops-access`.
+8. Confirm the chosen ops identity can log in through username and password, reaches its allowed default route, and that a lower-privilege role cannot open unauthorized ops pages.
+9. Confirm origin-less or cross-origin attempts to mutate `/api/ops/*` and `/api/ops-access/logout` are rejected with `403`.
+10. Confirm repeated failed login attempts hit `429` throttling and recover only after the cooldown window.
+11. Confirm `/ops/notifications` can read queued delivery items and update a notification state without losing the shared authority database between requests or process restarts.
+12. Confirm `/ops/audit` can read recent login, order-state, notification-state, and throttling traces without losing the shared authority database between requests or process restarts.
+13. Confirm checkout can create an order and tracking can read it back in the chosen environment without losing the authority database between requests or process restarts.
+14. Confirm the homepage, product page, article page, `cart`, and `sitemap.xml` render correctly after deployment.
+15. Confirm public launch approval still matches `CONTENT-OWNERSHIP.md`, including sample-pack and business-input gates.
 
 ## Rollback Path
 
@@ -92,6 +94,7 @@ If `NEXT_PUBLIC_SITE_URL` is absent, the app now falls back in this order:
 ## Post-Deploy Watchpoints
 
 - `/api/health` returns `status=ok`
+- `/ops/release` still exposes runtime blockers honestly after deployment
 - homepage response and metadata
 - unauthenticated `/ops` redirects to `/ops-access`
 - authenticated `/ops` dashboard still loads correctly
