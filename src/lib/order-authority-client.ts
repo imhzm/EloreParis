@@ -1,5 +1,6 @@
 import type { StoredCartItem } from "@/lib/cart";
 import type { CheckoutSubmissionInput } from "@/lib/checkout-validation";
+import type { StoredNotification } from "@/lib/notification-types";
 import type { StoredOrder } from "@/lib/orders";
 
 type CreateOrderRequestInput = {
@@ -9,6 +10,7 @@ type CreateOrderRequestInput = {
 
 type OrderResponse = {
   order: StoredOrder;
+  notifications: StoredNotification[];
 };
 
 type OpsOrderUpdateResponse = {

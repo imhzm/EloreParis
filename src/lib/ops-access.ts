@@ -42,9 +42,9 @@ const roleLabels: Record<OpsRole, string> = {
 };
 
 const rolePathMap: Record<OpsRole, string[]> = {
-  manager: ["/ops", "/ops/orders", "/ops/fulfillment", "/ops/catalog", "/ops/audit"],
+  manager: ["/ops", "/ops/orders", "/ops/fulfillment", "/ops/catalog", "/ops/notifications", "/ops/audit"],
   catalog_operator: ["/ops/catalog"],
-  fulfillment_operator: ["/ops/orders", "/ops/fulfillment"],
+  fulfillment_operator: ["/ops/orders", "/ops/fulfillment", "/ops/notifications"],
   auditor: ["/ops/audit"],
 };
 
@@ -283,6 +283,10 @@ function normalizeOpsAccessPath(pathname: string) {
 
   if (pathname.startsWith("/api/ops/audit")) {
     return "/ops/audit";
+  }
+
+  if (pathname.startsWith("/api/ops/notifications")) {
+    return "/ops/notifications";
   }
 
   if (pathname.startsWith("/api/ops/session")) {

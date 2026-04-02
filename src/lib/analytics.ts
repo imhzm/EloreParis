@@ -10,6 +10,7 @@ export type AnalyticsEventName =
   | "checkout_start"
   | "checkout_complete"
   | "filter_apply"
+  | "ops_notification_status_update"
   | "ops_order_status_update"
   | "search_submit"
   | "search_result_click"
@@ -137,6 +138,10 @@ export function getPageType(pathname: string) {
 
   if (pathname === "/ops/audit") {
     return "ops_audit";
+  }
+
+  if (pathname === "/ops/notifications") {
+    return "ops_notifications";
   }
 
   if (pathname.startsWith("/trust/")) {

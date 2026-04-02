@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { TrackedLink } from "@/components/tracked-link";
 import { getOrderFulfillmentPlan } from "@/lib/fulfillment";
+import type { StoredNotification } from "@/lib/notification-types";
 import { fetchRecentOrderFromAuthority } from "@/lib/order-authority-client";
 import {
   getOrderTimeline,
@@ -21,6 +22,7 @@ type OrderConfirmationProps = {
 export function OrderConfirmation({ orderNumber }: OrderConfirmationProps) {
   const hasOrderReference = orderNumber.trim().length > 0;
   const [order, setOrder] = useState<StoredOrder | null>(null);
+  const [notifications, setNotifications] = useState<StoredNotification[]>([]);
   const [isLoading, setIsLoading] = useState(hasOrderReference);
 
   useEffect(() => {
@@ -29,11 +31,13 @@ export function OrderConfirmation({ orderNumber }: OrderConfirmationProps) {
     }
 
     void fetchRecentOrderFromAuthority(orderNumber)
-      .then(({ order: matchedOrder }) => {
+      .then(({ order: matchedOrder, notifications: nextNotifications }) => {
         setOrder(matchedOrder);
+        setNotifications(nextNotifications);
       })
       .catch(() => {
         setOrder(null);
+        setNotifications([]);
       })
       .finally(() => {
         setIsLoading(false);
@@ -214,15 +218,22 @@ export function OrderConfirmation({ orderNumber }: OrderConfirmationProps) {
           )}
 
           <div className={styles.summaryList}>
-            {fulfillmentPlan.notifications.map((notification) => (
-              <div key={notification.key} className={styles.referenceCard}>
-                <div className={styles.referenceRow}>
-                  <span>{notification.label}</span>
-                  <strong className={styles.referenceValue}>{notification.status}</strong>
+            {notifications.length ? (
+              notifications.map((notification) => (
+                <div key={notification.id} className={styles.referenceCard}>
+                  <div className={styles.referenceRow}>
+                    <span>{notification.label}</span>
+                    <strong className={styles.referenceValue}>{notification.status}</strong>
+                  </div>
+                  <p>{notification.note}</p>
                 </div>
-                <p>{notification.note}</p>
+              ))
+            ) : (
+              <div className={styles.inlineNotice}>
+                لا توجد رسالة تشغيلية نشطة جديدة لهذا الطلب الآن. ستظهر الرسائل هنا عندما
+                تدخل queue الإشعارات مرحلة جديدة.
               </div>
-            ))}
+            )}
           </div>
 
           <div className={styles.actionColumn}>

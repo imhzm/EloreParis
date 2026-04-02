@@ -359,7 +359,7 @@ export function OpsFulfillmentSurface() {
                     </div>
 
                     <div className={styles.referenceCard}>
-                      <strong>Notification queue</strong>
+                      <strong>Notification plan</strong>
                       <div className={styles.summaryList}>
                         {plan.notifications.map((notification) => (
                           <div key={notification.key} className={styles.referenceCard}>
@@ -431,6 +431,15 @@ export function OpsFulfillmentSurface() {
             >
               <span>إدارة الطلبات</span>
               <span>Status progression</span>
+            </TrackedLink>
+            <TrackedLink
+              href="/ops/notifications"
+              analyticsLabel="ops_fulfillment_to_notifications"
+              analyticsSurface="ops_fulfillment_sidebar"
+              analyticsDestinationType="ops_notifications"
+            >
+              <span>طابور الإشعارات</span>
+              <span>Queue + delivery state</span>
             </TrackedLink>
             <TrackedLink
               href="/ops/catalog"

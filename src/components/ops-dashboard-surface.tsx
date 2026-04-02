@@ -278,6 +278,15 @@ export function OpsDashboardSurface() {
                 <span>Routing + notifications</span>
               </TrackedLink>
               <TrackedLink
+                href="/ops/notifications"
+                analyticsLabel="ops_dashboard_to_notifications"
+                analyticsSurface="ops_dashboard_links"
+                analyticsDestinationType="ops_notifications"
+              >
+                <span>إدارة الإشعارات</span>
+                <span>Queue + delivery trace</span>
+              </TrackedLink>
+              <TrackedLink
                 href="/ops/audit"
                 analyticsLabel="ops_dashboard_to_audit"
                 analyticsSurface="ops_dashboard_links"

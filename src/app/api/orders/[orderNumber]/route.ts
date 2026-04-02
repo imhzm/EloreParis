@@ -6,6 +6,7 @@ import {
   OrderAuthorityError,
   RECENT_ORDER_COOKIE,
 } from "@/lib/order-authority";
+import { listAuthorityNotificationsForOrder } from "@/lib/notification-authority";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -32,7 +33,9 @@ export async function GET(request: NextRequest, context: OrderRouteContext) {
       );
     }
 
-    return NextResponse.json({ order });
+    const notifications = await listAuthorityNotificationsForOrder(order);
+
+    return NextResponse.json({ order, notifications });
   } catch (error) {
     if (error instanceof OrderAuthorityError) {
       return NextResponse.json(

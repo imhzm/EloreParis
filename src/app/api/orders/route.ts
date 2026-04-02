@@ -5,6 +5,7 @@ import {
   RECENT_ORDER_COOKIE,
   RECENT_ORDER_MAX_AGE_SECONDS,
 } from "@/lib/order-authority";
+import { listAuthorityNotificationsForOrder } from "@/lib/notification-authority";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -39,10 +40,12 @@ export async function POST(request: Request) {
       items: body.items,
       checkout: checkout as Parameters<typeof createAuthorityOrder>[0]["checkout"],
     });
+    const notifications = await listAuthorityNotificationsForOrder(order);
 
     const response = NextResponse.json(
       {
         order,
+        notifications,
       },
       { status: 201 },
     );

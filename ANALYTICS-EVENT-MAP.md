@@ -17,6 +17,7 @@ This project now tracks the minimum event set needed to answer early-stage store
 9. Which in-app authority orders require manual review, split-shipment coordination, or COD fallback inside the rehearsal layer?
 10. Are protected internal ops surfaces still reachable and reviewable after the access gate is enabled?
 11. Can internal operators still move between dashboard, orders, fulfillment, catalog, and audit surfaces without losing route-level visibility after role gating is enabled?
+12. Which queued operational notifications are being marked sent or returned to queue inside the rehearsal layer before a real delivery provider exists?
 
 ## Event Set
 
@@ -216,6 +217,21 @@ Tracked properties:
 - `next_status`
 - `payment_method`
 
+### `ops_notification_status_update`
+
+- Fires when the internal `/ops/notifications` surface changes a centrally stored rehearsal notification from `queued` to `sent` or back again.
+- Answers whether the current rehearsal layer is sufficient to test delivery-state handling before a real provider and post-purchase CRM stack exist.
+
+Tracked properties:
+
+- `source_path`
+- `source_page_type`
+- `order_reference`
+- `template_key`
+- `previous_status`
+- `next_status`
+- `channel`
+
 ## Current Instrumented Surfaces
 
 - Header brand and primary navigation
@@ -234,8 +250,9 @@ Tracked properties:
 - Track-order lookup form and tracking result surface
 - Internal `/ops/orders` queue actions and tracking shortcuts
 - Internal `/ops/fulfillment` routing queue, notification review, and order-tracking shortcuts
+- Internal `/ops/notifications` queue actions, fulfillment shortcuts, and public tracking shortcuts
 - Internal `/ops-access` gate plus logout action through the protected ops navigation
-- Internal `/ops`, `/ops/orders`, `/ops/fulfillment`, `/ops/catalog`, and `/ops/audit` navigation links under the role-aware session model
+- Internal `/ops`, `/ops/orders`, `/ops/fulfillment`, `/ops/notifications`, `/ops/catalog`, and `/ops/audit` navigation links under the role-aware session model
 - FAQ route links into tracking, trust policies, and contact
 - Contact route links into FAQ, tracking, and trust support paths
 - About route links into trust, terms, contact, and shopping discovery
@@ -259,7 +276,7 @@ Tracked properties:
 ## Deliberately Deferred
 
 - `wishlist_add`
-- notification delivery events
+- external delivery-provider events
 - post-purchase CRM and lifecycle events
 
 These remain deferred until payment, order routing, notifications, CRM surfaces, and a real authenticated backoffice exist instead of placeholders.

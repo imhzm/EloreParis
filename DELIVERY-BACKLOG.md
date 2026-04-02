@@ -16,11 +16,11 @@
 | SW-02 | Saudi legal, trust, and compliance surfaces | `5` | `in-progress` | Discovery / Design | Required legal pages, footer trust data, privacy requirements, compliance assumptions, and support surfaces are documented and routed into product requirements |
 | SW-03 | Commerce model, taxonomy, sitemap, and home IA | `6-8` | `in-progress` | Discovery | The public IA and home structure are accepted as the working MVP map |
 | SW-04 | Category, product, and conversion experience | `9-11`, `27-29` | `in-progress` | Design / Implementation | PLP/PDP patterns, CRO blocks, and advanced merchandising rules are defined and implemented for MVP |
-| SW-05 | Admin, catalog, data model, supplier ops, and order operations | `12-13` | `in-progress` | Design / Implementation | The admin scope, product data model, supplier sync assumptions, and order operations flow are explicitly designed, surfaced, and testable through protected internal routes, role-aware ops sessions, local audit traces, and centralized in-app order APIs |
+| SW-05 | Admin, catalog, data model, supplier ops, and order operations | `12-13` | `in-progress` | Design / Implementation | The admin scope, product data model, supplier sync assumptions, and order operations flow are explicitly designed, surfaced, and testable through protected internal routes, role-aware ops sessions, local audit traces, centralized in-app order APIs, and a protected notification queue |
 | SW-06 | Content system, editorial style, and commercial copy framework | `14`, `18`, `28-29` | `in-progress` | Discovery / Design | Editorial templates, page copy rules, article model, and content ownership are defined; content status remains honest |
 | SW-07 | Keyword strategy, page mapping, and ecommerce SEO direction | `15-21` | `in-progress` | Discovery | Keyword clusters, page-to-intent map, technical SEO direction, and ecommerce SEO priorities are locked for MVP |
 | SW-08 | Structured data, internal linking, search, and discoverability systems | `22-26` | `in-progress` | Design / Implementation | Schema inventory, internal linking model, search requirements, and snippet-control strategy are specified and implemented |
-| SW-09 | Post-purchase flows, CRM segmentation, analytics, and KPI model | `30-31` | `in-progress` | Growth and Automation | Core lifecycle flows, analytics plan, and measurement model are implemented and validated |
+| SW-09 | Post-purchase flows, CRM segmentation, analytics, and KPI model | `30-31` | `in-progress` | Growth and Automation | Core lifecycle flows, notification-state rehearsal, analytics plan, and measurement model are implemented and validated |
 | SW-10 | Launch gate, QA, and executive readiness | `32-33` | `in-progress` | Validation / Release | Launch checklist, QA evidence, release readiness, and unresolved risks are explicitly tracked |
 
 ## MVP Cut
@@ -72,7 +72,7 @@
 - Stack, commerce engine, CMS, and supplier integration details are not frozen yet.
 - The broader shop atlas is now live with editorial collection routes for haircare, bodycare, tools, and beauty sets, but those surfaces are still IA/SEO shells until real catalog ownership and merchandising rules are frozen.
 - The new server-side collection filters and ingredient discovery surfaces are intentionally narrow and data-backed; any deeper merchandising model must be decided explicitly instead of being improvised inside the current product content.
-- Cart, checkout handoff, checkout eligibility rules, confirmation, track-order, internal `/ops`, `/ops/catalog`, `/ops/fulfillment`, `/ops/orders`, and `/ops/audit` now exist as real rehearsal surfaces, and order state now flows through a centralized file-backed app authority instead of browser-only storage, but payment, durable order routing, stock truth, supplier sync, and notification ownership are still unresolved.
+- Cart, checkout handoff, checkout eligibility rules, confirmation, track-order, internal `/ops`, `/ops/catalog`, `/ops/fulfillment`, `/ops/orders`, `/ops/notifications`, and `/ops/audit` now exist as real rehearsal surfaces, and order plus notification state now flow through centralized file-backed app authorities instead of browser-only storage, but payment, durable order routing, stock truth, supplier sync, and external delivery ownership are still unresolved.
 - The new ops surfaces made gaps in auth, role separation, and persistent admin ownership more visible; a role-aware protected access gate and local audit trail now exist for `/ops/*`, but real identity-backed RBAC, durable audit storage, and backend ownership are still unresolved.
 - The roadmap assumes Saudi legal/compliance readiness; this must be validated against the actual business setup before launch claims are made.
 - Release hardening has started through CI, manifest, and fallback surfaces, but deployment target and monitoring are still undefined.
@@ -84,8 +84,8 @@
 The broader public IA slice and internal ops rehearsal slice are now in progress for the current storefront scope. The next task is to convert `SW-05`, `SW-09`, and `SW-10` into the next implementation pack:
 
 1. freeze which of the new editorial collections remain in MVP now that the shop atlas and broader category routes are live
-2. replace the file-backed in-app authority with real backend authority for cart persistence, catalog authority, stock truth, supplier sync, fulfillment routing, notification ownership, order state, payment orchestration, and order routing
-3. replace the current protected app-authority rehearsal with real payment, shipping, notifications, stock ownership, fulfillment orchestration, and order instrumentation
+2. replace the file-backed in-app authorities with real backend authority for cart persistence, catalog authority, stock truth, supplier sync, fulfillment routing, notification delivery, order state, payment orchestration, and order routing
+3. replace the current protected app-authority rehearsal with real payment, shipping, notification delivery, stock ownership, fulfillment orchestration, and order instrumentation
 4. upgrade the current role-aware ops access gate into real RBAC, durable audit storage, and identity-backed internal auth after the backend ownership model is active
 5. inject Vercel credentials, execute the first deployment, and wire monitoring around the new `/api/health` endpoint
 6. replace provisional trust, support, and legal copy with real approved business data and final support channels

@@ -51,14 +51,16 @@ These routes remain valid public surfaces for IA, SEO, and future merchandising,
 - `/ops/orders`
 - `/ops/catalog`
 - `/ops/fulfillment`
+- `/ops/notifications`
 - `/ops/audit`
 - protected ops order APIs
+- protected ops notification APIs
 - protected ops session and audit APIs
 - local KPI rehearsal
 - local supplier and stock rehearsal
 - centralized order queue review and status rehearsal
 - local fulfillment routing logic
-- local notification planning
+- centralized notification queue rehearsal
 - local session and order audit trace
 
 ### Must Move To Real Backend Ownership Before Launch
@@ -68,7 +70,7 @@ These routes remain valid public surfaces for IA, SEO, and future merchandising,
 - supplier sync
 - payment orchestration
 - shipping orchestration
-- delivery notifications
+- durable notification queue and delivery notifications
 - identity-backed ops access
 - durable audit trail for sensitive actions
 
@@ -87,6 +89,7 @@ This is not final authentication. It is a safe boundary that stops the internal 
 Launch cannot be considered complete while these remain local or provisional:
 
 - file-backed order persistence
+- file-backed notification persistence
 - file-backed ops audit persistence
 - payment provider handoff
 - shipment dispatch ownership

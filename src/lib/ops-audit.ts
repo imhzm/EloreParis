@@ -62,7 +62,8 @@ function normalizeAuditEntry(value: unknown): OpsAuditEntry | null {
     typeof auditRecord.action !== "string" ||
     !isAuditActor(auditRecord.actor) ||
     (auditRecord.entityType !== "ops_session" &&
-      auditRecord.entityType !== "order") ||
+      auditRecord.entityType !== "order" &&
+      auditRecord.entityType !== "notification") ||
     typeof auditRecord.entityId !== "string" ||
     typeof auditRecord.summary !== "string" ||
     !auditRecord.metadata ||

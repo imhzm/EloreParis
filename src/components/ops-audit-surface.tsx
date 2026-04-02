@@ -15,6 +15,7 @@ const auditFilters: AuditFilter[] = [
   "ops_login_failure",
   "ops_logout",
   "ops_order_status_update",
+  "ops_notification_status_update",
 ];
 
 function formatTimestamp(value: string) {
@@ -38,6 +39,8 @@ function getAuditActionLabel(action: OpsAuditAction) {
       return "إنهاء الجلسة";
     case "ops_order_status_update":
       return "تحديث حالة طلب";
+    case "ops_notification_status_update":
+      return "تحديث حالة إشعار";
   }
 }
 
@@ -80,6 +83,9 @@ export function OpsAuditSurface() {
       statusUpdates: auditEntries.filter(
         (entry) => entry.action === "ops_order_status_update",
       ).length,
+      notificationUpdates: auditEntries.filter(
+        (entry) => entry.action === "ops_notification_status_update",
+      ).length,
       loginEvents: auditEntries.filter(
         (entry) =>
           entry.action === "ops_login_success" ||
@@ -111,7 +117,7 @@ export function OpsAuditSurface() {
             <span>
               {isLoading
                 ? "جارٍ تحميل سجل المراجعة."
-                : `${metrics.loginEvents} أحداث جلسات و${metrics.statusUpdates} تحديثات حالة طلب مسجلة.`}
+                : `${metrics.loginEvents} أحداث جلسات و${metrics.statusUpdates} تحديثات طلب و${metrics.notificationUpdates} تحديثات إشعار مسجلة.`}
             </span>
           </div>
 
@@ -221,6 +227,15 @@ export function OpsAuditSurface() {
             >
               <span>لوحة fulfillment</span>
               <span>Routing + notifications</span>
+            </TrackedLink>
+            <TrackedLink
+              href="/ops/notifications"
+              analyticsLabel="ops_audit_to_notifications"
+              analyticsSurface="ops_audit_links"
+              analyticsDestinationType="ops_notifications"
+            >
+              <span>طابور الإشعارات</span>
+              <span>Delivery trace</span>
             </TrackedLink>
             <TrackedLink
               href="/ops"

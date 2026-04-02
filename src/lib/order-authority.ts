@@ -17,6 +17,7 @@ import {
   assertOpsRequestAccess,
   OpsAccessError,
 } from "@/lib/ops-access";
+import { syncNotificationQueueForOrders } from "@/lib/notification-authority";
 import {
   createStoredOrder,
   findStoredOrder,
@@ -150,6 +151,7 @@ export async function createAuthorityOrder({
 
   const orders = await readAuthorityOrders();
   await writeAuthorityOrders([order, ...orders]);
+  await syncNotificationQueueForOrders([order]);
 
   const recentOrderToken = await createSignedToken(
     {
@@ -222,6 +224,8 @@ export async function advanceAuthorityOrderStatus(orderNumber: string) {
   if (!updatedOrder) {
     throw new OrderAuthorityError("تعذر إعادة تحميل الطلب بعد تحديث حالته.", 500);
   }
+
+  await syncNotificationQueueForOrders([updatedOrder]);
 
   return {
     order: updatedOrder,

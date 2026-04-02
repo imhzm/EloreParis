@@ -85,7 +85,7 @@ export function OpsAccessSurface({
             <p>Protected routes</p>
             <strong>/ops/*</strong>
             <span>
-              يغطي هذا gate حاليًا: dashboard, orders, catalog, وfulfillment.
+              يغطي هذا gate حاليًا: dashboard, orders, catalog, fulfillment, notifications, وaudit.
             </span>
           </div>
 
@@ -233,6 +233,15 @@ export function OpsAccessSurface({
             >
               <span>إدارة fulfillment</span>
               <span>Routing</span>
+            </TrackedLink>
+            <TrackedLink
+              href="/ops/notifications"
+              analyticsLabel="ops_access_to_notifications"
+              analyticsSurface="ops_access_links"
+              analyticsDestinationType="ops_notifications"
+            >
+              <span>إدارة الإشعارات</span>
+              <span>Notifications</span>
             </TrackedLink>
             <TrackedLink
               href="/ops/audit"

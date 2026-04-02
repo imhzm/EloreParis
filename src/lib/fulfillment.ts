@@ -5,6 +5,7 @@ import type {
   StoredOrder,
   StoredOrderLine,
 } from "@/lib/orders";
+import type { NotificationTemplateKey } from "@/lib/notification-types";
 import { getProductBySlug } from "@/lib/site-content";
 import {
   getSupplierRecord,
@@ -50,7 +51,7 @@ export type FulfillmentLinePlan = {
 };
 
 export type FulfillmentNotification = {
-  key: string;
+  key: NotificationTemplateKey;
   label: string;
   channel: "whatsapp" | "email" | "dashboard";
   status: "active" | "completed" | "upcoming" | "disabled";

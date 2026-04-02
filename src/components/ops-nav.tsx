@@ -41,6 +41,12 @@ const opsLinks = [
     destinationType: "ops_catalog",
   },
   {
+    href: "/ops/notifications",
+    label: "Notifications",
+    analyticsLabel: "ops_nav_notifications",
+    destinationType: "ops_notifications",
+  },
+  {
     href: "/ops/audit",
     label: "Audit",
     analyticsLabel: "ops_nav_audit",

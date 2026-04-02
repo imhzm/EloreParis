@@ -4,6 +4,7 @@ import { useState } from "react";
 import { TrackedLink } from "@/components/tracked-link";
 import { getPageType, trackAnalyticsEvent } from "@/lib/analytics";
 import { getOrderFulfillmentPlan } from "@/lib/fulfillment";
+import type { StoredNotification } from "@/lib/notification-types";
 import { fetchTrackedOrderFromAuthority } from "@/lib/order-authority-client";
 import {
   getOrderTimeline,
@@ -24,6 +25,7 @@ export function TrackOrderSurface({
   const [orderNumber, setOrderNumber] = useState(initialOrderNumber);
   const [phoneLastFour, setPhoneLastFour] = useState("");
   const [match, setMatch] = useState<StoredOrder | null>(null);
+  const [notifications, setNotifications] = useState<StoredNotification[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
 
@@ -43,8 +45,9 @@ export function TrackOrderSurface({
     setError(null);
 
     void fetchTrackedOrderFromAuthority(normalizedOrder, normalizedLastFour)
-      .then(({ order }) => {
+      .then(({ order, notifications: nextNotifications }) => {
         setMatch(order);
+        setNotifications(nextNotifications);
 
         trackAnalyticsEvent("track_order_lookup", {
           source_path: "/track-order",
@@ -57,6 +60,7 @@ export function TrackOrderSurface({
       })
       .catch((lookupError: unknown) => {
         setMatch(null);
+        setNotifications([]);
         setError(
           lookupError instanceof Error
             ? lookupError.message
@@ -287,15 +291,21 @@ export function TrackOrderSurface({
             )}
 
             <div className={styles.summaryList}>
-              {fulfillmentPlan.notifications.map((notification) => (
-                <div key={notification.key} className={styles.referenceCard}>
-                  <div className={styles.referenceRow}>
-                    <span>{notification.label}</span>
-                    <strong className={styles.referenceValue}>{notification.status}</strong>
+              {notifications.length ? (
+                notifications.map((notification) => (
+                  <div key={notification.id} className={styles.referenceCard}>
+                    <div className={styles.referenceRow}>
+                      <span>{notification.label}</span>
+                      <strong className={styles.referenceValue}>{notification.status}</strong>
+                    </div>
+                    <p>{notification.note}</p>
                   </div>
-                  <p>{notification.note}</p>
+                ))
+              ) : (
+                <div className={styles.inlineNotice}>
+                  لا توجد رسالة تشغيلية جديدة في queue هذا الطلب الآن.
                 </div>
-              ))}
+              )}
             </div>
 
             <div className={styles.actionColumn}>

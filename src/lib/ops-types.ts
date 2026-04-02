@@ -22,7 +22,8 @@ export type OpsAuditAction =
   | "ops_login_success"
   | "ops_login_failure"
   | "ops_logout"
-  | "ops_order_status_update";
+  | "ops_order_status_update"
+  | "ops_notification_status_update";
 
 export type OpsAuditActor = {
   userId: string;
@@ -37,7 +38,7 @@ export type OpsAuditEntry = {
   createdAt: string;
   action: OpsAuditAction;
   actor: OpsAuditActor;
-  entityType: "ops_session" | "order";
+  entityType: "ops_session" | "order" | "notification";
   entityId: string;
   summary: string;
   metadata: Record<string, OpsAuditMetadataValue>;

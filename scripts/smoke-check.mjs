@@ -19,6 +19,9 @@ const orderAuthorityFile =
   process.env.SMOKE_ORDER_AUTHORITY_FILE ?? ".data/smoke-orders.json";
 const opsAuditFile =
   process.env.SMOKE_OPS_AUDIT_FILE ?? ".data/smoke-ops-audit.json";
+const notificationAuthorityFile =
+  process.env.SMOKE_NOTIFICATION_AUTHORITY_FILE ??
+  ".data/smoke-notifications.json";
 const nextCliPath = require.resolve("next/dist/bin/next");
 
 if (!existsSync(".next/BUILD_ID")) {
@@ -50,6 +53,12 @@ function safeCleanupOrderStore() {
 
   try {
     rmSync(opsAuditFile, { force: true });
+  } catch {
+    // Ignore smoke cleanup failures.
+  }
+
+  try {
+    rmSync(notificationAuthorityFile, { force: true });
   } catch {
     // Ignore smoke cleanup failures.
   }
@@ -212,6 +221,14 @@ const publicSmokeChecks = [
     ],
   },
   {
+    pathname: "/ops-access?next=%2Fops%2Fnotifications",
+    markers: [
+      "Ops access gate",
+      "ops_access_to_notifications",
+      'content="noindex, nofollow"',
+    ],
+  },
+  {
     pathname: "/sitemap.xml",
     markers: [
       "/shop/haircare",
@@ -263,6 +280,14 @@ const protectedOpsChecks = [
       'content="noindex, nofollow"',
     ],
   },
+  {
+    pathname: "/ops/notifications",
+    markers: [
+      "Internal notifications",
+      "ops_notifications_to_fulfillment",
+      'content="noindex, nofollow"',
+    ],
+  },
 ];
 
 const assetChecks = ["/og-product.svg", "/og-journal.svg"];
@@ -301,6 +326,7 @@ server = spawn(process.execPath, [nextCliPath, "start", "--port", String(port)],
     ORDER_AUTHORITY_SECRET: orderAuthoritySecret,
     ORDER_AUTHORITY_FILE: orderAuthorityFile,
     OPS_AUDIT_FILE: opsAuditFile,
+    NOTIFICATION_AUTHORITY_FILE: notificationAuthorityFile,
   },
   stdio: ["ignore", "pipe", "pipe"],
 });
@@ -377,6 +403,13 @@ try {
   );
   assert.equal(createOrderResponse.status, 201);
   assert.ok(createOrderBody.order.orderNumber, "Expected created order reference");
+  assert.ok(
+    Array.isArray(createOrderBody.notifications) &&
+      createOrderBody.notifications.some(
+        (notification) => notification.templateKey === "payment_link",
+      ),
+    "Expected created order response to include active notification queue items",
+  );
 
   const recentOrderCookie = extractCookie(
     createOrderResponse,
@@ -396,6 +429,12 @@ try {
     recentOrderBody.order.orderNumber,
     createOrderBody.order.orderNumber,
   );
+  assert.ok(
+    recentOrderBody.notifications.some(
+      (notification) => notification.templateKey === "payment_link",
+    ),
+    "Expected recent-order API to include notification queue items",
+  );
 
   const { response: trackedOrderResponse, body: trackedOrderBody } = await fetchJson(
     `/api/orders/${encodeURIComponent(createOrderBody.order.orderNumber)}?phoneLastFour=4567`,
@@ -404,6 +443,12 @@ try {
   assert.equal(
     trackedOrderBody.order.orderNumber,
     createOrderBody.order.orderNumber,
+  );
+  assert.ok(
+    trackedOrderBody.notifications.some(
+      (notification) => notification.templateKey === "payment_link",
+    ),
+    "Expected tracked-order API to include notification queue items",
   );
 
   const { response: loginResponse, body: loginBody } = await sendJson(
@@ -447,6 +492,28 @@ try {
     "Expected ops orders API to include the smoke order",
   );
 
+  const {
+    response: opsNotificationsResponse,
+    body: opsNotificationsBody,
+  } = await fetchJson("/api/ops/notifications", {
+    headers: {
+      Cookie: opsCookie,
+    },
+  });
+  assert.equal(opsNotificationsResponse.status, 200);
+
+  const smokeNotification = opsNotificationsBody.notifications.find(
+    (notification) =>
+      notification.orderNumber === createOrderBody.order.orderNumber &&
+      notification.templateKey === "payment_link",
+  );
+
+  assert.ok(
+    smokeNotification,
+    "Expected ops notifications API to include the smoke payment-link notification",
+  );
+  assert.equal(smokeNotification.status, "queued");
+
   const { response: updateOrderResponse, body: updateOrderBody } = await sendJson(
     "PATCH",
     `/api/ops/orders/${encodeURIComponent(createOrderBody.order.orderNumber)}`,
@@ -460,6 +527,25 @@ try {
   assert.equal(updateOrderResponse.status, 200);
   assert.equal(updateOrderBody.previousStatus, "payment_pending");
   assert.equal(updateOrderBody.nextStatus, "confirmed");
+
+  const {
+    response: updateNotificationResponse,
+    body: updateNotificationBody,
+  } = await sendJson(
+    "PATCH",
+    `/api/ops/notifications/${encodeURIComponent(smokeNotification.id)}`,
+    {
+      status: "sent",
+    },
+    {
+      headers: {
+        Cookie: opsCookie,
+      },
+    },
+  );
+  assert.equal(updateNotificationResponse.status, 200);
+  assert.equal(updateNotificationBody.previousStatus, "queued");
+  assert.equal(updateNotificationBody.nextStatus, "sent");
 
   const { response: auditResponse, body: auditBody } = await fetchJson(
     "/api/ops/audit",
@@ -481,6 +567,14 @@ try {
         entry.entityId === createOrderBody.order.orderNumber,
     ),
     "Expected audit API to include the smoke order status update",
+  );
+  assert.ok(
+    auditBody.auditEntries.some(
+      (entry) =>
+        entry.action === "ops_notification_status_update" &&
+        entry.entityId === smokeNotification.id,
+    ),
+    "Expected audit API to include the smoke notification status update",
   );
 
   for (const check of protectedOpsChecks) {
@@ -542,6 +636,21 @@ try {
     forbiddenOrdersApiBody.error,
     /permission/i,
     "Expected role-aware permission error for catalog operator",
+  );
+
+  const {
+    response: forbiddenNotificationsApiResponse,
+    body: forbiddenNotificationsApiBody,
+  } = await fetchJson("/api/ops/notifications", {
+    headers: {
+      Cookie: catalogCookie,
+    },
+  });
+  assert.equal(forbiddenNotificationsApiResponse.status, 403);
+  assert.match(
+    forbiddenNotificationsApiBody.error,
+    /permission/i,
+    "Expected role-aware permission error for notifications API",
   );
 
   console.log(`Smoke checks passed against ${baseUrl}`);
