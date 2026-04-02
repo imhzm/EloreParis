@@ -271,6 +271,15 @@ export function OpsReleaseSurface() {
                 <span>Latest stored release evidence</span>
               </TrackedLink>
               <TrackedLink
+                href="/api/ops/release/package"
+                analyticsLabel="ops_release_to_package"
+                analyticsSurface="ops_release_links"
+                analyticsDestinationType="other"
+              >
+                <span>Release package API</span>
+                <span>Combined blockers, preflight, and latest evidence</span>
+              </TrackedLink>
+              <TrackedLink
                 href="/ops/content"
                 analyticsLabel="ops_release_to_content"
                 analyticsSurface="ops_release_links"

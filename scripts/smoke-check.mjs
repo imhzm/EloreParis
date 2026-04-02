@@ -34,6 +34,11 @@ const releaseEvidenceFile =
   process.env.SMOKE_RELEASE_EVIDENCE_PATH ??
   process.env.RELEASE_EVIDENCE_PATH ??
   ".artifacts/release-evidence.json";
+const releasePackageFile =
+  process.env.SMOKE_RELEASE_PACKAGE_PATH ?? ".artifacts/release-package.json";
+const releasePackageMarkdownFile =
+  process.env.SMOKE_RELEASE_PACKAGE_MARKDOWN_PATH ??
+  ".artifacts/release-package.md";
 const standaloneStartScript = path.resolve(
   process.cwd(),
   "scripts/start-standalone.mjs",
@@ -67,7 +72,7 @@ function safeRemoveAuthorityArtifact(filePath) {
   }
 }
 
-function safeCleanupAuthorityArtifacts() {
+function safeCleanupAuthorityState() {
   safeRemoveAuthorityArtifact(authorityDbFile);
   safeRemoveAuthorityArtifact(`${authorityDbFile}-shm`);
   safeRemoveAuthorityArtifact(`${authorityDbFile}-wal`);
@@ -75,12 +80,78 @@ function safeCleanupAuthorityArtifacts() {
   safeRemoveAuthorityArtifact(orderAuthorityFile);
   safeRemoveAuthorityArtifact(opsAuditFile);
   safeRemoveAuthorityArtifact(notificationAuthorityFile);
+}
+
+function resetReleaseArtifacts() {
   safeRemoveAuthorityArtifact(releaseEvidenceFile);
+  safeRemoveAuthorityArtifact(releasePackageFile);
+  safeRemoveAuthorityArtifact(releasePackageMarkdownFile);
 }
 
 function writeReleaseEvidence(report) {
   mkdirSync(path.dirname(releaseEvidenceFile), { recursive: true });
   writeFileSync(releaseEvidenceFile, JSON.stringify(report, null, 2));
+}
+
+function renderReleasePackageMarkdown(releasePackage) {
+  const blockedItems = releasePackage.blockedItems
+    .map(
+      (item) =>
+        `- ${item.title} (${item.source})\n  ${item.summary}\n  ${item.details
+          .map((detail) => `  - ${detail}`)
+          .join("\n")}`,
+    )
+    .join("\n");
+  const warningItems = releasePackage.warningItems
+    .map(
+      (item) =>
+        `- ${item.title} (${item.source})\n  ${item.summary}\n  ${item.details
+          .map((detail) => `  - ${detail}`)
+          .join("\n")}`,
+    )
+    .join("\n");
+  const nextActions = releasePackage.nextActions
+    .map((action) => `- ${action}`)
+    .join("\n");
+  const evidenceNotes =
+    releasePackage.releaseEvidence?.notes.map((note) => `- ${note}`).join("\n") ??
+    "- No stored release evidence is available yet.";
+
+  return [
+    "# Release Package",
+    "",
+    `- Generated at: ${releasePackage.generatedAt}`,
+    `- Verification mode: ${releasePackage.verificationMode}`,
+    `- Target base URL: ${releasePackage.targetBaseUrl}`,
+    `- Runtime environment: ${releasePackage.runtimeEnvironment}`,
+    `- Canonical URL: ${releasePackage.canonicalUrl}`,
+    `- Overall status: ${releasePackage.overallStatus}`,
+    `- Blocked items: ${releasePackage.blockedCount}`,
+    `- Warning items: ${releasePackage.warningCount}`,
+    `- Ready items: ${releasePackage.readyCount}`,
+    "",
+    "## Blocked Items",
+    blockedItems || "- None.",
+    "",
+    "## Warning Items",
+    warningItems || "- None.",
+    "",
+    "## Next Actions",
+    nextActions || "- None.",
+    "",
+    "## Latest Evidence Notes",
+    evidenceNotes,
+    "",
+  ].join("\n");
+}
+
+function writeReleasePackageArtifacts(releasePackage) {
+  mkdirSync(path.dirname(releasePackageFile), { recursive: true });
+  writeFileSync(releasePackageFile, JSON.stringify(releasePackage, null, 2));
+  writeFileSync(
+    releasePackageMarkdownFile,
+    renderReleasePackageMarkdown(releasePackage),
+  );
 }
 
 async function shutdownServer() {
@@ -347,7 +418,8 @@ process.on("SIGTERM", () => {
   void shutdownServer().finally(() => process.exit(1));
 });
 
-safeCleanupAuthorityArtifacts();
+safeCleanupAuthorityState();
+resetReleaseArtifacts();
 
 server = spawn(process.execPath, [standaloneStartScript], {
   cwd: process.cwd(),
@@ -833,7 +905,7 @@ try {
       publicRouteChecks: publicSmokeChecks.length,
       protectedRouteChecks: protectedOpsChecks.length,
       assetChecks: assetChecks.length,
-      apiChecks: 8,
+      apiChecks: 11,
     },
     checks: [
       {
@@ -848,8 +920,8 @@ try {
       },
       {
         id: "api-contracts",
-        title: "Health, orders, notifications, audit, and release APIs",
-        count: 8,
+        title: "Health, order, release, notification, audit, and package APIs",
+        count: 11,
       },
       {
         id: "release-assets",
@@ -887,6 +959,31 @@ try {
     releaseEvidenceBody.releaseEvidence.summary.protectedRouteChecks,
     protectedOpsChecks.length,
   );
+
+  const {
+    response: releasePackageResponse,
+    body: releasePackageBody,
+  } = await fetchJson("/api/ops/release/package", {
+    headers: {
+      Cookie: opsCookie,
+    },
+  });
+  assert.equal(
+    releasePackageResponse.status,
+    200,
+    "Expected ops release package API to return 200 for manager role",
+  );
+  assert.equal(
+    releasePackageBody.releasePackage.releaseEvidence?.summary.apiChecks,
+    11,
+  );
+  assert.ok(
+    releasePackageBody.releasePackage.blockedItems.some(
+      (item) => item.id === "hosting-runtime",
+    ),
+    "Expected release package to include the hosting-runtime blocker in local smoke mode",
+  );
+  writeReleasePackageArtifacts(releasePackageBody.releasePackage);
 
   const throttledIp = "198.51.100.42";
 
@@ -968,5 +1065,5 @@ try {
   process.exitCode = 1;
 } finally {
   await shutdownServer();
-  safeCleanupAuthorityArtifacts();
+  safeCleanupAuthorityState();
 }

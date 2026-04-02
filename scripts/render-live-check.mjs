@@ -25,6 +25,16 @@ const releaseEvidenceArtifactPath = path.resolve(
   process.env.LIVE_EVIDENCE_ARTIFACT_PATH ??
     ".artifacts/render-live-evidence.json",
 );
+const releasePackageArtifactPath = path.resolve(
+  process.cwd(),
+  process.env.LIVE_RELEASE_PACKAGE_ARTIFACT_PATH ??
+    ".artifacts/render-live-release-package.json",
+);
+const releasePackageMarkdownArtifactPath = path.resolve(
+  process.cwd(),
+  process.env.LIVE_RELEASE_PACKAGE_MARKDOWN_PATH ??
+    ".artifacts/render-live-release-package.md",
+);
 
 if (!baseUrl) {
   throw new Error(
@@ -49,6 +59,67 @@ const trustedMutationHeaders = {
 function writeReleaseEvidenceArtifact(report) {
   mkdirSync(path.dirname(releaseEvidenceArtifactPath), { recursive: true });
   writeFileSync(releaseEvidenceArtifactPath, JSON.stringify(report, null, 2));
+}
+
+function renderReleasePackageMarkdown(releasePackage) {
+  const blockedItems = releasePackage.blockedItems
+    .map(
+      (item) =>
+        `- ${item.title} (${item.source})\n  ${item.summary}\n  ${item.details
+          .map((detail) => `  - ${detail}`)
+          .join("\n")}`,
+    )
+    .join("\n");
+  const warningItems = releasePackage.warningItems
+    .map(
+      (item) =>
+        `- ${item.title} (${item.source})\n  ${item.summary}\n  ${item.details
+          .map((detail) => `  - ${detail}`)
+          .join("\n")}`,
+    )
+    .join("\n");
+  const nextActions = releasePackage.nextActions
+    .map((action) => `- ${action}`)
+    .join("\n");
+  const evidenceNotes =
+    releasePackage.releaseEvidence?.notes.map((note) => `- ${note}`).join("\n") ??
+    "- No stored release evidence is available yet.";
+
+  return [
+    "# Live Release Package",
+    "",
+    `- Generated at: ${releasePackage.generatedAt}`,
+    `- Verification mode: ${releasePackage.verificationMode}`,
+    `- Target base URL: ${releasePackage.targetBaseUrl}`,
+    `- Runtime environment: ${releasePackage.runtimeEnvironment}`,
+    `- Canonical URL: ${releasePackage.canonicalUrl}`,
+    `- Overall status: ${releasePackage.overallStatus}`,
+    `- Blocked items: ${releasePackage.blockedCount}`,
+    `- Warning items: ${releasePackage.warningCount}`,
+    `- Ready items: ${releasePackage.readyCount}`,
+    "",
+    "## Blocked Items",
+    blockedItems || "- None.",
+    "",
+    "## Warning Items",
+    warningItems || "- None.",
+    "",
+    "## Next Actions",
+    nextActions || "- None.",
+    "",
+    "## Latest Evidence Notes",
+    evidenceNotes,
+    "",
+  ].join("\n");
+}
+
+function writeReleasePackageArtifacts(releasePackage) {
+  mkdirSync(path.dirname(releasePackageArtifactPath), { recursive: true });
+  writeFileSync(releasePackageArtifactPath, JSON.stringify(releasePackage, null, 2));
+  writeFileSync(
+    releasePackageMarkdownArtifactPath,
+    renderReleasePackageMarkdown(releasePackage),
+  );
 }
 
 function extractCookie(response, cookieName) {
@@ -270,7 +341,7 @@ try {
       publicRouteChecks: 1,
       protectedRouteChecks: 2,
       assetChecks: 0,
-      apiChecks: 4,
+      apiChecks: 6,
     },
     checks: [
       {
@@ -292,6 +363,11 @@ try {
         id: "live-release-evidence",
         title: "Release evidence publish and readback",
         count: 2,
+      },
+      {
+        id: "live-release-package",
+        title: "Release package readback from the deployed runtime",
+        count: 1,
       },
     ],
     notes: [
@@ -350,6 +426,31 @@ try {
     storedEvidenceBody?.releaseEvidence?.verificationMode,
     "live_postdeploy",
   );
+
+  const { response: releasePackageResponse, body: releasePackageBody } =
+    await fetchJson("/api/ops/release/package", {
+      headers: {
+        Cookie: opsCookie,
+      },
+    });
+
+  assert.equal(
+    releasePackageResponse.status,
+    200,
+    "Expected live release package readback to return 200.",
+  );
+  assert.equal(
+    releasePackageBody?.releasePackage?.releaseEvidence?.verificationMode,
+    "live_postdeploy",
+    "Expected the live release package to expose the stored post-deploy evidence.",
+  );
+  assert.ok(
+    releasePackageBody?.releasePackage?.blockedItems.some(
+      (item) => item.id === "content-approval",
+    ),
+    "Expected the live release package to keep surfacing the remaining content blocker honestly.",
+  );
+  writeReleasePackageArtifacts(releasePackageBody.releasePackage);
 
   const logoutResponse = await fetch(`${baseUrl}/api/ops-access/logout`, {
     method: "POST",

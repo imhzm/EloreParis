@@ -43,3 +43,13 @@ jobs:
           name: release-evidence
           path: .artifacts/release-evidence.json
           if-no-files-found: ignore
+
+      - name: Upload release package artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-package
+          path: |
+            .artifacts/release-package.json
+            .artifacts/release-package.md
+          if-no-files-found: ignore

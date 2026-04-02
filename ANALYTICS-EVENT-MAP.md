@@ -252,7 +252,8 @@ Tracked properties:
 - Internal `/ops/fulfillment` routing queue, notification review, and order-tracking shortcuts
 - Internal `/ops/notifications` queue actions, fulfillment shortcuts, and public tracking shortcuts
 - Internal `/ops-access` gate plus logout action through the protected ops navigation
-- Internal `/ops`, `/ops/orders`, `/ops/fulfillment`, `/ops/notifications`, `/ops/catalog`, and `/ops/audit` navigation links under the role-aware session model
+- Internal `/ops`, `/ops/orders`, `/ops/fulfillment`, `/ops/notifications`, `/ops/catalog`, `/ops/release`, and `/ops/audit` navigation links under the role-aware session model
+- Internal `/ops/release` links into health, evidence, release package, content governance, and audit review surfaces
 - FAQ route links into tracking, trust policies, and contact
 - Contact route links into FAQ, tracking, and trust support paths
 - About route links into trust, terms, contact, and shopping discovery
