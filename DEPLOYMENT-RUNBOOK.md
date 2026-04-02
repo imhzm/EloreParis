@@ -25,6 +25,7 @@
 - `/ops/release` now also exposes a runtime preflight section for the public URL, persistent-path alignment, signing-secret quality, and protected ops bootstrap identities.
 - The latest executable smoke-evidence report is exposed through [`/api/ops/release/evidence`](D:/REDA/ksa%20cozmateks/src/app/api/ops/release/evidence/route.ts) and uploaded from CI as an artifact.
 - A combined release package is now exposed through [`/api/ops/release/package`](D:/REDA/ksa%20cozmateks/src/app/api/ops/release/package/route.ts) and uploaded from both CI and the live Render workflow as JSON plus Markdown artifacts.
+- An executive release packet is now exposed through [`/api/ops/release/packet`](D:/REDA/ksa%20cozmateks/src/app/api/ops/release/packet/route.ts) and uploaded from both CI and the live Render workflow as JSON plus Markdown artifacts.
 - Published release packages are now preserved through [`/api/ops/release/history`](D:/REDA/ksa%20cozmateks/src/app/api/ops/release/history/route.ts) and uploaded from both CI and the live Render workflow as release-history JSON plus Markdown artifacts.
 - Runtime drift versus the latest published package is now exposed through [`/api/ops/release/compare`](D:/REDA/ksa%20cozmateks/src/app/api/ops/release/compare/route.ts) and uploaded from both CI and the live Render workflow as release-diff JSON plus Markdown artifacts.
 - Protected release decisions are now preserved through [`/api/ops/release/decisions`](D:/REDA/ksa%20cozmateks/src/app/api/ops/release/decisions/route.ts), false approvals are rejected while blockers remain, and CI plus live Render verification now upload release-decision JSON plus Markdown artifacts.
@@ -104,18 +105,19 @@ If you still want to use it for previews or one-off verification, it requires:
 7. Confirm the runtime preflight section inside `/ops/release` reports `public-site-url`, `signing-secrets`, and `ops-bootstrap-identities` as ready, and that `persistent-runtime-paths` is no longer blocked.
 8. Confirm `/api/ops/release/evidence` now reflects the latest live post-deploy verification report for the deployed build instead of staying empty.
 9. Confirm `/api/ops/release/package` now reflects the same live evidence plus the current blockers and next actions from the deployed runtime.
-10. Confirm `/api/ops/release/history` includes the newly published live release package record and preserves earlier publication entries.
-11. Confirm `/api/ops/release/compare` reports `unchanged` immediately after a healthy live publication or surfaces any drift honestly if the runtime changed again.
-12. Confirm `/api/ops/release/decisions` records the expected hold or approval verdict for the latest published package and rejects any false approval while blockers remain.
-13. Confirm unauthenticated `/ops` redirects to `/ops-access`.
-14. Confirm the chosen ops identity can log in through username and password, reaches its allowed default route, and that a lower-privilege role cannot open unauthorized ops pages.
-15. Confirm origin-less or cross-origin attempts to mutate `/api/ops/*` and `/api/ops-access/logout` are rejected with `403`.
-16. Confirm repeated failed login attempts hit `429` throttling and recover only after the cooldown window.
-17. Confirm `/ops/notifications` can read queued delivery items and update a notification state without losing the shared authority database between requests or process restarts.
-18. Confirm `/ops/audit` can read recent login, order-state, notification-state, throttling, release-evidence publish, release-package publish, and release-decision publish traces without losing the shared authority database between requests or process restarts.
-19. Confirm checkout can create an order and tracking can read it back in the chosen environment without losing the authority database between requests or process restarts.
-20. Confirm the homepage, product page, article page, `cart`, and `sitemap.xml` render correctly after deployment.
-21. Confirm public launch approval still matches [`CONTENT-OWNERSHIP.md`](D:/REDA/ksa%20cozmateks/CONTENT-OWNERSHIP.md), including sample-pack and business-input gates.
+10. Confirm `/api/ops/release/packet` condenses the same live evidence, latest package, latest decision, drift status, and content-governance blockers into one honest runtime packet.
+11. Confirm `/api/ops/release/history` includes the newly published live release package record and preserves earlier publication entries.
+12. Confirm `/api/ops/release/compare` reports `unchanged` immediately after a healthy live publication or surfaces any drift honestly if the runtime changed again.
+13. Confirm `/api/ops/release/decisions` records the expected hold or approval verdict for the latest published package and rejects any false approval while blockers remain.
+14. Confirm unauthenticated `/ops` redirects to `/ops-access`.
+15. Confirm the chosen ops identity can log in through username and password, reaches its allowed default route, and that a lower-privilege role cannot open unauthorized ops pages.
+16. Confirm origin-less or cross-origin attempts to mutate `/api/ops/*` and `/api/ops-access/logout` are rejected with `403`.
+17. Confirm repeated failed login attempts hit `429` throttling and recover only after the cooldown window.
+18. Confirm `/ops/notifications` can read queued delivery items and update a notification state without losing the shared authority database between requests or process restarts.
+19. Confirm `/ops/audit` can read recent login, order-state, notification-state, throttling, release-evidence publish, release-package publish, and release-decision publish traces without losing the shared authority database between requests or process restarts.
+20. Confirm checkout can create an order and tracking can read it back in the chosen environment without losing the authority database between requests or process restarts.
+21. Confirm the homepage, product page, article page, `cart`, and `sitemap.xml` render correctly after deployment.
+22. Confirm public launch approval still matches [`CONTENT-OWNERSHIP.md`](D:/REDA/ksa%20cozmateks/CONTENT-OWNERSHIP.md), including sample-pack and business-input gates.
 
 ## Rollback Path
 
@@ -131,6 +133,7 @@ If you still want to use it for previews or one-off verification, it requires:
 - `/ops/release` runtime preflight still reflects the real public URL, persistent paths, signing-secret quality, and bootstrap identities after deployment
 - `/api/ops/release/evidence` reflects the most recent successful live post-deploy verification run
 - `/api/ops/release/package` reflects the latest live evidence plus the current blocker set from the deployed runtime
+- `/api/ops/release/packet` reflects the same current blocker set, latest package, latest decision, drift status, and governance blockers in one executive runtime payload
 - `/api/ops/release/history` preserves the publication trail for the latest live package and any prior verification snapshots
 - `/api/ops/release/compare` shows whether the deployed runtime still matches the latest published package or has drifted since publication
 - `/api/ops/release/decisions` preserves the latest hold-versus-approve verdict trail for the published package and refuses false approvals while blockers remain

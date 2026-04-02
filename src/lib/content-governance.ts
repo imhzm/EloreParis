@@ -24,6 +24,15 @@ export type ContentGovernanceEntry = {
   requiredInputs: string[];
 };
 
+export type ContentGovernanceSummary = {
+  totalSurfaces: number;
+  totalRoutes: number;
+  awaitingStyleSamples: number;
+  awaitingBusinessInputs: number;
+  ownersMapped: number;
+  launchBlocked: number;
+};
+
 export const contentGovernanceEntries: ContentGovernanceEntry[] = [
   {
     id: "home-and-shop",
@@ -200,5 +209,5 @@ export function getContentGovernanceSummary() {
     ).length,
     ownersMapped: owners.size,
     launchBlocked: contentGovernanceEntries.length,
-  };
+  } satisfies ContentGovernanceSummary;
 }

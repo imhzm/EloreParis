@@ -54,6 +54,11 @@ const releaseDecisionFile =
 const releaseDecisionMarkdownFile =
   process.env.SMOKE_RELEASE_DECISION_MARKDOWN_PATH ??
   ".artifacts/release-decision.md";
+const releasePacketFile =
+  process.env.SMOKE_RELEASE_PACKET_PATH ?? ".artifacts/release-packet.json";
+const releasePacketMarkdownFile =
+  process.env.SMOKE_RELEASE_PACKET_MARKDOWN_PATH ??
+  ".artifacts/release-packet.md";
 const standaloneStartScript = path.resolve(
   process.cwd(),
   "scripts/start-standalone.mjs",
@@ -107,6 +112,8 @@ function resetReleaseArtifacts() {
   safeRemoveAuthorityArtifact(releaseDiffMarkdownFile);
   safeRemoveAuthorityArtifact(releaseDecisionFile);
   safeRemoveAuthorityArtifact(releaseDecisionMarkdownFile);
+  safeRemoveAuthorityArtifact(releasePacketFile);
+  safeRemoveAuthorityArtifact(releasePacketMarkdownFile);
 }
 
 function writeReleaseEvidence(report) {
@@ -270,6 +277,52 @@ function writeReleaseDecisionArtifacts(releaseDecisions) {
   writeFileSync(
     releaseDecisionMarkdownFile,
     renderReleaseDecisionMarkdown(releaseDecisions),
+  );
+}
+
+function renderReleasePacketMarkdown(releasePacket) {
+  const executiveSummary = releasePacket.executiveSummary
+    .map((item) => `- ${item}`)
+    .join("\n");
+  const blockerHighlights = releasePacket.blockerHighlights
+    .map((item) => `- ${item}`)
+    .join("\n");
+  const nextActions = releasePacket.nextActions
+    .map((item) => `- ${item}`)
+    .join("\n");
+
+  return [
+    "# Release Packet",
+    "",
+    `- Generated at: ${releasePacket.generatedAt}`,
+    `- Overall status: ${releasePacket.overallStatus}`,
+    `- Verification mode: ${releasePacket.verificationMode}`,
+    `- Target base URL: ${releasePacket.targetBaseUrl}`,
+    `- Runtime environment: ${releasePacket.runtimeEnvironment}`,
+    `- Canonical URL: ${releasePacket.canonicalUrl}`,
+    `- Latest published record: ${releasePacket.latestPublishedRecord?.id ?? "none"}`,
+    `- Latest decision: ${releasePacket.latestDecision?.verdict ?? "none"}`,
+    `- Comparison status: ${releasePacket.comparison.status}`,
+    `- Content launch blockers: ${releasePacket.contentGovernance.launchBlocked}`,
+    "",
+    "## Executive Summary",
+    executiveSummary || "- None.",
+    "",
+    "## Blocker Highlights",
+    blockerHighlights || "- None.",
+    "",
+    "## Next Actions",
+    nextActions || "- None.",
+    "",
+  ].join("\n");
+}
+
+function writeReleasePacketArtifacts(releasePacket) {
+  mkdirSync(path.dirname(releasePacketFile), { recursive: true });
+  writeFileSync(releasePacketFile, JSON.stringify(releasePacket, null, 2));
+  writeFileSync(
+    releasePacketMarkdownFile,
+    renderReleasePacketMarkdown(releasePacket),
   );
 }
 
@@ -500,6 +553,7 @@ const protectedOpsChecks = [
       "Runtime drift",
       "Release decisions",
       "Release history",
+      "ops_release_to_packet",
       "ops_release_to_health",
       "ops_release_to_history",
       "ops_release_to_compare",
@@ -997,7 +1051,7 @@ try {
       publicRouteChecks: publicSmokeChecks.length,
       protectedRouteChecks: protectedOpsChecks.length,
       assetChecks: assetChecks.length,
-      apiChecks: 20,
+      apiChecks: 21,
     },
     checks: [
       {
@@ -1012,8 +1066,8 @@ try {
       },
       {
         id: "api-contracts",
-        title: "Health, order, release, notification, audit, package, history, compare, and decision APIs",
-        count: 20,
+        title: "Health, order, release, notification, audit, package, packet, history, compare, and decision APIs",
+        count: 21,
       },
       {
         id: "release-assets",
@@ -1073,7 +1127,7 @@ try {
   );
   assert.equal(
     releaseEvidenceBody.releaseEvidence.summary.apiChecks,
-    20,
+    21,
   );
 
   const {
@@ -1091,7 +1145,7 @@ try {
   );
   assert.equal(
     releasePackageBody.releasePackage.releaseEvidence?.summary.apiChecks,
-    20,
+    21,
   );
   assert.ok(
     releasePackageBody.releasePackage.blockedItems.some(
@@ -1119,7 +1173,7 @@ try {
   );
   assert.equal(
     publishReleasePackageBody.releasePackageRecord.artifact.releaseEvidence?.summary.apiChecks,
-    20,
+    21,
   );
 
   const {
@@ -1257,6 +1311,41 @@ try {
     "unchanged",
   );
   writeReleaseDecisionArtifacts(releaseDecisionBody.releaseDecisions);
+
+  const {
+    response: releasePacketResponse,
+    body: releasePacketBody,
+  } = await fetchJson("/api/ops/release/packet", {
+    headers: {
+      Cookie: opsCookie,
+    },
+  });
+  assert.equal(
+    releasePacketResponse.status,
+    200,
+    "Expected ops release packet API to return 200 for manager role",
+  );
+  assert.equal(
+    releasePacketBody.releasePacket.latestPublishedRecord?.id,
+    publishReleasePackageBody.releasePackageRecord.id,
+  );
+  assert.equal(
+    releasePacketBody.releasePacket.latestDecision?.id,
+    publishReleaseDecisionBody.releaseDecisionRecord.id,
+  );
+  assert.equal(
+    releasePacketBody.releasePacket.comparison.status,
+    "unchanged",
+  );
+  assert.equal(
+    releasePacketBody.releasePacket.currentArtifact.releaseEvidence?.summary.apiChecks,
+    21,
+  );
+  assert.ok(
+    releasePacketBody.releasePacket.contentGovernance.launchBlocked > 0,
+    "Expected executive release packet to surface unresolved content blockers",
+  );
+  writeReleasePacketArtifacts(releasePacketBody.releasePacket);
 
   const { response: releaseAuditResponse, body: releaseAuditBody } = await fetchJson(
     "/api/ops/audit",

@@ -65,6 +65,16 @@ const releaseDecisionMarkdownArtifactPath = path.resolve(
   process.env.LIVE_RELEASE_DECISION_MARKDOWN_PATH ??
     ".artifacts/render-live-release-decision.md",
 );
+const releasePacketArtifactPath = path.resolve(
+  process.cwd(),
+  process.env.LIVE_RELEASE_PACKET_ARTIFACT_PATH ??
+    ".artifacts/render-live-release-packet.json",
+);
+const releasePacketMarkdownArtifactPath = path.resolve(
+  process.cwd(),
+  process.env.LIVE_RELEASE_PACKET_MARKDOWN_PATH ??
+    ".artifacts/render-live-release-packet.md",
+);
 
 if (!baseUrl) {
   throw new Error(
@@ -247,6 +257,52 @@ function writeReleaseDecisionArtifacts(releaseDecisions) {
   writeFileSync(
     releaseDecisionMarkdownArtifactPath,
     renderReleaseDecisionMarkdown(releaseDecisions),
+  );
+}
+
+function renderReleasePacketMarkdown(releasePacket) {
+  const executiveSummary = releasePacket.executiveSummary
+    .map((item) => `- ${item}`)
+    .join("\n");
+  const blockerHighlights = releasePacket.blockerHighlights
+    .map((item) => `- ${item}`)
+    .join("\n");
+  const nextActions = releasePacket.nextActions
+    .map((item) => `- ${item}`)
+    .join("\n");
+
+  return [
+    "# Live Release Packet",
+    "",
+    `- Generated at: ${releasePacket.generatedAt}`,
+    `- Overall status: ${releasePacket.overallStatus}`,
+    `- Verification mode: ${releasePacket.verificationMode}`,
+    `- Target base URL: ${releasePacket.targetBaseUrl}`,
+    `- Runtime environment: ${releasePacket.runtimeEnvironment}`,
+    `- Canonical URL: ${releasePacket.canonicalUrl}`,
+    `- Latest published record: ${releasePacket.latestPublishedRecord?.id ?? "none"}`,
+    `- Latest decision: ${releasePacket.latestDecision?.verdict ?? "none"}`,
+    `- Comparison status: ${releasePacket.comparison.status}`,
+    `- Content launch blockers: ${releasePacket.contentGovernance.launchBlocked}`,
+    "",
+    "## Executive Summary",
+    executiveSummary || "- None.",
+    "",
+    "## Blocker Highlights",
+    blockerHighlights || "- None.",
+    "",
+    "## Next Actions",
+    nextActions || "- None.",
+    "",
+  ].join("\n");
+}
+
+function writeReleasePacketArtifacts(releasePacket) {
+  mkdirSync(path.dirname(releasePacketArtifactPath), { recursive: true });
+  writeFileSync(releasePacketArtifactPath, JSON.stringify(releasePacket, null, 2));
+  writeFileSync(
+    releasePacketMarkdownArtifactPath,
+    renderReleasePacketMarkdown(releasePacket),
   );
 }
 
@@ -469,7 +525,7 @@ try {
       publicRouteChecks: 1,
       protectedRouteChecks: 2,
       assetChecks: 0,
-      apiChecks: 14,
+      apiChecks: 15,
     },
     checks: [
       {
@@ -511,6 +567,11 @@ try {
         id: "live-release-decision",
         title: "Release decision rejection, publication, and readback from the deployed runtime",
         count: 3,
+      },
+      {
+        id: "live-release-packet",
+        title: "Executive release packet readback from the deployed runtime",
+        count: 1,
       },
     ],
     notes: [
@@ -614,7 +675,7 @@ try {
   );
   assert.equal(
     releasePackageBody?.releasePackage?.releaseEvidence?.summary.apiChecks,
-    14,
+    15,
   );
 
   const { response: releaseHistoryResponse, body: releaseHistoryBody } =
@@ -748,6 +809,37 @@ try {
   );
   assert.equal(livePublishedReleaseDecision?.compareStatus, "unchanged");
   writeReleaseDecisionArtifacts(releaseDecisionBody.releaseDecisions);
+
+  const { response: releasePacketResponse, body: releasePacketBody } =
+    await fetchJson("/api/ops/release/packet", {
+      headers: {
+        Cookie: opsCookie,
+      },
+    });
+
+  assert.equal(
+    releasePacketResponse.status,
+    200,
+    "Expected live release packet readback to return 200.",
+  );
+  assert.equal(
+    releasePacketBody?.releasePacket?.latestPublishedRecord?.id,
+    publishReleasePackageBody?.releasePackageRecord?.id,
+  );
+  assert.equal(
+    releasePacketBody?.releasePacket?.latestDecision?.id,
+    publishReleaseDecisionBody?.releaseDecisionRecord?.id,
+  );
+  assert.equal(releasePacketBody?.releasePacket?.comparison?.status, "unchanged");
+  assert.equal(
+    releasePacketBody?.releasePacket?.currentArtifact?.releaseEvidence?.summary?.apiChecks,
+    15,
+  );
+  assert.ok(
+    releasePacketBody?.releasePacket?.contentGovernance?.launchBlocked > 0,
+    "Expected live release packet to surface unresolved content blockers honestly.",
+  );
+  writeReleasePacketArtifacts(releasePacketBody.releasePacket);
 
   const { response: auditResponse, body: auditBody } = await fetchJson(
     "/api/ops/audit",

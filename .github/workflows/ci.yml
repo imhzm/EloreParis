@@ -83,3 +83,13 @@ jobs:
             .artifacts/release-decision.json
             .artifacts/release-decision.md
           if-no-files-found: ignore
+
+      - name: Upload release packet artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-packet
+          path: |
+            .artifacts/release-packet.json
+            .artifacts/release-packet.md
+          if-no-files-found: ignore

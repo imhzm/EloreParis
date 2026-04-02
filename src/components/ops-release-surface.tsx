@@ -8,6 +8,7 @@ import {
   fetchOpsReleaseDecisions,
   fetchOpsReleaseEvidence,
   fetchOpsReleaseHistory,
+  fetchOpsReleasePacket,
   fetchOpsReleaseReadiness,
 } from "@/lib/ops-control-client";
 import type { ReleaseEvidenceReport } from "@/lib/release-evidence-types";
@@ -16,6 +17,7 @@ import type {
   ReleasePackageComparison,
   ReleasePackageRecord,
 } from "@/lib/release-package-types";
+import type { ReleasePacketArtifact } from "@/lib/release-packet-types";
 import type {
   ReleaseReadinessGate,
   ReleaseReadinessSnapshot,
@@ -92,6 +94,7 @@ export function OpsReleaseSurface() {
   const [releaseComparison, setReleaseComparison] =
     useState<ReleasePackageComparison | null>(null);
   const [releaseDecisions, setReleaseDecisions] = useState<ReleaseDecisionRecord[]>([]);
+  const [releasePacket, setReleasePacket] = useState<ReleasePacketArtifact | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -102,6 +105,7 @@ export function OpsReleaseSurface() {
       fetchOpsReleaseHistory(),
       fetchOpsReleaseComparison(),
       fetchOpsReleaseDecisions(),
+      fetchOpsReleasePacket(),
     ])
       .then(
         ([
@@ -110,43 +114,50 @@ export function OpsReleaseSurface() {
           historyResult,
           comparisonResult,
           decisionsResult,
+          packetResult,
         ]) => {
-        if (readinessResult.status === "fulfilled") {
-          setSnapshot(readinessResult.value.releaseReadiness);
-          setError(null);
-        } else {
-          setSnapshot(null);
-          setError(
-            readinessResult.reason instanceof Error
-              ? readinessResult.reason.message
-              : "Unable to load the current release blockers from the protected runtime.",
-          );
-        }
+          if (readinessResult.status === "fulfilled") {
+            setSnapshot(readinessResult.value.releaseReadiness);
+            setError(null);
+          } else {
+            setSnapshot(null);
+            setError(
+              readinessResult.reason instanceof Error
+                ? readinessResult.reason.message
+                : "Unable to load the current release blockers from the protected runtime.",
+            );
+          }
 
-        if (evidenceResult.status === "fulfilled") {
-          setEvidence(evidenceResult.value.releaseEvidence);
-        } else {
-          setEvidence(null);
-        }
+          if (evidenceResult.status === "fulfilled") {
+            setEvidence(evidenceResult.value.releaseEvidence);
+          } else {
+            setEvidence(null);
+          }
 
-        if (historyResult.status === "fulfilled") {
-          setReleaseHistory(historyResult.value.releasePackages);
-        } else {
-          setReleaseHistory([]);
-        }
+          if (historyResult.status === "fulfilled") {
+            setReleaseHistory(historyResult.value.releasePackages);
+          } else {
+            setReleaseHistory([]);
+          }
 
-        if (comparisonResult.status === "fulfilled") {
-          setReleaseComparison(comparisonResult.value.releaseComparison);
-        } else {
-          setReleaseComparison(null);
-        }
-        
-        if (decisionsResult.status === "fulfilled") {
-          setReleaseDecisions(decisionsResult.value.releaseDecisions);
-        } else {
-          setReleaseDecisions([]);
-        }
-      },
+          if (comparisonResult.status === "fulfilled") {
+            setReleaseComparison(comparisonResult.value.releaseComparison);
+          } else {
+            setReleaseComparison(null);
+          }
+
+          if (decisionsResult.status === "fulfilled") {
+            setReleaseDecisions(decisionsResult.value.releaseDecisions);
+          } else {
+            setReleaseDecisions([]);
+          }
+
+          if (packetResult.status === "fulfilled") {
+            setReleasePacket(packetResult.value.releasePacket);
+          } else {
+            setReleasePacket(null);
+          }
+        },
       )
       .finally(() => {
         setIsLoading(false);
@@ -185,7 +196,8 @@ export function OpsReleaseSurface() {
             This surface does not claim that launch is complete. It keeps the remaining blockers
             visible: hosting, transactional authority, protected ops access, public-content
             approval, runtime preflight, latest verification evidence, the durable release
-            package trail, and the release decision trail inside the application authority.
+            package trail, the release decision trail, and an executive packet inside the
+            application authority.
           </p>
         </div>
 
@@ -274,6 +286,69 @@ export function OpsReleaseSurface() {
 
         <aside className={styles.summaryList}>
           <article className={styles.summaryCard}>
+            <p className={styles.sectionTitle}>Release packet</p>
+            <h2>Executive release packet</h2>
+            {releasePacket ? (
+              <div className={styles.summaryList}>
+                <div className={styles.referenceCard}>
+                  <div className={styles.referenceRow}>
+                    <span>Overall status</span>
+                    <strong className={styles.referenceValue}>
+                      {getStatusLabel(releasePacket.overallStatus)}
+                    </strong>
+                  </div>
+                  <div className={styles.referenceRow}>
+                    <span>Latest package</span>
+                    <strong className={styles.referenceValue}>
+                      {releasePacket.latestPublishedRecord?.id ?? "none"}
+                    </strong>
+                  </div>
+                  <div className={styles.referenceRow}>
+                    <span>Latest decision</span>
+                    <strong className={styles.referenceValue}>
+                      {releasePacket.latestDecision
+                        ? getDecisionVerdictLabel(releasePacket.latestDecision.verdict)
+                        : "none"}
+                    </strong>
+                  </div>
+                  <div className={styles.referenceRow}>
+                    <span>Runtime drift</span>
+                    <strong className={styles.referenceValue}>
+                      {getComparisonStatusLabel(releasePacket.comparison.status)}
+                    </strong>
+                  </div>
+                  <div className={styles.referenceRow}>
+                    <span>Content blockers</span>
+                    <strong className={styles.referenceValue}>
+                      {releasePacket.contentGovernance.launchBlocked}
+                    </strong>
+                  </div>
+                </div>
+
+                <div className={styles.summaryList}>
+                  {releasePacket.executiveSummary.map((item) => (
+                    <div key={item} className={styles.infoBullet}>
+                      {item}
+                    </div>
+                  ))}
+                </div>
+
+                <div className={styles.summaryList}>
+                  {releasePacket.blockerHighlights.map((item) => (
+                    <div key={item} className={styles.infoBullet}>
+                      {item}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className={styles.infoBullet}>
+                The executive release packet is not available yet from the protected runtime.
+              </div>
+            )}
+          </article>
+
+          <article className={styles.summaryCard}>
             <p className={styles.sectionTitle}>Latest evidence</p>
             <h2>Current verification report</h2>
             {evidence ? (
@@ -352,6 +427,15 @@ export function OpsReleaseSurface() {
               >
                 <span>Release package API</span>
                 <span>Combined blockers, preflight, and latest evidence</span>
+              </TrackedLink>
+              <TrackedLink
+                href="/api/ops/release/packet"
+                analyticsLabel="ops_release_to_packet"
+                analyticsSurface="ops_release_links"
+                analyticsDestinationType="other"
+              >
+                <span>Release packet API</span>
+                <span>Executive packet for blockers, drift, decisions, and governance</span>
               </TrackedLink>
               <TrackedLink
                 href="/api/ops/release/history"

@@ -9,6 +9,7 @@ import type {
   ReleasePackageComparison,
   ReleasePackageRecord,
 } from "@/lib/release-package-types";
+import type { ReleasePacketArtifact } from "@/lib/release-packet-types";
 import type { ReleaseReadinessSnapshot } from "@/lib/release-readiness-types";
 
 async function parseApiError(response: Response, fallbackMessage: string) {
@@ -145,6 +146,22 @@ export async function fetchOpsReleaseDecisions() {
 
   return (await response.json()) as {
     releaseDecisions: ReleaseDecisionRecord[];
+  };
+}
+
+export async function fetchOpsReleasePacket() {
+  const response = await fetch("/api/ops/release/packet", {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      await parseApiError(response, "Unable to load the current executive release packet."),
+    );
+  }
+
+  return (await response.json()) as {
+    releasePacket: ReleasePacketArtifact;
   };
 }
 

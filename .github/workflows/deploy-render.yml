@@ -54,6 +54,8 @@ jobs:
           LIVE_RELEASE_DIFF_MARKDOWN_PATH: .artifacts/render-live-release-diff.md
           LIVE_RELEASE_DECISION_ARTIFACT_PATH: .artifacts/render-live-release-decision.json
           LIVE_RELEASE_DECISION_MARKDOWN_PATH: .artifacts/render-live-release-decision.md
+          LIVE_RELEASE_PACKET_ARTIFACT_PATH: .artifacts/render-live-release-packet.json
+          LIVE_RELEASE_PACKET_MARKDOWN_PATH: .artifacts/render-live-release-packet.md
         run: npm run test:render-live
 
       - name: Upload live release evidence artifact
@@ -102,4 +104,14 @@ jobs:
           path: |
             .artifacts/render-live-release-decision.json
             .artifacts/render-live-release-decision.md
+          if-no-files-found: ignore
+
+      - name: Upload live release packet artifact
+        if: steps.credentials.outputs.configured == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: render-live-release-packet
+          path: |
+            .artifacts/render-live-release-packet.json
+            .artifacts/render-live-release-packet.md
           if-no-files-found: ignore
