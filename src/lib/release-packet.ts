@@ -13,6 +13,9 @@ import {
 import type { ReleasePacketArtifact } from "@/lib/release-packet-types";
 
 function buildExecutiveSummary(packet: ReleasePacketArtifact) {
+  const blockedOwnerSummaries = packet.currentArtifact.releaseReadiness.ownerSummaries.filter(
+    (summary) => summary.blockedCount > 0,
+  );
   const summary = [
     `Current runtime package is ${packet.overallStatus} with ${packet.currentArtifact.blockedCount} blocked, ${packet.currentArtifact.warningCount} warnings, and ${packet.currentArtifact.readyCount} ready items.`,
   ];
@@ -57,6 +60,15 @@ function buildExecutiveSummary(packet: ReleasePacketArtifact) {
   summary.push(
     `${packet.contentGovernance.launchBlocked} content governance groups still block launch, with ${packet.contentGovernance.awaitingStyleSamples} waiting for style samples and ${packet.contentGovernance.awaitingBusinessInputs} waiting for business inputs.`,
   );
+  if (blockedOwnerSummaries.length) {
+    summary.push(
+      `${blockedOwnerSummaries.length} owner lanes still carry blocked work, led by ${blockedOwnerSummaries[0].ownerLabel} with ${blockedOwnerSummaries[0].blockedCount} blocked items.`,
+    );
+  } else {
+    summary.push(
+      "No owner lane currently carries blocked release work inside the runtime packet.",
+    );
+  }
   summary.push(
     `This executive packet should be refreshed within ${packet.reviewWindowMinutes} minutes, before ${packet.reviewExpiresAt}, before a protected release decision is recorded.`,
   );
@@ -69,7 +81,8 @@ function buildBlockerHighlights(
   comparison: ReleasePacketArtifact["comparison"],
 ) {
   const blockedHighlights = currentArtifact.blockedItems.map(
-    (item) => `${item.title}: ${item.summary}`,
+    (item) =>
+      `${item.title}: ${item.summary} Owner: ${item.owner.label}. Next step: ${item.resolutionAction}`,
   );
 
   if (blockedHighlights.length) {
@@ -77,7 +90,8 @@ function buildBlockerHighlights(
   }
 
   const warningHighlights = currentArtifact.warningItems.map(
-    (item) => `${item.title}: ${item.summary}`,
+    (item) =>
+      `${item.title}: ${item.summary} Owner: ${item.owner.label}. Next step: ${item.resolutionAction}`,
   );
 
   if (warningHighlights.length) {

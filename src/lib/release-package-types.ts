@@ -1,5 +1,6 @@
 import type { ReleaseEvidenceReport } from "@/lib/release-evidence-types";
 import type {
+  ReleaseActionOwner,
   ReleaseReadinessSnapshot,
   ReleaseReadinessStatus,
 } from "@/lib/release-readiness-types";
@@ -14,6 +15,8 @@ export type ReleasePackageIssue = {
   source: ReleasePackageIssueSource;
   summary: string;
   details: string[];
+  owner: ReleaseActionOwner;
+  resolutionAction: string;
 };
 
 export type ReleasePackageArtifact = {

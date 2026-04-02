@@ -18,7 +18,7 @@ This project now tracks the minimum event set needed to answer early-stage store
 10. Are protected internal ops surfaces still reachable and reviewable after the access gate is enabled?
 11. Can internal operators still move between dashboard, orders, fulfillment, catalog, and audit surfaces without losing route-level visibility after role gating is enabled?
 12. Which queued operational notifications are being marked sent or returned to queue inside the rehearsal layer before a real delivery provider exists?
-13. Which protected release decisions are being recorded manually from the `/ops/release` surface, and under what packet and blocker state?
+13. Which protected release decisions are being recorded manually from the `/ops/release` surface, and under what packet, blocker, and ownership state?
 
 ## Event Set
 
@@ -236,7 +236,7 @@ Tracked properties:
 ### `ops_release_decision_submit`
 
 - Fires when the internal `/ops/release` surface records a protected hold or approve decision against the latest executive packet.
-- Answers whether release governance is still being exercised manually from the protected runtime, and what blocker or drift state existed when the verdict was recorded.
+- Answers whether release governance is still being exercised manually from the protected runtime, and what blocker, drift, and acknowledgement state existed when the verdict was recorded.
 
 Tracked properties:
 
@@ -273,7 +273,7 @@ Tracked properties:
 - Internal `/ops-access` gate plus logout action through the protected ops navigation
 - Internal `/ops`, `/ops/orders`, `/ops/fulfillment`, `/ops/notifications`, `/ops/catalog`, `/ops/release`, and `/ops/audit` navigation links under the role-aware session model
 - Internal `/ops/release` links into health, evidence, release package, release packet, release history, release compare, release decisions, content governance, and audit review surfaces
-- Internal `/ops/release` manager-only decision composer for protected hold and approval verdicts
+- Internal `/ops/release` manager-only decision composer for protected hold and approval verdicts plus blocker-ownership review
 - Internal `/ops/audit` links into orders, fulfillment, notifications, and release review surfaces
 - FAQ route links into tracking, trust policies, and contact
 - Contact route links into FAQ, tracking, and trust support paths

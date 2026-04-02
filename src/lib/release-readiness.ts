@@ -6,6 +6,14 @@ import {
 import { getAuthorityStorageInfo } from "@/lib/authority-database";
 import { getHostingDirection } from "@/lib/hosting-direction";
 import { getOpsAccessConfig } from "@/lib/ops-access";
+import {
+  buildReleaseOwnerSummaries,
+  getReleaseCommerceOwner,
+  getReleaseContentOwner,
+  getReleaseDeliveryOwner,
+  getReleasePlatformOwner,
+  getReleaseSecurityOwner,
+} from "@/lib/release-ownership";
 import { getReleaseRuntimePreflightSnapshot } from "@/lib/release-runtime-preflight";
 import type {
   ReleaseReadinessGate,
@@ -54,6 +62,11 @@ export function getReleaseReadinessSnapshot(): ReleaseReadinessSnapshot {
   const hostingDirection = getHostingDirection();
   const opsAccessConfig = getOpsAccessConfig();
   const runtimePreflight = getReleaseRuntimePreflightSnapshot();
+  const deliveryOwner = getReleaseDeliveryOwner();
+  const platformOwner = getReleasePlatformOwner();
+  const commerceOwner = getReleaseCommerceOwner();
+  const securityOwner = getReleaseSecurityOwner();
+  const contentOwner = getReleaseContentOwner();
 
   const gates: ReleaseReadinessGate[] = [
     {
@@ -66,6 +79,9 @@ export function getReleaseReadinessSnapshot(): ReleaseReadinessSnapshot {
         "GitHub Actions CI runs on every push to main.",
         "Smoke checks verify key public routes, protected ops routes, and transactional APIs.",
       ],
+      owner: deliveryOwner,
+      resolutionAction:
+        "Keep CI green on main and republish a protected release package after any release-surface change.",
     },
     {
       id: "hosting-direction",
@@ -80,6 +96,9 @@ export function getReleaseReadinessSnapshot(): ReleaseReadinessSnapshot {
         `Persistent state path: ${hostingDirection.persistencePath}`,
         `Secondary path: ${hostingDirection.optionalSecondaryPath}`,
       ],
+      owner: platformOwner,
+      resolutionAction:
+        "Keep Render plus persistent disk as the only supported launch path until shared backend ownership replaces the single-host runtime.",
     },
     {
       id: "hosting-runtime",
@@ -94,6 +113,9 @@ export function getReleaseReadinessSnapshot(): ReleaseReadinessSnapshot {
             "A real Render deployment plus production domain configuration is still required.",
           ]
         : [`Current canonical URL: ${siteUrl}`],
+      owner: platformOwner,
+      resolutionAction:
+        "Create the live Render service, bind the production domain, and republish the release package from the hosted runtime.",
     },
     {
       id: "transactional-backend",
@@ -108,6 +130,9 @@ export function getReleaseReadinessSnapshot(): ReleaseReadinessSnapshot {
         `Durability mode: ${authorityStorage.durability}`,
         `Storage path: ${authorityStorage.path}`,
       ],
+      owner: commerceOwner,
+      resolutionAction:
+        "Replace the current single-host SQLite authority with shared durable ownership for orders, notifications, and audit data before multi-operator production use.",
     },
     {
       id: "ops-auth",
@@ -121,6 +146,9 @@ export function getReleaseReadinessSnapshot(): ReleaseReadinessSnapshot {
         `Primary auth method: ${opsAccessConfig.primaryAuthMethod}`,
         `Identity login available: ${opsAccessConfig.supportsIdentityAuth ? "yes" : "no"}`,
       ],
+      owner: securityOwner,
+      resolutionAction:
+        "Upgrade the current env-backed identities into provider-backed auth with real RBAC before trusting live internal operations.",
     },
     {
       id: "content-approval",
@@ -135,8 +163,15 @@ export function getReleaseReadinessSnapshot(): ReleaseReadinessSnapshot {
         `${contentSummary.awaitingBusinessInputs} groups are waiting for approved business inputs.`,
         `${contentSummary.launchBlocked} governance groups still block final launch claims.`,
       ],
+      owner: contentOwner,
+      resolutionAction:
+        "Clear the remaining sample-pack, legal, and business-input approvals in /ops/content before any public launch claim.",
     },
   ];
+  const ownerSummaries = buildReleaseOwnerSummaries([
+    ...gates,
+    ...runtimePreflight.checks,
+  ]);
 
   return {
     overallStatus: getOverallStatus(gates),
@@ -147,6 +182,7 @@ export function getReleaseReadinessSnapshot(): ReleaseReadinessSnapshot {
     canonicalUrl: siteUrl,
     gates,
     runtimePreflight,
+    ownerSummaries,
     nextActions: [
       "Create the primary Render web service from render.yaml, attach the persistent disk, and set the deploy-hook plus live-base-url secrets for the manual Render workflow.",
       "Use the runtime preflight section inside /ops/release to clear the public URL, persistent path, signing-secret, and protected-identity blockers before the first live deploy claim.",

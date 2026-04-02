@@ -23,6 +23,7 @@ import type {
 import type { ReleasePacketArtifact } from "@/lib/release-packet-types";
 import type {
   ReleaseReadinessGate,
+  ReleaseReadinessOwnerSummary,
   ReleaseReadinessSnapshot,
 } from "@/lib/release-readiness-types";
 import type { OpsSessionSummary } from "@/lib/ops-types";
@@ -49,6 +50,23 @@ function getStatusLabel(status: ReleaseReadinessGate["status"]) {
       return "Warning";
     case "blocked":
       return "Blocked";
+  }
+}
+
+function getOwnerLaneLabel(
+  lane: ReleaseReadinessOwnerSummary["lane"],
+) {
+  switch (lane) {
+    case "delivery":
+      return "Delivery";
+    case "platform":
+      return "Platform";
+    case "security":
+      return "Security";
+    case "commerce":
+      return "Commerce";
+    case "content":
+      return "Content";
   }
 }
 
@@ -145,7 +163,7 @@ function formatToken(value: string) {
     return value;
   }
 
-  return `${value.slice(0, 14)}…`;
+  return `${value.slice(0, 14)}...`;
 }
 
 function parseDecisionNotes(value: string) {
@@ -304,6 +322,15 @@ export function OpsReleaseSurface() {
 
   const decisionNotes = useMemo(() => parseDecisionNotes(notesInput), [notesInput]);
   const blockedItems = releasePacket?.currentArtifact.blockedItems ?? [];
+  const ownerSummaries =
+    releasePacket?.currentArtifact.releaseReadiness.ownerSummaries ??
+    snapshot?.ownerSummaries ??
+    [];
+  const activeOwnerSummaries = ownerSummaries.filter(
+    (summary) => summary.blockedCount > 0 || summary.warningCount > 0,
+  );
+  const displayedOwnerSummaries =
+    activeOwnerSummaries.length > 0 ? activeOwnerSummaries : ownerSummaries;
   const isManagerSession = opsSession?.role === "manager";
   const packetExpired = releasePacket
     ? Date.parse(releasePacket.reviewExpiresAt) <= Date.now()
@@ -533,14 +560,43 @@ export function OpsReleaseSurface() {
                     <div className={styles.linePrice}>{getStatusLabel(gate.status)}</div>
                   </div>
 
+                  <div className={styles.badgeRow}>
+                    <span>{getOwnerLaneLabel(gate.owner.lane)}</span>
+                    <span>{gate.owner.label}</span>
+                  </div>
+
                   <p>{gate.summary}</p>
 
+                  <div className={styles.referenceCard}>
+                    <div className={styles.referenceRow}>
+                      <span>Owner route</span>
+                      <strong className={styles.referenceValue}>{gate.owner.defaultPath}</strong>
+                    </div>
+                    <div className={styles.referenceRow}>
+                      <span>Resolution action</span>
+                      <strong className={styles.referenceValue}>{gate.resolutionAction}</strong>
+                    </div>
+                  </div>
+
                   <div className={styles.summaryList}>
+                    <div className={styles.infoBullet}>{gate.owner.summary}</div>
                     {gate.details.map((detail) => (
                       <div key={detail} className={styles.infoBullet}>
                         {detail}
                       </div>
                     ))}
+                  </div>
+
+                  <div className={styles.linkList}>
+                    <TrackedLink
+                      href={gate.owner.defaultPath}
+                      analyticsLabel={`ops_release_gate_owner_${gate.id}`}
+                      analyticsSurface="ops_release_gate_owner"
+                      analyticsDestinationType="ops_route"
+                    >
+                      <span>{gate.owner.label}</span>
+                      <span>{gate.resolutionAction}</span>
+                    </TrackedLink>
                   </div>
                 </article>
               ))
@@ -603,6 +659,16 @@ export function OpsReleaseSurface() {
                     <span>Content blockers</span>
                     <strong className={styles.referenceValue}>
                       {releasePacket.contentGovernance.launchBlocked}
+                    </strong>
+                  </div>
+                  <div className={styles.referenceRow}>
+                    <span>Owner lanes with blocked work</span>
+                    <strong className={styles.referenceValue}>
+                      {
+                        releasePacket.currentArtifact.releaseReadiness.ownerSummaries.filter(
+                          (summary) => summary.blockedCount > 0,
+                        ).length
+                      }
                     </strong>
                   </div>
                   <div className={styles.referenceRow}>
@@ -737,6 +803,36 @@ export function OpsReleaseSurface() {
                 execute the live Render verification flow after the first deploy.
               </div>
             )}
+          </article>
+
+          <article className={styles.summaryCard}>
+            <p className={styles.sectionTitle}>Blocker ownership</p>
+            <h2>Who closes the remaining work?</h2>
+            <div className={styles.summaryList}>
+              {displayedOwnerSummaries.length ? (
+                displayedOwnerSummaries.map((summary) => (
+                  <TrackedLink
+                    key={summary.ownerId}
+                    href={summary.defaultPath}
+                    analyticsLabel={`ops_release_owner_${summary.ownerId}`}
+                    analyticsSurface="ops_release_owner_summary"
+                    analyticsDestinationType="ops_route"
+                  >
+                    <span>
+                      {summary.ownerLabel} ({getOwnerLaneLabel(summary.lane)})
+                    </span>
+                    <span>
+                      {summary.blockedCount} blocked, {summary.warningCount} warnings,{" "}
+                      {summary.readyCount} ready. {summary.nextStep}
+                    </span>
+                  </TrackedLink>
+                ))
+              ) : (
+                <div className={styles.infoBullet}>
+                  Owner lanes will appear here after the release snapshot becomes available.
+                </div>
+              )}
+            </div>
           </article>
 
           <article className={styles.summaryCard}>
@@ -886,14 +982,43 @@ export function OpsReleaseSurface() {
                   <div className={styles.linePrice}>{getStatusLabel(check.status)}</div>
                 </div>
 
+                <div className={styles.badgeRow}>
+                  <span>{getOwnerLaneLabel(check.owner.lane)}</span>
+                  <span>{check.owner.label}</span>
+                </div>
+
                 <p>{check.summary}</p>
 
+                <div className={styles.referenceCard}>
+                  <div className={styles.referenceRow}>
+                    <span>Owner route</span>
+                    <strong className={styles.referenceValue}>{check.owner.defaultPath}</strong>
+                  </div>
+                  <div className={styles.referenceRow}>
+                    <span>Resolution action</span>
+                    <strong className={styles.referenceValue}>{check.resolutionAction}</strong>
+                  </div>
+                </div>
+
                 <div className={styles.summaryList}>
+                  <div className={styles.infoBullet}>{check.owner.summary}</div>
                   {check.details.map((detail) => (
                     <div key={detail} className={styles.infoBullet}>
                       {detail}
                     </div>
                   ))}
+                </div>
+
+                <div className={styles.linkList}>
+                  <TrackedLink
+                    href={check.owner.defaultPath}
+                    analyticsLabel={`ops_release_preflight_owner_${check.id}`}
+                    analyticsSurface="ops_release_preflight_owner"
+                    analyticsDestinationType="ops_route"
+                  >
+                    <span>{check.owner.label}</span>
+                    <span>{check.resolutionAction}</span>
+                  </TrackedLink>
                 </div>
               </article>
             ))
@@ -1249,6 +1374,10 @@ export function OpsReleaseSurface() {
                               <strong>{item.title}</strong>
                               <br />
                               {item.summary}
+                              <br />
+                              Owner: {item.owner.label} ({getOwnerLaneLabel(item.owner.lane)})
+                              <br />
+                              Next step: {item.resolutionAction}
                             </span>
                           </label>
                         );
@@ -1441,6 +1570,34 @@ export function OpsReleaseSurface() {
                       {record.artifact.releaseEvidence?.verificationMode ?? "runtime_snapshot"}
                     </strong>
                   </div>
+                  <div className={styles.referenceRow}>
+                    <span>Owner lanes with blocked work</span>
+                    <strong className={styles.referenceValue}>
+                      {
+                        record.artifact.releaseReadiness.ownerSummaries.filter(
+                          (summary) => summary.blockedCount > 0,
+                        ).length
+                      }
+                    </strong>
+                  </div>
+                </div>
+
+                <div className={styles.summaryList}>
+                  {record.artifact.releaseReadiness.ownerSummaries
+                    .filter(
+                      (summary) => summary.blockedCount > 0 || summary.warningCount > 0,
+                    )
+                    .slice(0, 3)
+                    .map((summary) => (
+                      <div
+                        key={`${record.id}-${summary.ownerId}`}
+                        className={styles.infoBullet}
+                      >
+                        {summary.ownerLabel} ({getOwnerLaneLabel(summary.lane)}):{" "}
+                        {summary.blockedCount} blocked, {summary.warningCount} warnings.{" "}
+                        {summary.nextStep}
+                      </div>
+                    ))}
                 </div>
               </article>
             ))

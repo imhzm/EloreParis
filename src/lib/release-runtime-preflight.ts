@@ -5,6 +5,10 @@ import path from "node:path";
 import { getAuthorityDatabasePath } from "@/lib/authority-database";
 import { getHostingDirection } from "@/lib/hosting-direction";
 import { getOpsAccessConfig } from "@/lib/ops-access";
+import {
+  getReleasePlatformOwner,
+  getReleaseSecurityOwner,
+} from "@/lib/release-ownership";
 import { getReleaseEvidencePath } from "@/lib/release-evidence";
 import type {
   ReleaseReadinessStatus,
@@ -128,6 +132,8 @@ export function getReleaseRuntimePreflightSnapshot(): ReleaseRuntimePreflightSna
   const managerIdentities = identityUsers.filter(
     (user) => user.role === "manager",
   );
+  const platformOwner = getReleasePlatformOwner();
+  const securityOwner = getReleaseSecurityOwner();
 
   const checks: ReleaseRuntimePreflightCheck[] = [
     {
@@ -152,6 +158,9 @@ export function getReleaseRuntimePreflightSnapshot(): ReleaseRuntimePreflightSna
         `NEXT_PUBLIC_SITE_URL: ${nextPublicSiteUrl || "missing"}`,
         `RENDER_EXTERNAL_URL: ${renderExternalUrl || "missing"}`,
       ],
+      owner: platformOwner,
+      resolutionAction:
+        "Set NEXT_PUBLIC_SITE_URL to the hosted production domain and keep the Render external URL only as a fallback signal.",
     },
     {
       id: "persistent-runtime-paths",
@@ -181,6 +190,9 @@ export function getReleaseRuntimePreflightSnapshot(): ReleaseRuntimePreflightSna
         `Authority path writable from: ${authorityPathAccess.checkedDirectory}`,
         `Release evidence path writable from: ${releaseEvidencePathAccess.checkedDirectory}`,
       ],
+      owner: platformOwner,
+      resolutionAction:
+        "Move authority and evidence paths under the frozen persistent disk root before any hosted release publication.",
     },
     {
       id: "signing-secrets",
@@ -199,6 +211,9 @@ export function getReleaseRuntimePreflightSnapshot(): ReleaseRuntimePreflightSna
         describeSecret("ORDER_AUTHORITY_SECRET", orderAuthoritySecret),
         describeSecret("OPS_ACCESS_SIGNING_SECRET", opsAccessSigningSecret),
       ],
+      owner: securityOwner,
+      resolutionAction:
+        "Set strong non-placeholder ORDER_AUTHORITY_SECRET and OPS_ACCESS_SIGNING_SECRET values in the hosted runtime environment.",
     },
     {
       id: "ops-bootstrap-identities",
@@ -226,6 +241,9 @@ export function getReleaseRuntimePreflightSnapshot(): ReleaseRuntimePreflightSna
         `Manager identities: ${managerIdentities.length}`,
         `Primary auth method: ${opsAccessConfig.primaryAuthMethod}`,
       ],
+      owner: securityOwner,
+      resolutionAction:
+        "Configure at least one manager-capable protected identity before live release publication, evidence publication, or approval actions.",
     },
   ];
 

@@ -101,11 +101,24 @@ function writeReleaseEvidenceArtifact(report) {
   writeFileSync(releaseEvidenceArtifactPath, JSON.stringify(report, null, 2));
 }
 
+function renderOwnerSummariesMarkdown(ownerSummaries) {
+  if (!ownerSummaries?.length) {
+    return "- None.";
+  }
+
+  return ownerSummaries
+    .map(
+      (summary) =>
+        `- ${summary.ownerLabel} (${summary.lane})\n  - Route: ${summary.defaultPath}\n  - Blocked: ${summary.blockedCount}\n  - Warning: ${summary.warningCount}\n  - Ready: ${summary.readyCount}\n  - Next step: ${summary.nextStep}`,
+    )
+    .join("\n");
+}
+
 function renderReleasePackageMarkdown(releasePackage) {
   const blockedItems = releasePackage.blockedItems
     .map(
       (item) =>
-        `- ${item.title} (${item.source})\n  ${item.summary}\n  ${item.details
+        `- ${item.title} (${item.source})\n  - Owner: ${item.owner.label} (${item.owner.lane})\n  - Route: ${item.owner.defaultPath}\n  - Summary: ${item.summary}\n  - Next step: ${item.resolutionAction}\n  ${item.details
           .map((detail) => `  - ${detail}`)
           .join("\n")}`,
     )
@@ -113,7 +126,7 @@ function renderReleasePackageMarkdown(releasePackage) {
   const warningItems = releasePackage.warningItems
     .map(
       (item) =>
-        `- ${item.title} (${item.source})\n  ${item.summary}\n  ${item.details
+        `- ${item.title} (${item.source})\n  - Owner: ${item.owner.label} (${item.owner.lane})\n  - Route: ${item.owner.defaultPath}\n  - Summary: ${item.summary}\n  - Next step: ${item.resolutionAction}\n  ${item.details
           .map((detail) => `  - ${detail}`)
           .join("\n")}`,
     )
@@ -121,6 +134,9 @@ function renderReleasePackageMarkdown(releasePackage) {
   const nextActions = releasePackage.nextActions
     .map((action) => `- ${action}`)
     .join("\n");
+  const ownerSummaries = renderOwnerSummariesMarkdown(
+    releasePackage.releaseReadiness.ownerSummaries,
+  );
   const evidenceNotes =
     releasePackage.releaseEvidence?.notes.map((note) => `- ${note}`).join("\n") ??
     "- No stored release evidence is available yet.";
@@ -143,6 +159,9 @@ function renderReleasePackageMarkdown(releasePackage) {
     "",
     "## Warning Items",
     warningItems || "- None.",
+    "",
+    "## Blocker Ownership",
+    ownerSummaries,
     "",
     "## Next Actions",
     nextActions || "- None.",
@@ -181,6 +200,8 @@ function renderReleaseHistoryMarkdown(releasePackages) {
       `- Blocked items: ${record.blockedCount}`,
       `- Warning items: ${record.warningCount}`,
       `- Ready items: ${record.readyCount}`,
+      "- Blocker ownership:",
+      renderOwnerSummariesMarkdown(record.artifact.releaseReadiness.ownerSummaries),
       "",
     ]),
   ].join("\n");
@@ -274,6 +295,9 @@ function renderReleasePacketMarkdown(releasePacket) {
   const nextActions = releasePacket.nextActions
     .map((item) => `- ${item}`)
     .join("\n");
+  const ownerSummaries = renderOwnerSummariesMarkdown(
+    releasePacket.currentArtifact.releaseReadiness.ownerSummaries,
+  );
 
   return [
     "# Live Release Packet",
@@ -296,6 +320,9 @@ function renderReleasePacketMarkdown(releasePacket) {
     "",
     "## Executive Summary",
     executiveSummary || "- None.",
+    "",
+    "## Blocker Ownership",
+    ownerSummaries,
     "",
     "## Latest Decision Review",
     `- ${releasePacket.latestDecisionReview.summary}`,
@@ -498,6 +525,7 @@ try {
     "Current blocked items requiring acknowledgement",
     "/ops/release",
   );
+  assertIncludes(releasePageBody, "Blocker ownership", "/ops/release");
 
   const { response: releaseResponse, body: releaseBody } = await fetchJson(
     "/api/ops/release",
@@ -511,6 +539,10 @@ try {
 
   const releaseSnapshot = releaseBody?.releaseReadiness;
   assert.ok(releaseSnapshot, "Expected live release readiness payload.");
+  assert.ok(
+    releaseSnapshot.ownerSummaries?.length > 0,
+    "Expected live release readiness payload to expose blocker ownership summaries.",
+  );
 
   const hostingDirectionGate = requireGate(releaseSnapshot, "hosting-direction");
   const hostingRuntimeGate = requireGate(releaseSnapshot, "hosting-runtime");
@@ -558,6 +590,8 @@ try {
     "ready",
     "Expected ops-bootstrap-identities preflight to be ready on the deployed runtime.",
   );
+  assert.equal(hostingRuntimeGate.owner?.id, "platform-runtime");
+  assert.equal(signingSecretsPreflight.owner?.id, "security-access");
   assert.ok(
     persistentPathsPreflight.status === "ready" ||
       persistentPathsPreflight.status === "warning",
@@ -741,6 +775,16 @@ try {
     "Expected the live release package to keep surfacing the remaining content blocker honestly.",
   );
   assert.equal(
+    releasePackageBody?.releasePackage?.blockedItems.find(
+      (item) => item.id === "content-approval",
+    )?.owner?.id,
+    "content-governance",
+  );
+  assert.ok(
+    releasePackageBody?.releasePackage?.releaseReadiness?.ownerSummaries?.length > 0,
+    "Expected the live release package to retain blocker ownership summaries.",
+  );
+  assert.equal(
     releasePackageBody?.releasePackage?.releaseEvidence?.summary.apiChecks,
     18,
   );
@@ -811,6 +855,10 @@ try {
     preDecisionPacketBody?.releasePacket?.latestDecisionDelta?.status,
     "missing",
     "Expected the live executive packet to report a missing decision delta before the first verdict is recorded.",
+  );
+  assert.ok(
+    preDecisionPacketBody?.releasePacket?.currentArtifact?.releaseReadiness?.ownerSummaries?.length > 0,
+    "Expected the live executive packet to expose blocker ownership summaries.",
   );
 
   const { response: staleDecisionResponse, body: staleDecisionBody } =
@@ -1076,6 +1124,12 @@ try {
   assert.ok(
     releasePacketBody?.releasePacket?.contentGovernance?.launchBlocked > 0,
     "Expected live release packet to surface unresolved content blockers honestly.",
+  );
+  assert.ok(
+    releasePacketBody?.releasePacket?.currentArtifact?.releaseReadiness?.ownerSummaries?.some(
+      (summary) => summary.ownerId === "platform-runtime",
+    ),
+    "Expected the live executive packet to retain owner summaries after publication and decision flows.",
   );
   writeReleasePacketArtifacts(releasePacketBody.releasePacket);
 
