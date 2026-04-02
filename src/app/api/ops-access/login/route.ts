@@ -1,3 +1,4 @@
+import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { logOpsAuditEvent } from "@/lib/ops-audit";
 import {
@@ -12,8 +13,20 @@ import {
   shouldUseSecureOpsCookies,
   sanitizeOpsNextPath,
 } from "@/lib/ops-access";
+import {
+  assertOpsLoginThrottleAllowed,
+  clearOpsLoginThrottleAttempts,
+  getOpsLoginThrottlePolicy,
+  getOpsLoginThrottleTargets,
+  OpsLoginThrottleError,
+  recordFailedOpsLoginAttempt,
+} from "@/lib/ops-login-throttle";
 import { verifyOpsPasswordHash } from "@/lib/ops-password";
 import type { OpsAuthMethod } from "@/lib/ops-types";
+import {
+  RequestHardeningError,
+  assertTrustedMutationRequest,
+} from "@/lib/request-hardening";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +37,7 @@ type LoginRequestBody = {
   nextPath?: string;
 };
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   const accessConfig = getOpsAccessConfig();
 
   if (!accessConfig.isConfigured) {
@@ -35,6 +48,21 @@ export async function POST(request: Request) {
       },
       { status: 503 },
     );
+  }
+
+  try {
+    assertTrustedMutationRequest(request);
+  } catch (error) {
+    if (error instanceof RequestHardeningError) {
+      return NextResponse.json(
+        {
+          error: error.message,
+        },
+        { status: error.statusCode },
+      );
+    }
+
+    throw error;
   }
 
   let requestBody: LoginRequestBody;
@@ -54,6 +82,54 @@ export async function POST(request: Request) {
   const submittedUsername = requestBody.username?.trim() ?? "";
   const submittedPassword = requestBody.password ?? "";
   const nextPath = sanitizeOpsNextPath(requestBody.nextPath);
+  const throttleTargets = getOpsLoginThrottleTargets({
+    username: submittedUsername,
+    accessCode: submittedCode,
+    request,
+  });
+
+  try {
+    assertOpsLoginThrottleAllowed(throttleTargets);
+  } catch (error) {
+    if (error instanceof OpsLoginThrottleError) {
+      const throttlePolicy = getOpsLoginThrottlePolicy();
+
+      await logOpsAuditEvent({
+        action: "ops_login_rate_limited",
+        actor: {
+          userId: "unknown",
+          name: "Unknown operator",
+          role: "system",
+        },
+        entityType: "ops_session",
+        entityId: "rate-limited-login",
+        summary: `Rate-limited ops login attempt for ${nextPath}.`,
+        metadata: {
+          next_path: nextPath,
+          retry_after_seconds: error.retryAfterSeconds,
+          blocked_until: error.blockedUntil,
+          username: submittedUsername || "unknown",
+          max_attempts: throttlePolicy.maxAttempts,
+          cooldown_seconds: throttlePolicy.cooldownSeconds,
+        },
+      });
+
+      return NextResponse.json(
+        {
+          error: error.message,
+          retryAfterSeconds: error.retryAfterSeconds,
+        },
+        {
+          status: error.statusCode,
+          headers: {
+            "Retry-After": String(error.retryAfterSeconds),
+          },
+        },
+      );
+    }
+
+    throw error;
+  }
 
   let authMethod: OpsAuthMethod | null = null;
   let user = null;
@@ -96,6 +172,8 @@ export async function POST(request: Request) {
   }
 
   if (!user || !authMethod) {
+    recordFailedOpsLoginAttempt(throttleTargets);
+
     await logOpsAuditEvent({
       action: "ops_login_failure",
       actor: {
@@ -126,6 +204,8 @@ export async function POST(request: Request) {
       { status: 401 },
     );
   }
+
+  clearOpsLoginThrottleAttempts(throttleTargets);
 
   const finalRedirectTo = canRoleAccessOpsPath(user.role, nextPath)
     ? nextPath

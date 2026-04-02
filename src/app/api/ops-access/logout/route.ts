@@ -8,10 +8,27 @@ import {
   OPS_SESSION_COOKIE,
   shouldUseSecureOpsCookies,
 } from "@/lib/ops-access";
+import {
+  RequestHardeningError,
+  assertTrustedMutationRequest,
+} from "@/lib/request-hardening";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
+  try {
+    assertTrustedMutationRequest(request);
+  } catch (error) {
+    if (error instanceof RequestHardeningError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.statusCode },
+      );
+    }
+
+    throw error;
+  }
+
   const accessConfig = getOpsAccessConfig();
   const sessionCookie = request.cookies.get(OPS_SESSION_COOKIE)?.value;
   const session =

@@ -6,6 +6,10 @@ import {
   assertOpsApiAccess,
   OrderAuthorityError,
 } from "@/lib/order-authority";
+import {
+  RequestHardeningError,
+  assertTrustedMutationRequest,
+} from "@/lib/request-hardening";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,6 +23,7 @@ export async function PATCH(
   context: OpsOrderRouteContext,
 ) {
   try {
+    assertTrustedMutationRequest(request);
     const session = await assertOpsApiAccess(request);
     const { orderNumber } = await context.params;
     const { order, previousStatus, nextStatus } =
@@ -49,7 +54,10 @@ export async function PATCH(
       nextStatus,
     });
   } catch (error) {
-    if (error instanceof OrderAuthorityError) {
+    if (
+      error instanceof OrderAuthorityError ||
+      error instanceof RequestHardeningError
+    ) {
       return NextResponse.json(
         { error: error.message },
         { status: error.statusCode },

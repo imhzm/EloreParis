@@ -13,6 +13,7 @@ const auditFilters: AuditFilter[] = [
   "all",
   "ops_login_success",
   "ops_login_failure",
+  "ops_login_rate_limited",
   "ops_logout",
   "ops_order_status_update",
   "ops_notification_status_update",
@@ -35,6 +36,8 @@ function getAuditActionLabel(action: OpsAuditAction) {
       return "نجاح تسجيل الدخول";
     case "ops_login_failure":
       return "فشل تسجيل الدخول";
+    case "ops_login_rate_limited":
+      return "تقييد دخول التشغيل";
     case "ops_logout":
       return "إنهاء الجلسة";
     case "ops_order_status_update":
@@ -89,7 +92,8 @@ export function OpsAuditSurface() {
       loginEvents: auditEntries.filter(
         (entry) =>
           entry.action === "ops_login_success" ||
-          entry.action === "ops_login_failure",
+          entry.action === "ops_login_failure" ||
+          entry.action === "ops_login_rate_limited",
       ).length,
     }),
     [auditEntries],
@@ -126,7 +130,7 @@ export function OpsAuditSurface() {
             <h2>ops sessions + order transitions</h2>
             <p>
               الطبقة الحالية تركز على traceability التشغيلي داخل التطبيق نفسه،
-              وليس على compliance archive خارجي أو immutable logs بعد.
+              وليست على compliance archive خارجي أو immutable logs بعد.
             </p>
           </div>
         </div>

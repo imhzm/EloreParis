@@ -20,6 +20,8 @@
 - A secret-gated workflow now exists at [deploy-vercel.yml](D:/REDA/ksa%20cozmateks/.github/workflows/deploy-vercel.yml).
 - Health checks are exposed through [`/api/health`](D:/REDA/ksa%20cozmateks/src/app/api/health/route.ts).
 - Orders, notifications, and ops audit now share one SQLite-backed in-app authority with backward-compatible import from the older rehearsal JSON files.
+- Protected ops mutations now require a trusted same-origin request instead of relying on signed cookies alone for write safety.
+- Repeated failed ops login attempts now throttle durably inside the shared SQLite authority.
 - Absolute URLs now resolve safely from production/preview environment variables instead of falling back blindly to localhost.
 
 ## Required GitHub Secrets
@@ -73,10 +75,12 @@ If `NEXT_PUBLIC_SITE_URL` is absent, the app now falls back in this order:
 5. Confirm the deployment URL returns `200` on `/api/health`.
 6. Confirm unauthenticated `/ops` redirects to `/ops-access`.
 7. Confirm the chosen ops identity can log in through username and password, reaches its allowed default route, and that a lower-privilege role cannot open unauthorized ops pages.
-8. Confirm `/ops/notifications` can read queued delivery items and update a notification state without losing the shared authority database between requests or process restarts.
-9. Confirm `/ops/audit` can read recent login, order-state, and notification-state traces without losing the shared authority database between requests or process restarts.
-10. Confirm checkout can create an order and tracking can read it back in the chosen environment without losing the authority database between requests or process restarts.
-11. Confirm the homepage, product page, article page, `cart`, and `sitemap.xml` render correctly after deployment.
+8. Confirm origin-less or cross-origin attempts to mutate `/api/ops/*` and `/api/ops-access/logout` are rejected with `403`.
+9. Confirm repeated failed login attempts hit `429` throttling and recover only after the cooldown window.
+10. Confirm `/ops/notifications` can read queued delivery items and update a notification state without losing the shared authority database between requests or process restarts.
+11. Confirm `/ops/audit` can read recent login, order-state, notification-state, and throttling traces without losing the shared authority database between requests or process restarts.
+12. Confirm checkout can create an order and tracking can read it back in the chosen environment without losing the authority database between requests or process restarts.
+13. Confirm the homepage, product page, article page, `cart`, and `sitemap.xml` render correctly after deployment.
 
 ## Rollback Path
 
@@ -91,6 +95,8 @@ If `NEXT_PUBLIC_SITE_URL` is absent, the app now falls back in this order:
 - unauthenticated `/ops` redirects to `/ops-access`
 - authenticated `/ops` dashboard still loads correctly
 - authorized roles only see the ops routes they are allowed to use
+- origin-less or cross-origin ops mutations fail closed
+- repeated failed ops logins move into throttled responses
 - `/ops/notifications` still loads and preserves queue state after login
 - `/ops/audit` still loads and shows recent traces after login
 - product and journal share-preview tags

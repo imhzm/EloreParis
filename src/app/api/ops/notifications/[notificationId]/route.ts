@@ -10,6 +10,10 @@ import {
   updateAuthorityNotificationStatus,
 } from "@/lib/notification-authority";
 import type { NotificationDeliveryStatus } from "@/lib/notification-types";
+import {
+  RequestHardeningError,
+  assertTrustedMutationRequest,
+} from "@/lib/request-hardening";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -29,6 +33,7 @@ export async function PATCH(
   context: NotificationRouteContext,
 ) {
   try {
+    assertTrustedMutationRequest(request);
     const session = await assertOpsRequestAccess(request, "/ops/notifications");
     const body = (await request.json()) as {
       status?: unknown;
@@ -73,7 +78,8 @@ export async function PATCH(
   } catch (error) {
     if (
       error instanceof OpsAccessError ||
-      error instanceof NotificationAuthorityError
+      error instanceof NotificationAuthorityError ||
+      error instanceof RequestHardeningError
     ) {
       return NextResponse.json(
         { error: error.message },

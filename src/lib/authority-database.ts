@@ -71,6 +71,18 @@ function initializeAuthorityDatabase(database: DatabaseSync) {
 
     CREATE INDEX IF NOT EXISTS idx_authority_ops_audit_entity
       ON authority_ops_audit (entity_type, entity_id, created_at DESC);
+
+    CREATE TABLE IF NOT EXISTS authority_ops_login_throttle (
+      throttle_key TEXT PRIMARY KEY,
+      label TEXT NOT NULL,
+      failed_count INTEGER NOT NULL,
+      first_failed_at TEXT NOT NULL,
+      last_failed_at TEXT NOT NULL,
+      blocked_until TEXT
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_authority_ops_login_throttle_blocked_until
+      ON authority_ops_login_throttle (blocked_until);
   `);
 }
 

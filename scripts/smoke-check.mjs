@@ -9,6 +9,9 @@ const require = createRequire(import.meta.url);
 const port = Number(process.env.SMOKE_PORT ?? 3066);
 const host = process.env.SMOKE_HOST ?? "127.0.0.1";
 const baseUrl = `http://${host}:${port}`;
+const trustedMutationHeaders = {
+  Origin: baseUrl,
+};
 const opsManagerUsername =
   process.env.SMOKE_OPS_MANAGER_USERNAME ?? "smoke.manager";
 const opsManagerPassword =
@@ -140,14 +143,17 @@ async function fetchHead(pathname, init = {}) {
 }
 
 async function sendJson(method, pathname, body, init = {}) {
+  const { headers: extraHeaders = {}, ...restInit } = init;
+
   return fetchJson(pathname, {
     method,
+    ...restInit,
     headers: {
+      ...trustedMutationHeaders,
       "Content-Type": "application/json",
-      ...(init.headers ?? {}),
+      ...extraHeaders,
     },
     body: JSON.stringify(body),
-    ...init,
   });
 }
 
@@ -404,7 +410,7 @@ try {
         district: "العليا",
         addressLine: "شارع الملك فهد، مبنى 10",
         notes: "Smoke test order",
-        shippingMethodId: "express",
+        shippingMethodId: "standard",
         paymentMethodId: "payment_link",
         acceptPolicies: true,
         acceptUpdates: true,
@@ -434,7 +440,11 @@ try {
       },
     },
   );
-  assert.equal(recentOrderResponse.status, 200);
+  assert.equal(
+    recentOrderResponse.status,
+    200,
+    "Expected recent-order API lookup to return 200",
+  );
   assert.equal(
     recentOrderBody.order.orderNumber,
     createOrderBody.order.orderNumber,
@@ -449,7 +459,11 @@ try {
   const { response: trackedOrderResponse, body: trackedOrderBody } = await fetchJson(
     `/api/orders/${encodeURIComponent(createOrderBody.order.orderNumber)}?phoneLastFour=4567`,
   );
-  assert.equal(trackedOrderResponse.status, 200);
+  assert.equal(
+    trackedOrderResponse.status,
+    200,
+    "Expected tracked-order API lookup to return 200",
+  );
   assert.equal(
     trackedOrderBody.order.orderNumber,
     createOrderBody.order.orderNumber,
@@ -470,11 +484,20 @@ try {
       nextPath: "/ops",
     },
   );
-  assert.equal(loginResponse.status, 200);
+  assert.equal(loginResponse.status, 200, "Expected manager ops login to return 200");
   assert.equal(loginBody.ok, true);
   assert.equal(loginBody.redirectTo, "/ops");
 
   const opsCookie = extractCookie(loginResponse, "cozmateks-ops-session");
+
+  const logoutWithoutOriginResponse = await fetch(`${baseUrl}/api/ops-access/logout`, {
+    method: "POST",
+    cache: "no-store",
+    headers: {
+      Cookie: opsCookie,
+    },
+  });
+  assert.equal(logoutWithoutOriginResponse.status, 403);
 
   const { response: opsSessionResponse, body: opsSessionBody } = await fetchJson(
     "/api/ops/session",
@@ -484,7 +507,11 @@ try {
       },
     },
   );
-  assert.equal(opsSessionResponse.status, 200);
+  assert.equal(
+    opsSessionResponse.status,
+    200,
+    "Expected ops session summary to return 200 after login",
+  );
   assert.equal(opsSessionBody.session.role, "manager");
   assert.equal(opsSessionBody.session.authMethod, "identity_password");
   assert.equal(opsSessionBody.session.username, opsManagerUsername);
@@ -497,7 +524,11 @@ try {
       },
     },
   );
-  assert.equal(opsOrdersResponse.status, 200);
+  assert.equal(
+    opsOrdersResponse.status,
+    200,
+    "Expected ops orders API to return 200 for manager role",
+  );
   assert.ok(
     opsOrdersBody.orders.some(
       (order) => order.orderNumber === createOrderBody.order.orderNumber,
@@ -513,7 +544,11 @@ try {
       Cookie: opsCookie,
     },
   });
-  assert.equal(opsNotificationsResponse.status, 200);
+  assert.equal(
+    opsNotificationsResponse.status,
+    200,
+    "Expected ops notifications API to return 200 for manager role",
+  );
 
   const smokeNotification = opsNotificationsBody.notifications.find(
     (notification) =>
@@ -537,7 +572,11 @@ try {
       },
     },
   );
-  assert.equal(updateOrderResponse.status, 200);
+  assert.equal(
+    updateOrderResponse.status,
+    200,
+    "Expected ops order status update to return 200",
+  );
   assert.equal(updateOrderBody.previousStatus, "payment_pending");
   assert.equal(updateOrderBody.nextStatus, "confirmed");
 
@@ -556,7 +595,11 @@ try {
       },
     },
   );
-  assert.equal(updateNotificationResponse.status, 200);
+  assert.equal(
+    updateNotificationResponse.status,
+    200,
+    "Expected ops notification status update to return 200",
+  );
   assert.equal(updateNotificationBody.previousStatus, "queued");
   assert.equal(updateNotificationBody.nextStatus, "sent");
 
@@ -568,7 +611,11 @@ try {
       },
     },
   );
-  assert.equal(auditResponse.status, 200);
+  assert.equal(
+    auditResponse.status,
+    200,
+    "Expected ops audit API to return 200 for manager role",
+  );
   assert.ok(
     auditBody.auditEntries.some((entry) => entry.action === "ops_login_success"),
     "Expected audit API to include a login success entry",
@@ -616,7 +663,11 @@ try {
       nextPath: "/ops",
     },
   );
-  assert.equal(catalogLoginResponse.status, 200);
+  assert.equal(
+    catalogLoginResponse.status,
+    200,
+    "Expected catalog-role ops login to return 200",
+  );
   assert.equal(catalogLoginBody.redirectTo, "/ops/catalog");
 
   const catalogCookie = extractCookie(
@@ -665,6 +716,71 @@ try {
     forbiddenNotificationsApiBody.error,
     /permission/i,
     "Expected role-aware permission error for notifications API",
+  );
+
+  const throttledIp = "198.51.100.42";
+
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const { response: failedLoginResponse } = await sendJson(
+      "POST",
+      "/api/ops-access/login",
+      {
+        username: "blocked.user",
+        password: "WrongPassword!123",
+        nextPath: "/ops",
+      },
+      {
+        headers: {
+          "X-Forwarded-For": throttledIp,
+        },
+      },
+    );
+
+    assert.equal(
+      failedLoginResponse.status,
+      401,
+      "Expected invalid identity login attempts to fail before throttling kicks in",
+    );
+  }
+
+  const { response: throttledLoginResponse, body: throttledLoginBody } = await sendJson(
+    "POST",
+    "/api/ops-access/login",
+    {
+      username: "blocked.user",
+      password: "WrongPassword!123",
+      nextPath: "/ops",
+    },
+    {
+      headers: {
+        "X-Forwarded-For": throttledIp,
+      },
+    },
+  );
+  assert.equal(throttledLoginResponse.status, 429);
+  assert.equal(typeof throttledLoginBody.retryAfterSeconds, "number");
+  assert.ok(
+    throttledLoginBody.retryAfterSeconds > 0,
+    "Expected throttled login response to include retryAfterSeconds",
+  );
+
+  const logoutResponse = await fetch(`${baseUrl}/api/ops-access/logout`, {
+    method: "POST",
+    cache: "no-store",
+    headers: {
+      ...trustedMutationHeaders,
+      Cookie: opsCookie,
+    },
+  });
+  assert.equal(
+    logoutResponse.status,
+    200,
+    "Expected trusted-origin logout request to return 200",
+  );
+  assert.match(
+    logoutResponse.headers.get("set-cookie") ?? "",
+    /Max-Age=0/i,
+    "Expected logout response to clear the ops session cookie",
   );
 
   console.log(`Smoke checks passed against ${baseUrl}`);

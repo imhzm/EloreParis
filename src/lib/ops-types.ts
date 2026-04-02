@@ -25,6 +25,7 @@ export type OpsSessionSummary = {
 export type OpsAuditAction =
   | "ops_login_success"
   | "ops_login_failure"
+  | "ops_login_rate_limited"
   | "ops_logout"
   | "ops_order_status_update"
   | "ops_notification_status_update";
