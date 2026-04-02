@@ -27,6 +27,7 @@
 - A combined release package is now exposed through [`/api/ops/release/package`](D:/REDA/ksa%20cozmateks/src/app/api/ops/release/package/route.ts) and uploaded from both CI and the live Render workflow as JSON plus Markdown artifacts.
 - Published release packages are now preserved through [`/api/ops/release/history`](D:/REDA/ksa%20cozmateks/src/app/api/ops/release/history/route.ts) and uploaded from both CI and the live Render workflow as release-history JSON plus Markdown artifacts.
 - Runtime drift versus the latest published package is now exposed through [`/api/ops/release/compare`](D:/REDA/ksa%20cozmateks/src/app/api/ops/release/compare/route.ts) and uploaded from both CI and the live Render workflow as release-diff JSON plus Markdown artifacts.
+- Protected release decisions are now preserved through [`/api/ops/release/decisions`](D:/REDA/ksa%20cozmateks/src/app/api/ops/release/decisions/route.ts), false approvals are rejected while blockers remain, and CI plus live Render verification now upload release-decision JSON plus Markdown artifacts.
 - A manual Render deployment workflow now exists at [`deploy-render.yml`](D:/REDA/ksa%20cozmateks/.github/workflows/deploy-render.yml); it can trigger the deploy hook, wait for the live service to become healthy, and publish post-deploy evidence back into the deployed runtime.
 - Orders, notifications, and ops audit now share one SQLite-backed in-app authority with backward-compatible import from the older rehearsal JSON files.
 - Protected ops mutations require a trusted same-origin request instead of relying on signed cookies alone for write safety.
@@ -105,15 +106,16 @@ If you still want to use it for previews or one-off verification, it requires:
 9. Confirm `/api/ops/release/package` now reflects the same live evidence plus the current blockers and next actions from the deployed runtime.
 10. Confirm `/api/ops/release/history` includes the newly published live release package record and preserves earlier publication entries.
 11. Confirm `/api/ops/release/compare` reports `unchanged` immediately after a healthy live publication or surfaces any drift honestly if the runtime changed again.
-12. Confirm unauthenticated `/ops` redirects to `/ops-access`.
-13. Confirm the chosen ops identity can log in through username and password, reaches its allowed default route, and that a lower-privilege role cannot open unauthorized ops pages.
-14. Confirm origin-less or cross-origin attempts to mutate `/api/ops/*` and `/api/ops-access/logout` are rejected with `403`.
-15. Confirm repeated failed login attempts hit `429` throttling and recover only after the cooldown window.
-16. Confirm `/ops/notifications` can read queued delivery items and update a notification state without losing the shared authority database between requests or process restarts.
-17. Confirm `/ops/audit` can read recent login, order-state, notification-state, throttling, release-evidence publish, and release-package publish traces without losing the shared authority database between requests or process restarts.
-18. Confirm checkout can create an order and tracking can read it back in the chosen environment without losing the authority database between requests or process restarts.
-19. Confirm the homepage, product page, article page, `cart`, and `sitemap.xml` render correctly after deployment.
-20. Confirm public launch approval still matches [`CONTENT-OWNERSHIP.md`](D:/REDA/ksa%20cozmateks/CONTENT-OWNERSHIP.md), including sample-pack and business-input gates.
+12. Confirm `/api/ops/release/decisions` records the expected hold or approval verdict for the latest published package and rejects any false approval while blockers remain.
+13. Confirm unauthenticated `/ops` redirects to `/ops-access`.
+14. Confirm the chosen ops identity can log in through username and password, reaches its allowed default route, and that a lower-privilege role cannot open unauthorized ops pages.
+15. Confirm origin-less or cross-origin attempts to mutate `/api/ops/*` and `/api/ops-access/logout` are rejected with `403`.
+16. Confirm repeated failed login attempts hit `429` throttling and recover only after the cooldown window.
+17. Confirm `/ops/notifications` can read queued delivery items and update a notification state without losing the shared authority database between requests or process restarts.
+18. Confirm `/ops/audit` can read recent login, order-state, notification-state, throttling, release-evidence publish, release-package publish, and release-decision publish traces without losing the shared authority database between requests or process restarts.
+19. Confirm checkout can create an order and tracking can read it back in the chosen environment without losing the authority database between requests or process restarts.
+20. Confirm the homepage, product page, article page, `cart`, and `sitemap.xml` render correctly after deployment.
+21. Confirm public launch approval still matches [`CONTENT-OWNERSHIP.md`](D:/REDA/ksa%20cozmateks/CONTENT-OWNERSHIP.md), including sample-pack and business-input gates.
 
 ## Rollback Path
 
@@ -131,6 +133,7 @@ If you still want to use it for previews or one-off verification, it requires:
 - `/api/ops/release/package` reflects the latest live evidence plus the current blocker set from the deployed runtime
 - `/api/ops/release/history` preserves the publication trail for the latest live package and any prior verification snapshots
 - `/api/ops/release/compare` shows whether the deployed runtime still matches the latest published package or has drifted since publication
+- `/api/ops/release/decisions` preserves the latest hold-versus-approve verdict trail for the published package and refuses false approvals while blockers remain
 - homepage response and metadata
 - unauthenticated `/ops` redirects to `/ops-access`
 - authenticated `/ops` dashboard still loads correctly
@@ -151,6 +154,6 @@ If you still want to use it for previews or one-off verification, it requires:
 - No live production domain is wired into `NEXT_PUBLIC_SITE_URL` yet.
 - The current transactional order authority is SQLite-backed inside the app, which now matches the frozen single-host deployment direction, but it is still not a shared durable backend for scale or failover.
 - The current notification authority is SQLite-backed inside the app, and it is still not provider-backed delivery ownership.
-- The current ops audit authority is SQLite-backed inside the app, and it is still not a central durable audit backend for long-lived production operations.
+- The current ops audit and release-decision authorities are SQLite-backed inside the app, and they are still not a central durable governance backend for long-lived production operations.
 - The current ops auth layer supports username/password identities with signed sessions, but it is still not provider-backed authentication or full RBAC over a central user directory.
 - Legal/business production data is still provisional, so a public launch claim would still be premature even after the first live deploy.

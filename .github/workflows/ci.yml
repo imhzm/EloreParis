@@ -73,3 +73,13 @@ jobs:
             .artifacts/release-diff.json
             .artifacts/release-diff.md
           if-no-files-found: ignore
+
+      - name: Upload release decision artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-decision
+          path: |
+            .artifacts/release-decision.json
+            .artifacts/release-decision.md
+          if-no-files-found: ignore

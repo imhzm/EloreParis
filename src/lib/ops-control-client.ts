@@ -5,6 +5,7 @@ import type {
 import type { OpsAuditEntry, OpsSessionSummary } from "@/lib/ops-types";
 import type { ReleaseEvidenceReport } from "@/lib/release-evidence-types";
 import type {
+  ReleaseDecisionRecord,
   ReleasePackageComparison,
   ReleasePackageRecord,
 } from "@/lib/release-package-types";
@@ -128,6 +129,22 @@ export async function fetchOpsReleaseComparison() {
 
   return (await response.json()) as {
     releaseComparison: ReleasePackageComparison;
+  };
+}
+
+export async function fetchOpsReleaseDecisions() {
+  const response = await fetch("/api/ops/release/decisions", {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      await parseApiError(response, "تعذر تحميل سجل قرارات الإطلاق الحالية."),
+    );
+  }
+
+  return (await response.json()) as {
+    releaseDecisions: ReleaseDecisionRecord[];
   };
 }
 

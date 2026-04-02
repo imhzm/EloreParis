@@ -84,3 +84,23 @@ export type ReleasePackageComparison = {
   };
   summary: string[];
 };
+
+export type ReleaseDecisionVerdict = "hold" | "approve";
+
+export type ReleaseDecisionRecord = {
+  id: string;
+  decidedAt: string;
+  actor: OpsAuditActor;
+  verdict: ReleaseDecisionVerdict;
+  rationale: string;
+  notes: string[];
+  releasePackageRecordId: string;
+  releasePackagePublishedAt: string;
+  verificationMode: ReleasePackageArtifact["verificationMode"];
+  targetBaseUrl: string;
+  overallStatus: ReleaseReadinessStatus;
+  compareStatus: ReleasePackageComparisonStatus;
+  blockedCount: number;
+  warningCount: number;
+  readyCount: number;
+};

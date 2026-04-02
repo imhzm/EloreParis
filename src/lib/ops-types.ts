@@ -30,7 +30,8 @@ export type OpsAuditAction =
   | "ops_order_status_update"
   | "ops_notification_status_update"
   | "ops_release_evidence_publish"
-  | "ops_release_package_publish";
+  | "ops_release_package_publish"
+  | "ops_release_decision_publish";
 
 export type OpsAuditActor = {
   userId: string;

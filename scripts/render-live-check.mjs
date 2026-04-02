@@ -55,6 +55,16 @@ const releaseDiffMarkdownArtifactPath = path.resolve(
   process.env.LIVE_RELEASE_DIFF_MARKDOWN_PATH ??
     ".artifacts/render-live-release-diff.md",
 );
+const releaseDecisionArtifactPath = path.resolve(
+  process.cwd(),
+  process.env.LIVE_RELEASE_DECISION_ARTIFACT_PATH ??
+    ".artifacts/render-live-release-decision.json",
+);
+const releaseDecisionMarkdownArtifactPath = path.resolve(
+  process.cwd(),
+  process.env.LIVE_RELEASE_DECISION_MARKDOWN_PATH ??
+    ".artifacts/render-live-release-decision.md",
+);
 
 if (!baseUrl) {
   throw new Error(
@@ -200,6 +210,43 @@ function writeReleaseDiffArtifacts(releaseComparison) {
   writeFileSync(
     releaseDiffMarkdownArtifactPath,
     renderReleaseDiffMarkdown(releaseComparison),
+  );
+}
+
+function renderReleaseDecisionMarkdown(releaseDecisions) {
+  if (!releaseDecisions.length) {
+    return "# Live Release Decisions\n\n- No release decisions are stored yet.\n";
+  }
+
+  return [
+    "# Live Release Decisions",
+    "",
+    ...releaseDecisions.flatMap((record) => [
+      `## ${record.id}`,
+      "",
+      `- Decided at: ${record.decidedAt}`,
+      `- Actor: ${record.actor.name} (${record.actor.role})`,
+      `- Verdict: ${record.verdict}`,
+      `- Published package: ${record.releasePackageRecordId}`,
+      `- Compare status: ${record.compareStatus}`,
+      `- Verification mode: ${record.verificationMode}`,
+      `- Target base URL: ${record.targetBaseUrl}`,
+      `- Overall status: ${record.overallStatus}`,
+      `- Rationale: ${record.rationale}`,
+      ...(record.notes.length
+        ? ["- Notes:", ...record.notes.map((note) => `  - ${note}`)]
+        : ["- Notes: none"]),
+      "",
+    ]),
+  ].join("\n");
+}
+
+function writeReleaseDecisionArtifacts(releaseDecisions) {
+  mkdirSync(path.dirname(releaseDecisionArtifactPath), { recursive: true });
+  writeFileSync(releaseDecisionArtifactPath, JSON.stringify(releaseDecisions, null, 2));
+  writeFileSync(
+    releaseDecisionMarkdownArtifactPath,
+    renderReleaseDecisionMarkdown(releaseDecisions),
   );
 }
 
@@ -422,7 +469,7 @@ try {
       publicRouteChecks: 1,
       protectedRouteChecks: 2,
       assetChecks: 0,
-      apiChecks: 11,
+      apiChecks: 14,
     },
     checks: [
       {
@@ -459,6 +506,11 @@ try {
         id: "live-release-compare",
         title: "Release compare readback from the deployed runtime",
         count: 1,
+      },
+      {
+        id: "live-release-decision",
+        title: "Release decision rejection, publication, and readback from the deployed runtime",
+        count: 3,
       },
     ],
     notes: [
@@ -562,7 +614,7 @@ try {
   );
   assert.equal(
     releasePackageBody?.releasePackage?.releaseEvidence?.summary.apiChecks,
-    11,
+    14,
   );
 
   const { response: releaseHistoryResponse, body: releaseHistoryBody } =
@@ -610,6 +662,93 @@ try {
   );
   writeReleaseDiffArtifacts(releaseCompareBody.releaseComparison);
 
+  const { response: rejectedApprovalResponse, body: rejectedApprovalBody } =
+    await fetchJson("/api/ops/release/decisions", {
+      method: "POST",
+      headers: {
+        ...trustedMutationHeaders,
+        Cookie: opsCookie,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        releaseDecision: {
+          verdict: "approve",
+          rationale:
+            "Live verification should reject approvals while protected blockers still remain on the deployed runtime.",
+          notes: [
+            "Live verification confirms that approvals fail closed until launch blockers are honestly cleared.",
+          ],
+        },
+      }),
+    });
+
+  assert.equal(
+    rejectedApprovalResponse.status,
+    409,
+    "Expected live release decision approvals to be rejected while blocked gates remain.",
+  );
+  assert.equal(
+    rejectedApprovalBody?.error,
+    "A blocked runtime package cannot be approved.",
+  );
+
+  const { response: publishReleaseDecisionResponse, body: publishReleaseDecisionBody } =
+    await fetchJson("/api/ops/release/decisions", {
+      method: "POST",
+      headers: {
+        ...trustedMutationHeaders,
+        Cookie: opsCookie,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        releaseDecision: {
+          verdict: "hold",
+          rationale:
+            "Live verification keeps the release on hold because the deployed runtime still exposes honest external launch blockers.",
+          notes: [
+            `Latest compare status: ${releaseCompareBody.releaseComparison.status}.`,
+            `Blocked issue IDs: ${livePublishedReleaseRecord.artifact.blockedItems.map((item) => item.id).join(", ")}.`,
+          ],
+        },
+      }),
+    });
+
+  assert.equal(
+    publishReleaseDecisionResponse.status,
+    201,
+    "Expected live release decision publication to return 201.",
+  );
+  assert.equal(
+    publishReleaseDecisionBody?.releaseDecisionRecord?.verdict,
+    "hold",
+  );
+  assert.equal(
+    publishReleaseDecisionBody?.releaseDecisionRecord?.releasePackageRecordId,
+    publishReleasePackageBody?.releasePackageRecord?.id,
+  );
+
+  const { response: releaseDecisionResponse, body: releaseDecisionBody } =
+    await fetchJson("/api/ops/release/decisions", {
+      headers: {
+        Cookie: opsCookie,
+      },
+    });
+
+  assert.equal(
+    releaseDecisionResponse.status,
+    200,
+    "Expected live release decisions readback to return 200.",
+  );
+  const livePublishedReleaseDecision = releaseDecisionBody?.releaseDecisions?.find(
+    (record) => record.id === publishReleaseDecisionBody?.releaseDecisionRecord?.id,
+  );
+  assert.ok(
+    livePublishedReleaseDecision,
+    "Expected live release decisions to include the newly recorded release decision.",
+  );
+  assert.equal(livePublishedReleaseDecision?.compareStatus, "unchanged");
+  writeReleaseDecisionArtifacts(releaseDecisionBody.releaseDecisions);
+
   const { response: auditResponse, body: auditBody } = await fetchJson(
     "/api/ops/audit",
     {
@@ -635,6 +774,14 @@ try {
         entry.entityId === publishReleasePackageBody?.releasePackageRecord?.id,
     ),
     "Expected the live audit trail to include the release package publication.",
+  );
+  assert.ok(
+    auditBody?.auditEntries?.some(
+      (entry) =>
+        entry.action === "ops_release_decision_publish" &&
+        entry.entityId === publishReleaseDecisionBody?.releaseDecisionRecord?.id,
+    ),
+    "Expected the live audit trail to include the release decision publication.",
   );
 
   const logoutResponse = await fetch(`${baseUrl}/api/ops-access/logout`, {

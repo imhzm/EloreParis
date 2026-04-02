@@ -49,6 +49,11 @@ const releaseDiffFile =
 const releaseDiffMarkdownFile =
   process.env.SMOKE_RELEASE_DIFF_MARKDOWN_PATH ??
   ".artifacts/release-diff.md";
+const releaseDecisionFile =
+  process.env.SMOKE_RELEASE_DECISION_PATH ?? ".artifacts/release-decision.json";
+const releaseDecisionMarkdownFile =
+  process.env.SMOKE_RELEASE_DECISION_MARKDOWN_PATH ??
+  ".artifacts/release-decision.md";
 const standaloneStartScript = path.resolve(
   process.cwd(),
   "scripts/start-standalone.mjs",
@@ -100,6 +105,8 @@ function resetReleaseArtifacts() {
   safeRemoveAuthorityArtifact(releaseHistoryMarkdownFile);
   safeRemoveAuthorityArtifact(releaseDiffFile);
   safeRemoveAuthorityArtifact(releaseDiffMarkdownFile);
+  safeRemoveAuthorityArtifact(releaseDecisionFile);
+  safeRemoveAuthorityArtifact(releaseDecisionMarkdownFile);
 }
 
 function writeReleaseEvidence(report) {
@@ -226,6 +233,43 @@ function writeReleaseDiffArtifacts(releaseComparison) {
   writeFileSync(
     releaseDiffMarkdownFile,
     renderReleaseDiffMarkdown(releaseComparison),
+  );
+}
+
+function renderReleaseDecisionMarkdown(releaseDecisions) {
+  if (!releaseDecisions.length) {
+    return "# Release Decisions\n\n- No release decisions are stored yet.\n";
+  }
+
+  return [
+    "# Release Decisions",
+    "",
+    ...releaseDecisions.flatMap((record) => [
+      `## ${record.id}`,
+      "",
+      `- Decided at: ${record.decidedAt}`,
+      `- Actor: ${record.actor.name} (${record.actor.role})`,
+      `- Verdict: ${record.verdict}`,
+      `- Published package: ${record.releasePackageRecordId}`,
+      `- Compare status: ${record.compareStatus}`,
+      `- Verification mode: ${record.verificationMode}`,
+      `- Target base URL: ${record.targetBaseUrl}`,
+      `- Overall status: ${record.overallStatus}`,
+      `- Rationale: ${record.rationale}`,
+      ...(record.notes.length
+        ? ["- Notes:", ...record.notes.map((note) => `  - ${note}`)]
+        : ["- Notes: none"]),
+      "",
+    ]),
+  ].join("\n");
+}
+
+function writeReleaseDecisionArtifacts(releaseDecisions) {
+  mkdirSync(path.dirname(releaseDecisionFile), { recursive: true });
+  writeFileSync(releaseDecisionFile, JSON.stringify(releaseDecisions, null, 2));
+  writeFileSync(
+    releaseDecisionMarkdownFile,
+    renderReleaseDecisionMarkdown(releaseDecisions),
   );
 }
 
@@ -454,10 +498,12 @@ const protectedOpsChecks = [
       "Internal release readiness",
       "Runtime preflight",
       "Runtime drift",
+      "Release decisions",
       "Release history",
       "ops_release_to_health",
       "ops_release_to_history",
       "ops_release_to_compare",
+      "ops_release_to_decisions",
       'content="noindex, nofollow"',
     ],
   },
@@ -951,7 +997,7 @@ try {
       publicRouteChecks: publicSmokeChecks.length,
       protectedRouteChecks: protectedOpsChecks.length,
       assetChecks: assetChecks.length,
-      apiChecks: 17,
+      apiChecks: 20,
     },
     checks: [
       {
@@ -966,8 +1012,8 @@ try {
       },
       {
         id: "api-contracts",
-        title: "Health, order, release, notification, audit, package, history, and compare APIs",
-        count: 17,
+        title: "Health, order, release, notification, audit, package, history, compare, and decision APIs",
+        count: 20,
       },
       {
         id: "release-assets",
@@ -1027,7 +1073,7 @@ try {
   );
   assert.equal(
     releaseEvidenceBody.releaseEvidence.summary.apiChecks,
-    17,
+    20,
   );
 
   const {
@@ -1045,7 +1091,7 @@ try {
   );
   assert.equal(
     releasePackageBody.releasePackage.releaseEvidence?.summary.apiChecks,
-    17,
+    20,
   );
   assert.ok(
     releasePackageBody.releasePackage.blockedItems.some(
@@ -1073,7 +1119,7 @@ try {
   );
   assert.equal(
     publishReleasePackageBody.releasePackageRecord.artifact.releaseEvidence?.summary.apiChecks,
-    17,
+    20,
   );
 
   const {
@@ -1127,6 +1173,91 @@ try {
   );
   writeReleaseDiffArtifacts(releaseCompareBody.releaseComparison);
 
+  const {
+    response: rejectedApprovalResponse,
+    body: rejectedApprovalBody,
+  } = await sendJson("POST", "/api/ops/release/decisions", {
+    releaseDecision: {
+      verdict: "approve",
+      rationale:
+        "Automated smoke verification should reject approvals while blocked launch gates still remain.",
+      notes: [
+        "Smoke confirms that approvals fail closed until the protected runtime is honestly ready.",
+      ],
+    },
+  }, {
+    headers: {
+      Cookie: opsCookie,
+    },
+  });
+  assert.equal(
+    rejectedApprovalResponse.status,
+    409,
+    "Expected ops release decision API to reject approvals while blocked launch gates remain",
+  );
+  assert.equal(
+    rejectedApprovalBody.error,
+    "A blocked runtime package cannot be approved.",
+  );
+
+  const {
+    response: publishReleaseDecisionResponse,
+    body: publishReleaseDecisionBody,
+  } = await sendJson("POST", "/api/ops/release/decisions", {
+    releaseDecision: {
+      verdict: "hold",
+      rationale:
+        "Automated smoke verification keeps the release on hold because protected runtime blockers still remain outside the repository.",
+      notes: [
+        `Latest compare status: ${releaseCompareBody.releaseComparison.status}.`,
+        `Blocked issue IDs: ${publishedReleaseRecord.artifact.blockedItems.map((item) => item.id).join(", ")}.`,
+      ],
+    },
+  }, {
+    headers: {
+      Cookie: opsCookie,
+    },
+  });
+  assert.equal(
+    publishReleaseDecisionResponse.status,
+    201,
+    "Expected ops release decision API to record a hold verdict for the latest protected package",
+  );
+  assert.equal(
+    publishReleaseDecisionBody.releaseDecisionRecord.verdict,
+    "hold",
+  );
+  assert.equal(
+    publishReleaseDecisionBody.releaseDecisionRecord.releasePackageRecordId,
+    publishReleasePackageBody.releasePackageRecord.id,
+  );
+
+  const {
+    response: releaseDecisionResponse,
+    body: releaseDecisionBody,
+  } = await fetchJson("/api/ops/release/decisions", {
+    headers: {
+      Cookie: opsCookie,
+    },
+  });
+  assert.equal(
+    releaseDecisionResponse.status,
+    200,
+    "Expected ops release decisions API to return 200 for manager role",
+  );
+  const publishedReleaseDecision = releaseDecisionBody.releaseDecisions.find(
+    (record) => record.id === publishReleaseDecisionBody.releaseDecisionRecord.id,
+  );
+  assert.ok(
+    publishedReleaseDecision,
+    "Expected ops release decisions API to include the newly recorded release decision",
+  );
+  assert.equal(
+    publishedReleaseDecision.compareStatus,
+    "unchanged",
+  );
+  writeReleaseDecisionArtifacts(releaseDecisionBody.releaseDecisions);
+
   const { response: releaseAuditResponse, body: releaseAuditBody } = await fetchJson(
     "/api/ops/audit",
     {
@@ -1175,6 +1306,14 @@ try {
         entry.entityId === publishReleasePackageBody.releasePackageRecord.id,
     ),
     "Expected audit API to include the release package publication entry",
+  );
+  assert.ok(
+    releaseAuditBody.auditEntries.some(
+      (entry) =>
+        entry.action === "ops_release_decision_publish" &&
+        entry.entityId === publishReleaseDecisionBody.releaseDecisionRecord.id,
+    ),
+    "Expected audit API to include the release decision publication entry",
   );
 
   const throttledIp = "198.51.100.42";

@@ -5,12 +5,14 @@ import { OpsNav } from "@/components/ops-nav";
 import { TrackedLink } from "@/components/tracked-link";
 import {
   fetchOpsReleaseComparison,
+  fetchOpsReleaseDecisions,
   fetchOpsReleaseEvidence,
   fetchOpsReleaseHistory,
   fetchOpsReleaseReadiness,
 } from "@/lib/ops-control-client";
 import type { ReleaseEvidenceReport } from "@/lib/release-evidence-types";
 import type {
+  ReleaseDecisionRecord,
   ReleasePackageComparison,
   ReleasePackageRecord,
 } from "@/lib/release-package-types";
@@ -74,12 +76,22 @@ function formatDelta(delta: number) {
   return String(delta);
 }
 
+function getDecisionVerdictLabel(verdict: ReleaseDecisionRecord["verdict"]) {
+  switch (verdict) {
+    case "hold":
+      return "Hold";
+    case "approve":
+      return "Approved";
+  }
+}
+
 export function OpsReleaseSurface() {
   const [snapshot, setSnapshot] = useState<ReleaseReadinessSnapshot | null>(null);
   const [evidence, setEvidence] = useState<ReleaseEvidenceReport | null>(null);
   const [releaseHistory, setReleaseHistory] = useState<ReleasePackageRecord[]>([]);
   const [releaseComparison, setReleaseComparison] =
     useState<ReleasePackageComparison | null>(null);
+  const [releaseDecisions, setReleaseDecisions] = useState<ReleaseDecisionRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -89,8 +101,16 @@ export function OpsReleaseSurface() {
       fetchOpsReleaseEvidence(),
       fetchOpsReleaseHistory(),
       fetchOpsReleaseComparison(),
+      fetchOpsReleaseDecisions(),
     ])
-      .then(([readinessResult, evidenceResult, historyResult, comparisonResult]) => {
+      .then(
+        ([
+          readinessResult,
+          evidenceResult,
+          historyResult,
+          comparisonResult,
+          decisionsResult,
+        ]) => {
         if (readinessResult.status === "fulfilled") {
           setSnapshot(readinessResult.value.releaseReadiness);
           setError(null);
@@ -120,7 +140,14 @@ export function OpsReleaseSurface() {
         } else {
           setReleaseComparison(null);
         }
-      })
+        
+        if (decisionsResult.status === "fulfilled") {
+          setReleaseDecisions(decisionsResult.value.releaseDecisions);
+        } else {
+          setReleaseDecisions([]);
+        }
+      },
+      )
       .finally(() => {
         setIsLoading(false);
       });
@@ -157,8 +184,8 @@ export function OpsReleaseSurface() {
           <p className={styles.summary}>
             This surface does not claim that launch is complete. It keeps the remaining blockers
             visible: hosting, transactional authority, protected ops access, public-content
-            approval, runtime preflight, latest verification evidence, and now the durable release
-            package trail inside the application authority.
+            approval, runtime preflight, latest verification evidence, the durable release
+            package trail, and the release decision trail inside the application authority.
           </p>
         </div>
 
@@ -343,6 +370,15 @@ export function OpsReleaseSurface() {
               >
                 <span>Release compare API</span>
                 <span>Runtime drift versus the latest published package</span>
+              </TrackedLink>
+              <TrackedLink
+                href="/api/ops/release/decisions"
+                analyticsLabel="ops_release_to_decisions"
+                analyticsSurface="ops_release_links"
+                analyticsDestinationType="other"
+              >
+                <span>Release decisions API</span>
+                <span>Protected verdict trail for hold versus approval decisions</span>
               </TrackedLink>
               <TrackedLink
                 href="/ops/content"
@@ -573,6 +609,89 @@ export function OpsReleaseSurface() {
               <p className={styles.eyebrow}>Release compare</p>
               <h1>Runtime drift summary is unavailable</h1>
               <p>Recheck the protected compare API and the current release-package trail.</p>
+            </article>
+          )}
+        </div>
+      </section>
+
+      <section className={styles.mainCard}>
+        <p className={styles.sectionTitle}>Release decisions</p>
+        <h2>Protected verdict trail for the latest published packages</h2>
+        <p className={styles.summary}>
+          Packages and drift explain what changed. The decision trail explains whether the latest
+          protected package was left on hold or explicitly approved, and why.
+        </p>
+
+        <div className={styles.ordersGrid}>
+          {isLoading ? (
+            <article className={styles.emptyCard}>
+              <p className={styles.eyebrow}>Release decisions</p>
+              <h1>Loading release decision trail</h1>
+              <p>Reading the protected verdict history from the shared authority store.</p>
+            </article>
+          ) : releaseDecisions.length ? (
+            releaseDecisions.map((decision) => (
+              <article key={decision.id} className={styles.lineItem}>
+                <div className={styles.lineHead}>
+                  <div>
+                    <h3>{getDecisionVerdictLabel(decision.verdict)}</h3>
+                    <p className={styles.lineMeta}>
+                      {formatTimestamp(decision.decidedAt)} by {decision.actor.name}
+                    </p>
+                  </div>
+                  <div className={styles.linePrice}>{decision.releasePackageRecordId}</div>
+                </div>
+
+                <div className={styles.badgeRow}>
+                  <span>{decision.actor.role}</span>
+                  <span>{decision.compareStatus}</span>
+                  <span>{getVerificationModeLabel(decision.verificationMode)}</span>
+                </div>
+
+                <p>{decision.rationale}</p>
+
+                <div className={styles.referenceCard}>
+                  <div className={styles.referenceRow}>
+                    <span>Published package</span>
+                    <strong className={styles.referenceValue}>
+                      {decision.releasePackageRecordId}
+                    </strong>
+                  </div>
+                  <div className={styles.referenceRow}>
+                    <span>Target base URL</span>
+                    <strong className={styles.referenceValue}>{decision.targetBaseUrl}</strong>
+                  </div>
+                  <div className={styles.referenceRow}>
+                    <span>Overall status</span>
+                    <strong className={styles.referenceValue}>{decision.overallStatus}</strong>
+                  </div>
+                  <div className={styles.referenceRow}>
+                    <span>Blocked / warning / ready</span>
+                    <strong className={styles.referenceValue}>
+                      {decision.blockedCount} / {decision.warningCount} / {decision.readyCount}
+                    </strong>
+                  </div>
+                </div>
+
+                {decision.notes.length ? (
+                  <div className={styles.summaryList}>
+                    {decision.notes.map((note) => (
+                      <div key={note} className={styles.infoBullet}>
+                        {note}
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </article>
+            ))
+          ) : (
+            <article className={styles.emptyCard}>
+              <p className={styles.eyebrow}>No decisions</p>
+              <h1>No release decision has been recorded yet</h1>
+              <p>
+                Run the smoke suite or the live Render verification path again after this slice to
+                publish the current hold-versus-approve verdict trail.
+              </p>
             </article>
           )}
         </div>
