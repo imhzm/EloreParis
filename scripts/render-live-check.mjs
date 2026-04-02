@@ -240,6 +240,7 @@ function renderReleaseDecisionMarkdown(releaseDecisions) {
       `- Reviewed packet: ${record.releasePacketGeneratedAt}`,
       `- Review token: ${record.releasePacketReviewToken}`,
       `- Review window minutes: ${record.releasePacketReviewWindowMinutes}`,
+      `- Acknowledged blocked items: ${record.acknowledgedBlockedItemIds.join(", ") || "none"}`,
       `- Published package: ${record.releasePackageRecordId}`,
       `- Compare status: ${record.compareStatus}`,
       `- Verification mode: ${record.verificationMode}`,
@@ -531,7 +532,7 @@ try {
       publicRouteChecks: 1,
       protectedRouteChecks: 2,
       assetChecks: 0,
-      apiChecks: 17,
+      apiChecks: 18,
     },
     checks: [
       {
@@ -571,8 +572,8 @@ try {
       },
       {
         id: "live-release-decision",
-        title: "Release decision stale-token rejection, stale-age rejection, approval rejection, publication, and readback from the deployed runtime",
-        count: 5,
+        title: "Release decision stale-token rejection, stale-age rejection, blocker-acknowledgement rejection, approval rejection, publication, and readback from the deployed runtime",
+        count: 6,
       },
       {
         id: "live-release-packet",
@@ -681,7 +682,7 @@ try {
   );
   assert.equal(
     releasePackageBody?.releasePackage?.releaseEvidence?.summary.apiChecks,
-    17,
+    18,
   );
 
   const { response: releaseHistoryResponse, body: releaseHistoryBody } =
@@ -811,6 +812,49 @@ try {
     "The executive release packet is stale and must be refreshed before a release decision can be recorded.",
   );
 
+  const blockedItemIds = livePublishedReleaseRecord.artifact.blockedItems.map(
+    (item) => item.id,
+  );
+  assert.ok(
+    blockedItemIds.length > 0,
+    "Expected the deployed runtime to still expose blocked release items during live verification.",
+  );
+  const incompleteAcknowledgedBlockedItemIds =
+    blockedItemIds.length > 1 ? blockedItemIds.slice(0, blockedItemIds.length - 1) : [];
+
+  const { response: incompleteAcknowledgementResponse, body: incompleteAcknowledgementBody } =
+    await fetchJson("/api/ops/release/decisions", {
+      method: "POST",
+      headers: {
+        ...trustedMutationHeaders,
+        Cookie: opsCookie,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        releaseDecision: {
+          verdict: "hold",
+          rationale:
+            "Live verification should reject release holds that do not acknowledge every current blocked item.",
+          acknowledgedBlockedItemIds: incompleteAcknowledgedBlockedItemIds,
+          releasePacketGeneratedAt: preDecisionPacketBody?.releasePacket?.generatedAt,
+          reviewToken: preDecisionPacketBody?.releasePacket?.reviewToken,
+          notes: [
+            "Live verification confirms that hold decisions must explicitly cover every blocked release item.",
+          ],
+        },
+      }),
+    });
+
+  assert.equal(
+    incompleteAcknowledgementResponse.status,
+    409,
+    "Expected live release decision API to reject incomplete blocked-item acknowledgement.",
+  );
+  assert.equal(
+    incompleteAcknowledgementBody?.error,
+    "The release decision must acknowledge every currently blocked release item before it can be recorded.",
+  );
+
   const { response: rejectedApprovalResponse, body: rejectedApprovalBody } =
     await fetchJson("/api/ops/release/decisions", {
       method: "POST",
@@ -824,6 +868,7 @@ try {
           verdict: "approve",
           rationale:
             "Live verification should reject approvals while protected blockers still remain on the deployed runtime.",
+          acknowledgedBlockedItemIds: blockedItemIds,
           releasePacketGeneratedAt: preDecisionPacketBody?.releasePacket?.generatedAt,
           reviewToken: preDecisionPacketBody?.releasePacket?.reviewToken,
           notes: [
@@ -856,6 +901,7 @@ try {
           verdict: "hold",
           rationale:
             "Live verification keeps the release on hold because the deployed runtime still exposes honest external launch blockers.",
+          acknowledgedBlockedItemIds: blockedItemIds,
           releasePacketGeneratedAt: preDecisionPacketBody?.releasePacket?.generatedAt,
           reviewToken: preDecisionPacketBody?.releasePacket?.reviewToken,
           notes: [
@@ -908,6 +954,10 @@ try {
     livePublishedReleaseDecision?.releasePacketReviewWindowMinutes,
     preDecisionPacketBody?.releasePacket?.reviewWindowMinutes,
   );
+  assert.deepEqual(
+    livePublishedReleaseDecision?.acknowledgedBlockedItemIds,
+    blockedItemIds,
+  );
   writeReleaseDecisionArtifacts(releaseDecisionBody.releaseDecisions);
 
   const { response: releasePacketResponse, body: releasePacketBody } =
@@ -933,7 +983,7 @@ try {
   assert.equal(releasePacketBody?.releasePacket?.comparison?.status, "unchanged");
   assert.equal(
     releasePacketBody?.releasePacket?.currentArtifact?.releaseEvidence?.summary?.apiChecks,
-    17,
+    18,
   );
   assert.ok(
     releasePacketBody?.releasePacket?.contentGovernance?.launchBlocked > 0,

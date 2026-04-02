@@ -6,7 +6,7 @@
 - Last updated: 2026-04-02
 - Current phase: `release`
 - Overall completion: `99%`
-- Current focus: packet-bound release decisions so hold or approve verdicts cannot be recorded against stale executive review state or expired review windows
+- Current focus: packet-bound release decisions so hold or approve verdicts cannot be recorded against stale executive review state, expired review windows, or incomplete blocker acknowledgements
 - Forecast status: `date not committed yet`
 - Working estimate: `12-16 weeks for an MVP after stack, catalog model, and integration scope are frozen`
 
@@ -141,7 +141,7 @@ Progress is tracked against SkyWave phases, not by ad-hoc task count.
 - [x] Compare the current runtime package against the latest published release package and export the drift review as protected runtime plus CI artifacts
 - [x] Persist release-decision history inside the shared authority and surface hold-versus-approve verdicts through protected runtime APIs plus release artifacts
 - [x] Add an executive release-packet contract that condenses blockers, drift, decisions, and governance into one protected API plus CI/live artifacts
-- [x] Bind release decisions to the latest executive release packet through a runtime review token plus a freshness window and stale-decision rejection checks
+- [x] Bind release decisions to the latest executive release packet through a runtime review token, a freshness window, and explicit blocker acknowledgement checks
 
 ## Current Status by Quality Layer
 

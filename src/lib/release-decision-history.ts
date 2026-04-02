@@ -91,6 +91,16 @@ export async function publishReleaseDecisionRecord(
   const reviewWindowMinutes = getReleasePacketReviewWindowMinutes(
     releaseComparison.currentArtifact.verificationMode,
   );
+  const currentBlockedItemIds = releaseComparison.currentArtifact.blockedItems.map(
+    (item) => item.id,
+  );
+  const missingBlockedItemAcknowledgements = currentBlockedItemIds.filter(
+    (itemId) => !decision.acknowledgedBlockedItemIds.includes(itemId),
+  );
+  const unexpectedBlockedItemAcknowledgements =
+    decision.acknowledgedBlockedItemIds.filter(
+      (itemId) => !currentBlockedItemIds.includes(itemId),
+    );
 
   if (!latestPublishedRecord) {
     throw new ReleaseDecisionError(
@@ -114,6 +124,20 @@ export async function publishReleaseDecisionRecord(
   ) {
     throw new ReleaseDecisionError(
       "The executive release packet is stale and must be refreshed before a release decision can be recorded.",
+      409,
+    );
+  }
+
+  if (missingBlockedItemAcknowledgements.length > 0) {
+    throw new ReleaseDecisionError(
+      "The release decision must acknowledge every currently blocked release item before it can be recorded.",
+      409,
+    );
+  }
+
+  if (unexpectedBlockedItemAcknowledgements.length > 0) {
+    throw new ReleaseDecisionError(
+      "The release decision references blocked items that are not part of the current executive packet.",
       409,
     );
   }
@@ -156,6 +180,7 @@ export async function publishReleaseDecisionRecord(
     verdict: decision.verdict,
     rationale: decision.rationale,
     notes: decision.notes,
+    acknowledgedBlockedItemIds: decision.acknowledgedBlockedItemIds,
     releasePacketGeneratedAt: decision.releasePacketGeneratedAt,
     releasePacketReviewToken: decision.reviewToken,
     releasePacketReviewWindowMinutes: reviewWindowMinutes,
@@ -191,6 +216,8 @@ export async function publishReleaseDecisionRecord(
       release_package_record_id: record.releasePackageRecordId,
       release_packet_review_token: record.releasePacketReviewToken,
       release_packet_review_window_minutes: record.releasePacketReviewWindowMinutes,
+      acknowledged_blocked_item_ids: record.acknowledgedBlockedItemIds.join(","),
+      acknowledged_blocked_item_count: record.acknowledgedBlockedItemIds.length,
       verification_mode: record.verificationMode,
       blocked_count: record.blockedCount,
       warning_count: record.warningCount,

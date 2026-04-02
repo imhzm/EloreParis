@@ -260,6 +260,7 @@ function renderReleaseDecisionMarkdown(releaseDecisions) {
       `- Reviewed packet: ${record.releasePacketGeneratedAt}`,
       `- Review token: ${record.releasePacketReviewToken}`,
       `- Review window minutes: ${record.releasePacketReviewWindowMinutes}`,
+      `- Acknowledged blocked items: ${record.acknowledgedBlockedItemIds.join(", ") || "none"}`,
       `- Published package: ${record.releasePackageRecordId}`,
       `- Compare status: ${record.compareStatus}`,
       `- Verification mode: ${record.verificationMode}`,
@@ -1057,7 +1058,7 @@ try {
       publicRouteChecks: publicSmokeChecks.length,
       protectedRouteChecks: protectedOpsChecks.length,
       assetChecks: assetChecks.length,
-      apiChecks: 23,
+      apiChecks: 24,
     },
     checks: [
       {
@@ -1072,8 +1073,8 @@ try {
       },
       {
         id: "api-contracts",
-        title: "Health, order, release, notification, audit, package, packet, history, compare, and decision APIs with packet-bound freshness guards",
-        count: 23,
+        title: "Health, order, release, notification, audit, package, packet, history, compare, and decision APIs with packet-bound freshness and blocker-acknowledgement guards",
+        count: 24,
       },
       {
         id: "release-assets",
@@ -1133,7 +1134,7 @@ try {
   );
   assert.equal(
     releaseEvidenceBody.releaseEvidence.summary.apiChecks,
-    23,
+    24,
   );
 
   const {
@@ -1151,7 +1152,7 @@ try {
   );
   assert.equal(
     releasePackageBody.releasePackage.releaseEvidence?.summary.apiChecks,
-    23,
+    24,
   );
   assert.ok(
     releasePackageBody.releasePackage.blockedItems.some(
@@ -1179,7 +1180,7 @@ try {
   );
   assert.equal(
     publishReleasePackageBody.releasePackageRecord.artifact.releaseEvidence?.summary.apiChecks,
-    23,
+    24,
   );
 
   const {
@@ -1310,6 +1311,46 @@ try {
     "The executive release packet is stale and must be refreshed before a release decision can be recorded.",
   );
 
+  const blockedItemIds = publishedReleaseRecord.artifact.blockedItems.map(
+    (item) => item.id,
+  );
+  assert.ok(
+    blockedItemIds.length > 0,
+    "Expected the current protected runtime to still expose blocked release items during smoke verification.",
+  );
+  const incompleteAcknowledgedBlockedItemIds =
+    blockedItemIds.length > 1 ? blockedItemIds.slice(0, blockedItemIds.length - 1) : [];
+
+  const {
+    response: incompleteAcknowledgementResponse,
+    body: incompleteAcknowledgementBody,
+  } = await sendJson("POST", "/api/ops/release/decisions", {
+    releaseDecision: {
+      verdict: "hold",
+      rationale:
+        "Automated smoke verification should reject release holds that do not acknowledge every current blocked item.",
+      acknowledgedBlockedItemIds: incompleteAcknowledgedBlockedItemIds,
+      releasePacketGeneratedAt: preDecisionPacketBody.releasePacket.generatedAt,
+      reviewToken: preDecisionPacketBody.releasePacket.reviewToken,
+      notes: [
+        "Smoke confirms that hold decisions must explicitly cover every blocked release item.",
+      ],
+    },
+  }, {
+    headers: {
+      Cookie: opsCookie,
+    },
+  });
+  assert.equal(
+    incompleteAcknowledgementResponse.status,
+    409,
+    "Expected ops release decision API to reject incomplete blocked-item acknowledgement",
+  );
+  assert.equal(
+    incompleteAcknowledgementBody.error,
+    "The release decision must acknowledge every currently blocked release item before it can be recorded.",
+  );
+
   const {
     response: rejectedApprovalResponse,
     body: rejectedApprovalBody,
@@ -1318,6 +1359,7 @@ try {
       verdict: "approve",
       rationale:
         "Automated smoke verification should reject approvals while blocked launch gates still remain.",
+      acknowledgedBlockedItemIds: blockedItemIds,
       releasePacketGeneratedAt: preDecisionPacketBody.releasePacket.generatedAt,
       reviewToken: preDecisionPacketBody.releasePacket.reviewToken,
       notes: [
@@ -1347,6 +1389,7 @@ try {
       verdict: "hold",
       rationale:
         "Automated smoke verification keeps the release on hold because protected runtime blockers still remain outside the repository.",
+      acknowledgedBlockedItemIds: blockedItemIds,
       releasePacketGeneratedAt: preDecisionPacketBody.releasePacket.generatedAt,
       reviewToken: preDecisionPacketBody.releasePacket.reviewToken,
       notes: [
@@ -1405,6 +1448,10 @@ try {
     publishedReleaseDecision.releasePacketReviewWindowMinutes,
     preDecisionPacketBody.releasePacket.reviewWindowMinutes,
   );
+  assert.deepEqual(
+    publishedReleaseDecision.acknowledgedBlockedItemIds,
+    blockedItemIds,
+  );
   writeReleaseDecisionArtifacts(releaseDecisionBody.releaseDecisions);
 
   const {
@@ -1434,7 +1481,7 @@ try {
   );
   assert.equal(
     releasePacketBody.releasePacket.currentArtifact.releaseEvidence?.summary.apiChecks,
-    23,
+    24,
   );
   assert.ok(
     releasePacketBody.releasePacket.contentGovernance.launchBlocked > 0,

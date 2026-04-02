@@ -12,6 +12,7 @@ export type ReleaseDecisionDraft = {
   verdict: ReleaseDecisionVerdict;
   rationale: string;
   notes: string[];
+  acknowledgedBlockedItemIds: string[];
   releasePacketGeneratedAt: string;
   reviewToken: string;
 };
@@ -60,6 +61,33 @@ function normalizeDecisionNotes(value: unknown) {
   return notes;
 }
 
+function normalizeAcknowledgedBlockedItemIds(value: unknown) {
+  if (value === undefined) {
+    return [];
+  }
+
+  if (!Array.isArray(value)) {
+    return null;
+  }
+
+  const acknowledgedBlockedItemIds = Array.from(
+    new Set(
+      value
+        .map((itemId) => (typeof itemId === "string" ? itemId.trim() : ""))
+        .filter((itemId) => itemId.length > 0),
+    ),
+  );
+
+  if (
+    acknowledgedBlockedItemIds.length > 16 ||
+    acknowledgedBlockedItemIds.some((itemId) => itemId.length > 120)
+  ) {
+    return null;
+  }
+
+  return acknowledgedBlockedItemIds;
+}
+
 export function normalizeReleaseDecisionDraft(
   value: unknown,
 ): ReleaseDecisionDraft | null {
@@ -77,6 +105,9 @@ export function normalizeReleaseDecisionDraft(
   const reviewToken =
     typeof draft.reviewToken === "string" ? draft.reviewToken.trim() : "";
   const notes = normalizeDecisionNotes(draft.notes);
+  const acknowledgedBlockedItemIds = normalizeAcknowledgedBlockedItemIds(
+    draft.acknowledgedBlockedItemIds,
+  );
 
   if (
     !isReleaseDecisionVerdict(draft.verdict) ||
@@ -85,7 +116,8 @@ export function normalizeReleaseDecisionDraft(
     releasePacketGeneratedAt.length < 10 ||
     !Number.isFinite(Date.parse(releasePacketGeneratedAt)) ||
     reviewToken.length < 16 ||
-    !notes
+    !notes ||
+    !acknowledgedBlockedItemIds
   ) {
     return null;
   }
@@ -94,6 +126,7 @@ export function normalizeReleaseDecisionDraft(
     verdict: draft.verdict,
     rationale,
     notes,
+    acknowledgedBlockedItemIds,
     releasePacketGeneratedAt,
     reviewToken,
   };
@@ -108,6 +141,9 @@ export function normalizeReleaseDecisionRecord(
 
   const record = value as Record<string, unknown>;
   const notes = normalizeDecisionNotes(record.notes);
+  const acknowledgedBlockedItemIds = normalizeAcknowledgedBlockedItemIds(
+    record.acknowledgedBlockedItemIds,
+  );
   const reviewWindowMinutes =
     typeof record.releasePacketReviewWindowMinutes === "number"
       ? record.releasePacketReviewWindowMinutes
@@ -137,6 +173,7 @@ export function normalizeReleaseDecisionRecord(
     typeof record.warningCount !== "number" ||
     typeof record.readyCount !== "number" ||
     reviewWindowMinutes === null ||
+    !acknowledgedBlockedItemIds ||
     !notes
   ) {
     return null;
@@ -149,6 +186,7 @@ export function normalizeReleaseDecisionRecord(
     verdict: record.verdict,
     rationale: record.rationale,
     notes,
+    acknowledgedBlockedItemIds,
     releasePacketGeneratedAt: record.releasePacketGeneratedAt,
     releasePacketReviewToken: record.releasePacketReviewToken,
     releasePacketReviewWindowMinutes: reviewWindowMinutes,

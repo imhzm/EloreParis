@@ -94,6 +94,7 @@ export type ReleaseDecisionRecord = {
   verdict: ReleaseDecisionVerdict;
   rationale: string;
   notes: string[];
+  acknowledgedBlockedItemIds: string[];
   releasePacketGeneratedAt: string;
   releasePacketReviewToken: string;
   releasePacketReviewWindowMinutes: number;

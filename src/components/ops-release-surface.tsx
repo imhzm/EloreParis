@@ -801,6 +801,14 @@ export function OpsReleaseSurface() {
                   </div>
                 </div>
 
+                {decision.acknowledgedBlockedItemIds.length ? (
+                  <div className={styles.summaryList}>
+                    <div className={styles.infoBullet}>
+                      Acknowledged blockers: {decision.acknowledgedBlockedItemIds.join(", ")}
+                    </div>
+                  </div>
+                ) : null}
+
                 {decision.notes.length ? (
                   <div className={styles.summaryList}>
                     {decision.notes.map((note) => (
