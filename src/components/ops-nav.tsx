@@ -5,6 +5,7 @@ import { OpsSessionActions } from "@/components/ops-session-actions";
 import { TrackedLink } from "@/components/tracked-link";
 import {
   canRoleAccessOpsPath,
+  getOpsAuthMethodLabel,
   getOpsRoleLabel,
 } from "@/lib/ops-access";
 import { fetchOpsSessionSummary } from "@/lib/ops-control-client";
@@ -109,6 +110,8 @@ export function OpsNav({ activeHref }: OpsNavProps) {
             <strong>{session.name}</strong>
             <span>
               {getOpsRoleLabel(session.role)} ·{" "}
+              {session.username ? `@${session.username} · ` : ""}
+              {getOpsAuthMethodLabel(session.authMethod)} ·{" "}
               {session.mode === "development_open" ? "Dev open mode" : "Protected"}
             </span>
           </div>

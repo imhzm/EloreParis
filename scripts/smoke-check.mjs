@@ -9,10 +9,14 @@ const require = createRequire(import.meta.url);
 const port = Number(process.env.SMOKE_PORT ?? 3066);
 const host = process.env.SMOKE_HOST ?? "127.0.0.1";
 const baseUrl = `http://${host}:${port}`;
-const opsManagerCode =
-  process.env.SMOKE_OPS_MANAGER_CODE ?? "smoke-ops-manager";
-const opsCatalogCode =
-  process.env.SMOKE_OPS_CATALOG_CODE ?? "smoke-ops-catalog";
+const opsManagerUsername =
+  process.env.SMOKE_OPS_MANAGER_USERNAME ?? "smoke.manager";
+const opsManagerPassword =
+  process.env.SMOKE_OPS_MANAGER_PASSWORD ?? "SmokeManager!123";
+const opsCatalogUsername =
+  process.env.SMOKE_OPS_CATALOG_USERNAME ?? "smoke.catalog";
+const opsCatalogPassword =
+  process.env.SMOKE_OPS_CATALOG_PASSWORD ?? "SmokeCatalog!123";
 const orderAuthoritySecret =
   process.env.SMOKE_ORDER_AUTHORITY_SECRET ?? "smoke-order-authority";
 const authorityDbFile =
@@ -307,18 +311,22 @@ server = spawn(process.execPath, [nextCliPath, "start", "--port", String(port)],
   env: {
     ...process.env,
     NEXT_PUBLIC_SITE_URL: baseUrl,
-    OPS_ACCESS_USERS_JSON: JSON.stringify([
+    OPS_AUTH_USERS_JSON: JSON.stringify([
       {
         id: "manager",
         name: "Smoke Manager",
         role: "manager",
-        accessCode: opsManagerCode,
+        username: opsManagerUsername,
+        passwordHash:
+          "scrypt$V0g4xKAfr5fs8KbyqDGz+w==$KtF2LAD+/iUv3nc2xoaahQflidn+UBhky2Va1Zf2rZ1Pkex5h28D3jTFCjZwcokyukHpX8aV97/pSFkC02QiDg==",
       },
       {
         id: "catalog",
         name: "Smoke Catalog",
         role: "catalog_operator",
-        accessCode: opsCatalogCode,
+        username: opsCatalogUsername,
+        passwordHash:
+          "scrypt$VZqgRZ7iQ1a6cSa0wMLPcw==$TxYvPyblj+ajRequEMrZXXUFrFL8rIcnUTCGuQExaAHP2WElqMoEe81xghsBI7MP2bBfOou0MoQ3K9NKrkvleg==",
       },
     ]),
     OPS_ACCESS_SIGNING_SECRET: "smoke-ops-signing-secret",
@@ -457,7 +465,8 @@ try {
     "POST",
     "/api/ops-access/login",
     {
-      accessCode: opsManagerCode,
+      username: opsManagerUsername,
+      password: opsManagerPassword,
       nextPath: "/ops",
     },
   );
@@ -477,6 +486,8 @@ try {
   );
   assert.equal(opsSessionResponse.status, 200);
   assert.equal(opsSessionBody.session.role, "manager");
+  assert.equal(opsSessionBody.session.authMethod, "identity_password");
+  assert.equal(opsSessionBody.session.username, opsManagerUsername);
 
   const { response: opsOrdersResponse, body: opsOrdersBody } = await fetchJson(
     "/api/ops/orders",
@@ -600,7 +611,8 @@ try {
     "POST",
     "/api/ops-access/login",
     {
-      accessCode: opsCatalogCode,
+      username: opsCatalogUsername,
+      password: opsCatalogPassword,
       nextPath: "/ops",
     },
   );

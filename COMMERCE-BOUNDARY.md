@@ -78,11 +78,11 @@ These routes remain valid public surfaces for IA, SEO, and future merchandising,
 
 - `/ops/*` is internal only
 - `/ops-access` is the only public entry point into the ops gate
-- production and enforced environments require either `OPS_ACCESS_USERS_JSON` or the legacy `OPS_ACCESS_CODE`
-- role-aware signed sessions currently gate dashboard, orders, fulfillment, catalog, and audit access
+- production and enforced environments prefer `OPS_AUTH_USERS_JSON` and can still fall back to `OPS_ACCESS_USERS_JSON` or the legacy `OPS_ACCESS_CODE`
+- role-aware signed sessions currently gate dashboard, orders, fulfillment, catalog, notifications, and audit access after identity or legacy fallback login
 - development may remain open unless `ENFORCE_OPS_ACCESS=true`
 
-This is not final authentication. It is a safe boundary that stops the internal rehearsal layer from remaining publicly exposed while the real backoffice is still unresolved.
+This is not final authentication. It is a safer boundary that moves the internal rehearsal layer from a shared code toward identity-backed login while the real backoffice is still unresolved.
 
 ## Release Implication
 
@@ -91,6 +91,7 @@ Launch cannot be considered complete while these remain local, single-host, or p
 - SQLite-backed order persistence without durable shared backend ownership
 - SQLite-backed notification persistence without provider-backed delivery ownership
 - SQLite-backed ops audit persistence without durable shared audit backend
+- env-backed internal identities instead of provider-backed auth
 - payment provider handoff
 - shipment dispatch ownership
 - notification delivery ownership

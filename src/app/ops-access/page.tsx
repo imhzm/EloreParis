@@ -56,6 +56,9 @@ export default async function OpsAccessPage({
     <StorefrontShell activeHref="">
       <OpsAccessSurface
         accessMode={accessConfig.mode}
+        primaryAuthMethod={accessConfig.primaryAuthMethod}
+        supportsAccessCodeAuth={accessConfig.supportsAccessCodeAuth}
+        supportsIdentityAuth={accessConfig.supportsIdentityAuth}
         nextPath={nextPath}
         deniedPath={denied}
       />

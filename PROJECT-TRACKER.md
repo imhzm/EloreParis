@@ -5,8 +5,8 @@
 - Start date: 2026-04-01
 - Last updated: 2026-04-02
 - Current phase: `implementation`
-- Overall completion: `95%`
-- Current focus: unified SQLite-backed application authority for orders, notifications, and ops audit over the protected ops rehearsal layer
+- Overall completion: `97%`
+- Current focus: identity-backed internal ops auth over the SQLite-backed application authority and protected ops rehearsal layer
 - Forecast status: `date not committed yet`
 - Working estimate: `12-16 weeks for an MVP after stack, catalog model, and integration scope are frozen`
 
@@ -20,7 +20,7 @@ Progress is tracked against SkyWave phases, not by ad-hoc task count.
 | Design and Architecture | 20% | In Progress | 88% | Design system direction, page architecture, stack and data decisions |
 | Implementation | 35% | In Progress | 100% | Public storefront and required internal surfaces implemented |
 | Validation | 10% | In Progress | 99% | Lint, typecheck, tests, UX QA, SEO/schema QA, accessibility QA |
-| Release | 10% | In Progress | 96% | Deployment target, configs, monitoring, legal/trust gates, rollback path |
+| Release | 10% | In Progress | 98% | Deployment target, configs, monitoring, legal/trust gates, rollback path |
 | Growth and Automation | 10% | In Progress | 81% | CRM flows, SEO growth loops, analytics maturity, post-launch automations |
 
 ## Current Discovery Checklist
@@ -127,6 +127,8 @@ Progress is tracked against SkyWave phases, not by ad-hoc task count.
 - [x] Expanded smoke coverage to verify notification queue visibility, status updates, and audit trace entries
 - [x] Replaced the separate file-backed order, notification, and audit authorities with a unified SQLite-backed application authority plus legacy JSON import paths
 - [x] Expanded health and smoke verification to assert SQLite-backed authority readiness instead of only route-level availability
+- [x] Replaced the shared ops access-code gate with identity-backed internal ops login plus legacy fallback for transitional environments
+- [x] Added password-hash tooling and smoke coverage for username/password ops login paths
 - [ ] Freeze content ownership and sample requirements
 
 ## Current Status by Quality Layer
@@ -137,11 +139,11 @@ Progress is tracked against SkyWave phases, not by ad-hoc task count.
 | SEO / AEO / GEO | In Progress | Metadata, route structure, internal links, journal flow, robots, sitemap, and release-facing share metadata now cover the broader shop atlas plus collection, ingredient, concern, routine, product, trust, FAQ, contact, about, terms, and internal search discovery templates, with dedicated commerce/editorial social previews on PDPs and articles, deploy-safe absolute URL resolution for hosted environments, filtered collection states canonicalized back to the main category URL, and transactional `cart` / `checkout` routes marked `noindex,nofollow` |
 | Schema strategy | In Progress | JSON-LD foundations exist on home, category, ingredient, concern, routine, product, journal, article, trust, FAQ, contact, about, and terms routes, and filtered collection plus ingredient discovery states now emit result-aware `ItemList` markup |
 | Accessibility | In Progress | Semantic layout and skip-link exist; full QA is still pending, but smoke coverage now protects core route rendering from silent regressions |
-| Security / Privacy | In Progress | Trust, privacy, shipping, returns, authenticity, FAQ, contact, about, and terms surfaces now exist as real public routes, track-order now uses order reference plus phone last-4 or a short-lived recent-order cookie instead of exposing full customer details, `/ops/*` and ops APIs including `/ops/notifications` now sit behind a role-aware internal access gate with signed sessions and route-level permission checks, and the app emits safe default security headers; real business data, final support channels, and legal review are still pending |
+| Security / Privacy | In Progress | Trust, privacy, shipping, returns, authenticity, FAQ, contact, about, and terms surfaces now exist as real public routes, track-order now uses order reference plus phone last-4 or a short-lived recent-order cookie instead of exposing full customer details, `/ops/*` and ops APIs including `/ops/notifications` now sit behind a role-aware internal login gate with username/password support, signed sessions, and route-level permission checks, and the app emits safe default security headers; real business data, provider-backed auth, and legal review are still pending |
 | Performance / CWV | In Progress | Next.js foundation is in place; runtime and asset optimization still pending |
 | Analytics / Conversion | In Progress | Page views, global navigation, core CTA instrumentation, internal search submit/result events including ingredient result groups, collection `filter_apply`, ingredient route links, `add_to_cart`, `cart_update`, `checkout_start`, `checkout_option_change`, `checkout_complete`, `track_order_lookup`, internal ops route page typing including `/ops/audit` and `/ops/notifications`, plus internal `ops_order_status_update` and `ops_notification_status_update` are now wired against the centralized in-app order and notification authorities; real payment completion and external lifecycle notifications are still pending |
 | Content system | In Progress | Editorial, concern, routine, product, collection, trust, FAQ, contact, about, and terms shells exist, but voice remains provisional until real samples exist |
-| Release / Ops | In Progress | Local runtime is stable on port `3056`, checkout now writes order references into a unified SQLite-backed in-app authority instead of browser-only or JSON-only storage, confirmation and tracking now read from protected API routes and real notification queue state, internal `/ops`, `/ops/catalog`, `/ops/fulfillment`, `/ops/orders`, `/ops/notifications`, and `/ops/audit` surfaces now rehearse KPI review, catalog ownership, routing, supplier exceptions, notification delivery-state trace, session tracing, and order progression through guarded APIs without claiming a real backoffice, `/ops-access` plus middleware now gate those internal routes with role-aware signed sessions in production-safe environments, the codebase is now on GitHub with CI verified on push, branded fallback plus manifest surfaces now exist, `/api/health` now exposes authority storage mode for deployment checks, smoke checks now guard critical release surfaces plus order create/read/update, notification queue transitions, authority storage readiness, and ops access control in CI, and a secret-gated Vercel deployment workflow plus explicit runbook now exist; first live deployment, monitoring ownership, real RBAC, and real durable backend ownership are still pending |
+| Release / Ops | In Progress | Local runtime is stable on port `3056`, checkout now writes order references into a unified SQLite-backed in-app authority instead of browser-only or JSON-only storage, confirmation and tracking now read from protected API routes and real notification queue state, internal `/ops`, `/ops/catalog`, `/ops/fulfillment`, `/ops/orders`, `/ops/notifications`, and `/ops/audit` surfaces now rehearse KPI review, catalog ownership, routing, supplier exceptions, notification delivery-state trace, session tracing, and order progression through guarded APIs without claiming a real backoffice, `/ops-access` plus middleware now gate those internal routes with role-aware signed sessions and identity-backed login in production-safe environments, the codebase is now on GitHub with CI verified on push, branded fallback plus manifest surfaces now exist, `/api/health` now exposes authority storage mode for deployment checks, smoke checks now guard critical release surfaces plus order create/read/update, notification queue transitions, authority storage readiness, identity login, and ops access control in CI, and a secret-gated Vercel deployment workflow plus explicit runbook now exist; first live deployment, provider-backed auth, and real durable backend ownership are still pending |
 
 ## Milestone Log
 
@@ -257,11 +259,13 @@ Progress is tracked against SkyWave phases, not by ad-hoc task count.
 - Order, notification, and audit authorities now persist through one SQLite-backed application database instead of three separate JSON files, with legacy import paths kept for backward-compatible rehearsal migration.
 - `/api/health` now reports the active authority storage engine, and smoke regression now boots against an isolated SQLite database while verifying authority readiness alongside the protected ops flows.
 - GitHub Actions and the deploy workflow now build on Node.js 22 to match the new `node:sqlite` runtime requirement, and CI returned green again after the SQLite migration.
+- `/ops-access` now supports username/password login backed by hashed internal credentials, while preserving access-code fallback only for transitional environments that have not migrated yet.
+- Smoke regression now verifies identity login for manager and catalog roles instead of validating the old shared access-code flow only.
 
 ## Immediate Next Actions
 
 1. Replace the current SQLite-backed in-app authority with real backend authority for orders, stock, supplier sync, payment, shipping, and delivery ownership.
-2. Replace the current role-coded `/ops-access` session with identity-backed RBAC and durable audit storage after backend ownership is active.
+2. Replace the current env-backed internal ops identities and signed sessions with provider-backed auth, durable RBAC, and shared audit ownership after backend ownership is active.
 3. Supply Vercel credentials and execute the first real deployment from this repository.
 4. Replace provisional legal/business/support data with approved operating details before launch claims.
 

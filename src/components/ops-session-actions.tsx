@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { getPageType, trackAnalyticsEvent } from "@/lib/analytics";
+import { getOpsAuthMethodLabel } from "@/lib/ops-access";
 import type { OpsSessionSummary } from "@/lib/ops-types";
 import styles from "./order-flow.module.css";
 
@@ -46,7 +47,8 @@ export function OpsSessionActions({ session }: OpsSessionActionsProps) {
     <div className={styles.opsNavActions}>
       {session ? (
         <span className={styles.opsNavMeta}>
-          Session: {session.role} · {session.userId}
+          Session: {session.role} · {session.username ?? session.userId} ·{" "}
+          {getOpsAuthMethodLabel(session.authMethod)}
         </span>
       ) : null}
       <button

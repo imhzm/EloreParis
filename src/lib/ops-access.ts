@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 import { createSignedToken, verifySignedToken } from "@/lib/signed-token";
 import type {
   OpsAccessMode,
+  OpsAuthMethod,
   OpsRole,
   OpsSessionSummary,
 } from "@/lib/ops-types";
@@ -9,11 +10,13 @@ import type {
 export const OPS_SESSION_COOKIE = "cozmateks-ops-session";
 export const OPS_SESSION_MAX_AGE_SECONDS = 60 * 60 * 12;
 
-type OpsUserConfig = {
+export type OpsUserConfig = {
   id: string;
   name: string;
   role: OpsRole;
-  accessCode: string;
+  username?: string;
+  passwordHash?: string;
+  accessCode?: string;
 };
 
 export type OpsAccessConfig = {
@@ -23,6 +26,9 @@ export type OpsAccessConfig = {
   isConfigured: boolean;
   isProtectionActive: boolean;
   mode: OpsAccessMode;
+  supportsAccessCodeAuth: boolean;
+  supportsIdentityAuth: boolean;
+  primaryAuthMethod: OpsAuthMethod;
 };
 
 type OpsSessionPayload = {
@@ -31,6 +37,8 @@ type OpsSessionPayload = {
   userId: string;
   name: string;
   role: OpsRole;
+  authMethod: OpsAuthMethod;
+  username: string | null;
   exp: number;
 };
 
@@ -41,8 +49,20 @@ const roleLabels: Record<OpsRole, string> = {
   auditor: "Ops auditor",
 };
 
+const authMethodLabels: Record<OpsAuthMethod, string> = {
+  access_code: "Access code",
+  identity_password: "Identity login",
+};
+
 const rolePathMap: Record<OpsRole, string[]> = {
-  manager: ["/ops", "/ops/orders", "/ops/fulfillment", "/ops/catalog", "/ops/notifications", "/ops/audit"],
+  manager: [
+    "/ops",
+    "/ops/orders",
+    "/ops/fulfillment",
+    "/ops/catalog",
+    "/ops/notifications",
+    "/ops/audit",
+  ],
   catalog_operator: ["/ops/catalog"],
   fulfillment_operator: ["/ops/orders", "/ops/fulfillment", "/ops/notifications"],
   auditor: ["/ops/audit"],
@@ -70,6 +90,10 @@ function normalizeOpsUserId(value: string) {
     .replace(/^-|-$/g, "");
 }
 
+function normalizeOpsUsername(value: string) {
+  return value.trim().toLowerCase();
+}
+
 function decodePayload(value: unknown): value is OpsSessionPayload {
   return (
     value !== null &&
@@ -79,17 +103,32 @@ function decodePayload(value: unknown): value is OpsSessionPayload {
     "userId" in value &&
     "name" in value &&
     "role" in value &&
+    "authMethod" in value &&
+    "username" in value &&
     "exp" in value &&
     value.scope === "ops_session" &&
     typeof value.sessionId === "string" &&
     typeof value.userId === "string" &&
     typeof value.name === "string" &&
     isOpsRole(value.role) &&
+    (value.authMethod === "access_code" ||
+      value.authMethod === "identity_password") &&
+    (typeof value.username === "string" || value.username === null) &&
     typeof value.exp === "number"
   );
 }
 
-function parseOpsUsers(rawValue: string | undefined) {
+function getRawOpsUsersConfig() {
+  const preferredValue = process.env.OPS_AUTH_USERS_JSON?.trim();
+
+  if (preferredValue) {
+    return preferredValue;
+  }
+
+  return process.env.OPS_ACCESS_USERS_JSON?.trim() ?? "";
+}
+
+function parseOpsUsers(rawValue: string | undefined): OpsUserConfig[] {
   const value = rawValue?.trim();
 
   if (!value) {
@@ -117,23 +156,43 @@ function parseOpsUsers(rawValue: string | undefined) {
           "accessCode" in entry && typeof entry.accessCode === "string"
             ? entry.accessCode.trim()
             : "";
+        const rawUsername =
+          "username" in entry && typeof entry.username === "string"
+            ? normalizeOpsUsername(entry.username)
+            : "";
+        const rawPasswordHash =
+          "passwordHash" in entry && typeof entry.passwordHash === "string"
+            ? entry.passwordHash.trim()
+            : "";
 
-        if (!rawName || !rawCode || !isOpsRole(rawRole)) {
+        const hasAccessCode = rawCode.length > 0;
+        const hasIdentityCredentials =
+          rawUsername.length > 0 && rawPasswordHash.length > 0;
+
+        if (!rawName || !isOpsRole(rawRole)) {
           return null;
         }
 
-        const id = normalizeOpsUserId(rawId || rawName);
+        if (!hasAccessCode && !hasIdentityCredentials) {
+          return null;
+        }
+
+        const id = normalizeOpsUserId(rawId || rawUsername || rawName);
 
         if (!id) {
           return null;
         }
 
-        return {
+        const normalizedEntry: OpsUserConfig = {
           id,
           name: rawName.trim(),
           role: rawRole,
-          accessCode: rawCode,
-        } satisfies OpsUserConfig;
+          accessCode: hasAccessCode ? rawCode : undefined,
+          username: hasIdentityCredentials ? rawUsername : undefined,
+          passwordHash: hasIdentityCredentials ? rawPasswordHash : undefined,
+        };
+
+        return normalizedEntry;
       })
       .filter((entry): entry is OpsUserConfig => entry !== null);
   } catch {
@@ -155,7 +214,7 @@ function buildLegacyOpsUser(accessCode: string): OpsUserConfig | null {
 }
 
 function getOpsUsers(accessCode: string) {
-  const configuredUsers = parseOpsUsers(process.env.OPS_ACCESS_USERS_JSON);
+  const configuredUsers = parseOpsUsers(getRawOpsUsersConfig());
 
   if (configuredUsers.length > 0) {
     return configuredUsers;
@@ -165,6 +224,20 @@ function getOpsUsers(accessCode: string) {
   return legacyUser ? [legacyUser] : [];
 }
 
+function supportsAccessCodeAuth(users: OpsUserConfig[]) {
+  return users.some((user) => Boolean(user.accessCode));
+}
+
+function supportsIdentityAuth(users: OpsUserConfig[]) {
+  return users.some(
+    (user) => Boolean(user.username) && Boolean(user.passwordHash),
+  );
+}
+
+function getPrimaryAuthMethod(users: OpsUserConfig[]): OpsAuthMethod {
+  return supportsIdentityAuth(users) ? "identity_password" : "access_code";
+}
+
 function getOpsSigningSecret(users: OpsUserConfig[], accessCode: string) {
   const explicitSecret = normalizeSecret(process.env.OPS_ACCESS_SIGNING_SECRET);
 
@@ -172,7 +245,7 @@ function getOpsSigningSecret(users: OpsUserConfig[], accessCode: string) {
     return explicitSecret;
   }
 
-  if (users.length === 1) {
+  if (users.length === 1 && users[0].accessCode) {
     return users[0].accessCode;
   }
 
@@ -181,7 +254,10 @@ function getOpsSigningSecret(users: OpsUserConfig[], accessCode: string) {
   }
 
   const derivedSource = users
-    .map((user) => `${user.id}:${user.role}:${user.accessCode}`)
+    .map(
+      (user) =>
+        `${user.id}:${user.role}:${user.username ?? ""}:${user.passwordHash ?? ""}:${user.accessCode ?? ""}`,
+    )
     .sort()
     .join("|");
 
@@ -202,6 +278,8 @@ function mapPayloadToSessionSummary(
     name: payload.name,
     role: payload.role,
     mode,
+    authMethod: payload.authMethod,
+    username: payload.username,
     allowedPaths: buildAllowedPaths(payload.role),
   };
 }
@@ -220,6 +298,10 @@ export function getOpsRoleLabel(role: OpsRole) {
   return roleLabels[role];
 }
 
+export function getOpsAuthMethodLabel(authMethod: OpsAuthMethod) {
+  return authMethodLabels[authMethod];
+}
+
 export function getOpsAccessConfig(): OpsAccessConfig {
   const accessCode = normalizeSecret(process.env.OPS_ACCESS_CODE);
   const isProtectionActive =
@@ -227,6 +309,8 @@ export function getOpsAccessConfig(): OpsAccessConfig {
     process.env.ENFORCE_OPS_ACCESS === "true";
   const users = getOpsUsers(accessCode);
   const isConfigured = users.length > 0;
+  const supportsCodeAuth = supportsAccessCodeAuth(users);
+  const supportsPasswordAuth = supportsIdentityAuth(users);
 
   if (!isProtectionActive) {
     return {
@@ -236,6 +320,9 @@ export function getOpsAccessConfig(): OpsAccessConfig {
       isConfigured,
       isProtectionActive,
       mode: "development_open",
+      supportsAccessCodeAuth: supportsCodeAuth,
+      supportsIdentityAuth: supportsPasswordAuth,
+      primaryAuthMethod: getPrimaryAuthMethod(users),
     };
   }
 
@@ -247,6 +334,9 @@ export function getOpsAccessConfig(): OpsAccessConfig {
       isConfigured,
       isProtectionActive,
       mode: "setup_required",
+      supportsAccessCodeAuth: false,
+      supportsIdentityAuth: false,
+      primaryAuthMethod: "access_code",
     };
   }
 
@@ -257,6 +347,9 @@ export function getOpsAccessConfig(): OpsAccessConfig {
     isConfigured,
     isProtectionActive,
     mode: "protected",
+    supportsAccessCodeAuth: supportsCodeAuth,
+    supportsIdentityAuth: supportsPasswordAuth,
+    primaryAuthMethod: getPrimaryAuthMethod(users),
   };
 }
 
@@ -330,6 +423,21 @@ export function findOpsUserByAccessCode(
   );
 }
 
+export function findOpsUserByUsername(
+  submittedUsername: string,
+  config = getOpsAccessConfig(),
+) {
+  const normalizedUsername = normalizeOpsUsername(submittedUsername);
+
+  if (!normalizedUsername) {
+    return null;
+  }
+
+  return (
+    config.users.find((user) => user.username === normalizedUsername) ?? null
+  );
+}
+
 export function getDevelopmentOpenOpsSession(): OpsSessionSummary {
   return {
     sessionId: "development-open",
@@ -337,12 +445,15 @@ export function getDevelopmentOpenOpsSession(): OpsSessionSummary {
     name: "Local rehearsal",
     role: "manager",
     mode: "development_open",
+    authMethod: "access_code",
+    username: null,
     allowedPaths: buildAllowedPaths("manager"),
   };
 }
 
 export async function createOpsSessionToken(
   user: OpsUserConfig,
+  authMethod: OpsAuthMethod,
   config = getOpsAccessConfig(),
   maxAgeSeconds = OPS_SESSION_MAX_AGE_SECONDS,
 ) {
@@ -353,6 +464,8 @@ export async function createOpsSessionToken(
       userId: user.id,
       name: user.name,
       role: user.role,
+      authMethod,
+      username: user.username ?? null,
       exp: Date.now() + maxAgeSeconds * 1000,
     } satisfies OpsSessionPayload,
     config.signingSecret,

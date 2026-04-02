@@ -3,32 +3,41 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { TrackedLink } from "@/components/tracked-link";
-import type { OpsAccessMode } from "@/lib/ops-types";
+import type { OpsAccessMode, OpsAuthMethod } from "@/lib/ops-types";
 import styles from "./order-flow.module.css";
 
 type OpsAccessSurfaceProps = {
   accessMode: OpsAccessMode;
+  primaryAuthMethod: OpsAuthMethod;
+  supportsAccessCodeAuth: boolean;
+  supportsIdentityAuth: boolean;
   deniedPath?: string;
+  nextPath: string;
+};
+
+type LoginPayload = {
+  accessCode?: string;
+  username?: string;
+  password?: string;
   nextPath: string;
 };
 
 export function OpsAccessSurface({
   accessMode,
+  primaryAuthMethod,
+  supportsAccessCodeAuth,
+  supportsIdentityAuth,
   deniedPath,
   nextPath,
 }: OpsAccessSurfaceProps) {
   const router = useRouter();
   const [accessCode, setAccessCode] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, startTransition] = useTransition();
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    if (accessMode !== "protected") {
-      return;
-    }
-
+  async function submitLogin(payload: LoginPayload) {
     setError(null);
 
     try {
@@ -37,27 +46,24 @@ export function OpsAccessSurface({
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          accessCode,
-          nextPath,
-        }),
+        body: JSON.stringify(payload),
       });
 
-      const payload = (await response.json()) as {
+      const responsePayload = (await response.json()) as {
         error?: string;
         redirectTo?: string;
       };
 
       if (!response.ok) {
         setError(
-          payload.error ??
-            "تعذر التحقق من رمز الوصول التشغيلي في هذه اللحظة.",
+          responsePayload.error ??
+            "تعذر التحقق من بيانات الدخول التشغيلية في هذه اللحظة.",
         );
         return;
       }
 
       startTransition(() => {
-        router.push(payload.redirectTo ?? nextPath);
+        router.push(responsePayload.redirectTo ?? nextPath);
         router.refresh();
       });
     } catch {
@@ -67,16 +73,48 @@ export function OpsAccessSurface({
     }
   }
 
+  async function handleIdentitySubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (accessMode !== "protected") {
+      return;
+    }
+
+    await submitLogin({
+      username,
+      password,
+      nextPath,
+    });
+  }
+
+  async function handleAccessCodeSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (accessMode !== "protected") {
+      return;
+    }
+
+    await submitLogin({
+      accessCode,
+      nextPath,
+    });
+  }
+
+  const showIdentityCard = supportsIdentityAuth;
+  const showAccessCodeCard = supportsAccessCodeAuth;
+  const prefersIdentity = primaryAuthMethod === "identity_password";
+
   return (
     <div className={styles.page}>
       <section className={styles.hero}>
         <div>
           <p className={styles.eyebrow}>Ops access gate</p>
-          <h1>دخول داخلي مضبوط إلى أسطح التشغيل بدل تركها مكشوفة على المسارات العامة.</h1>
+          <h1>دخول داخلي مضبوط يفصل أسطح التشغيل عن الواجهة العامة ويقرب `/ops` من auth حقيقية.</h1>
           <p className={styles.summary}>
-            هذه الصفحة تفصل بين storefront العام وطبقة `/ops` الداخلية. الهدف ليس بناء auth
-            نهائي، بل فرض boundary صريحة على dashboard والطلبات والكتالوج والـ fulfillment
-            قبل ربط backoffice حقيقي.
+            هذه الصفحة لم تعد مجرد بوابة access code عامة. المسار الحالي يدفع
+            `/ops` نحو هوية داخلية role-aware يمكن تطويرها لاحقًا إلى RBAC كاملة
+            فوق backend ownership حقيقية، بدل تركها كرمز واحد مشترك بين كل
+            المشغلين.
           </p>
         </div>
 
@@ -85,7 +123,8 @@ export function OpsAccessSurface({
             <p>Protected routes</p>
             <strong>/ops/*</strong>
             <span>
-              يغطي هذا gate حاليًا: dashboard, orders, catalog, fulfillment, notifications, وaudit.
+              يغطي هذا gate حاليًا: dashboard, orders, catalog, fulfillment,
+              notifications, وaudit مع فصل واضح بين الأدوار.
             </span>
           </div>
 
@@ -93,8 +132,8 @@ export function OpsAccessSurface({
             <p className={styles.eyebrow}>Next destination</p>
             <h2>{nextPath}</h2>
             <p>
-              بعد السماح بالدخول سيتم تحويلك مباشرة إلى هذا المسار بدل بدء session عائمة بلا
-              سياق.
+              بعد نجاح التحقق سيتم تحويلك مباشرة إلى هذا المسار أو إلى fallback
+              مناسب لدورك الحالي إذا كان المسار المطلوب خارج صلاحياتك.
             </p>
           </div>
         </div>
@@ -109,60 +148,130 @@ export function OpsAccessSurface({
             <>
               {deniedPath ? (
                 <div className={styles.inlineError}>
-                  الجلسة الحالية لا تملك صلاحية الدخول إلى `{deniedPath}`. استخدم
-                  رمزًا مناسبًا للدور المطلوب أو ارجع إلى المسار الداخلي المسموح.
+                  الجلسة الحالية لا تملك صلاحية الدخول إلى `{deniedPath}`.
+                  استخدمي بيانات الدور المناسب أو ارجعي إلى المسار الداخلي
+                  المسموح.
                 </div>
               ) : null}
 
               <p>
-                الحماية مفعلة الآن. أدخل رمز الوصول الداخلي لمتابعة العمل على الأسطح التشغيلية.
+                الحماية مفعلة الآن. البوابة الحالية تدعم{" "}
+                {showIdentityCard ? "هوية داخلية باسم مستخدم وكلمة مرور" : "رموز وصول داخلية"}{" "}
+                {showIdentityCard && showAccessCodeCard
+                  ? "مع fallback access code للحالات الانتقالية."
+                  : "."}
               </p>
 
-              <form className={styles.summaryList} onSubmit={handleSubmit}>
-                <label className={styles.field}>
-                  <span className={styles.fieldLabel}>رمز الوصول الداخلي</span>
-                  <input
-                    className={styles.textInput}
-                    type="password"
-                    value={accessCode}
-                    onChange={(event) => setAccessCode(event.currentTarget.value)}
-                    autoComplete="current-password"
-                    dir="ltr"
-                  />
-                </label>
+              {error ? <div className={styles.inlineError}>{error}</div> : null}
 
-                {error ? <div className={styles.inlineError}>{error}</div> : null}
-
-                <div className={styles.actionColumn}>
-                  <button
-                    className={styles.primaryButton}
-                    type="submit"
-                    disabled={isSubmitting}
+              <div className={styles.authMethodsGrid}>
+                {showIdentityCard ? (
+                  <form
+                    className={`${styles.authMethodCard} ${prefersIdentity ? styles.authMethodCardPrimary : ""}`}
+                    onSubmit={handleIdentitySubmit}
                   >
-                    {isSubmitting ? "جارٍ التحقق..." : "الدخول إلى ops"}
-                  </button>
-                </div>
-              </form>
+                    <div className={styles.authMethodHeader}>
+                      <p className={styles.sectionTitle}>Identity login</p>
+                      <h3>الدخول ببيانات المشغل</h3>
+                      <p>
+                        هذا هو المسار المفضل الآن لأنه يفصل بين المستخدمين
+                        والأدوار بدل الاعتماد على رمز واحد مشترك.
+                      </p>
+                    </div>
+
+                    <label className={styles.field}>
+                      <span className={styles.fieldLabel}>اسم المستخدم</span>
+                      <input
+                        className={styles.textInput}
+                        type="text"
+                        value={username}
+                        onChange={(event) => setUsername(event.currentTarget.value)}
+                        autoComplete="username"
+                        dir="ltr"
+                      />
+                    </label>
+
+                    <label className={styles.field}>
+                      <span className={styles.fieldLabel}>كلمة المرور</span>
+                      <input
+                        className={styles.textInput}
+                        type="password"
+                        value={password}
+                        onChange={(event) => setPassword(event.currentTarget.value)}
+                        autoComplete="current-password"
+                        dir="ltr"
+                      />
+                    </label>
+
+                    <div className={styles.actionColumn}>
+                      <button
+                        className={styles.primaryButton}
+                        type="submit"
+                        disabled={isSubmitting}
+                      >
+                        {isSubmitting ? "جارٍ التحقق..." : "الدخول ببيانات المشغل"}
+                      </button>
+                    </div>
+                  </form>
+                ) : null}
+
+                {showAccessCodeCard ? (
+                  <form
+                    className={`${styles.authMethodCard} ${!showIdentityCard ? styles.authMethodCardPrimary : ""}`}
+                    onSubmit={handleAccessCodeSubmit}
+                  >
+                    <div className={styles.authMethodHeader}>
+                      <p className={styles.sectionTitle}>Access code</p>
+                      <h3>الدخول برمز الوصول</h3>
+                      <p>
+                        هذا المسار موجود للحفاظ على التوافق الانتقالي أو للبيئات
+                        التي لم تنتقل بعد إلى identity login.
+                      </p>
+                    </div>
+
+                    <label className={styles.field}>
+                      <span className={styles.fieldLabel}>رمز الوصول الداخلي</span>
+                      <input
+                        className={styles.textInput}
+                        type="password"
+                        value={accessCode}
+                        onChange={(event) => setAccessCode(event.currentTarget.value)}
+                        autoComplete="current-password"
+                        dir="ltr"
+                      />
+                    </label>
+
+                    <div className={styles.actionColumn}>
+                      <button
+                        className={showIdentityCard ? styles.secondaryButton : styles.primaryButton}
+                        type="submit"
+                        disabled={isSubmitting}
+                      >
+                        {isSubmitting ? "جارٍ التحقق..." : "الدخول برمز الوصول"}
+                      </button>
+                    </div>
+                  </form>
+                ) : null}
+              </div>
             </>
           ) : accessMode === "setup_required" ? (
             <>
               <div className={styles.inlineError}>
-                الحماية مفعلة، لكن `OPS_ACCESS_USERS_JSON` أو `OPS_ACCESS_CODE`
-                غير مضبوط بعد في البيئة الحالية. لذلك بقيت أسطح `/ops` مغلقة
-                افتراضيًا بدل السماح بدخول غير محمي.
+                الحماية مفعلة، لكن لا توجد هوية داخلية مضبوطة بعد. أضيفي
+                `OPS_AUTH_USERS_JSON` أو استخدمي fallback legacy عبر
+                `OPS_ACCESS_USERS_JSON` أو `OPS_ACCESS_CODE`.
               </div>
               <p>
-                أضف مجموعة مستخدمين داخل `OPS_ACCESS_USERS_JSON` أو فعّل fallback
-                البسيط عبر `OPS_ACCESS_CODE`، ثم أعد التشغيل أو أعد النشر حتى تصبح
-                البوابة قابلة للاستخدام.
+                إذا كان الهدف هو بيئة أقرب للإطلاق، فالأولوية الآن هي إعداد
+                مستخدمين داخليين role-aware بدل الاكتفاء access code واحدة.
               </p>
             </>
           ) : (
             <>
               <div className={styles.inlineNotice}>
-                بيئة التطوير الحالية تعمل بوضع open local rehearsal. أسطح `/ops` متاحة محليًا
-                لتسريع البناء، بينما الحماية تصبح فعلية عند تفعيل `ENFORCE_OPS_ACCESS=true` أو
-                عند التشغيل الإنتاجي.
+                بيئة التطوير الحالية تعمل بوضع open local rehearsal. أسطح `/ops`
+                متاحة محليًا لتسريع البناء، بينما الحماية تصبح فعلية عند تفعيل
+                `ENFORCE_OPS_ACCESS=true` أو عند التشغيل الإنتاجي.
               </div>
               <div className={styles.actionColumn}>
                 <TrackedLink
@@ -185,15 +294,16 @@ export function OpsAccessSurface({
 
           <div className={styles.summaryList}>
             <div className={styles.infoBullet}>
-              أسطح `/ops` أصبحت داخلية صراحة، وليست امتدادًا عامًا للـ storefront.
+              أسطح `/ops` أصبحت داخلية صراحة، وليست امتدادًا عامًا للواجهة
+              التجارية.
             </div>
             <div className={styles.infoBullet}>
-              الـ transactional MVP الحالي يظل متمركزًا حول `skincare` و`makeup`، بينما
-              المجموعات الأخرى تبقى IA/SEO surfaces حتى يُحسم catalog authority الحقيقي.
+              المسار الحالي يميّز بين هوية المشغل ودوره، حتى لو بقيت الجلسة
+              Signed-cookie session وليست provider-backed auth كاملة بعد.
             </div>
             <div className={styles.infoBullet}>
-              هذا gate ليس بديلًا عن auth/accounts لاحقًا، لكنه يمنع بقاء surfaces التشغيلية
-              مكشوفة قبل backend ownership الفعلية.
+              هذا gate ليس النهاية؛ لكنه يرفع المشروع من shared access code إلى
+              login أقرب للـ RBAC قبل backend ownership الحقيقية.
             </div>
           </div>
 

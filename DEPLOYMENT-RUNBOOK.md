@@ -36,6 +36,9 @@ Without these three secrets, the deploy workflow remains intentionally inactive.
   Use this when you want a fixed canonical production URL such as `https://cozmateks.com`.
 - `AUTHORITY_DB_PATH`
   Primary path for the SQLite-backed in-app authority. This must live on persistent writable storage in any non-local environment, otherwise transactional state will be lost between restarts or serverless invocations.
+- `OPS_AUTH_USERS_JSON`
+  Preferred way to define internal ops identities and roles using username plus password hash. Example shape: `[{"id":"ops-manager","name":"Ops manager","role":"manager","username":"ops.manager","passwordHash":"scrypt$..."}]`.
+  You can generate a hash locally through `npm run ops:hash-password -- "StrongPassword"`.
 - `ORDER_AUTHORITY_SECRET`
   Required once transactional routes are deployed anywhere outside local development. Use a strong server-only value distinct from `OPS_ACCESS_CODE`.
 - `ORDER_AUTHORITY_FILE`
@@ -43,7 +46,7 @@ Without these three secrets, the deploy workflow remains intentionally inactive.
 - `NOTIFICATION_AUTHORITY_FILE`
   Legacy import source for old JSON-based notification rehearsal data. Use only if you need one-time carryover into the SQLite authority.
 - `OPS_ACCESS_USERS_JSON`
-  Preferred way to define internal ops users and roles. Example shape: `[{"id":"ops-manager","name":"Ops manager","role":"manager","accessCode":"..."}]`.
+  Legacy fallback for internal ops users that still authenticate through shared access codes. Prefer `OPS_AUTH_USERS_JSON` for any environment closer to production.
 - `OPS_ACCESS_CODE`
   Legacy fallback for protecting `/ops/*` in production when you only need one manager-style internal code. Use a strong internal-only value and do not expose it client-side.
 - `OPS_ACCESS_SIGNING_SECRET`
@@ -69,7 +72,7 @@ If `NEXT_PUBLIC_SITE_URL` is absent, the app now falls back in this order:
 4. Push to `main` or trigger the workflow manually.
 5. Confirm the deployment URL returns `200` on `/api/health`.
 6. Confirm unauthenticated `/ops` redirects to `/ops-access`.
-7. Confirm the chosen ops role reaches its allowed default route and that a lower-privilege role cannot open unauthorized ops pages.
+7. Confirm the chosen ops identity can log in through username and password, reaches its allowed default route, and that a lower-privilege role cannot open unauthorized ops pages.
 8. Confirm `/ops/notifications` can read queued delivery items and update a notification state without losing the shared authority database between requests or process restarts.
 9. Confirm `/ops/audit` can read recent login, order-state, and notification-state traces without losing the shared authority database between requests or process restarts.
 10. Confirm checkout can create an order and tracking can read it back in the chosen environment without losing the authority database between requests or process restarts.
@@ -102,4 +105,5 @@ If `NEXT_PUBLIC_SITE_URL` is absent, the app now falls back in this order:
 - The current transactional order authority is SQLite-backed inside the app, which is a major step up from JSON rehearsal, but it is still not durable enough for ephemeral/serverless hosting without a persistent backend replacement.
 - The current notification authority is SQLite-backed inside the app, but it is still not provider-backed delivery ownership and it remains unsuitable for ephemeral/serverless hosting without persistent storage.
 - The current ops audit authority is SQLite-backed inside the app, but it is still not a durable shared audit backend for long-lived production operations or serverless hosting.
+- The current ops auth layer now supports username/password identities with signed sessions, but it is still not provider-backed authentication or full RBAC over a central user directory.
 - Legal/business production data is still provisional, so a public launch claim would still be premature even after the first deploy.

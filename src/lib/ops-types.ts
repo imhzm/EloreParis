@@ -9,12 +9,16 @@ export type OpsAccessMode =
   | "protected"
   | "setup_required";
 
+export type OpsAuthMethod = "access_code" | "identity_password";
+
 export type OpsSessionSummary = {
   sessionId: string;
   userId: string;
   name: string;
   role: OpsRole;
   mode: OpsAccessMode;
+  authMethod: OpsAuthMethod;
+  username: string | null;
   allowedPaths: string[];
 };
 
