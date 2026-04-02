@@ -49,6 +49,11 @@ const releaseDiffFile =
 const releaseDiffMarkdownFile =
   process.env.SMOKE_RELEASE_DIFF_MARKDOWN_PATH ??
   ".artifacts/release-diff.md";
+const releaseHandoffFile =
+  process.env.SMOKE_RELEASE_HANDOFF_PATH ?? ".artifacts/release-handoff.json";
+const releaseHandoffMarkdownFile =
+  process.env.SMOKE_RELEASE_HANDOFF_MARKDOWN_PATH ??
+  ".artifacts/release-handoff.md";
 const releaseDecisionFile =
   process.env.SMOKE_RELEASE_DECISION_PATH ?? ".artifacts/release-decision.json";
 const releaseDecisionMarkdownFile =
@@ -110,6 +115,8 @@ function resetReleaseArtifacts() {
   safeRemoveAuthorityArtifact(releaseHistoryMarkdownFile);
   safeRemoveAuthorityArtifact(releaseDiffFile);
   safeRemoveAuthorityArtifact(releaseDiffMarkdownFile);
+  safeRemoveAuthorityArtifact(releaseHandoffFile);
+  safeRemoveAuthorityArtifact(releaseHandoffMarkdownFile);
   safeRemoveAuthorityArtifact(releaseDecisionFile);
   safeRemoveAuthorityArtifact(releaseDecisionMarkdownFile);
   safeRemoveAuthorityArtifact(releasePacketFile);
@@ -264,6 +271,46 @@ function writeReleaseDiffArtifacts(releaseComparison) {
   );
 }
 
+function renderReleaseHandoffMarkdown(releaseHandoffs) {
+  if (!releaseHandoffs.length) {
+    return "# Release Handoffs\n\n- No release handoffs are stored yet.\n";
+  }
+
+  return [
+    "# Release Handoffs",
+    "",
+    ...releaseHandoffs.flatMap((record) => [
+      `## ${record.id}`,
+      "",
+      `- Handed off at: ${record.handedOffAt}`,
+      `- Actor: ${record.actor.name} (${record.actor.role})`,
+      `- Reviewed packet: ${record.releasePacketGeneratedAt}`,
+      `- Review token: ${record.releasePacketReviewToken}`,
+      `- Review window minutes: ${record.releasePacketReviewWindowMinutes}`,
+      `- Handed off owner lanes: ${record.handedOffOwnerIds.join(", ") || "none"}`,
+      `- Verification mode: ${record.verificationMode}`,
+      `- Target base URL: ${record.targetBaseUrl}`,
+      `- Overall status: ${record.overallStatus}`,
+      `- Rationale: ${record.rationale}`,
+      "- Owner summaries:",
+      renderOwnerSummariesMarkdown(record.ownerSummaries),
+      ...(record.notes.length
+        ? ["- Notes:", ...record.notes.map((note) => `  - ${note}`)]
+        : ["- Notes: none"]),
+      "",
+    ]),
+  ].join("\n");
+}
+
+function writeReleaseHandoffArtifacts(releaseHandoffs) {
+  mkdirSync(path.dirname(releaseHandoffFile), { recursive: true });
+  writeFileSync(releaseHandoffFile, JSON.stringify(releaseHandoffs, null, 2));
+  writeFileSync(
+    releaseHandoffMarkdownFile,
+    renderReleaseHandoffMarkdown(releaseHandoffs),
+  );
+}
+
 function renderReleaseDecisionMarkdown(releaseDecisions) {
   if (!releaseDecisions.length) {
     return "# Release Decisions\n\n- No release decisions are stored yet.\n";
@@ -332,6 +379,8 @@ function renderReleasePacketMarkdown(releasePacket) {
     `- Runtime environment: ${releasePacket.runtimeEnvironment}`,
     `- Canonical URL: ${releasePacket.canonicalUrl}`,
     `- Latest published record: ${releasePacket.latestPublishedRecord?.id ?? "none"}`,
+    `- Latest handoff: ${releasePacket.latestHandoff?.id ?? "none"}`,
+    `- Latest handoff review: ${releasePacket.latestHandoffReview.status}`,
     `- Latest decision: ${releasePacket.latestDecision?.verdict ?? "none"}`,
     `- Latest decision review: ${releasePacket.latestDecisionReview.status}`,
     `- Latest decision delta: ${releasePacket.latestDecisionDelta.status}`,
@@ -343,6 +392,12 @@ function renderReleasePacketMarkdown(releasePacket) {
     "",
     "## Blocker Ownership",
     ownerSummaries,
+    "",
+    "## Latest Handoff Review",
+    `- ${releasePacket.latestHandoffReview.summary}`,
+    ...(releasePacket.latestHandoffReview.details.length
+      ? releasePacket.latestHandoffReview.details.map((item) => `- ${item}`)
+      : ["- No additional detail."]),
     "",
     "## Latest Decision Review",
     `- ${releasePacket.latestDecisionReview.summary}`,
@@ -607,6 +662,8 @@ const protectedOpsChecks = [
       "Current blocked items requiring acknowledgement",
       "Runtime preflight",
       "Runtime drift",
+      "Record blocker handoff",
+      "Release handoffs",
       "Release decisions",
       "Release history",
       "Blocker ownership",
@@ -614,6 +671,7 @@ const protectedOpsChecks = [
       "ops_release_to_health",
       "ops_release_to_history",
       "ops_release_to_compare",
+      "ops_release_to_handoffs",
       "ops_release_to_decisions",
       'content="noindex, nofollow"',
     ],
@@ -1124,7 +1182,7 @@ try {
       publicRouteChecks: publicSmokeChecks.length,
       protectedRouteChecks: protectedOpsChecks.length,
       assetChecks: assetChecks.length,
-      apiChecks: 24,
+      apiChecks: 25,
     },
     checks: [
       {
@@ -1139,8 +1197,8 @@ try {
       },
       {
         id: "api-contracts",
-        title: "Health, order, release, notification, audit, package, packet, history, compare, and decision APIs with packet-bound freshness and blocker-acknowledgement guards",
-        count: 24,
+        title: "Health, order, release, notification, audit, package, packet, history, compare, handoff, and decision APIs with packet-bound freshness, owner-handoff, and blocker-acknowledgement guards",
+        count: 25,
       },
       {
         id: "release-assets",
@@ -1200,7 +1258,7 @@ try {
   );
   assert.equal(
     releaseEvidenceBody.releaseEvidence.summary.apiChecks,
-    24,
+    25,
   );
 
   const {
@@ -1218,7 +1276,7 @@ try {
   );
   assert.equal(
     releasePackageBody.releasePackage.releaseEvidence?.summary.apiChecks,
-    24,
+    25,
   );
   assert.ok(
     releasePackageBody.releasePackage.blockedItems.some(
@@ -1256,7 +1314,7 @@ try {
   );
   assert.equal(
     publishReleasePackageBody.releasePackageRecord.artifact.releaseEvidence?.summary.apiChecks,
-    24,
+    25,
   );
 
   const {
@@ -1327,6 +1385,11 @@ try {
     preDecisionPacketBody.releasePacket.latestDecisionReview.status,
     "missing",
     "Expected the executive release packet to report a missing decision before the first verdict is recorded",
+  );
+  assert.equal(
+    preDecisionPacketBody.releasePacket.latestHandoffReview.status,
+    "missing",
+    "Expected the executive release packet to report a missing handoff before the first owner handoff is recorded",
   );
   assert.equal(
     preDecisionPacketBody.releasePacket.latestDecisionDelta.status,
@@ -1414,6 +1477,13 @@ try {
     blockedItemIds.length > 0,
     "Expected the current protected runtime to still expose blocked release items during smoke verification.",
   );
+  const activeOwnerIds = preDecisionPacketBody.releasePacket.currentArtifact.releaseReadiness.ownerSummaries
+    .filter((summary) => summary.blockedCount > 0 || summary.warningCount > 0)
+    .map((summary) => summary.ownerId);
+  assert.ok(
+    activeOwnerIds.length > 0,
+    "Expected the current executive release packet to expose active owner lanes that require blocker handoff.",
+  );
   const incompleteAcknowledgedBlockedItemIds =
     blockedItemIds.length > 1 ? blockedItemIds.slice(0, blockedItemIds.length - 1) : [];
 
@@ -1445,6 +1515,205 @@ try {
   assert.equal(
     incompleteAcknowledgementBody.error,
     "The release decision must acknowledge every currently blocked release item before it can be recorded.",
+  );
+
+  const {
+    response: missingHandoffDecisionResponse,
+    body: missingHandoffDecisionBody,
+  } = await sendJson("POST", "/api/ops/release/decisions", {
+    releaseDecision: {
+      verdict: "hold",
+      rationale:
+        "Automated smoke verification should reject release decisions until the current blocker handoff has been recorded.",
+      acknowledgedBlockedItemIds: blockedItemIds,
+      releasePacketGeneratedAt: preDecisionPacketBody.releasePacket.generatedAt,
+      reviewToken: preDecisionPacketBody.releasePacket.reviewToken,
+      notes: [
+        "Smoke confirms that a current blocker handoff is required before a protected decision can be published.",
+      ],
+    },
+  }, {
+    headers: {
+      Cookie: opsCookie,
+    },
+  });
+  assert.equal(
+    missingHandoffDecisionResponse.status,
+    409,
+    "Expected ops release decision API to reject decisions before a current blocker handoff exists",
+  );
+  assert.equal(
+    missingHandoffDecisionBody.error,
+    "The release decision must be based on a current blocker handoff for the latest executive packet.",
+  );
+
+  const {
+    response: staleHandoffResponse,
+    body: staleHandoffBody,
+  } = await sendJson("POST", "/api/ops/release/handoffs", {
+    releaseHandoff: {
+      rationale:
+        "Automated smoke verification should reject blocker handoffs that are not based on the latest packet token.",
+      handedOffOwnerIds: activeOwnerIds,
+      releasePacketGeneratedAt: preDecisionPacketBody.releasePacket.generatedAt,
+      reviewToken: "stale-release-packet-token",
+      notes: [
+        "Smoke confirms that blocker handoffs are bound to the latest executive packet.",
+      ],
+    },
+  }, {
+    headers: {
+      Cookie: opsCookie,
+    },
+  });
+  assert.equal(
+    staleHandoffResponse.status,
+    409,
+    "Expected ops release handoff API to reject stale packet review tokens",
+  );
+  assert.equal(
+    staleHandoffBody.error,
+    "The blocker handoff must be based on the latest executive release packet.",
+  );
+
+  const {
+    response: staleHandoffAgeResponse,
+    body: staleHandoffAgeBody,
+  } = await sendJson("POST", "/api/ops/release/handoffs", {
+    releaseHandoff: {
+      rationale:
+        "Automated smoke verification should reject blocker handoffs that reference an expired executive review packet.",
+      handedOffOwnerIds: activeOwnerIds,
+      releasePacketGeneratedAt: stalePacketGeneratedAt,
+      reviewToken: preDecisionPacketBody.releasePacket.reviewToken,
+      notes: [
+        "Smoke confirms that executive packet age is enforced for blocker handoffs as well.",
+      ],
+    },
+  }, {
+    headers: {
+      Cookie: opsCookie,
+    },
+  });
+  assert.equal(
+    staleHandoffAgeResponse.status,
+    409,
+    "Expected ops release handoff API to reject stale executive packet age",
+  );
+  assert.equal(
+    staleHandoffAgeBody.error,
+    "The executive release packet is stale and must be refreshed before a blocker handoff can be recorded.",
+  );
+
+  const incompleteHandoffOwnerIds =
+    activeOwnerIds.length > 1 ? activeOwnerIds.slice(0, activeOwnerIds.length - 1) : [];
+
+  const {
+    response: incompleteHandoffResponse,
+    body: incompleteHandoffBody,
+  } = await sendJson("POST", "/api/ops/release/handoffs", {
+    releaseHandoff: {
+      rationale:
+        "Automated smoke verification should reject blocker handoffs that do not cover every active owner lane.",
+      handedOffOwnerIds: incompleteHandoffOwnerIds,
+      releasePacketGeneratedAt: preDecisionPacketBody.releasePacket.generatedAt,
+      reviewToken: preDecisionPacketBody.releasePacket.reviewToken,
+      notes: [
+        "Smoke confirms that every active owner lane must be explicitly handed off.",
+      ],
+    },
+  }, {
+    headers: {
+      Cookie: opsCookie,
+    },
+  });
+  assert.equal(
+    incompleteHandoffResponse.status,
+    409,
+    "Expected ops release handoff API to reject incomplete owner-lane coverage",
+  );
+  assert.equal(
+    incompleteHandoffBody.error,
+    "The blocker handoff must cover every active owner lane in the current executive packet.",
+  );
+
+  const {
+    response: publishReleaseHandoffResponse,
+    body: publishReleaseHandoffBody,
+  } = await sendJson("POST", "/api/ops/release/handoffs", {
+    releaseHandoff: {
+      rationale:
+        "Automated smoke verification hands the remaining launch blockers to the active owner lanes before recording the protected hold decision.",
+      handedOffOwnerIds: activeOwnerIds,
+      releasePacketGeneratedAt: preDecisionPacketBody.releasePacket.generatedAt,
+      reviewToken: preDecisionPacketBody.releasePacket.reviewToken,
+      notes: [
+        `Owner lanes: ${activeOwnerIds.join(", ")}.`,
+        `Current blocked items: ${blockedItemIds.join(", ")}.`,
+      ],
+    },
+  }, {
+    headers: {
+      Cookie: opsCookie,
+    },
+  });
+  assert.equal(
+    publishReleaseHandoffResponse.status,
+    201,
+    "Expected ops release handoff API to record a handoff for the current executive packet",
+  );
+  assert.deepEqual(
+    publishReleaseHandoffBody.releaseHandoffRecord.handedOffOwnerIds,
+    activeOwnerIds,
+  );
+
+  const {
+    response: releaseHandoffResponse,
+    body: releaseHandoffBody,
+  } = await fetchJson("/api/ops/release/handoffs", {
+    headers: {
+      Cookie: opsCookie,
+    },
+  });
+  assert.equal(
+    releaseHandoffResponse.status,
+    200,
+    "Expected ops release handoffs API to return 200 for manager role",
+  );
+  const publishedReleaseHandoff = releaseHandoffBody.releaseHandoffs.find(
+    (record) => record.id === publishReleaseHandoffBody.releaseHandoffRecord.id,
+  );
+  assert.ok(
+    publishedReleaseHandoff,
+    "Expected ops release handoffs API to include the newly recorded handoff",
+  );
+  assert.equal(
+    publishedReleaseHandoff.releasePacketReviewToken,
+    preDecisionPacketBody.releasePacket.reviewToken,
+  );
+  writeReleaseHandoffArtifacts(releaseHandoffBody.releaseHandoffs);
+
+  const {
+    response: handoffCurrentPacketResponse,
+    body: handoffCurrentPacketBody,
+  } = await fetchJson("/api/ops/release/packet", {
+    headers: {
+      Cookie: opsCookie,
+    },
+  });
+  assert.equal(
+    handoffCurrentPacketResponse.status,
+    200,
+    "Expected ops release packet API to return 200 after handoff publication",
+  );
+  assert.equal(
+    handoffCurrentPacketBody.releasePacket.latestHandoff?.id,
+    publishReleaseHandoffBody.releaseHandoffRecord.id,
+  );
+  assert.equal(
+    handoffCurrentPacketBody.releasePacket.latestHandoffReview.status,
+    "current",
+    "Expected the executive release packet to report the latest handoff as current after publication",
   );
 
   const {
@@ -1568,6 +1837,15 @@ try {
     publishReleasePackageBody.releasePackageRecord.id,
   );
   assert.equal(
+    releasePacketBody.releasePacket.latestHandoff?.id,
+    publishReleaseHandoffBody.releaseHandoffRecord.id,
+  );
+  assert.equal(
+    releasePacketBody.releasePacket.latestHandoffReview.status,
+    "current",
+    "Expected the executive release packet to retain a current handoff after decision publication",
+  );
+  assert.equal(
     releasePacketBody.releasePacket.latestDecision?.id,
     publishReleaseDecisionBody.releaseDecisionRecord.id,
   );
@@ -1595,7 +1873,7 @@ try {
   );
   assert.equal(
     releasePacketBody.releasePacket.currentArtifact.releaseEvidence?.summary.apiChecks,
-    24,
+    25,
   );
   assert.ok(
     releasePacketBody.releasePacket.contentGovernance.launchBlocked > 0,
@@ -1657,6 +1935,14 @@ try {
         entry.entityId === publishReleasePackageBody.releasePackageRecord.id,
     ),
     "Expected audit API to include the release package publication entry",
+  );
+  assert.ok(
+    releaseAuditBody.auditEntries.some(
+      (entry) =>
+        entry.action === "ops_release_handoff_publish" &&
+        entry.entityId === publishReleaseHandoffBody.releaseHandoffRecord.id,
+    ),
+    "Expected audit API to include the release handoff publication entry",
   );
   assert.ok(
     releaseAuditBody.auditEntries.some(

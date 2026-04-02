@@ -55,6 +55,16 @@ const releaseDiffMarkdownArtifactPath = path.resolve(
   process.env.LIVE_RELEASE_DIFF_MARKDOWN_PATH ??
     ".artifacts/render-live-release-diff.md",
 );
+const releaseHandoffArtifactPath = path.resolve(
+  process.cwd(),
+  process.env.LIVE_RELEASE_HANDOFF_ARTIFACT_PATH ??
+    ".artifacts/render-live-release-handoff.json",
+);
+const releaseHandoffMarkdownArtifactPath = path.resolve(
+  process.cwd(),
+  process.env.LIVE_RELEASE_HANDOFF_MARKDOWN_PATH ??
+    ".artifacts/render-live-release-handoff.md",
+);
 const releaseDecisionArtifactPath = path.resolve(
   process.cwd(),
   process.env.LIVE_RELEASE_DECISION_ARTIFACT_PATH ??
@@ -244,6 +254,46 @@ function writeReleaseDiffArtifacts(releaseComparison) {
   );
 }
 
+function renderReleaseHandoffMarkdown(releaseHandoffs) {
+  if (!releaseHandoffs.length) {
+    return "# Live Release Handoffs\n\n- No release handoffs are stored yet.\n";
+  }
+
+  return [
+    "# Live Release Handoffs",
+    "",
+    ...releaseHandoffs.flatMap((record) => [
+      `## ${record.id}`,
+      "",
+      `- Handed off at: ${record.handedOffAt}`,
+      `- Actor: ${record.actor.name} (${record.actor.role})`,
+      `- Reviewed packet: ${record.releasePacketGeneratedAt}`,
+      `- Review token: ${record.releasePacketReviewToken}`,
+      `- Review window minutes: ${record.releasePacketReviewWindowMinutes}`,
+      `- Handed off owner lanes: ${record.handedOffOwnerIds.join(", ") || "none"}`,
+      `- Verification mode: ${record.verificationMode}`,
+      `- Target base URL: ${record.targetBaseUrl}`,
+      `- Overall status: ${record.overallStatus}`,
+      `- Rationale: ${record.rationale}`,
+      "- Owner summaries:",
+      renderOwnerSummariesMarkdown(record.ownerSummaries),
+      ...(record.notes.length
+        ? ["- Notes:", ...record.notes.map((note) => `  - ${note}`)]
+        : ["- Notes: none"]),
+      "",
+    ]),
+  ].join("\n");
+}
+
+function writeReleaseHandoffArtifacts(releaseHandoffs) {
+  mkdirSync(path.dirname(releaseHandoffArtifactPath), { recursive: true });
+  writeFileSync(releaseHandoffArtifactPath, JSON.stringify(releaseHandoffs, null, 2));
+  writeFileSync(
+    releaseHandoffMarkdownArtifactPath,
+    renderReleaseHandoffMarkdown(releaseHandoffs),
+  );
+}
+
 function renderReleaseDecisionMarkdown(releaseDecisions) {
   if (!releaseDecisions.length) {
     return "# Live Release Decisions\n\n- No release decisions are stored yet.\n";
@@ -312,6 +362,8 @@ function renderReleasePacketMarkdown(releasePacket) {
     `- Runtime environment: ${releasePacket.runtimeEnvironment}`,
     `- Canonical URL: ${releasePacket.canonicalUrl}`,
     `- Latest published record: ${releasePacket.latestPublishedRecord?.id ?? "none"}`,
+    `- Latest handoff: ${releasePacket.latestHandoff?.id ?? "none"}`,
+    `- Latest handoff review: ${releasePacket.latestHandoffReview.status}`,
     `- Latest decision: ${releasePacket.latestDecision?.verdict ?? "none"}`,
     `- Latest decision review: ${releasePacket.latestDecisionReview.status}`,
     `- Latest decision delta: ${releasePacket.latestDecisionDelta.status}`,
@@ -323,6 +375,12 @@ function renderReleasePacketMarkdown(releasePacket) {
     "",
     "## Blocker Ownership",
     ownerSummaries,
+    "",
+    "## Latest Handoff Review",
+    `- ${releasePacket.latestHandoffReview.summary}`,
+    ...(releasePacket.latestHandoffReview.details.length
+      ? releasePacket.latestHandoffReview.details.map((item) => `- ${item}`)
+      : ["- No additional detail."]),
     "",
     "## Latest Decision Review",
     `- ${releasePacket.latestDecisionReview.summary}`,
@@ -525,6 +583,8 @@ try {
     "Current blocked items requiring acknowledgement",
     "/ops/release",
   );
+  assertIncludes(releasePageBody, "Record blocker handoff", "/ops/release");
+  assertIncludes(releasePageBody, "Release handoffs", "/ops/release");
   assertIncludes(releasePageBody, "Blocker ownership", "/ops/release");
 
   const { response: releaseResponse, body: releaseBody } = await fetchJson(
@@ -626,7 +686,7 @@ try {
       publicRouteChecks: 1,
       protectedRouteChecks: 2,
       assetChecks: 0,
-      apiChecks: 18,
+      apiChecks: 19,
     },
     checks: [
       {
@@ -666,8 +726,13 @@ try {
       },
       {
         id: "live-release-decision",
-        title: "Release decision stale-token rejection, stale-age rejection, blocker-acknowledgement rejection, approval rejection, publication, and readback from the deployed runtime",
-        count: 6,
+        title: "Release decision stale-token rejection, stale-age rejection, missing-handoff rejection, blocker-acknowledgement rejection, approval rejection, publication, and readback from the deployed runtime",
+        count: 7,
+      },
+      {
+        id: "live-release-handoff",
+        title: "Release handoff stale-token rejection, stale-age rejection, owner-coverage rejection, publication, and readback from the deployed runtime",
+        count: 5,
       },
       {
         id: "live-release-packet",
@@ -786,7 +851,7 @@ try {
   );
   assert.equal(
     releasePackageBody?.releasePackage?.releaseEvidence?.summary.apiChecks,
-    18,
+    19,
   );
 
   const { response: releaseHistoryResponse, body: releaseHistoryBody } =
@@ -847,6 +912,11 @@ try {
     "Expected live release packet to be available before decision publication.",
   );
   assert.equal(
+    preDecisionPacketBody?.releasePacket?.latestHandoffReview?.status,
+    "missing",
+    "Expected the live executive packet to report a missing blocker handoff before the first handoff is recorded.",
+  );
+  assert.equal(
     preDecisionPacketBody?.releasePacket?.latestDecisionReview?.status,
     "missing",
     "Expected the live executive packet to report a missing decision before the first verdict is recorded.",
@@ -859,6 +929,13 @@ try {
   assert.ok(
     preDecisionPacketBody?.releasePacket?.currentArtifact?.releaseReadiness?.ownerSummaries?.length > 0,
     "Expected the live executive packet to expose blocker ownership summaries.",
+  );
+  const activeOwnerIds = preDecisionPacketBody.releasePacket.currentArtifact.releaseReadiness.ownerSummaries
+    .filter((summary) => summary.blockedCount > 0 || summary.warningCount > 0)
+    .map((summary) => summary.ownerId);
+  assert.ok(
+    activeOwnerIds.length > 0,
+    "Expected the live executive packet to expose active owner lanes that require blocker handoff.",
   );
 
   const { response: staleDecisionResponse, body: staleDecisionBody } =
@@ -971,6 +1048,218 @@ try {
   assert.equal(
     incompleteAcknowledgementBody?.error,
     "The release decision must acknowledge every currently blocked release item before it can be recorded.",
+  );
+
+  const { response: missingHandoffDecisionResponse, body: missingHandoffDecisionBody } =
+    await fetchJson("/api/ops/release/decisions", {
+      method: "POST",
+      headers: {
+        ...trustedMutationHeaders,
+        Cookie: opsCookie,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        releaseDecision: {
+          verdict: "hold",
+          rationale:
+            "Live verification should reject release decisions until the current blocker handoff has been recorded.",
+          acknowledgedBlockedItemIds: blockedItemIds,
+          releasePacketGeneratedAt: preDecisionPacketBody?.releasePacket?.generatedAt,
+          reviewToken: preDecisionPacketBody?.releasePacket?.reviewToken,
+          notes: [
+            "Live verification confirms that a current blocker handoff is required before a protected decision can be published.",
+          ],
+        },
+      }),
+    });
+
+  assert.equal(
+    missingHandoffDecisionResponse.status,
+    409,
+    "Expected live release decision API to reject decisions before a current blocker handoff exists.",
+  );
+  assert.equal(
+    missingHandoffDecisionBody?.error,
+    "The release decision must be based on a current blocker handoff for the latest executive packet.",
+  );
+
+  const { response: staleHandoffResponse, body: staleHandoffBody } =
+    await fetchJson("/api/ops/release/handoffs", {
+      method: "POST",
+      headers: {
+        ...trustedMutationHeaders,
+        Cookie: opsCookie,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        releaseHandoff: {
+          rationale:
+            "Live verification should reject blocker handoffs that are not based on the latest packet token.",
+          handedOffOwnerIds: activeOwnerIds,
+          releasePacketGeneratedAt: preDecisionPacketBody?.releasePacket?.generatedAt,
+          reviewToken: "stale-release-packet-token",
+          notes: [
+            "Live verification confirms that blocker handoffs are bound to the latest executive packet.",
+          ],
+        },
+      }),
+    });
+
+  assert.equal(
+    staleHandoffResponse.status,
+    409,
+    "Expected live release handoff API to reject stale packet review tokens.",
+  );
+  assert.equal(
+    staleHandoffBody?.error,
+    "The blocker handoff must be based on the latest executive release packet.",
+  );
+
+  const { response: staleHandoffAgeResponse, body: staleHandoffAgeBody } =
+    await fetchJson("/api/ops/release/handoffs", {
+      method: "POST",
+      headers: {
+        ...trustedMutationHeaders,
+        Cookie: opsCookie,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        releaseHandoff: {
+          rationale:
+            "Live verification should reject blocker handoffs that reference an expired executive review packet.",
+          handedOffOwnerIds: activeOwnerIds,
+          releasePacketGeneratedAt: stalePacketGeneratedAt,
+          reviewToken: preDecisionPacketBody?.releasePacket?.reviewToken,
+          notes: [
+            "Live verification confirms that executive packet age is enforced for blocker handoffs as well.",
+          ],
+        },
+      }),
+    });
+
+  assert.equal(
+    staleHandoffAgeResponse.status,
+    409,
+    "Expected live release handoff API to reject stale executive packet age.",
+  );
+  assert.equal(
+    staleHandoffAgeBody?.error,
+    "The executive release packet is stale and must be refreshed before a blocker handoff can be recorded.",
+  );
+
+  const incompleteHandoffOwnerIds =
+    activeOwnerIds.length > 1 ? activeOwnerIds.slice(0, activeOwnerIds.length - 1) : [];
+
+  const { response: incompleteHandoffResponse, body: incompleteHandoffBody } =
+    await fetchJson("/api/ops/release/handoffs", {
+      method: "POST",
+      headers: {
+        ...trustedMutationHeaders,
+        Cookie: opsCookie,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        releaseHandoff: {
+          rationale:
+            "Live verification should reject blocker handoffs that do not cover every active owner lane.",
+          handedOffOwnerIds: incompleteHandoffOwnerIds,
+          releasePacketGeneratedAt: preDecisionPacketBody?.releasePacket?.generatedAt,
+          reviewToken: preDecisionPacketBody?.releasePacket?.reviewToken,
+          notes: [
+            "Live verification confirms that every active owner lane must be explicitly handed off.",
+          ],
+        },
+      }),
+    });
+
+  assert.equal(
+    incompleteHandoffResponse.status,
+    409,
+    "Expected live release handoff API to reject incomplete owner-lane coverage.",
+  );
+  assert.equal(
+    incompleteHandoffBody?.error,
+    "The blocker handoff must cover every active owner lane in the current executive packet.",
+  );
+
+  const { response: publishReleaseHandoffResponse, body: publishReleaseHandoffBody } =
+    await fetchJson("/api/ops/release/handoffs", {
+      method: "POST",
+      headers: {
+        ...trustedMutationHeaders,
+        Cookie: opsCookie,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        releaseHandoff: {
+          rationale:
+            "Live verification hands the remaining launch blockers to the active owner lanes before recording the protected hold decision.",
+          handedOffOwnerIds: activeOwnerIds,
+          releasePacketGeneratedAt: preDecisionPacketBody?.releasePacket?.generatedAt,
+          reviewToken: preDecisionPacketBody?.releasePacket?.reviewToken,
+          notes: [
+            `Owner lanes: ${activeOwnerIds.join(", ")}.`,
+            `Current blocked items: ${blockedItemIds.join(", ")}.`,
+          ],
+        },
+      }),
+    });
+
+  assert.equal(
+    publishReleaseHandoffResponse.status,
+    201,
+    "Expected live release handoff API to record a handoff for the current executive packet.",
+  );
+  assert.deepEqual(
+    publishReleaseHandoffBody?.releaseHandoffRecord?.handedOffOwnerIds,
+    activeOwnerIds,
+  );
+
+  const { response: releaseHandoffResponse, body: releaseHandoffBody } =
+    await fetchJson("/api/ops/release/handoffs", {
+      headers: {
+        Cookie: opsCookie,
+      },
+    });
+
+  assert.equal(
+    releaseHandoffResponse.status,
+    200,
+    "Expected live release handoffs readback to return 200.",
+  );
+  const livePublishedReleaseHandoff = releaseHandoffBody?.releaseHandoffs?.find(
+    (record) => record.id === publishReleaseHandoffBody?.releaseHandoffRecord?.id,
+  );
+  assert.ok(
+    livePublishedReleaseHandoff,
+    "Expected live release handoffs to include the newly recorded release handoff.",
+  );
+  assert.equal(
+    livePublishedReleaseHandoff?.releasePacketReviewToken,
+    preDecisionPacketBody?.releasePacket?.reviewToken,
+  );
+  writeReleaseHandoffArtifacts(releaseHandoffBody.releaseHandoffs);
+
+  const { response: handoffCurrentPacketResponse, body: handoffCurrentPacketBody } =
+    await fetchJson("/api/ops/release/packet", {
+      headers: {
+        Cookie: opsCookie,
+      },
+    });
+
+  assert.equal(
+    handoffCurrentPacketResponse.status,
+    200,
+    "Expected live release packet to return 200 after handoff publication.",
+  );
+  assert.equal(
+    handoffCurrentPacketBody?.releasePacket?.latestHandoff?.id,
+    publishReleaseHandoffBody?.releaseHandoffRecord?.id,
+  );
+  assert.equal(
+    handoffCurrentPacketBody?.releasePacket?.latestHandoffReview?.status,
+    "current",
+    "Expected the live executive packet to report the latest handoff as current after publication.",
   );
 
   const { response: rejectedApprovalResponse, body: rejectedApprovalBody } =
@@ -1095,6 +1384,15 @@ try {
     publishReleasePackageBody?.releasePackageRecord?.id,
   );
   assert.equal(
+    releasePacketBody?.releasePacket?.latestHandoff?.id,
+    publishReleaseHandoffBody?.releaseHandoffRecord?.id,
+  );
+  assert.equal(
+    releasePacketBody?.releasePacket?.latestHandoffReview?.status,
+    "current",
+    "Expected the live executive packet to retain a current handoff after decision publication.",
+  );
+  assert.equal(
     releasePacketBody?.releasePacket?.latestDecision?.id,
     publishReleaseDecisionBody?.releaseDecisionRecord?.id,
   );
@@ -1119,7 +1417,7 @@ try {
   assert.equal(releasePacketBody?.releasePacket?.comparison?.status, "unchanged");
   assert.equal(
     releasePacketBody?.releasePacket?.currentArtifact?.releaseEvidence?.summary?.apiChecks,
-    18,
+    19,
   );
   assert.ok(
     releasePacketBody?.releasePacket?.contentGovernance?.launchBlocked > 0,
@@ -1158,6 +1456,14 @@ try {
         entry.entityId === publishReleasePackageBody?.releasePackageRecord?.id,
     ),
     "Expected the live audit trail to include the release package publication.",
+  );
+  assert.ok(
+    auditBody?.auditEntries?.some(
+      (entry) =>
+        entry.action === "ops_release_handoff_publish" &&
+        entry.entityId === publishReleaseHandoffBody?.releaseHandoffRecord?.id,
+    ),
+    "Expected the live audit trail to include the release handoff publication.",
   );
   assert.ok(
     auditBody?.auditEntries?.some(

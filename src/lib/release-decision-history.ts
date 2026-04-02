@@ -8,6 +8,8 @@ import {
   type ReleaseDecisionDraft,
 } from "@/lib/release-decision";
 import { getContentGovernanceSummary } from "@/lib/content-governance";
+import { getLatestReleaseHandoffRecord } from "@/lib/release-handoff-history";
+import { buildReleaseHandoffReview } from "@/lib/release-handoff-review";
 import { buildReleasePackageComparison } from "@/lib/release-package-comparison";
 import {
   buildReleasePacketReviewToken,
@@ -91,6 +93,12 @@ export async function publishReleaseDecisionRecord(
   const reviewWindowMinutes = getReleasePacketReviewWindowMinutes(
     releaseComparison.currentArtifact.verificationMode,
   );
+  const latestHandoffRecord = getLatestReleaseHandoffRecord();
+  const handoffReview = buildReleaseHandoffReview(
+    latestHandoffRecord,
+    releaseComparison.currentArtifact,
+    reviewToken,
+  );
   const currentBlockedItemIds = releaseComparison.currentArtifact.blockedItems.map(
     (item) => item.id,
   );
@@ -138,6 +146,16 @@ export async function publishReleaseDecisionRecord(
   if (unexpectedBlockedItemAcknowledgements.length > 0) {
     throw new ReleaseDecisionError(
       "The release decision references blocked items that are not part of the current executive packet.",
+      409,
+    );
+  }
+
+  if (
+    handoffReview.status !== "current" &&
+    handoffReview.status !== "not_required"
+  ) {
+    throw new ReleaseDecisionError(
+      "The release decision must be based on a current blocker handoff for the latest executive packet.",
       409,
     );
   }
@@ -222,6 +240,8 @@ export async function publishReleaseDecisionRecord(
       blocked_count: record.blockedCount,
       warning_count: record.warningCount,
       ready_count: record.readyCount,
+      latest_handoff_id: latestHandoffRecord?.id ?? "none",
+      latest_handoff_review_status: handoffReview.status,
     },
   });
 

@@ -4,6 +4,8 @@ import { getContentGovernanceSummary } from "@/lib/content-governance";
 import { buildReleaseDecisionDelta } from "@/lib/release-decision-delta";
 import { buildReleaseDecisionReview } from "@/lib/release-decision-review";
 import { readReleaseDecisionHistory } from "@/lib/release-decision-history";
+import { readReleaseHandoffHistory } from "@/lib/release-handoff-history";
+import { buildReleaseHandoffReview } from "@/lib/release-handoff-review";
 import { buildReleasePackageComparison } from "@/lib/release-package-comparison";
 import {
   buildReleasePacketReviewToken,
@@ -40,6 +42,7 @@ function buildExecutiveSummary(packet: ReleasePacketArtifact) {
     );
   }
 
+  summary.push(packet.latestHandoffReview.summary);
   summary.push(packet.latestDecisionReview.summary);
   summary.push(packet.latestDecisionDelta.summary[0]);
 
@@ -113,6 +116,7 @@ export function buildReleasePacketArtifact(): ReleasePacketArtifact {
   const comparison = buildReleasePackageComparison();
   const currentArtifact = comparison.currentArtifact;
   const latestPublishedRecord = comparison.latestPublishedRecord;
+  const latestHandoff = readReleaseHandoffHistory(1)[0] ?? null;
   const latestDecision = readReleaseDecisionHistory(1)[0] ?? null;
   const contentGovernance = getContentGovernanceSummary();
   const generatedAt = new Date().toISOString();
@@ -141,6 +145,12 @@ export function buildReleasePacketArtifact(): ReleasePacketArtifact {
     nextActions: currentArtifact.nextActions,
     currentArtifact,
     latestPublishedRecord,
+    latestHandoff,
+    latestHandoffReview: buildReleaseHandoffReview(
+      latestHandoff,
+      currentArtifact,
+      reviewToken,
+    ),
     latestDecision,
     latestDecisionReview: buildReleaseDecisionReview(
       latestDecision,

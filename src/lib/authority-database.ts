@@ -10,6 +10,7 @@ const authorityTableDirectory = {
   notifications: "authority_notifications",
   audit: "authority_ops_audit",
   releasePackages: "authority_release_packages",
+  releaseHandoffs: "authority_release_handoffs",
   releaseDecisions: "authority_release_decisions",
 } as const;
 
@@ -103,6 +104,15 @@ function initializeAuthorityDatabase(database: DatabaseSync) {
 
     CREATE INDEX IF NOT EXISTS idx_authority_release_decisions_package_record
       ON authority_release_decisions (release_package_record_id, decided_at DESC);
+
+    CREATE TABLE IF NOT EXISTS authority_release_handoffs (
+      id TEXT PRIMARY KEY,
+      handed_off_at TEXT NOT NULL,
+      payload_json TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_authority_release_handoffs_handed_off_at
+      ON authority_release_handoffs (handed_off_at DESC);
 
     CREATE TABLE IF NOT EXISTS authority_ops_login_throttle (
       throttle_key TEXT PRIMARY KEY,

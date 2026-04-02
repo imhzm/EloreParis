@@ -52,6 +52,8 @@ jobs:
           LIVE_RELEASE_HISTORY_MARKDOWN_PATH: .artifacts/render-live-release-history.md
           LIVE_RELEASE_DIFF_ARTIFACT_PATH: .artifacts/render-live-release-diff.json
           LIVE_RELEASE_DIFF_MARKDOWN_PATH: .artifacts/render-live-release-diff.md
+          LIVE_RELEASE_HANDOFF_ARTIFACT_PATH: .artifacts/render-live-release-handoff.json
+          LIVE_RELEASE_HANDOFF_MARKDOWN_PATH: .artifacts/render-live-release-handoff.md
           LIVE_RELEASE_DECISION_ARTIFACT_PATH: .artifacts/render-live-release-decision.json
           LIVE_RELEASE_DECISION_MARKDOWN_PATH: .artifacts/render-live-release-decision.md
           LIVE_RELEASE_PACKET_ARTIFACT_PATH: .artifacts/render-live-release-packet.json
@@ -94,6 +96,16 @@ jobs:
           path: |
             .artifacts/render-live-release-diff.json
             .artifacts/render-live-release-diff.md
+          if-no-files-found: ignore
+
+      - name: Upload live release handoff artifact
+        if: steps.credentials.outputs.configured == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: render-live-release-handoff
+          path: |
+            .artifacts/render-live-release-handoff.json
+            .artifacts/render-live-release-handoff.md
           if-no-files-found: ignore
 
       - name: Upload live release decision artifact

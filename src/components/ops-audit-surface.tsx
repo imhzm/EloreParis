@@ -19,6 +19,7 @@ const auditFilters: AuditFilter[] = [
   "ops_notification_status_update",
   "ops_release_evidence_publish",
   "ops_release_package_publish",
+  "ops_release_handoff_publish",
   "ops_release_decision_publish",
 ];
 
@@ -51,6 +52,8 @@ function getAuditActionLabel(action: OpsAuditAction) {
       return "Release evidence published";
     case "ops_release_package_publish":
       return "Release package published";
+    case "ops_release_handoff_publish":
+      return "Release handoff published";
     case "ops_release_decision_publish":
       return "Release decision published";
   }
@@ -104,6 +107,9 @@ export function OpsAuditSurface() {
       releasePackagePublishes: auditEntries.filter(
         (entry) => entry.action === "ops_release_package_publish",
       ).length,
+      releaseHandoffPublishes: auditEntries.filter(
+        (entry) => entry.action === "ops_release_handoff_publish",
+      ).length,
       releaseDecisionPublishes: auditEntries.filter(
         (entry) => entry.action === "ops_release_decision_publish",
       ).length,
@@ -128,8 +134,8 @@ export function OpsAuditSurface() {
           <p className={styles.summary}>
             This surface does not claim a final SIEM or compliance archive. It keeps a clear,
             searchable trace for ops logins, throttling, order changes, notification changes,
-            release-evidence publication, release-package publication, and release-decision
-            publication inside the current runtime.
+            release-evidence publication, release-package publication, release-handoff
+            publication, and release-decision publication inside the current runtime.
           </p>
         </div>
 
@@ -140,7 +146,7 @@ export function OpsAuditSurface() {
             <span>
               {isLoading
                 ? "Loading audit coverage."
-                : `${metrics.loginEvents} session events, ${metrics.statusUpdates} order updates, ${metrics.notificationUpdates} notification updates, ${metrics.releaseEvidencePublishes} evidence publishes, ${metrics.releasePackagePublishes} release-package publishes, and ${metrics.releaseDecisionPublishes} release-decision publishes.`}
+                : `${metrics.loginEvents} session events, ${metrics.statusUpdates} order updates, ${metrics.notificationUpdates} notification updates, ${metrics.releaseEvidencePublishes} evidence publishes, ${metrics.releasePackagePublishes} release-package publishes, ${metrics.releaseHandoffPublishes} release-handoff publishes, and ${metrics.releaseDecisionPublishes} release-decision publishes.`}
             </span>
           </div>
 

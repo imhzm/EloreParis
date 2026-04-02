@@ -18,7 +18,8 @@ This project now tracks the minimum event set needed to answer early-stage store
 10. Are protected internal ops surfaces still reachable and reviewable after the access gate is enabled?
 11. Can internal operators still move between dashboard, orders, fulfillment, catalog, and audit surfaces without losing route-level visibility after role gating is enabled?
 12. Which queued operational notifications are being marked sent or returned to queue inside the rehearsal layer before a real delivery provider exists?
-13. Which protected release decisions are being recorded manually from the `/ops/release` surface, and under what packet, blocker, and ownership state?
+13. Which protected blocker handoffs are being recorded manually from the `/ops/release` surface before decisions are published, and under what owner-lane state?
+14. Which protected release decisions are being recorded manually from the `/ops/release` surface, and under what packet, blocker, and ownership state?
 
 ## Event Set
 
@@ -251,6 +252,22 @@ Tracked properties:
 - `acknowledged_blocked_item_count`
 - `target_base_url`
 
+### `ops_release_handoff_submit`
+
+- Fires when the internal `/ops/release` surface records a protected blocker handoff against the latest executive packet.
+- Answers whether blocker ownership transfer is still being exercised manually from the protected runtime before release decisions are published.
+
+Tracked properties:
+
+- `source_path`
+- `source_page_type`
+- `overall_status`
+- `blocked_count`
+- `warning_count`
+- `ready_count`
+- `handed_off_owner_count`
+- `target_base_url`
+
 ## Current Instrumented Surfaces
 
 - Header brand and primary navigation
@@ -272,8 +289,8 @@ Tracked properties:
 - Internal `/ops/notifications` queue actions, fulfillment shortcuts, and public tracking shortcuts
 - Internal `/ops-access` gate plus logout action through the protected ops navigation
 - Internal `/ops`, `/ops/orders`, `/ops/fulfillment`, `/ops/notifications`, `/ops/catalog`, `/ops/release`, and `/ops/audit` navigation links under the role-aware session model
-- Internal `/ops/release` links into health, evidence, release package, release packet, release history, release compare, release decisions, content governance, and audit review surfaces
-- Internal `/ops/release` manager-only decision composer for protected hold and approval verdicts plus blocker-ownership review
+- Internal `/ops/release` links into health, evidence, release package, release packet, release history, release compare, release handoffs, release decisions, content governance, and audit review surfaces
+- Internal `/ops/release` manager-only handoff and decision composers for protected blocker ownership transfer plus hold and approval verdicts
 - Internal `/ops/audit` links into orders, fulfillment, notifications, and release review surfaces
 - FAQ route links into tracking, trust policies, and contact
 - Contact route links into FAQ, tracking, and trust support paths

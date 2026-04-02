@@ -1,6 +1,7 @@
 import type { ContentGovernanceSummary } from "@/lib/content-governance";
 import type {
   ReleaseDecisionRecord,
+  ReleaseHandoffRecord,
   ReleasePackageArtifact,
   ReleasePackageComparison,
   ReleasePackageRecord,
@@ -22,6 +23,26 @@ export type ReleasePacketDecisionReview = {
   details: string[];
   latestDecisionId: string | null;
   reviewExpiresAt: string | null;
+};
+
+export type ReleasePacketHandoffReviewStatus =
+  | "not_required"
+  | "missing"
+  | "stale_packet"
+  | "expired_review"
+  | "partial"
+  | "current";
+
+export type ReleasePacketHandoffReview = {
+  evaluatedAt: string;
+  status: ReleasePacketHandoffReviewStatus;
+  summary: string;
+  details: string[];
+  latestHandoffId: string | null;
+  reviewExpiresAt: string | null;
+  activeOwnerIds: string[];
+  missingOwnerIds: string[];
+  unexpectedOwnerIds: string[];
 };
 
 export type ReleasePacketDecisionDeltaStatus =
@@ -79,6 +100,8 @@ export type ReleasePacketArtifact = {
   nextActions: string[];
   currentArtifact: ReleasePackageArtifact;
   latestPublishedRecord: ReleasePackageRecord | null;
+  latestHandoff: ReleaseHandoffRecord | null;
+  latestHandoffReview: ReleasePacketHandoffReview;
   latestDecision: ReleaseDecisionRecord | null;
   latestDecisionReview: ReleasePacketDecisionReview;
   latestDecisionDelta: ReleasePacketDecisionDelta;

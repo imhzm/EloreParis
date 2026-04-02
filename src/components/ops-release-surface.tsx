@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { OpsNav } from "@/components/ops-nav";
 import { TrackedLink } from "@/components/tracked-link";
 import {
+  fetchOpsReleaseHandoffs,
   fetchOpsSessionSummary,
   fetchOpsReleaseComparison,
   fetchOpsReleaseDecisions,
@@ -11,12 +12,14 @@ import {
   fetchOpsReleaseHistory,
   fetchOpsReleasePacket,
   fetchOpsReleaseReadiness,
+  publishOpsReleaseHandoff,
   publishOpsReleaseDecision,
 } from "@/lib/ops-control-client";
 import { getPageType, trackAnalyticsEvent } from "@/lib/analytics";
 import type { ReleaseEvidenceReport } from "@/lib/release-evidence-types";
 import type {
   ReleaseDecisionRecord,
+  ReleaseHandoffRecord,
   ReleasePackageComparison,
   ReleasePackageRecord,
 } from "@/lib/release-package-types";
@@ -33,6 +36,7 @@ type ReleaseSurfaceData = {
   snapshot: ReleaseReadinessSnapshot | null;
   evidence: ReleaseEvidenceReport | null;
   releaseHistory: ReleasePackageRecord[];
+  releaseHandoffs: ReleaseHandoffRecord[];
   releaseComparison: ReleasePackageComparison | null;
   releaseDecisions: ReleaseDecisionRecord[];
   releasePacket: ReleasePacketArtifact | null;
@@ -122,6 +126,25 @@ function getDecisionVerdictLabel(verdict: ReleaseDecisionRecord["verdict"]) {
   }
 }
 
+function getHandoffReviewStatusLabel(
+  status: ReleasePacketArtifact["latestHandoffReview"]["status"],
+) {
+  switch (status) {
+    case "not_required":
+      return "Not required";
+    case "missing":
+      return "Missing";
+    case "stale_packet":
+      return "Packet changed";
+    case "expired_review":
+      return "Review expired";
+    case "partial":
+      return "Partial";
+    case "current":
+      return "Current";
+  }
+}
+
 function getDecisionReviewStatusLabel(
   status: ReleasePacketArtifact["latestDecisionReview"]["status"],
 ) {
@@ -182,6 +205,7 @@ async function loadReleaseSurfaceData(): Promise<ReleaseSurfaceData> {
     readinessResult,
     evidenceResult,
     historyResult,
+    handoffsResult,
     comparisonResult,
     decisionsResult,
     packetResult,
@@ -190,6 +214,7 @@ async function loadReleaseSurfaceData(): Promise<ReleaseSurfaceData> {
     fetchOpsReleaseReadiness(),
     fetchOpsReleaseEvidence(),
     fetchOpsReleaseHistory(),
+    fetchOpsReleaseHandoffs(),
     fetchOpsReleaseComparison(),
     fetchOpsReleaseDecisions(),
     fetchOpsReleasePacket(),
@@ -208,6 +233,10 @@ async function loadReleaseSurfaceData(): Promise<ReleaseSurfaceData> {
     releaseHistory:
       historyResult.status === "fulfilled"
         ? historyResult.value.releasePackages
+        : [],
+    releaseHandoffs:
+      handoffsResult.status === "fulfilled"
+        ? handoffsResult.value.releaseHandoffs
         : [],
     releaseComparison:
       comparisonResult.status === "fulfilled"
@@ -234,6 +263,7 @@ export function OpsReleaseSurface() {
   const [snapshot, setSnapshot] = useState<ReleaseReadinessSnapshot | null>(null);
   const [evidence, setEvidence] = useState<ReleaseEvidenceReport | null>(null);
   const [releaseHistory, setReleaseHistory] = useState<ReleasePackageRecord[]>([]);
+  const [releaseHandoffs, setReleaseHandoffs] = useState<ReleaseHandoffRecord[]>([]);
   const [releaseComparison, setReleaseComparison] =
     useState<ReleasePackageComparison | null>(null);
   const [releaseDecisions, setReleaseDecisions] = useState<ReleaseDecisionRecord[]>([]);
@@ -242,6 +272,12 @@ export function OpsReleaseSurface() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [handoffRationale, setHandoffRationale] = useState("");
+  const [handoffNotesInput, setHandoffNotesInput] = useState("");
+  const [selectedHandoffOwnerIds, setSelectedHandoffOwnerIds] = useState<string[]>([]);
+  const [publishHandoffError, setPublishHandoffError] = useState<string | null>(null);
+  const [publishHandoffNotice, setPublishHandoffNotice] = useState<string | null>(null);
+  const [isPublishingHandoff, setIsPublishingHandoff] = useState(false);
   const [selectedVerdict, setSelectedVerdict] =
     useState<ReleaseDecisionRecord["verdict"]>("hold");
   const [rationale, setRationale] = useState("");
@@ -270,6 +306,7 @@ export function OpsReleaseSurface() {
         setSnapshot(data.snapshot);
         setEvidence(data.evidence);
         setReleaseHistory(data.releaseHistory);
+        setReleaseHandoffs(data.releaseHandoffs);
         setReleaseComparison(data.releaseComparison);
         setReleaseDecisions(data.releaseDecisions);
         setReleasePacket(data.releasePacket);
@@ -300,6 +337,19 @@ export function OpsReleaseSurface() {
     );
   }, [releasePacket]);
 
+  useEffect(() => {
+    const activeOwnerIds =
+      releasePacket?.currentArtifact.releaseReadiness.ownerSummaries
+        .filter((summary) => summary.blockedCount > 0 || summary.warningCount > 0)
+        .map((summary) => summary.ownerId) ?? [];
+
+    setSelectedHandoffOwnerIds((currentValue) => {
+      const filtered = currentValue.filter((ownerId) => activeOwnerIds.includes(ownerId));
+
+      return filtered.length ? filtered : activeOwnerIds;
+    });
+  }, [releasePacket]);
+
   const metrics = useMemo(
     () => ({
       overallStatus: snapshot?.overallStatus ?? "blocked",
@@ -321,7 +371,12 @@ export function OpsReleaseSurface() {
   );
 
   const decisionNotes = useMemo(() => parseDecisionNotes(notesInput), [notesInput]);
+  const handoffNotes = useMemo(() => parseDecisionNotes(handoffNotesInput), [handoffNotesInput]);
   const blockedItems = releasePacket?.currentArtifact.blockedItems ?? [];
+  const handoffOwnerSummaries =
+    releasePacket?.currentArtifact.releaseReadiness.ownerSummaries.filter(
+      (summary) => summary.blockedCount > 0 || summary.warningCount > 0,
+    ) ?? [];
   const ownerSummaries =
     releasePacket?.currentArtifact.releaseReadiness.ownerSummaries ??
     snapshot?.ownerSummaries ??
@@ -335,6 +390,21 @@ export function OpsReleaseSurface() {
   const packetExpired = releasePacket
     ? Date.parse(releasePacket.reviewExpiresAt) <= Date.now()
     : false;
+  const handoffDisabledReason =
+    !releasePacket
+      ? "Refresh the executive release packet before recording a blocker handoff."
+      : packetExpired
+        ? "Refresh the executive release packet before recording a blocker handoff."
+        : !handoffOwnerSummaries.length
+          ? "No active owner lanes currently require a blocker handoff."
+          : null;
+  const decisionHandoffDisabledReason =
+    !releasePacket
+      ? "Refresh the executive release packet before recording a protected release decision."
+      : releasePacket.latestHandoffReview.status === "current" ||
+          releasePacket.latestHandoffReview.status === "not_required"
+        ? null
+        : "Record a current blocker handoff for the latest executive packet before publishing a protected release decision.";
   const approvalDisabledReason =
     !releasePacket?.latestPublishedRecord
       ? "Publish a protected release package before recording an approval."
@@ -346,7 +416,7 @@ export function OpsReleaseSurface() {
             ? "Approval stays disabled until runtime drift returns to unchanged."
             : !releasePacket.currentArtifact.releaseEvidence
               ? "Approval stays disabled until executable release evidence exists in the current runtime."
-              : null;
+              : decisionHandoffDisabledReason;
 
   useEffect(() => {
     if (selectedVerdict === "approve" && approvalDisabledReason) {
@@ -354,12 +424,119 @@ export function OpsReleaseSurface() {
     }
   }, [approvalDisabledReason, selectedVerdict]);
 
+  function handleHandoffOwnerToggle(ownerId: string) {
+    setSelectedHandoffOwnerIds((currentValue) =>
+      currentValue.includes(ownerId)
+        ? currentValue.filter((value) => value !== ownerId)
+        : [...currentValue, ownerId],
+    );
+  }
+
   function handleBlockedItemToggle(itemId: string) {
     setAcknowledgedBlockedItemIds((currentValue) =>
       currentValue.includes(itemId)
         ? currentValue.filter((value) => value !== itemId)
         : [...currentValue, itemId],
     );
+  }
+
+  async function handleReleaseHandoffSubmit(
+    event: React.FormEvent<HTMLFormElement>,
+  ) {
+    event.preventDefault();
+    setPublishHandoffError(null);
+    setPublishHandoffNotice(null);
+
+    if (!opsSession) {
+      setPublishHandoffError(
+        "The current ops session is still loading. Refresh the release surface and try again.",
+      );
+      return;
+    }
+
+    if (!isManagerSession) {
+      setPublishHandoffError(
+        "Only manager sessions can record protected blocker handoffs from this surface.",
+      );
+      return;
+    }
+
+    if (!releasePacket) {
+      setPublishHandoffError(
+        "The latest executive release packet is unavailable. Reload the page before recording a blocker handoff.",
+      );
+      return;
+    }
+
+    if (handoffDisabledReason) {
+      setPublishHandoffError(handoffDisabledReason);
+      return;
+    }
+
+    const normalizedRationale = handoffRationale.trim();
+
+    if (normalizedRationale.length < 16 || normalizedRationale.length > 500) {
+      setPublishHandoffError(
+        "Rationale must be between 16 and 500 characters before the blocker handoff can be recorded.",
+      );
+      return;
+    }
+
+    if (handoffNotes.length > 6 || handoffNotes.some((note) => note.length > 240)) {
+      setPublishHandoffError(
+        "Notes must stay within 6 lines and each note must stay under 240 characters.",
+      );
+      return;
+    }
+
+    const missingOwnerSummaries = handoffOwnerSummaries.filter(
+      (summary) => !selectedHandoffOwnerIds.includes(summary.ownerId),
+    );
+
+    if (missingOwnerSummaries.length > 0) {
+      setPublishHandoffError(
+        "Select every active owner lane before recording the blocker handoff from the release surface.",
+      );
+      return;
+    }
+
+    setIsPublishingHandoff(true);
+
+    try {
+      const { releaseHandoffRecord } = await publishOpsReleaseHandoff({
+        rationale: normalizedRationale,
+        notes: handoffNotes,
+        handedOffOwnerIds: selectedHandoffOwnerIds,
+        releasePacketGeneratedAt: releasePacket.generatedAt,
+        reviewToken: releasePacket.reviewToken,
+      });
+
+      trackAnalyticsEvent("ops_release_handoff_submit", {
+        source_path: RELEASE_SURFACE_PATH,
+        source_page_type: getPageType(RELEASE_SURFACE_PATH),
+        overall_status: releaseHandoffRecord.overallStatus,
+        blocked_count: releaseHandoffRecord.blockedCount,
+        warning_count: releaseHandoffRecord.warningCount,
+        ready_count: releaseHandoffRecord.readyCount,
+        handed_off_owner_count: releaseHandoffRecord.handedOffOwnerIds.length,
+        target_base_url: releaseHandoffRecord.targetBaseUrl,
+      });
+
+      setPublishHandoffNotice(
+        `Recorded a blocker handoff for ${releaseHandoffRecord.handedOffOwnerIds.length} owner lanes from the latest executive packet.`,
+      );
+      setHandoffRationale("");
+      setHandoffNotesInput("");
+      setReloadKey((currentValue) => currentValue + 1);
+    } catch (submissionError) {
+      setPublishHandoffError(
+        submissionError instanceof Error
+          ? submissionError.message
+          : "Unable to record the protected blocker handoff in the current runtime.",
+      );
+    } finally {
+      setIsPublishingHandoff(false);
+    }
   }
 
   async function handleReleaseDecisionSubmit(
@@ -401,6 +578,11 @@ export function OpsReleaseSurface() {
       setPublishError(
         "The executive release packet has expired. Refresh the release surface before recording a decision.",
       );
+      return;
+    }
+
+    if (decisionHandoffDisabledReason) {
+      setPublishError(decisionHandoffDisabledReason);
       return;
     }
 
@@ -630,6 +812,18 @@ export function OpsReleaseSurface() {
                     </strong>
                   </div>
                   <div className={styles.referenceRow}>
+                    <span>Latest handoff</span>
+                    <strong className={styles.referenceValue}>
+                      {releasePacket.latestHandoff?.id ?? "none"}
+                    </strong>
+                  </div>
+                  <div className={styles.referenceRow}>
+                    <span>Handoff review</span>
+                    <strong className={styles.referenceValue}>
+                      {getHandoffReviewStatusLabel(releasePacket.latestHandoffReview.status)}
+                    </strong>
+                  </div>
+                  <div className={styles.referenceRow}>
                     <span>Latest decision</span>
                     <strong className={styles.referenceValue}>
                       {releasePacket.latestDecision
@@ -693,6 +887,17 @@ export function OpsReleaseSurface() {
 
                 <div className={styles.summaryList}>
                   {releasePacket.executiveSummary.map((item) => (
+                    <div key={item} className={styles.infoBullet}>
+                      {item}
+                    </div>
+                  ))}
+                </div>
+
+                <div className={styles.summaryList}>
+                  <div className={styles.infoBullet}>
+                    {releasePacket.latestHandoffReview.summary}
+                  </div>
+                  {releasePacket.latestHandoffReview.details.map((item) => (
                     <div key={item} className={styles.infoBullet}>
                       {item}
                     </div>
@@ -904,6 +1109,15 @@ export function OpsReleaseSurface() {
               >
                 <span>Release compare API</span>
                 <span>Runtime drift versus the latest published package</span>
+              </TrackedLink>
+              <TrackedLink
+                href="/api/ops/release/handoffs"
+                analyticsLabel="ops_release_to_handoffs"
+                analyticsSurface="ops_release_links"
+                analyticsDestinationType="other"
+              >
+                <span>Release handoffs API</span>
+                <span>Protected owner handoff trail for the latest executive packet</span>
               </TrackedLink>
               <TrackedLink
                 href="/api/ops/release/decisions"
@@ -1178,12 +1392,253 @@ export function OpsReleaseSurface() {
       </section>
 
       <section className={styles.mainCard}>
-        <p className={styles.sectionTitle}>Release decisions</p>
-        <h2>Protected verdict trail for the latest published packages</h2>
+        <p className={styles.sectionTitle}>Release governance</p>
+        <h2>Protected handoff and decision trail for the latest executive packet</h2>
         <p className={styles.summary}>
-          Packages and drift explain what changed. The decision trail explains whether the latest
-          protected package was left on hold or explicitly approved, and why.
+          Packages and drift explain what changed. The governance trail explains whether the
+          current blockers were explicitly handed off to the right owner lanes and whether the
+          latest protected package was left on hold or explicitly approved.
         </p>
+
+        <article className={styles.lineItem}>
+          <div className={styles.lineHead}>
+            <div>
+              <h3>Record blocker handoff</h3>
+              <p className={styles.lineMeta}>
+                Manager-authored handoffs stay bound to the latest executive packet, review window,
+                and active owner-lane set.
+              </p>
+            </div>
+            <div className={styles.linePrice}>{opsSession?.role ?? "loading..."}</div>
+          </div>
+
+          <p className={styles.summary}>
+            Current owner lanes requiring handoff are always taken from the latest executive packet
+            before a protected release decision can be recorded.
+          </p>
+
+          {publishHandoffError ? <div className={styles.inlineError}>{publishHandoffError}</div> : null}
+          {publishHandoffNotice ? (
+            <div className={styles.inlineNotice}>{publishHandoffNotice}</div>
+          ) : null}
+
+          {!opsSession ? (
+            <div className={styles.inlineNotice}>
+              Loading the current ops session before enabling blocker handoff publication.
+            </div>
+          ) : !isManagerSession ? (
+            <div className={styles.inlineNotice}>
+              This session is <strong>{opsSession.role}</strong>. Review remains visible here, but
+              only manager sessions can record protected blocker handoffs.
+            </div>
+          ) : !releasePacket ? (
+            <div className={styles.inlineNotice}>
+              The executive packet is unavailable right now, so the handoff composer cannot be
+              armed yet.
+            </div>
+          ) : (
+            <>
+              <div className={styles.referenceCard}>
+                <div className={styles.referenceRow}>
+                  <span>Manager session</span>
+                  <strong className={styles.referenceValue}>{opsSession.name}</strong>
+                </div>
+                <div className={styles.referenceRow}>
+                  <span>Latest handoff</span>
+                  <strong className={styles.referenceValue}>
+                    {releasePacket.latestHandoff?.id ?? "none"}
+                  </strong>
+                </div>
+                <div className={styles.referenceRow}>
+                  <span>Handoff review</span>
+                  <strong className={styles.referenceValue}>
+                    {getHandoffReviewStatusLabel(releasePacket.latestHandoffReview.status)}
+                  </strong>
+                </div>
+                <div className={styles.referenceRow}>
+                  <span>Active owner lanes</span>
+                  <strong className={styles.referenceValue}>
+                    {handoffOwnerSummaries.length}
+                  </strong>
+                </div>
+                <div className={styles.referenceRow}>
+                  <span>Review token</span>
+                  <strong className={styles.referenceValue}>
+                    {formatToken(releasePacket.reviewToken)}
+                  </strong>
+                </div>
+                <div className={styles.referenceRow}>
+                  <span>Refresh by</span>
+                  <strong className={styles.referenceValue}>
+                    {formatTimestamp(releasePacket.reviewExpiresAt)}
+                  </strong>
+                </div>
+              </div>
+
+              <div className={styles.inlineNotice}>{releasePacket.latestHandoffReview.summary}</div>
+
+              <form className={styles.actionColumn} onSubmit={handleReleaseHandoffSubmit}>
+                <label className={styles.fieldFull}>
+                  <span className={styles.fieldLabel}>Handoff rationale</span>
+                  <textarea
+                    className={styles.textArea}
+                    value={handoffRationale}
+                    onChange={(event) => setHandoffRationale(event.currentTarget.value)}
+                    placeholder="Explain which owner lanes now own the remaining release blockers."
+                  />
+                  <span className={styles.helperText}>
+                    Use a concrete rationale between 16 and 500 characters.
+                  </span>
+                </label>
+
+                <label className={styles.fieldFull}>
+                  <span className={styles.fieldLabel}>Handoff notes</span>
+                  <textarea
+                    className={styles.textArea}
+                    value={handoffNotesInput}
+                    onChange={(event) => setHandoffNotesInput(event.currentTarget.value)}
+                    placeholder="One supporting note per line. Keep the notes short and operational."
+                  />
+                  <span className={styles.helperText}>
+                    One note per line, up to 6 notes total.
+                  </span>
+                </label>
+
+                <div className={styles.fieldFull}>
+                  <span className={styles.fieldLabel}>Current owner lanes requiring handoff</span>
+                  {handoffOwnerSummaries.length ? (
+                    <div className={styles.summaryList}>
+                      {handoffOwnerSummaries.map((summary) => {
+                        const isChecked = selectedHandoffOwnerIds.includes(summary.ownerId);
+
+                        return (
+                          <label key={summary.ownerId} className={styles.checkboxRow}>
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => handleHandoffOwnerToggle(summary.ownerId)}
+                            />
+                            <span>
+                              <strong>
+                                {summary.ownerLabel} ({getOwnerLaneLabel(summary.lane)})
+                              </strong>
+                              <br />
+                              Route: {summary.defaultPath}
+                              <br />
+                              Counts: {summary.blockedCount} blocked, {summary.warningCount} warnings,{" "}
+                              {summary.readyCount} ready
+                              <br />
+                              Next step: {summary.nextStep}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className={styles.inlineNotice}>
+                      No active owner lanes remain in this packet, so blocker handoff is not
+                      required right now.
+                    </div>
+                  )}
+                </div>
+
+                <div className={styles.actionColumn}>
+                  <button
+                    className={styles.primaryButton}
+                    type="submit"
+                    disabled={isPublishingHandoff || isRefreshing || Boolean(handoffDisabledReason)}
+                  >
+                    {isPublishingHandoff
+                      ? "Recording blocker handoff..."
+                      : "Record blocker handoff"}
+                  </button>
+                </div>
+              </form>
+            </>
+          )}
+        </article>
+
+        <div className={styles.ordersGrid}>
+          {isLoading ? (
+            <article className={styles.emptyCard}>
+              <p className={styles.eyebrow}>Release handoffs</p>
+              <h1>Loading release handoff trail</h1>
+              <p>Reading recent owner-lane handoffs from the shared authority store.</p>
+            </article>
+          ) : releaseHandoffs.length ? (
+            releaseHandoffs.map((handoff) => (
+              <article key={handoff.id} className={styles.lineItem}>
+                <div className={styles.lineHead}>
+                  <div>
+                    <h3>Blocker handoff</h3>
+                    <p className={styles.lineMeta}>
+                      {formatTimestamp(handoff.handedOffAt)} by {handoff.actor.name}
+                    </p>
+                  </div>
+                  <div className={styles.linePrice}>{handoff.handedOffOwnerIds.length} owners</div>
+                </div>
+
+                <div className={styles.badgeRow}>
+                  <span>{handoff.actor.role}</span>
+                  <span>{getVerificationModeLabel(handoff.verificationMode)}</span>
+                  <span>{handoff.overallStatus}</span>
+                </div>
+
+                <p>{handoff.rationale}</p>
+
+                <div className={styles.referenceCard}>
+                  <div className={styles.referenceRow}>
+                    <span>Reviewed packet</span>
+                    <strong className={styles.referenceValue}>
+                      {formatTimestamp(handoff.releasePacketGeneratedAt)}
+                    </strong>
+                  </div>
+                  <div className={styles.referenceRow}>
+                    <span>Review token</span>
+                    <strong className={styles.referenceValue}>
+                      {formatToken(handoff.releasePacketReviewToken)}
+                    </strong>
+                  </div>
+                  <div className={styles.referenceRow}>
+                    <span>Review window</span>
+                    <strong className={styles.referenceValue}>
+                      {handoff.releasePacketReviewWindowMinutes} min
+                    </strong>
+                  </div>
+                  <div className={styles.referenceRow}>
+                    <span>Target base URL</span>
+                    <strong className={styles.referenceValue}>{handoff.targetBaseUrl}</strong>
+                  </div>
+                </div>
+
+                <div className={styles.summaryList}>
+                  {handoff.ownerSummaries.map((summary) => (
+                    <div key={summary.ownerId} className={styles.infoBullet}>
+                      {summary.ownerLabel} ({getOwnerLaneLabel(summary.lane)}): {summary.blockedCount} blocked,{" "}
+                      {summary.warningCount} warnings, {summary.readyCount} ready. {summary.nextStep}
+                    </div>
+                  ))}
+                </div>
+
+                {handoff.notes.length ? (
+                  <div className={styles.summaryList}>
+                    {handoff.notes.map((note) => (
+                      <div key={note} className={styles.infoBullet}>
+                        {note}
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </article>
+            ))
+          ) : (
+            <article className={styles.emptyCard}>
+              <p className={styles.eyebrow}>No handoffs</p>
+              <h1>No blocker handoff has been recorded yet</h1>
+              <p>Record the current owner-lane handoff before publishing the next protected release decision.</p>
+            </article>
+          )}
+        </div>
 
         <article className={styles.lineItem}>
           <div className={styles.lineHead}>
@@ -1191,7 +1646,7 @@ export function OpsReleaseSurface() {
               <h3>Record a protected release decision</h3>
               <p className={styles.lineMeta}>
                 Manager-authored decisions stay bound to the latest executive packet, review window,
-                and blocker acknowledgement trail.
+                current blocker handoff, and blocker acknowledgement trail.
               </p>
             </div>
             <div className={styles.linePrice}>{opsSession?.role ?? "loading..."}</div>
@@ -1231,17 +1686,29 @@ export function OpsReleaseSurface() {
                   <span>Manager session</span>
                   <strong className={styles.referenceValue}>{opsSession.name}</strong>
                 </div>
-                <div className={styles.referenceRow}>
-                  <span>Latest package</span>
-                  <strong className={styles.referenceValue}>
-                    {releasePacket.latestPublishedRecord?.id ?? "none"}
-                  </strong>
-                </div>
-                <div className={styles.referenceRow}>
-                  <span>Review token</span>
-                  <strong className={styles.referenceValue}>
-                    {formatToken(releasePacket.reviewToken)}
-                  </strong>
+              <div className={styles.referenceRow}>
+                <span>Latest package</span>
+                <strong className={styles.referenceValue}>
+                  {releasePacket.latestPublishedRecord?.id ?? "none"}
+                </strong>
+              </div>
+              <div className={styles.referenceRow}>
+                <span>Latest handoff</span>
+                <strong className={styles.referenceValue}>
+                  {releasePacket.latestHandoff?.id ?? "none"}
+                </strong>
+              </div>
+              <div className={styles.referenceRow}>
+                <span>Handoff review</span>
+                <strong className={styles.referenceValue}>
+                  {getHandoffReviewStatusLabel(releasePacket.latestHandoffReview.status)}
+                </strong>
+              </div>
+              <div className={styles.referenceRow}>
+                <span>Review token</span>
+                <strong className={styles.referenceValue}>
+                  {formatToken(releasePacket.reviewToken)}
+                </strong>
                 </div>
                 <div className={styles.referenceRow}>
                   <span>Review window</span>
@@ -1264,6 +1731,10 @@ export function OpsReleaseSurface() {
               </div>
 
               <div className={styles.inlineNotice}>
+                {releasePacket.latestHandoffReview.summary}
+              </div>
+
+              <div className={styles.inlineNotice}>
                 {releasePacket.latestDecisionReview.summary}
               </div>
 
@@ -1273,6 +1744,9 @@ export function OpsReleaseSurface() {
 
               {approvalDisabledReason ? (
                 <div className={styles.inlineNotice}>{approvalDisabledReason}</div>
+              ) : null}
+              {decisionHandoffDisabledReason ? (
+                <div className={styles.inlineNotice}>{decisionHandoffDisabledReason}</div>
               ) : null}
 
               <form className={styles.actionColumn} onSubmit={handleReleaseDecisionSubmit}>
@@ -1399,7 +1873,8 @@ export function OpsReleaseSurface() {
                       isPublishing ||
                       isRefreshing ||
                       !releasePacket.latestPublishedRecord ||
-                      packetExpired
+                      packetExpired ||
+                      Boolean(decisionHandoffDisabledReason)
                     }
                   >
                     {isPublishing

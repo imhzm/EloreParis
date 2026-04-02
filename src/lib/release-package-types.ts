@@ -1,6 +1,7 @@
 import type { ReleaseEvidenceReport } from "@/lib/release-evidence-types";
 import type {
   ReleaseActionOwner,
+  ReleaseReadinessOwnerSummary,
   ReleaseReadinessSnapshot,
   ReleaseReadinessStatus,
 } from "@/lib/release-readiness-types";
@@ -89,6 +90,25 @@ export type ReleasePackageComparison = {
 };
 
 export type ReleaseDecisionVerdict = "hold" | "approve";
+
+export type ReleaseHandoffRecord = {
+  id: string;
+  handedOffAt: string;
+  actor: OpsAuditActor;
+  rationale: string;
+  notes: string[];
+  handedOffOwnerIds: string[];
+  ownerSummaries: ReleaseReadinessOwnerSummary[];
+  releasePacketGeneratedAt: string;
+  releasePacketReviewToken: string;
+  releasePacketReviewWindowMinutes: number;
+  verificationMode: ReleasePackageArtifact["verificationMode"];
+  targetBaseUrl: string;
+  overallStatus: ReleaseReadinessStatus;
+  blockedCount: number;
+  warningCount: number;
+  readyCount: number;
+};
 
 export type ReleaseDecisionRecord = {
   id: string;

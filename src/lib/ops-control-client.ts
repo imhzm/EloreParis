@@ -6,6 +6,7 @@ import type { OpsAuditEntry, OpsSessionSummary } from "@/lib/ops-types";
 import type { ReleaseEvidenceReport } from "@/lib/release-evidence-types";
 import type {
   ReleaseDecisionRecord,
+  ReleaseHandoffRecord,
   ReleasePackageComparison,
   ReleasePackageRecord,
 } from "@/lib/release-package-types";
@@ -17,6 +18,14 @@ export type OpsReleaseDecisionInput = {
   rationale: string;
   notes: string[];
   acknowledgedBlockedItemIds: string[];
+  releasePacketGeneratedAt: string;
+  reviewToken: string;
+};
+
+export type OpsReleaseHandoffInput = {
+  rationale: string;
+  notes: string[];
+  handedOffOwnerIds: string[];
   releasePacketGeneratedAt: string;
   reviewToken: string;
 };
@@ -158,6 +167,22 @@ export async function fetchOpsReleaseDecisions() {
   };
 }
 
+export async function fetchOpsReleaseHandoffs() {
+  const response = await fetch("/api/ops/release/handoffs", {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      await parseApiError(response, "Unable to load the protected release handoff trail."),
+    );
+  }
+
+  return (await response.json()) as {
+    releaseHandoffs: ReleaseHandoffRecord[];
+  };
+}
+
 export async function fetchOpsReleasePacket() {
   const response = await fetch("/api/ops/release/packet", {
     cache: "no-store",
@@ -171,6 +196,31 @@ export async function fetchOpsReleasePacket() {
 
   return (await response.json()) as {
     releasePacket: ReleasePacketArtifact;
+  };
+}
+
+export async function publishOpsReleaseHandoff(
+  releaseHandoff: OpsReleaseHandoffInput,
+) {
+  const response = await fetch("/api/ops/release/handoffs", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ releaseHandoff }),
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      await parseApiError(
+        response,
+        "Unable to record the protected blocker handoff in the current runtime.",
+      ),
+    );
+  }
+
+  return (await response.json()) as {
+    releaseHandoffRecord: ReleaseHandoffRecord;
   };
 }
 

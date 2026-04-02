@@ -74,6 +74,16 @@ jobs:
             .artifacts/release-diff.md
           if-no-files-found: ignore
 
+      - name: Upload release handoff artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-handoff
+          path: |
+            .artifacts/release-handoff.json
+            .artifacts/release-handoff.md
+          if-no-files-found: ignore
+
       - name: Upload release decision artifact
         if: always()
         uses: actions/upload-artifact@v4
