@@ -3,6 +3,7 @@ import "server-only";
 import { getContentGovernanceSummary } from "@/lib/content-governance";
 import { readReleaseDecisionHistory } from "@/lib/release-decision-history";
 import { buildReleasePackageComparison } from "@/lib/release-package-comparison";
+import { buildReleasePacketReviewToken } from "@/lib/release-packet-review";
 import type { ReleasePacketArtifact } from "@/lib/release-packet-types";
 
 function buildExecutiveSummary(packet: {
@@ -95,9 +96,11 @@ export function buildReleasePacketArtifact(): ReleasePacketArtifact {
   const latestPublishedRecord = comparison.latestPublishedRecord;
   const latestDecision = readReleaseDecisionHistory(1)[0] ?? null;
   const contentGovernance = getContentGovernanceSummary();
+  const reviewToken = buildReleasePacketReviewToken(comparison, contentGovernance);
 
   const packet: ReleasePacketArtifact = {
     generatedAt: new Date().toISOString(),
+    reviewToken,
     overallStatus: currentArtifact.overallStatus,
     verificationMode: currentArtifact.verificationMode,
     targetBaseUrl: currentArtifact.targetBaseUrl,

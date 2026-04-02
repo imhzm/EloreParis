@@ -94,6 +94,8 @@ export type ReleaseDecisionRecord = {
   verdict: ReleaseDecisionVerdict;
   rationale: string;
   notes: string[];
+  releasePacketGeneratedAt: string;
+  releasePacketReviewToken: string;
   releasePackageRecordId: string;
   releasePackagePublishedAt: string;
   verificationMode: ReleasePackageArtifact["verificationMode"];

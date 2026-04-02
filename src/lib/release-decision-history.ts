@@ -7,7 +7,9 @@ import {
   normalizeReleaseDecisionRecord,
   type ReleaseDecisionDraft,
 } from "@/lib/release-decision";
+import { getContentGovernanceSummary } from "@/lib/content-governance";
 import { buildReleasePackageComparison } from "@/lib/release-package-comparison";
+import { buildReleasePacketReviewToken } from "@/lib/release-packet-review";
 import type { ReleaseDecisionRecord } from "@/lib/release-package-types";
 import type { OpsSessionSummary } from "@/lib/ops-types";
 
@@ -76,11 +78,23 @@ export async function publishReleaseDecisionRecord(
   decision: ReleaseDecisionDraft,
 ) {
   const releaseComparison = buildReleasePackageComparison();
+  const contentGovernance = getContentGovernanceSummary();
   const latestPublishedRecord = releaseComparison.latestPublishedRecord;
+  const reviewToken = buildReleasePacketReviewToken(
+    releaseComparison,
+    contentGovernance,
+  );
 
   if (!latestPublishedRecord) {
     throw new ReleaseDecisionError(
       "A release package must be published before a release decision can be recorded.",
+      409,
+    );
+  }
+
+  if (decision.reviewToken !== reviewToken) {
+    throw new ReleaseDecisionError(
+      "The release decision must be based on the latest executive release packet.",
       409,
     );
   }
@@ -123,6 +137,8 @@ export async function publishReleaseDecisionRecord(
     verdict: decision.verdict,
     rationale: decision.rationale,
     notes: decision.notes,
+    releasePacketGeneratedAt: decision.releasePacketGeneratedAt,
+    releasePacketReviewToken: decision.reviewToken,
     releasePackageRecordId: latestPublishedRecord.id,
     releasePackagePublishedAt: latestPublishedRecord.publishedAt,
     verificationMode: releaseComparison.currentArtifact.verificationMode,
@@ -153,6 +169,7 @@ export async function publishReleaseDecisionRecord(
       verdict: record.verdict,
       compare_status: record.compareStatus,
       release_package_record_id: record.releasePackageRecordId,
+      release_packet_review_token: record.releasePacketReviewToken,
       verification_mode: record.verificationMode,
       blocked_count: record.blockedCount,
       warning_count: record.warningCount,

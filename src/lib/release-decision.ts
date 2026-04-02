@@ -11,6 +11,8 @@ export type ReleaseDecisionDraft = {
   verdict: ReleaseDecisionVerdict;
   rationale: string;
   notes: string[];
+  releasePacketGeneratedAt: string;
+  reviewToken: string;
 };
 
 function isReleaseDecisionVerdict(value: unknown): value is ReleaseDecisionVerdict {
@@ -67,12 +69,20 @@ export function normalizeReleaseDecisionDraft(
   const draft = value as Record<string, unknown>;
   const rationale =
     typeof draft.rationale === "string" ? draft.rationale.trim() : "";
+  const releasePacketGeneratedAt =
+    typeof draft.releasePacketGeneratedAt === "string"
+      ? draft.releasePacketGeneratedAt.trim()
+      : "";
+  const reviewToken =
+    typeof draft.reviewToken === "string" ? draft.reviewToken.trim() : "";
   const notes = normalizeDecisionNotes(draft.notes);
 
   if (
     !isReleaseDecisionVerdict(draft.verdict) ||
     rationale.length < 16 ||
     rationale.length > 500 ||
+    releasePacketGeneratedAt.length < 10 ||
+    reviewToken.length < 16 ||
     !notes
   ) {
     return null;
@@ -82,6 +92,8 @@ export function normalizeReleaseDecisionDraft(
     verdict: draft.verdict,
     rationale,
     notes,
+    releasePacketGeneratedAt,
+    reviewToken,
   };
 }
 
@@ -101,6 +113,8 @@ export function normalizeReleaseDecisionRecord(
     !isOpsAuditActor(record.actor) ||
     !isReleaseDecisionVerdict(record.verdict) ||
     typeof record.rationale !== "string" ||
+    typeof record.releasePacketGeneratedAt !== "string" ||
+    typeof record.releasePacketReviewToken !== "string" ||
     typeof record.releasePackageRecordId !== "string" ||
     typeof record.releasePackagePublishedAt !== "string" ||
     !isVerificationMode(record.verificationMode) ||
@@ -126,6 +140,8 @@ export function normalizeReleaseDecisionRecord(
     verdict: record.verdict,
     rationale: record.rationale,
     notes,
+    releasePacketGeneratedAt: record.releasePacketGeneratedAt,
+    releasePacketReviewToken: record.releasePacketReviewToken,
     releasePackageRecordId: record.releasePackageRecordId,
     releasePackagePublishedAt: record.releasePackagePublishedAt,
     verificationMode: record.verificationMode,

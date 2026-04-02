@@ -6,7 +6,7 @@
 - Last updated: 2026-04-02
 - Current phase: `release`
 - Overall completion: `99%`
-- Current focus: executive release packet that condenses blockers, drift, decisions, and governance into one protected runtime contract
+- Current focus: packet-bound release decisions so hold or approve verdicts cannot be recorded against stale executive review state
 - Forecast status: `date not committed yet`
 - Working estimate: `12-16 weeks for an MVP after stack, catalog model, and integration scope are frozen`
 
@@ -141,6 +141,7 @@ Progress is tracked against SkyWave phases, not by ad-hoc task count.
 - [x] Compare the current runtime package against the latest published release package and export the drift review as protected runtime plus CI artifacts
 - [x] Persist release-decision history inside the shared authority and surface hold-versus-approve verdicts through protected runtime APIs plus release artifacts
 - [x] Add an executive release-packet contract that condenses blockers, drift, decisions, and governance into one protected API plus CI/live artifacts
+- [x] Bind release decisions to the latest executive release packet through a runtime review token and stale-decision rejection checks
 
 ## Current Status by Quality Layer
 
@@ -263,6 +264,7 @@ Progress is tracked against SkyWave phases, not by ad-hoc task count.
 - `/ops/release` now also compares the current runtime package with the latest published release package so hidden release drift shows up before any launch claim or live deploy rehearsal is accepted.
 - Release governance now also stores durable hold-versus-approve decisions through `/api/ops/release/decisions`, rejects false approvals while blocked gates remain, and exports the decision trail from both smoke and live verification as review artifacts.
 - `/api/ops/release/packet` now condenses blockers, drift status, latest package, latest decision, and content-governance blockers into one executive runtime contract, and smoke plus live verification now export that contract as review artifacts.
+- Release decisions are now bound to the latest executive packet review token, so stale hold or approve payloads are rejected before governance state changes are recorded.
 - Checkout now applies city-aware shipping and payment eligibility rules before creating an order reference instead of treating every option as always available.
 - A real internal `/ops/fulfillment` route now exposes carrier recommendation, split-shipment logic, COD eligibility, and notification planning for locally saved orders.
 - Order confirmation and track-order surfaces now explain fulfillment state and notification readiness instead of showing the order status alone.

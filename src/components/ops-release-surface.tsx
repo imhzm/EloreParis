@@ -87,6 +87,14 @@ function getDecisionVerdictLabel(verdict: ReleaseDecisionRecord["verdict"]) {
   }
 }
 
+function formatToken(value: string) {
+  if (value.length <= 14) {
+    return value;
+  }
+
+  return `${value.slice(0, 14)}…`;
+}
+
 export function OpsReleaseSurface() {
   const [snapshot, setSnapshot] = useState<ReleaseReadinessSnapshot | null>(null);
   const [evidence, setEvidence] = useState<ReleaseEvidenceReport | null>(null);
@@ -321,6 +329,12 @@ export function OpsReleaseSurface() {
                     <span>Content blockers</span>
                     <strong className={styles.referenceValue}>
                       {releasePacket.contentGovernance.launchBlocked}
+                    </strong>
+                  </div>
+                  <div className={styles.referenceRow}>
+                    <span>Review token</span>
+                    <strong className={styles.referenceValue}>
+                      {formatToken(releasePacket.reviewToken)}
                     </strong>
                   </div>
                 </div>
@@ -742,6 +756,12 @@ export function OpsReleaseSurface() {
                     </strong>
                   </div>
                   <div className={styles.referenceRow}>
+                    <span>Reviewed packet</span>
+                    <strong className={styles.referenceValue}>
+                      {formatTimestamp(decision.releasePacketGeneratedAt)}
+                    </strong>
+                  </div>
+                  <div className={styles.referenceRow}>
                     <span>Target base URL</span>
                     <strong className={styles.referenceValue}>{decision.targetBaseUrl}</strong>
                   </div>
@@ -753,6 +773,12 @@ export function OpsReleaseSurface() {
                     <span>Blocked / warning / ready</span>
                     <strong className={styles.referenceValue}>
                       {decision.blockedCount} / {decision.warningCount} / {decision.readyCount}
+                    </strong>
+                  </div>
+                  <div className={styles.referenceRow}>
+                    <span>Review token</span>
+                    <strong className={styles.referenceValue}>
+                      {formatToken(decision.releasePacketReviewToken)}
                     </strong>
                   </div>
                 </div>
