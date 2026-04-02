@@ -290,6 +290,7 @@ function renderReleasePacketMarkdown(releasePacket) {
     `- Latest published record: ${releasePacket.latestPublishedRecord?.id ?? "none"}`,
     `- Latest decision: ${releasePacket.latestDecision?.verdict ?? "none"}`,
     `- Latest decision review: ${releasePacket.latestDecisionReview.status}`,
+    `- Latest decision delta: ${releasePacket.latestDecisionDelta.status}`,
     `- Comparison status: ${releasePacket.comparison.status}`,
     `- Content launch blockers: ${releasePacket.contentGovernance.launchBlocked}`,
     "",
@@ -301,6 +302,18 @@ function renderReleasePacketMarkdown(releasePacket) {
     ...(releasePacket.latestDecisionReview.details.length
       ? releasePacket.latestDecisionReview.details.map((item) => `- ${item}`)
       : ["- No additional detail."]),
+    "",
+    "## Latest Decision Delta",
+    ...(releasePacket.latestDecisionDelta.summary.length
+      ? releasePacket.latestDecisionDelta.summary.map((item) => `- ${item}`)
+      : ["- No decision delta detail."]),
+    ...(releasePacket.latestDecisionDelta.countDeltas
+      ? [
+          `- Blocked delta: ${releasePacket.latestDecisionDelta.countDeltas.blocked.delta}`,
+          `- Warning delta: ${releasePacket.latestDecisionDelta.countDeltas.warning.delta}`,
+          `- Ready delta: ${releasePacket.latestDecisionDelta.countDeltas.ready.delta}`,
+        ]
+      : ["- No structured decision delta is available."]),
     "",
     "## Blocker Highlights",
     blockerHighlights || "- None.",
@@ -794,6 +807,11 @@ try {
     "missing",
     "Expected the live executive packet to report a missing decision before the first verdict is recorded.",
   );
+  assert.equal(
+    preDecisionPacketBody?.releasePacket?.latestDecisionDelta?.status,
+    "missing",
+    "Expected the live executive packet to report a missing decision delta before the first verdict is recorded.",
+  );
 
   const { response: staleDecisionResponse, body: staleDecisionBody } =
     await fetchJson("/api/ops/release/decisions", {
@@ -1040,6 +1058,15 @@ try {
   assert.equal(
     releasePacketBody?.releasePacket?.latestDecisionReview?.latestDecisionId,
     publishReleaseDecisionBody?.releaseDecisionRecord?.id,
+  );
+  assert.equal(
+    releasePacketBody?.releasePacket?.latestDecisionDelta?.status,
+    "unchanged",
+    "Expected the live executive packet to report no drift against the latest recorded decision immediately after publication.",
+  );
+  assert.equal(
+    releasePacketBody?.releasePacket?.latestDecisionDelta?.decisionPackageRecordId,
+    publishReleaseDecisionBody?.releaseDecisionRecord?.releasePackageRecordId,
   );
   assert.equal(releasePacketBody?.releasePacket?.comparison?.status, "unchanged");
   assert.equal(

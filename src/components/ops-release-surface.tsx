@@ -123,6 +123,23 @@ function getDecisionReviewStatusLabel(
   }
 }
 
+function getDecisionDeltaStatusLabel(
+  status: ReleasePacketArtifact["latestDecisionDelta"]["status"],
+) {
+  switch (status) {
+    case "unpublished":
+      return "No package";
+    case "missing":
+      return "No decision";
+    case "package_missing":
+      return "History missing";
+    case "unchanged":
+      return "No drift";
+    case "changed":
+      return "Drifted";
+  }
+}
+
 function formatToken(value: string) {
   if (value.length <= 14) {
     return value;
@@ -571,6 +588,12 @@ export function OpsReleaseSurface() {
                     </strong>
                   </div>
                   <div className={styles.referenceRow}>
+                    <span>Decision delta</span>
+                    <strong className={styles.referenceValue}>
+                      {getDecisionDeltaStatusLabel(releasePacket.latestDecisionDelta.status)}
+                    </strong>
+                  </div>
+                  <div className={styles.referenceRow}>
                     <span>Runtime drift</span>
                     <strong className={styles.referenceValue}>
                       {getComparisonStatusLabel(releasePacket.comparison.status)}
@@ -619,6 +642,49 @@ export function OpsReleaseSurface() {
                       {item}
                     </div>
                   ))}
+                </div>
+
+                <div className={styles.summaryList}>
+                  {releasePacket.latestDecisionDelta.summary.map((item) => (
+                    <div key={item} className={styles.infoBullet}>
+                      {item}
+                    </div>
+                  ))}
+                  {releasePacket.latestDecisionDelta.countDeltas ? (
+                    <>
+                      <div className={styles.infoBullet}>
+                        Decision baseline deltas: blocked{" "}
+                        {formatDelta(releasePacket.latestDecisionDelta.countDeltas.blocked.delta)},
+                        warning{" "}
+                        {formatDelta(releasePacket.latestDecisionDelta.countDeltas.warning.delta)},
+                        ready {formatDelta(releasePacket.latestDecisionDelta.countDeltas.ready.delta)}
+                      </div>
+                      <div className={styles.infoBullet}>
+                        Blocked items added since latest decision:{" "}
+                        {releasePacket.latestDecisionDelta.blockedItems?.added.length
+                          ? releasePacket.latestDecisionDelta.blockedItems.added.join(", ")
+                          : "none"}
+                      </div>
+                      <div className={styles.infoBullet}>
+                        Blocked items cleared since latest decision:{" "}
+                        {releasePacket.latestDecisionDelta.blockedItems?.cleared.length
+                          ? releasePacket.latestDecisionDelta.blockedItems.cleared.join(", ")
+                          : "none"}
+                      </div>
+                      <div className={styles.infoBullet}>
+                        Warning items added since latest decision:{" "}
+                        {releasePacket.latestDecisionDelta.warningItems?.added.length
+                          ? releasePacket.latestDecisionDelta.warningItems.added.join(", ")
+                          : "none"}
+                      </div>
+                      <div className={styles.infoBullet}>
+                        Warning items cleared since latest decision:{" "}
+                        {releasePacket.latestDecisionDelta.warningItems?.cleared.length
+                          ? releasePacket.latestDecisionDelta.warningItems.cleared.join(", ")
+                          : "none"}
+                      </div>
+                    </>
+                  ) : null}
                 </div>
 
                 <div className={styles.summaryList}>
@@ -1074,6 +1140,10 @@ export function OpsReleaseSurface() {
 
               <div className={styles.inlineNotice}>
                 {releasePacket.latestDecisionReview.summary}
+              </div>
+
+              <div className={styles.inlineNotice}>
+                {releasePacket.latestDecisionDelta.summary[0]}
               </div>
 
               {approvalDisabledReason ? (

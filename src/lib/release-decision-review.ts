@@ -2,6 +2,7 @@ import "server-only";
 
 import type {
   ReleaseDecisionRecord,
+  ReleasePackageArtifact,
   ReleasePackageRecord,
 } from "@/lib/release-package-types";
 import type {
@@ -23,6 +24,7 @@ function getDecisionReviewExpiresAt(decision: ReleaseDecisionRecord) {
 export function buildReleaseDecisionReview(
   latestDecision: ReleaseDecisionRecord | null,
   latestPublishedRecord: ReleasePackageRecord | null,
+  currentArtifact: ReleasePackageArtifact,
   currentReviewToken: string,
   now = new Date(),
 ): ReleasePacketDecisionReview {
@@ -69,6 +71,7 @@ export function buildReleaseDecisionReview(
       details: [
         `Latest decision targets ${latestDecision.releasePackageRecordId}.`,
         `Latest protected package is ${latestPublishedRecord.id}.`,
+        `Current runtime package is ${currentArtifact.overallStatus} with ${currentArtifact.blockedCount} blocked and ${currentArtifact.warningCount} warnings.`,
       ],
       latestDecisionId,
       reviewExpiresAt,
@@ -84,6 +87,7 @@ export function buildReleaseDecisionReview(
       details: [
         "Current runtime blockers, drift state, or governance inputs changed after the verdict was recorded.",
         "Refresh the release surface and record a new protected decision.",
+        `Current runtime package is ${currentArtifact.overallStatus} with ${currentArtifact.blockedCount} blocked and ${currentArtifact.warningCount} warnings.`,
       ],
       latestDecisionId,
       reviewExpiresAt,
@@ -99,6 +103,7 @@ export function buildReleaseDecisionReview(
       details: [
         `Latest decision review window expired at ${reviewExpiresAt ?? "an invalid timestamp"}.`,
         "Refresh the executive packet and record a new protected decision.",
+        `Current runtime package is ${currentArtifact.overallStatus} with ${currentArtifact.blockedCount} blocked and ${currentArtifact.warningCount} warnings.`,
       ],
       latestDecisionId,
       reviewExpiresAt,

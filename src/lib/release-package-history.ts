@@ -153,3 +153,20 @@ export function getLatestReleasePackageRecord() {
 
   return parseReleasePackageRecord(row.payload_json);
 }
+
+export function getReleasePackageRecordById(id: string) {
+  const row = getAuthorityDatabase()
+    .prepare(`
+      SELECT payload_json
+      FROM authority_release_packages
+      WHERE id = ?
+      LIMIT 1
+    `)
+    .get(id) as { payload_json: string } | undefined;
+
+  if (!row) {
+    return null;
+  }
+
+  return parseReleasePackageRecord(row.payload_json);
+}

@@ -24,6 +24,46 @@ export type ReleasePacketDecisionReview = {
   reviewExpiresAt: string | null;
 };
 
+export type ReleasePacketDecisionDeltaStatus =
+  | "unpublished"
+  | "missing"
+  | "package_missing"
+  | "unchanged"
+  | "changed";
+
+export type ReleasePacketDecisionCountDelta = {
+  baseline: number;
+  current: number;
+  delta: number;
+};
+
+export type ReleasePacketDecisionDelta = {
+  status: ReleasePacketDecisionDeltaStatus;
+  decisionPackageRecordId: string | null;
+  baselinePublishedAt: string | null;
+  countDeltas: {
+    blocked: ReleasePacketDecisionCountDelta;
+    warning: ReleasePacketDecisionCountDelta;
+    ready: ReleasePacketDecisionCountDelta;
+  } | null;
+  changedFields: {
+    overallStatus: boolean;
+    verificationMode: boolean;
+    targetBaseUrl: boolean;
+    runtimeEnvironment: boolean;
+    nextActions: boolean;
+  } | null;
+  blockedItems: {
+    added: string[];
+    cleared: string[];
+  } | null;
+  warningItems: {
+    added: string[];
+    cleared: string[];
+  } | null;
+  summary: string[];
+};
+
 export type ReleasePacketArtifact = {
   generatedAt: string;
   reviewToken: string;
@@ -41,6 +81,7 @@ export type ReleasePacketArtifact = {
   latestPublishedRecord: ReleasePackageRecord | null;
   latestDecision: ReleaseDecisionRecord | null;
   latestDecisionReview: ReleasePacketDecisionReview;
+  latestDecisionDelta: ReleasePacketDecisionDelta;
   comparison: ReleasePackageComparison;
   contentGovernance: ContentGovernanceSummary;
 };

@@ -1,6 +1,7 @@
 import "server-only";
 
 import { getContentGovernanceSummary } from "@/lib/content-governance";
+import { buildReleaseDecisionDelta } from "@/lib/release-decision-delta";
 import { buildReleaseDecisionReview } from "@/lib/release-decision-review";
 import { readReleaseDecisionHistory } from "@/lib/release-decision-history";
 import { buildReleasePackageComparison } from "@/lib/release-package-comparison";
@@ -37,6 +38,7 @@ function buildExecutiveSummary(packet: ReleasePacketArtifact) {
   }
 
   summary.push(packet.latestDecisionReview.summary);
+  summary.push(packet.latestDecisionDelta.summary[0]);
 
   if (packet.comparison.status === "unchanged") {
     summary.push(
@@ -129,7 +131,13 @@ export function buildReleasePacketArtifact(): ReleasePacketArtifact {
     latestDecisionReview: buildReleaseDecisionReview(
       latestDecision,
       latestPublishedRecord,
+      currentArtifact,
       reviewToken,
+    ),
+    latestDecisionDelta: buildReleaseDecisionDelta(
+      latestDecision?.releasePackageRecordId ?? null,
+      currentArtifact,
+      latestPublishedRecord ? "missing" : "unpublished",
     ),
     comparison,
     contentGovernance,
