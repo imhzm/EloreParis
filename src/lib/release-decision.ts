@@ -1,5 +1,6 @@
 import "server-only";
 
+import { getReleasePacketReviewWindowMinutes } from "@/lib/release-packet-review";
 import type { OpsAuditActor } from "@/lib/ops-types";
 import type {
   ReleaseDecisionRecord,
@@ -82,6 +83,7 @@ export function normalizeReleaseDecisionDraft(
     rationale.length < 16 ||
     rationale.length > 500 ||
     releasePacketGeneratedAt.length < 10 ||
+    !Number.isFinite(Date.parse(releasePacketGeneratedAt)) ||
     reviewToken.length < 16 ||
     !notes
   ) {
@@ -106,6 +108,12 @@ export function normalizeReleaseDecisionRecord(
 
   const record = value as Record<string, unknown>;
   const notes = normalizeDecisionNotes(record.notes);
+  const reviewWindowMinutes =
+    typeof record.releasePacketReviewWindowMinutes === "number"
+      ? record.releasePacketReviewWindowMinutes
+      : isVerificationMode(record.verificationMode)
+        ? getReleasePacketReviewWindowMinutes(record.verificationMode)
+        : null;
 
   if (
     typeof record.id !== "string" ||
@@ -128,6 +136,7 @@ export function normalizeReleaseDecisionRecord(
     typeof record.blockedCount !== "number" ||
     typeof record.warningCount !== "number" ||
     typeof record.readyCount !== "number" ||
+    reviewWindowMinutes === null ||
     !notes
   ) {
     return null;
@@ -142,6 +151,7 @@ export function normalizeReleaseDecisionRecord(
     notes,
     releasePacketGeneratedAt: record.releasePacketGeneratedAt,
     releasePacketReviewToken: record.releasePacketReviewToken,
+    releasePacketReviewWindowMinutes: reviewWindowMinutes,
     releasePackageRecordId: record.releasePackageRecordId,
     releasePackagePublishedAt: record.releasePackagePublishedAt,
     verificationMode: record.verificationMode,

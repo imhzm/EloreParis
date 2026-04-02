@@ -259,6 +259,7 @@ function renderReleaseDecisionMarkdown(releaseDecisions) {
       `- Verdict: ${record.verdict}`,
       `- Reviewed packet: ${record.releasePacketGeneratedAt}`,
       `- Review token: ${record.releasePacketReviewToken}`,
+      `- Review window minutes: ${record.releasePacketReviewWindowMinutes}`,
       `- Published package: ${record.releasePackageRecordId}`,
       `- Compare status: ${record.compareStatus}`,
       `- Verification mode: ${record.verificationMode}`,
@@ -298,6 +299,8 @@ function renderReleasePacketMarkdown(releasePacket) {
     "",
     `- Generated at: ${releasePacket.generatedAt}`,
     `- Review token: ${releasePacket.reviewToken}`,
+    `- Review window minutes: ${releasePacket.reviewWindowMinutes}`,
+    `- Review expires at: ${releasePacket.reviewExpiresAt}`,
     `- Overall status: ${releasePacket.overallStatus}`,
     `- Verification mode: ${releasePacket.verificationMode}`,
     `- Target base URL: ${releasePacket.targetBaseUrl}`,
@@ -1054,7 +1057,7 @@ try {
       publicRouteChecks: publicSmokeChecks.length,
       protectedRouteChecks: protectedOpsChecks.length,
       assetChecks: assetChecks.length,
-      apiChecks: 22,
+      apiChecks: 23,
     },
     checks: [
       {
@@ -1069,8 +1072,8 @@ try {
       },
       {
         id: "api-contracts",
-        title: "Health, order, release, notification, audit, package, packet, history, compare, and decision APIs with packet-bound decision guards",
-        count: 22,
+        title: "Health, order, release, notification, audit, package, packet, history, compare, and decision APIs with packet-bound freshness guards",
+        count: 23,
       },
       {
         id: "release-assets",
@@ -1130,7 +1133,7 @@ try {
   );
   assert.equal(
     releaseEvidenceBody.releaseEvidence.summary.apiChecks,
-    22,
+    23,
   );
 
   const {
@@ -1148,7 +1151,7 @@ try {
   );
   assert.equal(
     releasePackageBody.releasePackage.releaseEvidence?.summary.apiChecks,
-    22,
+    23,
   );
   assert.ok(
     releasePackageBody.releasePackage.blockedItems.some(
@@ -1176,7 +1179,7 @@ try {
   );
   assert.equal(
     publishReleasePackageBody.releasePackageRecord.artifact.releaseEvidence?.summary.apiChecks,
-    22,
+    23,
   );
 
   const {
@@ -1273,6 +1276,40 @@ try {
     "The release decision must be based on the latest executive release packet.",
   );
 
+  const stalePacketGeneratedAt = new Date(
+    Date.parse(preDecisionPacketBody.releasePacket.generatedAt) -
+      (preDecisionPacketBody.releasePacket.reviewWindowMinutes + 5) * 60_000,
+  ).toISOString();
+
+  const {
+    response: stalePacketAgeResponse,
+    body: stalePacketAgeBody,
+  } = await sendJson("POST", "/api/ops/release/decisions", {
+    releaseDecision: {
+      verdict: "hold",
+      rationale:
+        "Automated smoke verification should reject release decisions that reference an expired executive review packet.",
+      releasePacketGeneratedAt: stalePacketGeneratedAt,
+      reviewToken: preDecisionPacketBody.releasePacket.reviewToken,
+      notes: [
+        "Smoke confirms that executive packet age is enforced alongside token matching.",
+      ],
+    },
+  }, {
+    headers: {
+      Cookie: opsCookie,
+    },
+  });
+  assert.equal(
+    stalePacketAgeResponse.status,
+    409,
+    "Expected ops release decision API to reject stale executive packet age",
+  );
+  assert.equal(
+    stalePacketAgeBody.error,
+    "The executive release packet is stale and must be refreshed before a release decision can be recorded.",
+  );
+
   const {
     response: rejectedApprovalResponse,
     body: rejectedApprovalBody,
@@ -1364,6 +1401,10 @@ try {
     publishedReleaseDecision.releasePacketReviewToken,
     preDecisionPacketBody.releasePacket.reviewToken,
   );
+  assert.equal(
+    publishedReleaseDecision.releasePacketReviewWindowMinutes,
+    preDecisionPacketBody.releasePacket.reviewWindowMinutes,
+  );
   writeReleaseDecisionArtifacts(releaseDecisionBody.releaseDecisions);
 
   const {
@@ -1393,7 +1434,7 @@ try {
   );
   assert.equal(
     releasePacketBody.releasePacket.currentArtifact.releaseEvidence?.summary.apiChecks,
-    22,
+    23,
   );
   assert.ok(
     releasePacketBody.releasePacket.contentGovernance.launchBlocked > 0,

@@ -9,7 +9,11 @@ import {
 } from "@/lib/release-decision";
 import { getContentGovernanceSummary } from "@/lib/content-governance";
 import { buildReleasePackageComparison } from "@/lib/release-package-comparison";
-import { buildReleasePacketReviewToken } from "@/lib/release-packet-review";
+import {
+  buildReleasePacketReviewToken,
+  getReleasePacketReviewWindowMinutes,
+  isReleasePacketReviewFresh,
+} from "@/lib/release-packet-review";
 import type { ReleaseDecisionRecord } from "@/lib/release-package-types";
 import type { OpsSessionSummary } from "@/lib/ops-types";
 
@@ -84,6 +88,9 @@ export async function publishReleaseDecisionRecord(
     releaseComparison,
     contentGovernance,
   );
+  const reviewWindowMinutes = getReleasePacketReviewWindowMinutes(
+    releaseComparison.currentArtifact.verificationMode,
+  );
 
   if (!latestPublishedRecord) {
     throw new ReleaseDecisionError(
@@ -95,6 +102,18 @@ export async function publishReleaseDecisionRecord(
   if (decision.reviewToken !== reviewToken) {
     throw new ReleaseDecisionError(
       "The release decision must be based on the latest executive release packet.",
+      409,
+    );
+  }
+
+  if (
+    !isReleasePacketReviewFresh(
+      decision.releasePacketGeneratedAt,
+      releaseComparison.currentArtifact.verificationMode,
+    )
+  ) {
+    throw new ReleaseDecisionError(
+      "The executive release packet is stale and must be refreshed before a release decision can be recorded.",
       409,
     );
   }
@@ -139,6 +158,7 @@ export async function publishReleaseDecisionRecord(
     notes: decision.notes,
     releasePacketGeneratedAt: decision.releasePacketGeneratedAt,
     releasePacketReviewToken: decision.reviewToken,
+    releasePacketReviewWindowMinutes: reviewWindowMinutes,
     releasePackageRecordId: latestPublishedRecord.id,
     releasePackagePublishedAt: latestPublishedRecord.publishedAt,
     verificationMode: releaseComparison.currentArtifact.verificationMode,
@@ -170,6 +190,7 @@ export async function publishReleaseDecisionRecord(
       compare_status: record.compareStatus,
       release_package_record_id: record.releasePackageRecordId,
       release_packet_review_token: record.releasePacketReviewToken,
+      release_packet_review_window_minutes: record.releasePacketReviewWindowMinutes,
       verification_mode: record.verificationMode,
       blocked_count: record.blockedCount,
       warning_count: record.warningCount,

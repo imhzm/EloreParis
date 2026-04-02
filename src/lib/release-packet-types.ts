@@ -10,6 +10,8 @@ import type { ReleaseReadinessStatus } from "@/lib/release-readiness-types";
 export type ReleasePacketArtifact = {
   generatedAt: string;
   reviewToken: string;
+  reviewWindowMinutes: number;
+  reviewExpiresAt: string;
   overallStatus: ReleaseReadinessStatus;
   verificationMode: ReleasePackageArtifact["verificationMode"];
   targetBaseUrl: string;

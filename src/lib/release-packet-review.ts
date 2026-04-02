@@ -1,6 +1,49 @@
 import { createHash } from "node:crypto";
 import type { ContentGovernanceSummary } from "@/lib/content-governance";
+import type { ReleasePackageArtifact } from "@/lib/release-package-types";
 import type { ReleasePackageComparison } from "@/lib/release-package-types";
+
+export function getReleasePacketReviewWindowMinutes(
+  verificationMode: ReleasePackageArtifact["verificationMode"],
+) {
+  switch (verificationMode) {
+    case "live_postdeploy":
+      return 120;
+    case "local_smoke":
+      return 45;
+    case "runtime_snapshot":
+      return 30;
+  }
+}
+
+export function getReleasePacketReviewExpiresAt(
+  generatedAt: string,
+  verificationMode: ReleasePackageArtifact["verificationMode"],
+) {
+  const generatedAtTime = Date.parse(generatedAt);
+
+  if (!Number.isFinite(generatedAtTime)) {
+    return null;
+  }
+
+  return new Date(
+    generatedAtTime + getReleasePacketReviewWindowMinutes(verificationMode) * 60_000,
+  ).toISOString();
+}
+
+export function isReleasePacketReviewFresh(
+  generatedAt: string,
+  verificationMode: ReleasePackageArtifact["verificationMode"],
+  now = new Date(),
+) {
+  const expiresAt = getReleasePacketReviewExpiresAt(generatedAt, verificationMode);
+
+  if (!expiresAt) {
+    return false;
+  }
+
+  return Date.parse(expiresAt) >= now.getTime();
+}
 
 export function buildReleasePacketReviewToken(
   comparison: ReleasePackageComparison,

@@ -3,17 +3,14 @@ import "server-only";
 import { getContentGovernanceSummary } from "@/lib/content-governance";
 import { readReleaseDecisionHistory } from "@/lib/release-decision-history";
 import { buildReleasePackageComparison } from "@/lib/release-package-comparison";
-import { buildReleasePacketReviewToken } from "@/lib/release-packet-review";
+import {
+  buildReleasePacketReviewToken,
+  getReleasePacketReviewExpiresAt,
+  getReleasePacketReviewWindowMinutes,
+} from "@/lib/release-packet-review";
 import type { ReleasePacketArtifact } from "@/lib/release-packet-types";
 
-function buildExecutiveSummary(packet: {
-  overallStatus: ReleasePacketArtifact["overallStatus"];
-  currentArtifact: ReleasePacketArtifact["currentArtifact"];
-  latestPublishedRecord: ReleasePacketArtifact["latestPublishedRecord"];
-  latestDecision: ReleasePacketArtifact["latestDecision"];
-  comparison: ReleasePacketArtifact["comparison"];
-  contentGovernance: ReleasePacketArtifact["contentGovernance"];
-}) {
+function buildExecutiveSummary(packet: ReleasePacketArtifact) {
   const summary = [
     `Current runtime package is ${packet.overallStatus} with ${packet.currentArtifact.blockedCount} blocked, ${packet.currentArtifact.warningCount} warnings, and ${packet.currentArtifact.readyCount} ready items.`,
   ];
@@ -54,6 +51,9 @@ function buildExecutiveSummary(packet: {
 
   summary.push(
     `${packet.contentGovernance.launchBlocked} content governance groups still block launch, with ${packet.contentGovernance.awaitingStyleSamples} waiting for style samples and ${packet.contentGovernance.awaitingBusinessInputs} waiting for business inputs.`,
+  );
+  summary.push(
+    `This executive packet should be refreshed within ${packet.reviewWindowMinutes} minutes, before ${packet.reviewExpiresAt}, before a protected release decision is recorded.`,
   );
 
   return summary;
@@ -96,11 +96,22 @@ export function buildReleasePacketArtifact(): ReleasePacketArtifact {
   const latestPublishedRecord = comparison.latestPublishedRecord;
   const latestDecision = readReleaseDecisionHistory(1)[0] ?? null;
   const contentGovernance = getContentGovernanceSummary();
+  const generatedAt = new Date().toISOString();
   const reviewToken = buildReleasePacketReviewToken(comparison, contentGovernance);
+  const reviewWindowMinutes = getReleasePacketReviewWindowMinutes(
+    currentArtifact.verificationMode,
+  );
+  const reviewExpiresAt =
+    getReleasePacketReviewExpiresAt(
+      generatedAt,
+      currentArtifact.verificationMode,
+    ) ?? generatedAt;
 
   const packet: ReleasePacketArtifact = {
-    generatedAt: new Date().toISOString(),
+    generatedAt,
     reviewToken,
+    reviewWindowMinutes,
+    reviewExpiresAt,
     overallStatus: currentArtifact.overallStatus,
     verificationMode: currentArtifact.verificationMode,
     targetBaseUrl: currentArtifact.targetBaseUrl,

@@ -337,6 +337,18 @@ export function OpsReleaseSurface() {
                       {formatToken(releasePacket.reviewToken)}
                     </strong>
                   </div>
+                  <div className={styles.referenceRow}>
+                    <span>Review window</span>
+                    <strong className={styles.referenceValue}>
+                      {releasePacket.reviewWindowMinutes} min
+                    </strong>
+                  </div>
+                  <div className={styles.referenceRow}>
+                    <span>Refresh by</span>
+                    <strong className={styles.referenceValue}>
+                      {formatTimestamp(releasePacket.reviewExpiresAt)}
+                    </strong>
+                  </div>
                 </div>
 
                 <div className={styles.summaryList}>
@@ -779,6 +791,12 @@ export function OpsReleaseSurface() {
                     <span>Review token</span>
                     <strong className={styles.referenceValue}>
                       {formatToken(decision.releasePacketReviewToken)}
+                    </strong>
+                  </div>
+                  <div className={styles.referenceRow}>
+                    <span>Review window</span>
+                    <strong className={styles.referenceValue}>
+                      {decision.releasePacketReviewWindowMinutes} min
                     </strong>
                   </div>
                 </div>

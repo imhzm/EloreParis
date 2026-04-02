@@ -239,6 +239,7 @@ function renderReleaseDecisionMarkdown(releaseDecisions) {
       `- Verdict: ${record.verdict}`,
       `- Reviewed packet: ${record.releasePacketGeneratedAt}`,
       `- Review token: ${record.releasePacketReviewToken}`,
+      `- Review window minutes: ${record.releasePacketReviewWindowMinutes}`,
       `- Published package: ${record.releasePackageRecordId}`,
       `- Compare status: ${record.compareStatus}`,
       `- Verification mode: ${record.verificationMode}`,
@@ -278,6 +279,8 @@ function renderReleasePacketMarkdown(releasePacket) {
     "",
     `- Generated at: ${releasePacket.generatedAt}`,
     `- Review token: ${releasePacket.reviewToken}`,
+    `- Review window minutes: ${releasePacket.reviewWindowMinutes}`,
+    `- Review expires at: ${releasePacket.reviewExpiresAt}`,
     `- Overall status: ${releasePacket.overallStatus}`,
     `- Verification mode: ${releasePacket.verificationMode}`,
     `- Target base URL: ${releasePacket.targetBaseUrl}`,
@@ -528,7 +531,7 @@ try {
       publicRouteChecks: 1,
       protectedRouteChecks: 2,
       assetChecks: 0,
-      apiChecks: 16,
+      apiChecks: 17,
     },
     checks: [
       {
@@ -568,8 +571,8 @@ try {
       },
       {
         id: "live-release-decision",
-        title: "Release decision stale-token rejection, approval rejection, publication, and readback from the deployed runtime",
-        count: 4,
+        title: "Release decision stale-token rejection, stale-age rejection, approval rejection, publication, and readback from the deployed runtime",
+        count: 5,
       },
       {
         id: "live-release-packet",
@@ -678,7 +681,7 @@ try {
   );
   assert.equal(
     releasePackageBody?.releasePackage?.releaseEvidence?.summary.apiChecks,
-    16,
+    17,
   );
 
   const { response: releaseHistoryResponse, body: releaseHistoryBody } =
@@ -769,6 +772,43 @@ try {
   assert.equal(
     staleDecisionBody?.error,
     "The release decision must be based on the latest executive release packet.",
+  );
+
+  const stalePacketGeneratedAt = new Date(
+    Date.parse(preDecisionPacketBody?.releasePacket?.generatedAt) -
+      (preDecisionPacketBody?.releasePacket?.reviewWindowMinutes + 5) * 60_000,
+  ).toISOString();
+
+  const { response: stalePacketAgeResponse, body: stalePacketAgeBody } =
+    await fetchJson("/api/ops/release/decisions", {
+      method: "POST",
+      headers: {
+        ...trustedMutationHeaders,
+        Cookie: opsCookie,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        releaseDecision: {
+          verdict: "hold",
+          rationale:
+            "Live verification should reject release decisions that reference an expired executive review packet.",
+          releasePacketGeneratedAt: stalePacketGeneratedAt,
+          reviewToken: preDecisionPacketBody?.releasePacket?.reviewToken,
+          notes: [
+            "Live verification confirms that executive packet age is enforced alongside token matching.",
+          ],
+        },
+      }),
+    });
+
+  assert.equal(
+    stalePacketAgeResponse.status,
+    409,
+    "Expected live release decision API to reject stale executive packet age.",
+  );
+  assert.equal(
+    stalePacketAgeBody?.error,
+    "The executive release packet is stale and must be refreshed before a release decision can be recorded.",
   );
 
   const { response: rejectedApprovalResponse, body: rejectedApprovalBody } =
@@ -864,6 +904,10 @@ try {
     livePublishedReleaseDecision?.releasePacketReviewToken,
     preDecisionPacketBody?.releasePacket?.reviewToken,
   );
+  assert.equal(
+    livePublishedReleaseDecision?.releasePacketReviewWindowMinutes,
+    preDecisionPacketBody?.releasePacket?.reviewWindowMinutes,
+  );
   writeReleaseDecisionArtifacts(releaseDecisionBody.releaseDecisions);
 
   const { response: releasePacketResponse, body: releasePacketBody } =
@@ -889,7 +933,7 @@ try {
   assert.equal(releasePacketBody?.releasePacket?.comparison?.status, "unchanged");
   assert.equal(
     releasePacketBody?.releasePacket?.currentArtifact?.releaseEvidence?.summary?.apiChecks,
-    16,
+    17,
   );
   assert.ok(
     releasePacketBody?.releasePacket?.contentGovernance?.launchBlocked > 0,
