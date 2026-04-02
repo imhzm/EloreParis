@@ -7,17 +7,16 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
-      RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
-      RENDER_SERVICE_BASE_URL: ${{ secrets.RENDER_SERVICE_BASE_URL }}
-      RENDER_OPS_MANAGER_USERNAME: ${{ secrets.RENDER_OPS_MANAGER_USERNAME }}
-      RENDER_OPS_MANAGER_PASSWORD: ${{ secrets.RENDER_OPS_MANAGER_PASSWORD }}
 
     steps:
       - name: Check Render deploy secrets
         id: credentials
         shell: bash
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+          RENDER_SERVICE_BASE_URL: ${{ secrets.RENDER_SERVICE_BASE_URL }}
+          RENDER_OPS_MANAGER_USERNAME: ${{ secrets.RENDER_OPS_MANAGER_USERNAME }}
+          RENDER_OPS_MANAGER_PASSWORD: ${{ secrets.RENDER_OPS_MANAGER_PASSWORD }}
         run: |
           missing=()
           for name in \
@@ -54,17 +53,24 @@ jobs:
 
       - name: Trigger Render deploy hook
         if: ${{ steps.credentials.outputs.configured == 'true' }}
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
         run: curl --fail --silent --show-error --request POST "$RENDER_DEPLOY_HOOK_URL"
 
       - name: Verify live Render deployment
         if: ${{ steps.credentials.outputs.configured == 'true' }}
         env:
+          RENDER_SERVICE_BASE_URL: ${{ secrets.RENDER_SERVICE_BASE_URL }}
+          RENDER_OPS_MANAGER_USERNAME: ${{ secrets.RENDER_OPS_MANAGER_USERNAME }}
+          RENDER_OPS_MANAGER_PASSWORD: ${{ secrets.RENDER_OPS_MANAGER_PASSWORD }}
           LIVE_CHECK_TIMEOUT_SECONDS: 1200
           LIVE_EVIDENCE_ARTIFACT_PATH: .artifacts/render-live-evidence.json
         run: npm run test:render-live
 
       - name: Upload live release evidence artifact
         if: ${{ always() && steps.credentials.outputs.configured == 'true' }}
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
         uses: actions/upload-artifact@v4
         with:
           name: render-live-evidence
