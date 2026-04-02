@@ -5,7 +5,7 @@
 - Start date: 2026-04-01
 - Last updated: 2026-04-02
 - Current phase: `implementation`
-- Overall completion: `94%`
+- Overall completion: `95%`
 - Current focus: unified SQLite-backed application authority for orders, notifications, and ops audit over the protected ops rehearsal layer
 - Forecast status: `date not committed yet`
 - Working estimate: `12-16 weeks for an MVP after stack, catalog model, and integration scope are frozen`
@@ -20,7 +20,7 @@ Progress is tracked against SkyWave phases, not by ad-hoc task count.
 | Design and Architecture | 20% | In Progress | 88% | Design system direction, page architecture, stack and data decisions |
 | Implementation | 35% | In Progress | 100% | Public storefront and required internal surfaces implemented |
 | Validation | 10% | In Progress | 99% | Lint, typecheck, tests, UX QA, SEO/schema QA, accessibility QA |
-| Release | 10% | In Progress | 95% | Deployment target, configs, monitoring, legal/trust gates, rollback path |
+| Release | 10% | In Progress | 96% | Deployment target, configs, monitoring, legal/trust gates, rollback path |
 | Growth and Automation | 10% | In Progress | 81% | CRM flows, SEO growth loops, analytics maturity, post-launch automations |
 
 ## Current Discovery Checklist
@@ -256,6 +256,7 @@ Progress is tracked against SkyWave phases, not by ad-hoc task count.
 - Smoke regression now verifies notification queue visibility, status updates, and audit entries in addition to order authority and role-gated ops access flows.
 - Order, notification, and audit authorities now persist through one SQLite-backed application database instead of three separate JSON files, with legacy import paths kept for backward-compatible rehearsal migration.
 - `/api/health` now reports the active authority storage engine, and smoke regression now boots against an isolated SQLite database while verifying authority readiness alongside the protected ops flows.
+- GitHub Actions and the deploy workflow now build on Node.js 22 to match the new `node:sqlite` runtime requirement, and CI returned green again after the SQLite migration.
 
 ## Immediate Next Actions
 
