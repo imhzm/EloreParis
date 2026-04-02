@@ -22,6 +22,7 @@
 - Production start now uses [`start-standalone.mjs`](D:/REDA/ksa%20cozmateks/scripts/start-standalone.mjs) instead of `next start`.
 - Health checks are exposed through [`/api/health`](D:/REDA/ksa%20cozmateks/src/app/api/health/route.ts).
 - Live launch blockers are exposed through [`/api/ops/release`](D:/REDA/ksa%20cozmateks/src/app/api/ops/release/route.ts) and [`/ops/release`](D:/REDA/ksa%20cozmateks/src/app/ops/release/page.tsx).
+- `/ops/release` now also exposes a runtime preflight section for the public URL, persistent-path alignment, signing-secret quality, and protected ops bootstrap identities.
 - The latest executable smoke-evidence report is exposed through [`/api/ops/release/evidence`](D:/REDA/ksa%20cozmateks/src/app/api/ops/release/evidence/route.ts) and uploaded from CI as an artifact.
 - A manual Render deployment workflow now exists at [`deploy-render.yml`](D:/REDA/ksa%20cozmateks/.github/workflows/deploy-render.yml); it can trigger the deploy hook, wait for the live service to become healthy, and publish post-deploy evidence back into the deployed runtime.
 - Orders, notifications, and ops audit now share one SQLite-backed in-app authority with backward-compatible import from the older rehearsal JSON files.
@@ -41,7 +42,7 @@
 ## Required Render Environment Values
 
 - `NEXT_PUBLIC_SITE_URL`
-  Set this to the final production domain once the live hostname is known.
+  Set this to the final production domain once the live hostname is known. Leaving it empty falls back to `RENDER_EXTERNAL_URL`, which is acceptable for rehearsal but still shows as a warning in runtime preflight.
 - `AUTHORITY_DB_PATH`
   Keep this on persistent storage. The current blueprint defaults it to `/var/data/authority.sqlite`.
 - `RELEASE_EVIDENCE_PATH`
@@ -49,6 +50,8 @@
 - `OPS_AUTH_USERS_JSON`
   Preferred way to define internal ops identities and roles using username plus password hash. Example shape:
   `[{"id":"ops-manager","name":"Ops manager","role":"manager","username":"ops.manager","passwordHash":"scrypt$..."}]`
+- `RENDER_EXTERNAL_URL`
+  Provided automatically by Render. The runtime preflight uses it as a hosted fallback, but it does not replace binding the final public site URL.
 - `ORDER_AUTHORITY_SECRET`
   Strong server-only secret for recent-order signed access.
 - `OPS_ACCESS_SIGNING_SECRET`
@@ -94,16 +97,17 @@ If you still want to use it for previews or one-off verification, it requires:
 4. Create the Render deploy hook, then store `RENDER_DEPLOY_HOOK_URL`, `RENDER_SERVICE_BASE_URL`, `RENDER_OPS_MANAGER_USERNAME`, and `RENDER_OPS_MANAGER_PASSWORD` in GitHub secrets.
 5. Trigger the manual [`Deploy to Render`](D:/REDA/ksa%20cozmateks/.github/workflows/deploy-render.yml) workflow and wait for it to finish its live verification path.
 6. Confirm `/ops/release` now reports the hosting-direction gate as ready and the canonical-runtime gate against the live domain instead of localhost.
-7. Confirm `/api/ops/release/evidence` now reflects the latest live post-deploy verification report for the deployed build instead of staying empty.
-8. Confirm unauthenticated `/ops` redirects to `/ops-access`.
-9. Confirm the chosen ops identity can log in through username and password, reaches its allowed default route, and that a lower-privilege role cannot open unauthorized ops pages.
-10. Confirm origin-less or cross-origin attempts to mutate `/api/ops/*` and `/api/ops-access/logout` are rejected with `403`.
-11. Confirm repeated failed login attempts hit `429` throttling and recover only after the cooldown window.
-12. Confirm `/ops/notifications` can read queued delivery items and update a notification state without losing the shared authority database between requests or process restarts.
-13. Confirm `/ops/audit` can read recent login, order-state, notification-state, throttling, and release-evidence publish traces without losing the shared authority database between requests or process restarts.
-14. Confirm checkout can create an order and tracking can read it back in the chosen environment without losing the authority database between requests or process restarts.
-15. Confirm the homepage, product page, article page, `cart`, and `sitemap.xml` render correctly after deployment.
-16. Confirm public launch approval still matches [`CONTENT-OWNERSHIP.md`](D:/REDA/ksa%20cozmateks/CONTENT-OWNERSHIP.md), including sample-pack and business-input gates.
+7. Confirm the runtime preflight section inside `/ops/release` reports `public-site-url`, `signing-secrets`, and `ops-bootstrap-identities` as ready, and that `persistent-runtime-paths` is no longer blocked.
+8. Confirm `/api/ops/release/evidence` now reflects the latest live post-deploy verification report for the deployed build instead of staying empty.
+9. Confirm unauthenticated `/ops` redirects to `/ops-access`.
+10. Confirm the chosen ops identity can log in through username and password, reaches its allowed default route, and that a lower-privilege role cannot open unauthorized ops pages.
+11. Confirm origin-less or cross-origin attempts to mutate `/api/ops/*` and `/api/ops-access/logout` are rejected with `403`.
+12. Confirm repeated failed login attempts hit `429` throttling and recover only after the cooldown window.
+13. Confirm `/ops/notifications` can read queued delivery items and update a notification state without losing the shared authority database between requests or process restarts.
+14. Confirm `/ops/audit` can read recent login, order-state, notification-state, throttling, and release-evidence publish traces without losing the shared authority database between requests or process restarts.
+15. Confirm checkout can create an order and tracking can read it back in the chosen environment without losing the authority database between requests or process restarts.
+16. Confirm the homepage, product page, article page, `cart`, and `sitemap.xml` render correctly after deployment.
+17. Confirm public launch approval still matches [`CONTENT-OWNERSHIP.md`](D:/REDA/ksa%20cozmateks/CONTENT-OWNERSHIP.md), including sample-pack and business-input gates.
 
 ## Rollback Path
 
@@ -116,6 +120,7 @@ If you still want to use it for previews or one-off verification, it requires:
 
 - `/api/health` returns `status=ok`
 - `/ops/release` still exposes runtime blockers honestly after deployment
+- `/ops/release` runtime preflight still reflects the real public URL, persistent paths, signing-secret quality, and bootstrap identities after deployment
 - `/api/ops/release/evidence` reflects the most recent successful live post-deploy verification run
 - homepage response and metadata
 - unauthenticated `/ops` redirects to `/ops-access`

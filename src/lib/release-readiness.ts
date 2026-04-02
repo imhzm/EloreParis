@@ -6,6 +6,7 @@ import {
 import { getAuthorityStorageInfo } from "@/lib/authority-database";
 import { getHostingDirection } from "@/lib/hosting-direction";
 import { getOpsAccessConfig } from "@/lib/ops-access";
+import { getReleaseRuntimePreflightSnapshot } from "@/lib/release-runtime-preflight";
 import type {
   ReleaseReadinessGate,
   ReleaseReadinessSnapshot,
@@ -52,6 +53,7 @@ export function getReleaseReadinessSnapshot(): ReleaseReadinessSnapshot {
   const contentSummary = getContentGovernanceSummary();
   const hostingDirection = getHostingDirection();
   const opsAccessConfig = getOpsAccessConfig();
+  const runtimePreflight = getReleaseRuntimePreflightSnapshot();
 
   const gates: ReleaseReadinessGate[] = [
     {
@@ -144,8 +146,10 @@ export function getReleaseReadinessSnapshot(): ReleaseReadinessSnapshot {
     runtimeEnvironment: getRuntimeEnvironment(),
     canonicalUrl: siteUrl,
     gates,
+    runtimePreflight,
     nextActions: [
       "Create the primary Render web service from render.yaml, attach the persistent disk, and set the deploy-hook plus live-base-url secrets for the manual Render workflow.",
+      "Use the runtime preflight section inside /ops/release to clear the public URL, persistent path, signing-secret, and protected-identity blockers before the first live deploy claim.",
       "Keep the current SQLite-backed authority only as a single-host launch path; replace it with a shared durable backend for orders, notifications, and audit data when the backend ownership phase starts.",
       "Upgrade the current signed-session ops gate into provider-backed auth and real RBAC.",
       "Clear the remaining sample-pack, legal, and business-input gates tracked in CONTENT-OWNERSHIP.md before public launch claims.",

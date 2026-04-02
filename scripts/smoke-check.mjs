@@ -306,6 +306,7 @@ const protectedOpsChecks = [
     pathname: "/ops/release",
     markers: [
       "Internal release readiness",
+      "Runtime preflight",
       "ops_release_to_health",
       'content="noindex, nofollow"',
     ],
@@ -574,6 +575,16 @@ try {
       (gate) => gate.id === "transactional-backend",
     ),
     "Expected ops release API to include the transactional-backend gate",
+  );
+  assert.ok(
+    opsReleaseBody.releaseReadiness.runtimePreflight,
+    "Expected ops release API to include runtime preflight details",
+  );
+  assert.ok(
+    opsReleaseBody.releaseReadiness.runtimePreflight.checks.some(
+      (check) => check.id === "signing-secrets",
+    ),
+    "Expected ops release API to include the signing-secrets preflight check",
   );
 
   const { response: opsOrdersResponse, body: opsOrdersBody } = await fetchJson(
@@ -849,6 +860,7 @@ try {
     notes: [
       "Generated from the standalone smoke suite before any live deploy claim.",
       `Health authority engine: ${health.authorityStorage.engine}.`,
+      `Release preflight status: ${opsReleaseBody.releaseReadiness.runtimePreflight.overallStatus}.`,
     ],
   };
 

@@ -90,6 +90,16 @@ export function OpsReleaseSurface() {
     [snapshot],
   );
 
+  const preflightMetrics = useMemo(
+    () => ({
+      overallStatus: snapshot?.runtimePreflight.overallStatus ?? "blocked",
+      blockedCount: snapshot?.runtimePreflight.blockedCount ?? 0,
+      warningCount: snapshot?.runtimePreflight.warningCount ?? 0,
+      readyCount: snapshot?.runtimePreflight.readyCount ?? 0,
+    }),
+    [snapshot],
+  );
+
   return (
     <div className={styles.page}>
       <OpsNav activeHref="/ops/release" />
@@ -281,6 +291,72 @@ export function OpsReleaseSurface() {
             </div>
           </article>
         </aside>
+      </section>
+
+      <section className={styles.mainCard}>
+        <p className={styles.sectionTitle}>Runtime preflight</p>
+        <h2>Live runtime contracts before the first real deploy</h2>
+        <p className={styles.summary}>
+          This preflight layer shows whether the current runtime is actually aligned with the
+          frozen release path: public site URL, persistent writable paths, signing-secret quality,
+          and protected internal ops identities.
+        </p>
+
+        <div className={styles.statusSummaryGrid}>
+          <article className={styles.statusSummaryCard}>
+            <p className={styles.sectionTitle}>Preflight status</p>
+            <strong>{isLoading ? "..." : getStatusLabel(preflightMetrics.overallStatus)}</strong>
+            <span>Fast view of the current runtime preflight contract.</span>
+          </article>
+          <article className={styles.statusSummaryCard}>
+            <p className={styles.sectionTitle}>Blocked</p>
+            <strong>{preflightMetrics.blockedCount}</strong>
+            <span>Environment items that still block an honest first live deploy.</span>
+          </article>
+          <article className={styles.statusSummaryCard}>
+            <p className={styles.sectionTitle}>Warnings</p>
+            <strong>{preflightMetrics.warningCount}</strong>
+            <span>Items that work now but still miss the frozen launch contract.</span>
+          </article>
+        </div>
+
+        <div className={styles.ordersGrid}>
+          {isLoading ? (
+            <article className={styles.emptyCard}>
+              <p className={styles.eyebrow}>Preflight</p>
+              <h1>Loading runtime preflight snapshot</h1>
+              <p>Checking the environment contract that governs the first live deploy.</p>
+            </article>
+          ) : snapshot ? (
+            snapshot.runtimePreflight.checks.map((check) => (
+              <article key={check.id} className={styles.lineItem}>
+                <div className={styles.lineHead}>
+                  <div>
+                    <h3>{check.title}</h3>
+                    <p className={styles.lineMeta}>{check.id}</p>
+                  </div>
+                  <div className={styles.linePrice}>{getStatusLabel(check.status)}</div>
+                </div>
+
+                <p>{check.summary}</p>
+
+                <div className={styles.summaryList}>
+                  {check.details.map((detail) => (
+                    <div key={detail} className={styles.infoBullet}>
+                      {detail}
+                    </div>
+                  ))}
+                </div>
+              </article>
+            ))
+          ) : (
+            <article className={styles.emptyCard}>
+              <p className={styles.eyebrow}>Preflight</p>
+              <h1>Runtime preflight snapshot is unavailable</h1>
+              <p>Recheck the current environment values, then reload the protected ops release surface.</p>
+            </article>
+          )}
+        </div>
       </section>
     </div>
   );

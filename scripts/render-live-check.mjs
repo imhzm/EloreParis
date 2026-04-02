@@ -116,6 +116,14 @@ function requireGate(snapshot, gateId) {
   return gate;
 }
 
+function requirePreflightCheck(snapshot, checkId) {
+  const check = snapshot.runtimePreflight?.checks.find(
+    (candidate) => candidate.id === checkId,
+  );
+  assert.ok(check, `Expected runtime preflight check ${checkId} to exist.`);
+  return check;
+}
+
 try {
   const health = await waitForHealth();
   assert.equal(health.status, "ok");
@@ -186,6 +194,22 @@ try {
   const hostingRuntimeGate = requireGate(releaseSnapshot, "hosting-runtime");
   const opsAuthGate = requireGate(releaseSnapshot, "ops-auth");
   const contentApprovalGate = requireGate(releaseSnapshot, "content-approval");
+  const publicSiteUrlPreflight = requirePreflightCheck(
+    releaseSnapshot,
+    "public-site-url",
+  );
+  const persistentPathsPreflight = requirePreflightCheck(
+    releaseSnapshot,
+    "persistent-runtime-paths",
+  );
+  const signingSecretsPreflight = requirePreflightCheck(
+    releaseSnapshot,
+    "signing-secrets",
+  );
+  const opsBootstrapPreflight = requirePreflightCheck(
+    releaseSnapshot,
+    "ops-bootstrap-identities",
+  );
 
   assert.equal(
     hostingDirectionGate.status,
@@ -196,6 +220,26 @@ try {
     hostingRuntimeGate.status,
     "ready",
     "Expected hosting-runtime gate to be ready on the deployed runtime.",
+  );
+  assert.equal(
+    publicSiteUrlPreflight.status,
+    "ready",
+    "Expected public-site-url preflight to be ready on the deployed runtime.",
+  );
+  assert.equal(
+    signingSecretsPreflight.status,
+    "ready",
+    "Expected signing-secrets preflight to be ready on the deployed runtime.",
+  );
+  assert.equal(
+    opsBootstrapPreflight.status,
+    "ready",
+    "Expected ops-bootstrap-identities preflight to be ready on the deployed runtime.",
+  );
+  assert.ok(
+    persistentPathsPreflight.status === "ready" ||
+      persistentPathsPreflight.status === "warning",
+    "Expected persistent-runtime-paths preflight to avoid a blocked state.",
   );
 
   const { response: prePublishEvidenceResponse } = await fetchJson(
@@ -242,7 +286,7 @@ try {
       {
         id: "live-release-gates",
         title: "Hosted release gates on the deployed runtime",
-        count: 2,
+        count: 3,
       },
       {
         id: "live-release-evidence",
@@ -252,6 +296,8 @@ try {
     ],
     notes: [
       `Hosting runtime gate: ${hostingRuntimeGate.status}.`,
+      `Runtime preflight: ${releaseSnapshot.runtimePreflight.overallStatus}.`,
+      `Persistent runtime paths preflight: ${persistentPathsPreflight.status}.`,
       `Ops auth gate: ${opsAuthGate.status}.`,
       `Content approval gate: ${contentApprovalGate.status}.`,
       `Pre-publish evidence status: ${prePublishEvidenceResponse.status}.`,
