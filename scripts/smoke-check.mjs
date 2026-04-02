@@ -275,6 +275,14 @@ const protectedOpsChecks = [
     ],
   },
   {
+    pathname: "/ops/content",
+    markers: [
+      "Internal content governance",
+      "ops_content_to_audit",
+      'content="noindex, nofollow"',
+    ],
+  },
+  {
     pathname: "/ops/fulfillment",
     markers: [
       "Fulfillment routing",
@@ -716,6 +724,21 @@ try {
     forbiddenNotificationsApiBody.error,
     /permission/i,
     "Expected role-aware permission error for notifications API",
+  );
+
+  const catalogContentRedirectResponse = await fetch(`${baseUrl}/ops/content`, {
+    cache: "no-store",
+    headers: {
+      Cookie: catalogCookie,
+    },
+    redirect: "manual",
+  });
+  assert.equal(catalogContentRedirectResponse.status, 307);
+  assert.ok(
+    (catalogContentRedirectResponse.headers.get("location") ?? "").includes(
+      "/ops/catalog",
+    ),
+    "Expected catalog operator to be redirected away from /ops/content",
   );
 
   const throttledIp = "198.51.100.42";

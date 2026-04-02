@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { TrackedLink } from "@/components/tracked-link";
 import { OpsNav } from "@/components/ops-nav";
+import { getContentGovernanceSummary } from "@/lib/content-governance";
 import {
   getOpsDashboardSnapshot,
   getSupplierSyncLogs,
@@ -51,6 +52,7 @@ export function OpsDashboardSurface() {
   }, []);
 
   const snapshot = useMemo(() => getOpsDashboardSnapshot(orders), [orders]);
+  const contentSummary = getContentGovernanceSummary();
   const syncLogs = getSupplierSyncLogs();
 
   return (
@@ -122,6 +124,14 @@ export function OpsDashboardSurface() {
           <p className={styles.sectionTitle}>Repeat customers</p>
           <strong>{snapshot.repeatCustomerCount}</strong>
           <span>عملاء تكرر منهم الشراء داخل البيانات الحالية.</span>
+        </article>
+        <article className={styles.statusSummaryCard}>
+          <p className={styles.sectionTitle}>Content freeze</p>
+          <strong>{contentSummary.launchBlocked}</strong>
+          <span>
+            Public content groups are now owner-mapped, but still blocked from final
+            launch polish until real samples and approved business inputs arrive.
+          </span>
         </article>
       </section>
 
@@ -267,6 +277,15 @@ export function OpsDashboardSurface() {
               >
                 <span>إدارة الكتالوج</span>
                 <span>Stock + SEO + supplier map</span>
+              </TrackedLink>
+              <TrackedLink
+                href="/ops/content"
+                analyticsLabel="ops_dashboard_to_content"
+                analyticsSurface="ops_dashboard_links"
+                analyticsDestinationType="ops_content"
+              >
+                <span>Content governance</span>
+                <span>Owners + sample freeze</span>
               </TrackedLink>
               <TrackedLink
                 href="/ops/fulfillment"

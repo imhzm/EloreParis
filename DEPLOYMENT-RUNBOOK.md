@@ -81,6 +81,7 @@ If `NEXT_PUBLIC_SITE_URL` is absent, the app now falls back in this order:
 11. Confirm `/ops/audit` can read recent login, order-state, notification-state, and throttling traces without losing the shared authority database between requests or process restarts.
 12. Confirm checkout can create an order and tracking can read it back in the chosen environment without losing the authority database between requests or process restarts.
 13. Confirm the homepage, product page, article page, `cart`, and `sitemap.xml` render correctly after deployment.
+14. Confirm public launch approval still matches `CONTENT-OWNERSHIP.md`, including sample-pack and business-input gates.
 
 ## Rollback Path
 
@@ -99,6 +100,7 @@ If `NEXT_PUBLIC_SITE_URL` is absent, the app now falls back in this order:
 - repeated failed ops logins move into throttled responses
 - `/ops/notifications` still loads and preserves queue state after login
 - `/ops/audit` still loads and shows recent traces after login
+- no public route is declared "final copy" while still blocked in `CONTENT-OWNERSHIP.md`
 - product and journal share-preview tags
 - `cart` and `checkout` still marked `noindex, nofollow`
 - smoke-critical routes still load correctly

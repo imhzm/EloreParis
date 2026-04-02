@@ -128,6 +128,10 @@ export function getPageType(pathname: string) {
     return "ops_catalog";
   }
 
+  if (pathname === "/ops/content") {
+    return "ops_content";
+  }
+
   if (pathname === "/ops/fulfillment") {
     return "ops_fulfillment";
   }
