@@ -7,7 +7,8 @@ import {
   getOpsDashboardSnapshot,
   getSupplierSyncLogs,
 } from "@/lib/ops-catalog";
-import { ORDER_STORAGE_KEY, sanitizeStoredOrders, type StoredOrder } from "@/lib/orders";
+import { fetchOpsOrdersFromAuthority } from "@/lib/order-authority-client";
+import { type StoredOrder } from "@/lib/orders";
 import styles from "./order-flow.module.css";
 
 function formatCurrency(value: number) {
@@ -27,20 +28,26 @@ function formatTimestamp(value: string) {
 
 export function OpsDashboardSurface() {
   const [orders, setOrders] = useState<StoredOrder[]>([]);
-  const [isHydrated, setIsHydrated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    try {
-      const rawOrders = window.localStorage.getItem(ORDER_STORAGE_KEY);
-      const parsedOrders = rawOrders ? JSON.parse(rawOrders) : [];
-      setOrders(sanitizeStoredOrders(parsedOrders));
-    } catch {
-      setOrders([]);
-      setError("تعذر تحميل الطلبات المحلية لبناء الـ dashboard التشغيلية.");
-    } finally {
-      setIsHydrated(true);
-    }
+    void fetchOpsOrdersFromAuthority()
+      .then((nextOrders) => {
+        setOrders(nextOrders);
+        setError(null);
+      })
+      .catch((loadError: unknown) => {
+        setOrders([]);
+        setError(
+          loadError instanceof Error
+            ? loadError.message
+            : "تعذر تحميل الطلبات لبناء dashboard التشغيلية.",
+        );
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   }, []);
 
   const snapshot = useMemo(() => getOpsDashboardSnapshot(orders), [orders]);
@@ -55,30 +62,31 @@ export function OpsDashboardSurface() {
           <p className={styles.eyebrow}>Internal ops dashboard</p>
           <h1>غرفة قيادة تشغيلية تمهّد الـ admin الحقيقي بدل تركه قرارًا مؤجلًا.</h1>
           <p className={styles.summary}>
-            هذه الصفحة تحول الطبقة المحلية الحالية إلى dashboard قابلة للاستخدام:
+            هذه الصفحة تحول طبقة الطلبات الحالية إلى dashboard قابلة للاستخدام:
             مبيعات، طلبات معلقة، مدن أعلى طلبًا، low stock، واستثناءات الموردين،
-            حتى يكون قرار الـ backend وownership التشغيلي مبنيًا على surface واضحة.
+            حتى يكون قرار الـ backend وownership التشغيلي مبنيًا على surface
+            واضحة.
           </p>
         </div>
 
         <div className={styles.heroAside}>
           <div className={styles.metricCard}>
             <p>Current scope</p>
-            <strong>{isHydrated ? snapshot.orderCount : "..."}</strong>
+            <strong>{isLoading ? "..." : snapshot.orderCount}</strong>
             <span>
-              {isHydrated
-                ? `طلبات محلية عبر ${snapshot.catalogCoverage.stockedProducts} منتجات نشطة و${snapshot.catalogCoverage.variants} variants تشغيلية.`
-                : "جارٍ تحميل الطلبات والبيانات التشغيلية المحلية."}
+              {isLoading
+                ? "جاري تحميل الطلبات والبيانات التشغيلية."
+                : `طلبات من authority داخلية عبر ${snapshot.catalogCoverage.stockedProducts} منتجات نشطة و${snapshot.catalogCoverage.variants} variants تشغيلية.`}
             </span>
           </div>
 
           <div className={styles.noticeCard}>
             <p className={styles.eyebrow}>Boundary note</p>
-            <h2>Dashboard داخلية + noindex + gate في الإنتاج</h2>
+            <h2>Dashboard داخلية + noindex + gate</h2>
             <p>
               هذه طبقة تشغيلية rehearsal وليست backoffice production. الهدف هنا
-              تثبيت الشكل والمنطق والـ KPIs قبل ربط auth/accounts وbackend orders والموردين
-              الفعليين، مع بقاء `/ops` محمية افتراضيًا عند التهيئة الإنتاجية.
+              تثبيت الشكل والمنطق والـ KPIs قبل ربط auth/accounts وbackend orders
+              والموردين الفعليين.
             </p>
           </div>
         </div>
@@ -88,17 +96,17 @@ export function OpsDashboardSurface() {
         <article className={styles.statusSummaryCard}>
           <p className={styles.sectionTitle}>مبيعات اليوم</p>
           <strong>{formatCurrency(snapshot.todaySales)}</strong>
-          <span>إجمالي الطلبات المسجلة اليوم داخل هذا المتصفح.</span>
+          <span>إجمالي الطلبات المسجلة اليوم داخل authority الحالية.</span>
         </article>
         <article className={styles.statusSummaryCard}>
           <p className={styles.sectionTitle}>مبيعات الشهر</p>
           <strong>{formatCurrency(snapshot.monthSales)}</strong>
-          <span>المجموع الشهري الحالي من الطلبات المحلية.</span>
+          <span>المجموع الشهري الحالي من الطلبات المتاحة.</span>
         </article>
         <article className={styles.statusSummaryCard}>
           <p className={styles.sectionTitle}>متوسط السلة</p>
           <strong>{formatCurrency(snapshot.averageOrderValue)}</strong>
-          <span>AOV محسوب من الطلبات الحالية فقط.</span>
+          <span>AOV محسوب من authority الحالية فقط.</span>
         </article>
         <article className={styles.statusSummaryCard}>
           <p className={styles.sectionTitle}>الطلبات المعلقة</p>
@@ -108,12 +116,12 @@ export function OpsDashboardSurface() {
         <article className={styles.statusSummaryCard}>
           <p className={styles.sectionTitle}>المنتجات منخفضة المخزون</p>
           <strong>{snapshot.lowStockCount}</strong>
-          <span>variants دون أو عند حد low stock الحالي.</span>
+          <span>variants عند أو دون حد low stock الحالي.</span>
         </article>
         <article className={styles.statusSummaryCard}>
           <p className={styles.sectionTitle}>Repeat customers</p>
           <strong>{snapshot.repeatCustomerCount}</strong>
-          <span>عملاء تكرر منهم الشراء داخل البيانات المحلية الحالية.</span>
+          <span>عملاء تكرر منهم الشراء داخل البيانات الحالية.</span>
         </article>
       </section>
 
@@ -129,9 +137,7 @@ export function OpsDashboardSurface() {
                     <div className={styles.lineHead}>
                       <div>
                         <h3>{product.name}</h3>
-                        <p className={styles.lineMeta}>
-                          {product.collectionTitle}
-                        </p>
+                        <p className={styles.lineMeta}>{product.collectionTitle}</p>
                       </div>
                       <div className={styles.linePrice}>{product.quantity} قطعة</div>
                     </div>
@@ -145,7 +151,7 @@ export function OpsDashboardSurface() {
                 <article className={styles.emptyCard}>
                   <p className={styles.eyebrow}>Sales</p>
                   <h1>لا توجد طلبات كافية بعد</h1>
-                  <p>ستظهر المنتجات الأعلى بيعًا هنا بمجرد وجود طلبات محلية فعلية.</p>
+                  <p>ستظهر المنتجات الأعلى بيعًا هنا بمجرد تراكم الطلبات داخل authority الحالية.</p>
                 </article>
               )}
             </div>
@@ -166,7 +172,7 @@ export function OpsDashboardSurface() {
                       </div>
                     ))
                   ) : (
-                    <p className={styles.helperText}>ستظهر خريطة المدن هنا بعد أولى الطلبات المحلية.</p>
+                    <p className={styles.helperText}>ستظهر خريطة المدن هنا بعد أولى الطلبات الفعلية.</p>
                   )}
                 </div>
               </div>
@@ -182,7 +188,7 @@ export function OpsDashboardSurface() {
                       </div>
                     ))
                   ) : (
-                    <p className={styles.helperText}>أفضل الفئات ستظهر عندما تتراكم بيانات طلبات فعلية.</p>
+                    <p className={styles.helperText}>أفضل الفئات ستظهر عندما تتراكم بيانات الطلبات.</p>
                   )}
                 </div>
               </div>

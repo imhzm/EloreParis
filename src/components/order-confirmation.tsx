@@ -3,13 +3,12 @@
 import { useEffect, useState } from "react";
 import { TrackedLink } from "@/components/tracked-link";
 import { getOrderFulfillmentPlan } from "@/lib/fulfillment";
+import { fetchRecentOrderFromAuthority } from "@/lib/order-authority-client";
 import {
   getOrderTimeline,
   getPaymentMethodById,
   getPhoneLastFour,
   getShippingMethodById,
-  ORDER_STORAGE_KEY,
-  sanitizeStoredOrders,
   type StoredOrder,
 } from "@/lib/orders";
 import { footerPolicyLinks } from "@/lib/site-content";
@@ -20,34 +19,35 @@ type OrderConfirmationProps = {
 };
 
 export function OrderConfirmation({ orderNumber }: OrderConfirmationProps) {
+  const hasOrderReference = orderNumber.trim().length > 0;
   const [order, setOrder] = useState<StoredOrder | null>(null);
-  const [isHydrated, setIsHydrated] = useState(false);
+  const [isLoading, setIsLoading] = useState(hasOrderReference);
 
   useEffect(() => {
-    try {
-      const rawOrders = window.localStorage.getItem(ORDER_STORAGE_KEY);
-      const parsedOrders = rawOrders ? JSON.parse(rawOrders) : [];
-      const orders = sanitizeStoredOrders(parsedOrders);
-
-      setOrder(
-        orders.find(
-          (candidate) => candidate.orderNumber === orderNumber.trim().toUpperCase(),
-        ) ?? null,
-      );
-    } catch {
-      setOrder(null);
-    } finally {
-      setIsHydrated(true);
+    if (!hasOrderReference) {
+      return;
     }
-  }, [orderNumber]);
 
-  if (!isHydrated) {
+    void fetchRecentOrderFromAuthority(orderNumber)
+      .then(({ order: matchedOrder }) => {
+        setOrder(matchedOrder);
+      })
+      .catch(() => {
+        setOrder(null);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, [hasOrderReference, orderNumber]);
+
+  if (isLoading) {
     return (
       <section className={styles.emptyCard}>
         <p className={styles.eyebrow}>Order confirmation</p>
         <h1>جاري استعادة مرجع الطلب</h1>
         <p>
-          يتم الآن تحميل الطلب المحفوظ محليًا على هذا المتصفح حتى تظهر صفحة التأكيد.
+          يتم الآن تحميل الطلب من authority الحالية للتطبيق حتى تظهر صفحة
+          التأكيد.
         </p>
       </section>
     );
@@ -57,10 +57,11 @@ export function OrderConfirmation({ orderNumber }: OrderConfirmationProps) {
     return (
       <section className={styles.emptyCard}>
         <p className={styles.eyebrow}>Order confirmation</p>
-        <h1>لم يتم العثور على الطلب على هذا المتصفح</h1>
+        <h1>لم يتم العثور على الطلب داخل authority الحالية</h1>
         <p>
-          قد يكون الرابط فُتح من جهاز آخر أو بعد مسح التخزين المحلي. يمكنك متابعة
-          الرحلة عبر صفحة تتبع الطلب أو إنشاء طلب جديد.
+          قد يكون رابط التأكيد فُتح خارج نفس جلسة الطلب، أو بعد انتهاء صلاحية
+          الوصول القصير الخاص بصفحة التأكيد. يمكنك متابعة الرحلة عبر صفحة تتبع
+          الطلب أو إنشاء طلب جديد.
         </p>
         <div className={styles.actionColumn}>
           <TrackedLink
@@ -97,11 +98,12 @@ export function OrderConfirmation({ orderNumber }: OrderConfirmationProps) {
     <div className={styles.page}>
       <section className={styles.hero}>
         <div>
-          <p className={styles.eyebrow}>Order confirmed locally</p>
+          <p className={styles.eyebrow}>Order confirmed in app authority</p>
           <h1>تم تثبيت الطلب وإنشاء مرجع متابعة أوضح</h1>
           <p className={styles.summary}>
-            تم حفظ الطلب محليًا على هذا المتصفح كخطوة تأسيسية قابلة للربط. المرجع
-            التالي هو ما سيُستخدم لاحقًا في التتبع وربط الإشعارات والتشغيل الداخلي.
+            تم تسجيل الطلب داخل authority الحالية للتطبيق بدل بقائه مربوطًا
+            بالمتصفح فقط. المرجع التالي هو ما سيُستخدم لاحقًا في التتبع وربط
+            الإشعارات والتشغيل الداخلي.
           </p>
         </div>
 
@@ -206,7 +208,8 @@ export function OrderConfirmation({ orderNumber }: OrderConfirmationProps) {
             </div>
           ) : (
             <div className={styles.inlineNotice}>
-              مسار التنفيذ الحالي لا يحتاج مراجعة يدوية إضافية داخل النموذج المحلي.
+              مسار التنفيذ الحالي لا يحتاج مراجعة يدوية إضافية داخل authority
+              الحالية.
             </div>
           )}
 

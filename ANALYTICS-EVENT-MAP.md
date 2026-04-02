@@ -12,9 +12,9 @@ This project now tracks the minimum event set needed to answer early-stage store
 4. Which collection filter states narrow browsing most effectively before the user moves into product, routine, or concern detail?
 5. Which product selections and cart changes actually move users from product detail into checkout review?
 6. Which shipping and payment choices stay eligible at checkout after city and cart rules are applied?
-7. Which checkout handoff choices convert cart intent into a saved order reference, and how often do users return to track that order?
-8. How often does the internal operations layer advance local order states before a real backoffice is selected?
-9. Which locally saved orders require manual review, split-shipment coordination, or COD fallback inside the rehearsal layer?
+7. Which checkout handoff choices convert cart intent into an authority-backed order reference, and how often do users return to track that order?
+8. How often does the internal operations layer advance centralized rehearsal order states before a real backoffice is selected?
+9. Which in-app authority orders require manual review, split-shipment coordination, or COD fallback inside the rehearsal layer?
 10. Are protected internal ops surfaces still reachable and reviewable after the access gate is enabled?
 
 ## Event Set
@@ -170,8 +170,8 @@ Tracked properties:
 
 ### `checkout_complete`
 
-- Fires when a user submits the checkout handoff form and a local order reference is created.
-- Answers whether the current pre-integration checkout is converting cart intent into a saved order state.
+- Fires when a user submits the checkout handoff form and an in-app order reference is created.
+- Answers whether the current pre-integration checkout is converting cart intent into a centralized saved order state.
 
 Tracked properties:
 
@@ -203,7 +203,7 @@ Tracked properties:
 
 ### `ops_order_status_update`
 
-- Fires when the internal `/ops/orders` surface advances a locally stored order from one status to the next valid state.
+- Fires when the internal `/ops/orders` surface advances a centrally stored rehearsal order from one status to the next valid state.
 - Answers whether the current rehearsal layer is sufficient to test order-state transitions before a real admin/backend exists.
 
 Tracked properties:

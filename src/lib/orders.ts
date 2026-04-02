@@ -1,7 +1,5 @@
 import type { ResolvedCartLine } from "@/lib/cart";
 
-export const ORDER_STORAGE_KEY = "cozmateks-orders";
-
 export type ShippingMethodId = "standard" | "express";
 export type PaymentMethodId = "payment_link" | "cash_on_delivery";
 export type OrderStatus =

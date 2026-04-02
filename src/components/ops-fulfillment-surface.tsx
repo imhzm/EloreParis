@@ -4,11 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { OpsNav } from "@/components/ops-nav";
 import { TrackedLink } from "@/components/tracked-link";
 import { getOrderFulfillmentPlan } from "@/lib/fulfillment";
-import {
-  ORDER_STORAGE_KEY,
-  sanitizeStoredOrders,
-  type StoredOrder,
-} from "@/lib/orders";
+import { fetchOpsOrdersFromAuthority } from "@/lib/order-authority-client";
+import { type StoredOrder } from "@/lib/orders";
 import styles from "./order-flow.module.css";
 
 type FulfillmentFilter =
@@ -58,22 +55,28 @@ function getFilterLabel(filter: FulfillmentFilter) {
 
 export function OpsFulfillmentSurface() {
   const [orders, setOrders] = useState<StoredOrder[]>([]);
-  const [isHydrated, setIsHydrated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<FulfillmentFilter>("all");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    try {
-      const rawOrders = window.localStorage.getItem(ORDER_STORAGE_KEY);
-      const parsedOrders = rawOrders ? JSON.parse(rawOrders) : [];
-      setOrders(sanitizeStoredOrders(parsedOrders));
-    } catch {
-      setOrders([]);
-      setError("تعذر تحميل بيانات الطلبات المحلية لبناء لوحة fulfillment.");
-    } finally {
-      setIsHydrated(true);
-    }
+    void fetchOpsOrdersFromAuthority()
+      .then((nextOrders) => {
+        setOrders(nextOrders);
+        setError(null);
+      })
+      .catch((loadError: unknown) => {
+        setOrders([]);
+        setError(
+          loadError instanceof Error
+            ? loadError.message
+            : "تعذر تحميل بيانات الطلبات لبناء لوحة fulfillment.",
+        );
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   }, []);
 
   const fulfillmentOrders = useMemo(
@@ -198,29 +201,30 @@ export function OpsFulfillmentSurface() {
       <section className={styles.hero}>
         <div>
           <p className={styles.eyebrow}>Fulfillment routing</p>
-          <h1>لوحة داخلية توضح كيف سيتحرك كل طلب بين الشحن والدفع والموردين.</h1>
+          <h1>لوحة داخلية توضّح كيف يتحرك كل طلب بين الشحن والدفع والموردين.</h1>
           <p className={styles.summary}>
-            هذه الصفحة تغلق الفجوة بين checkout والـ ops: أهلية COD، split shipment،
-            carrier المقترح، الإشعارات التشغيلية، والأسباب التي تفرض manual review.
+            هذه الصفحة تغلق الفجوة بين checkout وops: أهلية COD، split shipment،
+            carrier المقترح، الإشعارات التشغيلية، والأسباب التي تفرض manual
+            review.
           </p>
         </div>
 
         <div className={styles.heroAside}>
           <div className={styles.metricCard}>
             <p>Fulfillment orders</p>
-            <strong>{isHydrated ? fulfillmentOrders.length : "..."}</strong>
+            <strong>{isLoading ? "..." : fulfillmentOrders.length}</strong>
             <span>
-              قراءة تشغيلية للطلبات المحلية الحالية عبر routing وnotifications بدل status
+              قراءة تشغيلية للطلبات الحالية عبر routing وnotifications بدل status
               واحدة فقط.
             </span>
           </div>
 
           <div className={styles.noticeCard}>
             <p className={styles.eyebrow}>Scope</p>
-            <h2>Routing محلية + noindex + gate في الإنتاج</h2>
+            <h2>routing من authority الداخلية الحالية</h2>
             <p>
-              هذه surface داخلية للتجربة التشغيلية فقط، وليست backoffice production أو
-              order orchestration فعلية، لكنها لم تعد surface مفتوحة في النشر الإنتاجي.
+              هذه surface داخلية للتجربة التشغيلية، وليست order orchestration
+              production بعد، لكنها لم تعد معزولة داخل متصفح واحد.
             </p>
           </div>
         </div>
@@ -259,8 +263,8 @@ export function OpsFulfillmentSurface() {
           <p className={styles.sectionTitle}>Routing queue</p>
           <h2>الطلبات بحسب قرار fulfillment</h2>
           <p>
-            استخدمي البحث والفلاتر لعزل الطلبات التي تحتاج manual review أو تلك التي
-            أصبحت جاهزة لمسار سريع.
+            استخدمي البحث والفلاتر لعزل الطلبات التي تحتاج manual review أو تلك
+            التي أصبحت جاهزة لمسار سريع.
           </p>
 
           <div className={styles.filterBar}>
@@ -298,11 +302,11 @@ export function OpsFulfillmentSurface() {
           {error ? <div className={styles.inlineError}>{error}</div> : null}
 
           <div className={styles.ordersGrid}>
-            {!isHydrated ? (
+            {isLoading ? (
               <article className={styles.emptyCard}>
                 <p className={styles.eyebrow}>Fulfillment</p>
                 <h1>جاري تحميل قرارات التشغيل الحالية</h1>
-                <p>يتم الآن استعادة الطلبات المحلية وتحويلها إلى queue تشغيلية قابلة للمراجعة.</p>
+                <p>يتم الآن استعادة الطلبات من authority الحالية وتحويلها إلى queue قابلة للمراجعة.</p>
               </article>
             ) : filteredOrders.length ? (
               filteredOrders.map(({ order, plan }) => (
@@ -397,7 +401,7 @@ export function OpsFulfillmentSurface() {
                 <p className={styles.eyebrow}>No matches</p>
                 <h1>لا توجد طلبات تطابق الفلتر الحالي</h1>
                 <p>
-                  غيّر الفلتر أو نص البحث، أو ابدأ أول checkout محلي حتى تظهر queue
+                  غيّري الفلتر أو نص البحث، أو ابدئي أول checkout حتى تظهر queue
                   fulfillment الكاملة.
                 </p>
               </article>

@@ -1,18 +1,20 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useState } from "react";
 import { useCart } from "@/components/cart-provider";
 import { TrackedLink } from "@/components/tracked-link";
 import { getPageType, trackAnalyticsEvent } from "@/lib/analytics";
-import { getCheckoutRules, type CheckoutRules } from "@/lib/fulfillment";
 import {
-  createStoredOrder,
+  type CheckoutSubmissionInput,
+  validateCheckoutSubmission,
+} from "@/lib/checkout-validation";
+import { getCheckoutRules } from "@/lib/fulfillment";
+import { createOrderThroughAuthority } from "@/lib/order-authority-client";
+import {
   getPaymentMethodById,
   getShippingMethodById,
-  ORDER_STORAGE_KEY,
   paymentMethods,
-  sanitizeStoredOrders,
   shippingMethods,
   type CheckoutCustomerDetails,
   type PaymentMethodId,
@@ -42,69 +44,13 @@ const initialFormState: CheckoutFormState = {
   acceptUpdates: false,
 };
 
-function validateCheckoutForm(
-  formState: CheckoutFormState,
-  checkoutRules: CheckoutRules,
-) {
-  const normalizedPhone = formState.phone.replace(/\D/g, "");
-
-  if (formState.fullName.trim().length < 4) {
-    return "يرجى إدخال اسم واضح حتى يمكن ربط الطلب بمرجع قابل للمتابعة.";
-  }
-
-  if (normalizedPhone.length < 9) {
-    return "رقم الجوال مطلوب بصيغة قابلة للتواصل وتتبع الحالة.";
-  }
-
-  if (formState.city.trim().length < 2 || formState.district.trim().length < 2) {
-    return "يرجى تحديد المدينة والحي حتى تصبح نافذة الشحن مفهومة من البداية.";
-  }
-
-  if (formState.addressLine.trim().length < 8) {
-    return "أضيفي عنوانًا أدق حتى تكون خطوة الطلب قابلة للتحويل إلى تشغيل فعلي لاحقًا.";
-  }
-
-  if (
-    formState.email.trim().length > 0 &&
-    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formState.email.trim())
-  ) {
-    return "البريد الإلكتروني المدخل لا يبدو صالحًا.";
-  }
-
-  if (!formState.acceptPolicies) {
-    return "يلزم تأكيد مراجعة سياسات الشحن والخصوصية والاسترجاع قبل تثبيت الطلب.";
-  }
-
-  const selectedShipping = checkoutRules.shippingOptions.find(
-    (option) => option.id === formState.shippingMethodId,
-  );
-  if (!selectedShipping?.enabled) {
-    return (
-      selectedShipping?.reason ??
-      "خيار الشحن المختار غير متاح للمدينة أو لطبيعة عناصر السلة الحالية."
-    );
-  }
-
-  const selectedPayment = checkoutRules.paymentOptions.find(
-    (option) => option.id === formState.paymentMethodId,
-  );
-  if (!selectedPayment?.enabled) {
-    return (
-      selectedPayment?.reason ??
-      "طريقة الدفع المختارة غير متاحة وفق قواعد التشغيل الحالية للطلب."
-    );
-  }
-
-  return null;
-}
-
 export function CheckoutReview() {
   const pathname = usePathname() ?? "/checkout";
   const router = useRouter();
-  const [isSubmitting, startTransition] = useTransition();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formState, setFormState] = useState(initialFormState);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
-  const { cartCount, clearCart, isHydrated, lines, subtotal } = useCart();
+  const { cartCount, clearCart, isHydrated, items, lines, subtotal } = useCart();
 
   const checkoutRules = useMemo(
     () => getCheckoutRules(lines, formState.city, subtotal),
@@ -188,7 +134,8 @@ export function CheckoutReview() {
         <p className={styles.eyebrow}>Checkout</p>
         <h1>جاري تحميل خطوة تثبيت الطلب</h1>
         <p>
-          يتم الآن استعادة السلة حتى تظهر تفاصيل الطلب ونموذج التسليم بالشكل الصحيح.
+          يتم الآن استعادة السلة حتى تظهر تفاصيل الطلب ونموذج التسليم بالشكل
+          الصحيح.
         </p>
       </section>
     );
@@ -200,8 +147,8 @@ export function CheckoutReview() {
         <p className={styles.eyebrow}>Checkout</p>
         <h1>لا يمكن تثبيت الطلب بدون عناصر في السلة</h1>
         <p>
-          أصبحت هذه الخطوة الآن مسؤولة عن جمع بيانات الطلب وتوليد مرجع قابل للتتبع،
-          لذلك يجب أن تبدأ من سلة تحتوي عناصر فعلية.
+          أصبحت هذه الخطوة الآن مسؤولة عن جمع بيانات الطلب وتوليد مرجع قابل
+          للتتبع، لذلك يجب أن تبدأ من سلة تحتوي عناصر فعلية.
         </p>
         <div className={styles.actionColumn}>
           <TrackedLink
@@ -234,8 +181,9 @@ export function CheckoutReview() {
       ...formState,
       shippingMethodId: effectiveShippingMethodId,
       paymentMethodId: effectivePaymentMethodId,
-    };
-    const validationError = validateCheckoutForm(
+    } satisfies CheckoutSubmissionInput;
+
+    const validationError = validateCheckoutSubmission(
       effectiveFormState,
       checkoutRules,
     );
@@ -245,56 +193,44 @@ export function CheckoutReview() {
       return;
     }
 
-    try {
-      const rawOrders = window.localStorage.getItem(ORDER_STORAGE_KEY);
-      const parsedOrders = rawOrders ? JSON.parse(rawOrders) : [];
-      const existingOrders = sanitizeStoredOrders(parsedOrders);
-      const order = createStoredOrder({
-        lines,
-        customer: {
-          fullName: effectiveFormState.fullName,
-          phone: effectiveFormState.phone,
-          email: effectiveFormState.email,
-          city: effectiveFormState.city,
-          district: effectiveFormState.district,
-          addressLine: effectiveFormState.addressLine,
-          notes: effectiveFormState.notes,
-        },
-        shippingMethodId: effectiveFormState.shippingMethodId,
-        paymentMethodId: effectiveFormState.paymentMethodId,
-        allowOperationalUpdates: effectiveFormState.acceptUpdates,
+    setIsSubmitting(true);
+    setSubmissionError(null);
+
+    void createOrderThroughAuthority({
+      items,
+      checkout: effectiveFormState,
+    })
+      .then(({ order }) => {
+        clearCart();
+
+        trackAnalyticsEvent("checkout_complete", {
+          source_path: pathname,
+          source_page_type: getPageType(pathname),
+          order_reference: order.orderNumber,
+          cart_count: cartCount,
+          subtotal: order.subtotal,
+          shipping_method: order.shippingMethodId,
+          payment_method: order.paymentMethodId,
+          total_estimate: order.totalEstimate,
+          delivery_zone: checkoutRules.deliveryZoneId,
+          cod_eligible: checkoutRules.codEligible,
+          express_eligible: checkoutRules.expressEligible,
+        });
+
+        router.push(
+          `/checkout/success?order=${encodeURIComponent(order.orderNumber)}`,
+        );
+      })
+      .catch((error: unknown) => {
+        setSubmissionError(
+          error instanceof Error
+            ? error.message
+            : "تعذر إنشاء الطلب داخل authority الحالية للتطبيق.",
+        );
+      })
+      .finally(() => {
+        setIsSubmitting(false);
       });
-
-      window.localStorage.setItem(
-        ORDER_STORAGE_KEY,
-        JSON.stringify([order, ...existingOrders]),
-      );
-
-      clearCart();
-      setSubmissionError(null);
-
-      trackAnalyticsEvent("checkout_complete", {
-        source_path: pathname,
-        source_page_type: getPageType(pathname),
-        order_reference: order.orderNumber,
-        cart_count: cartCount,
-        subtotal: order.subtotal,
-        shipping_method: order.shippingMethodId,
-        payment_method: order.paymentMethodId,
-        total_estimate: order.totalEstimate,
-        delivery_zone: checkoutRules.deliveryZoneId,
-        cod_eligible: checkoutRules.codEligible,
-        express_eligible: checkoutRules.expressEligible,
-      });
-
-      startTransition(() => {
-        router.push(`/checkout/success?order=${encodeURIComponent(order.orderNumber)}`);
-      });
-    } catch {
-      setSubmissionError(
-        "تعذر حفظ الطلب على هذا المتصفح. راجعي إعدادات التخزين المحلي ثم أعيدي المحاولة.",
-      );
-    }
   };
 
   return (
@@ -304,8 +240,8 @@ export function CheckoutReview() {
           <p className={styles.eyebrow}>Checkout handoff</p>
           <h1>ثبّتي الطلب بمرجع واضح وخطوة تشغيل قابلة للمتابعة</h1>
           <p className={styles.summary}>
-            هذه الخطوة لم تعد مراجعة ساكنة. الآن هي handoff حقيقي يطبّق قواعد المدينة
-            والشحن والدفع على عناصر السلة الحالية قبل إنشاء مرجع الطلب.
+            هذه الخطوة لم تعد مراجعة ساكنة. الآن هي handoff حقيقي يطبّق قواعد
+            المدينة والشحن والدفع على عناصر السلة الحالية قبل إنشاء مرجع الطلب.
           </p>
         </div>
 
@@ -314,8 +250,8 @@ export function CheckoutReview() {
             <p>إجمالي العناصر</p>
             <strong>{cartCount}</strong>
             <span>
-              يتم استخدام عناصر السلة الحالية لبناء قرار تشغيلي أوضح: نافذة خدمة، أهلية
-              COD، وحدود fulfillment قبل تثبيت المرجع.
+              يتم استخدام عناصر السلة الحالية لبناء قرار تشغيلي أوضح: نافذة خدمة،
+              أهلية COD، وحدود fulfillment قبل تثبيت المرجع.
             </span>
           </div>
 
@@ -336,8 +272,8 @@ export function CheckoutReview() {
           <p className={styles.sectionTitle}>Order details</p>
           <h2>بيانات الطلب والتسليم</h2>
           <p>
-            الهدف هنا هو جمع الحد الأدنى الصحيح لتحويل قرار الشراء إلى طلب يمكن تأكيده
-            وتتبع حالته لاحقًا دون طلب بيانات غير لازمة.
+            الهدف هنا هو جمع الحد الأدنى الصحيح لتحويل قرار الشراء إلى طلب يمكن
+            تأكيده وتتبع حالته لاحقًا دون طلب بيانات غير لازمة.
           </p>
 
           <div className={styles.lineList}>
@@ -355,7 +291,11 @@ export function CheckoutReview() {
                   <span>{line.variant.size}</span>
                   <span>الكمية: {line.quantity}</span>
                   <span>{line.product.shippingNote}</span>
-                  <span>{line.variant.availability === "PreOrder" ? "PreOrder" : "InStock"}</span>
+                  <span>
+                    {line.variant.availability === "PreOrder"
+                      ? "PreOrder"
+                      : "InStock"}
+                  </span>
                 </div>
               </article>
             ))}
@@ -537,8 +477,9 @@ export function CheckoutReview() {
                   }
                 />
                 <span>
-                  راجعت سياسات الشحن والخصوصية والاسترجاع وأفهم أن هذه النسخة التأسيسية
-                  تحفظ الطلب محليًا على هذا المتصفح.
+                  راجعت سياسات الشحن والخصوصية والاسترجاع وأفهم أن هذه النسخة
+                  التأسيسية تحفظ الطلب داخل authority التطبيق الحالية قبل ربط
+                  نظام طلبات خارجي.
                 </span>
               </span>
             </label>
@@ -553,19 +494,18 @@ export function CheckoutReview() {
                   }
                 />
                 <span>
-                  أوافق على استخدام بيانات التواصل لإرسال تحديثات تشغيلية تخص الطلب فقط.
+                  أوافق على استخدام بيانات التواصل لإرسال تحديثات تشغيلية تخص
+                  الطلب فقط.
                 </span>
               </span>
             </label>
           </div>
 
           <div className={styles.inlineNotice}>
-            منطقة الخدمة الحالية: <strong>{checkoutRules.deliveryZoneLabel}</strong>.
-            {" "}
+            منطقة الخدمة الحالية: <strong>{checkoutRules.deliveryZoneLabel}</strong>.{" "}
             {checkoutRules.expressEligible
               ? "الشحن السريع متاح."
-              : "الشحن السريع غير متاح حاليًا."}
-            {" "}
+              : "الشحن السريع غير متاح حاليًا."}{" "}
             {checkoutRules.codEligible
               ? "الدفع عند الاستلام متاح."
               : "الدفع عند الاستلام غير متاح لهذا الطلب الآن."}
@@ -619,11 +559,15 @@ export function CheckoutReview() {
             </div>
             <div className={styles.summaryRow}>
               <span>منطقة الخدمة</span>
-              <strong className={styles.summaryValue}>{checkoutRules.deliveryZoneLabel}</strong>
+              <strong className={styles.summaryValue}>
+                {checkoutRules.deliveryZoneLabel}
+              </strong>
             </div>
             <div className={styles.summaryRow}>
               <span>نافذة التسليم</span>
-              <strong className={styles.summaryValue}>{selectedShipping.deliveryWindow}</strong>
+              <strong className={styles.summaryValue}>
+                {selectedShipping.deliveryWindow}
+              </strong>
             </div>
             <div className={styles.summaryRow}>
               <span>آلية الدفع</span>
@@ -632,8 +576,8 @@ export function CheckoutReview() {
           </div>
 
           <div className={styles.inlineNotice}>
-            سيتم إنشاء مرجع الطلب على هذا المتصفح فقط في هذه المرحلة، لكن القرار
-            التشغيلي الحالي أصبح أوضح بخصوص COD والشحن السريع وحدود المدينة.
+            سيتم إنشاء مرجع الطلب داخل authority التطبيق الحالية، بينما تظل
+            database أو منصة الطلبات النهائية مؤجلة إلى phase التشغيل التالية.
           </div>
 
           <div className={styles.linkList}>

@@ -1,16 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { TrackedLink } from "@/components/tracked-link";
 import { getPageType, trackAnalyticsEvent } from "@/lib/analytics";
 import { getOrderFulfillmentPlan } from "@/lib/fulfillment";
+import { fetchTrackedOrderFromAuthority } from "@/lib/order-authority-client";
 import {
-  findStoredOrder,
   getOrderTimeline,
   getPaymentMethodById,
   getShippingMethodById,
-  ORDER_STORAGE_KEY,
-  sanitizeStoredOrders,
   type StoredOrder,
 } from "@/lib/orders";
 import { footerPolicyLinks } from "@/lib/site-content";
@@ -25,22 +23,9 @@ export function TrackOrderSurface({
 }: TrackOrderSurfaceProps) {
   const [orderNumber, setOrderNumber] = useState(initialOrderNumber);
   const [phoneLastFour, setPhoneLastFour] = useState("");
-  const [orders, setOrders] = useState<StoredOrder[]>([]);
   const [match, setMatch] = useState<StoredOrder | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [isHydrated, setIsHydrated] = useState(false);
-
-  useEffect(() => {
-    try {
-      const rawOrders = window.localStorage.getItem(ORDER_STORAGE_KEY);
-      const parsedOrders = rawOrders ? JSON.parse(rawOrders) : [];
-      setOrders(sanitizeStoredOrders(parsedOrders));
-    } catch {
-      setOrders([]);
-    } finally {
-      setIsHydrated(true);
-    }
-  }, []);
+  const [isSearching, setIsSearching] = useState(false);
 
   const handleLookup = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -54,23 +39,42 @@ export function TrackOrderSurface({
       return;
     }
 
-    const order = findStoredOrder(orders, normalizedOrder, normalizedLastFour);
+    setIsSearching(true);
+    setError(null);
 
-    setMatch(order);
-    setError(
-      order
-        ? null
-        : "لم يتم العثور على طلب مطابق لهذه البيانات على هذا المتصفح.",
-    );
+    void fetchTrackedOrderFromAuthority(normalizedOrder, normalizedLastFour)
+      .then(({ order }) => {
+        setMatch(order);
 
-    trackAnalyticsEvent("track_order_lookup", {
-      source_path: "/track-order",
-      source_page_type: getPageType("/track-order"),
-      has_reference: Boolean(normalizedOrder),
-      has_phone_last4: normalizedLastFour.length === 4,
-      lookup_found: Boolean(order),
-      order_status: order?.status ?? "not_found",
-    });
+        trackAnalyticsEvent("track_order_lookup", {
+          source_path: "/track-order",
+          source_page_type: getPageType("/track-order"),
+          has_reference: true,
+          has_phone_last4: true,
+          lookup_found: true,
+          order_status: order.status,
+        });
+      })
+      .catch((lookupError: unknown) => {
+        setMatch(null);
+        setError(
+          lookupError instanceof Error
+            ? lookupError.message
+            : "لم يتم العثور على طلب مطابق لهذه البيانات داخل authority الحالية.",
+        );
+
+        trackAnalyticsEvent("track_order_lookup", {
+          source_path: "/track-order",
+          source_page_type: getPageType("/track-order"),
+          has_reference: true,
+          has_phone_last4: true,
+          lookup_found: false,
+          order_status: "not_found",
+        });
+      })
+      .finally(() => {
+        setIsSearching(false);
+      });
   };
 
   const fulfillmentPlan = match ? getOrderFulfillmentPlan(match) : null;
@@ -82,9 +86,9 @@ export function TrackOrderSurface({
           <p className={styles.eyebrow}>Order tracking</p>
           <h1>تتبعي الحالة الحالية بمرجع واضح بدل الرسائل المبهمة</h1>
           <p className={styles.summary}>
-            صفحة تتبع الطلب هنا تربط بين مرجع الطلب وآخر 4 أرقام من الجوال حتى تعرض
-            حالة واضحة داخل النسخة التأسيسية الحالية، مع مسار fulfillment مفهوم وليس
-            مجرد status label فقط.
+            صفحة تتبع الطلب هنا تربط بين مرجع الطلب وآخر 4 أرقام من الجوال حتى
+            تعرض حالة واضحة داخل authority الحالية للتطبيق، مع مسار fulfillment
+            مفهوم وليس status label فقط.
           </p>
         </div>
 
@@ -93,17 +97,17 @@ export function TrackOrderSurface({
             <p>ما الذي تحتاجينه؟</p>
             <strong>مرجع الطلب + آخر 4 أرقام</strong>
             <span>
-              هذا يقلل الاعتماد على معلومات شخصية كاملة ويجعل التتبع أوضح في المرحلة
-              الحالية.
+              هذا يقلل الاعتماد على معلومات شخصية كاملة ويجعل التتبع أوضح في
+              المرحلة الحالية.
             </span>
           </div>
 
           <div className={styles.noticeCard}>
             <p className={styles.eyebrow}>Scope</p>
-            <h2>التتبع الحالي محلي على هذا المتصفح</h2>
+            <h2>authority داخل التطبيق وليست OMS نهائية</h2>
             <p>
-              تم بناء هذه الصفحة لتغلق الرحلة end-to-end قبل ربط نظام طلبات مركزي.
-              لذلك لن يظهر إلا ما تم إنشاؤه على نفس المتصفح.
+              التتبع لم يعد يعتمد على المتصفح نفسه فقط، لكنه ما زال يعمل فوق
+              authority داخل التطبيق ولم ينتقل بعد إلى نظام طلبات خارجي كامل.
             </p>
           </div>
         </div>
@@ -114,8 +118,8 @@ export function TrackOrderSurface({
           <p className={styles.sectionTitle}>Lookup</p>
           <h2>البحث عن الطلب</h2>
           <p>
-            إذا خرجتِ من صفحة التأكيد، يمكنك العودة إلى الحالة الحالية من هنا متى كان
-            المرجع متاحًا لديك.
+            إذا خرجتِ من صفحة التأكيد، يمكنك العودة إلى الحالة الحالية من هنا متى
+            كان المرجع متاحًا لديك.
           </p>
 
           <div className={styles.formGrid}>
@@ -147,8 +151,8 @@ export function TrackOrderSurface({
           {error ? <div className={styles.inlineError}>{error}</div> : null}
 
           <div className={styles.actionColumn}>
-            <button className={styles.primaryButton} type="submit" disabled={!isHydrated}>
-              {isHydrated ? "عرض الحالة الحالية" : "جاري تحميل الطلبات..."}
+            <button className={styles.primaryButton} type="submit" disabled={isSearching}>
+              {isSearching ? "جاري البحث..." : "عرض الحالة الحالية"}
             </button>
             <TrackedLink
               href="/trust/shipping"

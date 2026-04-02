@@ -6,15 +6,16 @@ import { OpsNav } from "@/components/ops-nav";
 import { TrackedLink } from "@/components/tracked-link";
 import { getPageType, trackAnalyticsEvent } from "@/lib/analytics";
 import {
+  advanceOpsOrderFromAuthority,
+  fetchOpsOrdersFromAuthority,
+} from "@/lib/order-authority-client";
+import {
   getNextOrderStatus,
   getOrderStatusMeta,
   getOrderTimeline,
   getPaymentMethodById,
   getPhoneLastFour,
   getShippingMethodById,
-  ORDER_STORAGE_KEY,
-  sanitizeStoredOrders,
-  updateStoredOrderStatus,
   type OrderStatus,
   type StoredOrder,
 } from "@/lib/orders";
@@ -49,23 +50,29 @@ function normalizeSearchText(value: string) {
 export function OrdersOpsSurface() {
   const pathname = usePathname() ?? "/ops/orders";
   const [orders, setOrders] = useState<StoredOrder[]>([]);
-  const [isHydrated, setIsHydrated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<OrderStatusFilter>("all");
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<string | null>(null);
 
   useEffect(() => {
-    try {
-      const rawOrders = window.localStorage.getItem(ORDER_STORAGE_KEY);
-      const parsedOrders = rawOrders ? JSON.parse(rawOrders) : [];
-      setOrders(sanitizeStoredOrders(parsedOrders));
-    } catch {
-      setOrders([]);
-      setError("تعذر قراءة الطلبات المحلية من هذا المتصفح.");
-    } finally {
-      setIsHydrated(true);
-    }
+    void fetchOpsOrdersFromAuthority()
+      .then((nextOrders) => {
+        setOrders(nextOrders);
+        setError(null);
+      })
+      .catch((loadError: unknown) => {
+        setOrders([]);
+        setError(
+          loadError instanceof Error
+            ? loadError.message
+            : "تعذر قراءة الطلبات من authority الداخلية.",
+        );
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   }, []);
 
   const metrics = useMemo(() => {
@@ -143,35 +150,36 @@ export function OrdersOpsSurface() {
   );
 
   const handleAdvanceStatus = (order: StoredOrder) => {
-    const nextStatus = getNextOrderStatus(order);
+    void advanceOpsOrderFromAuthority(order.orderNumber)
+      .then(({ order: updatedOrder, previousStatus, nextStatus }) => {
+        setOrders((currentOrders) =>
+          currentOrders.map((candidate) =>
+            candidate.orderNumber === updatedOrder.orderNumber
+              ? updatedOrder
+              : candidate,
+          ),
+        );
+        setError(null);
+        setLastUpdate(
+          `تم نقل ${updatedOrder.orderNumber} من ${getOrderStatusMeta(previousStatus).label} إلى ${getOrderStatusMeta(nextStatus).label}.`,
+        );
 
-    if (!nextStatus) {
-      return;
-    }
-
-    try {
-      const nextOrders = updateStoredOrderStatus(
-        orders,
-        order.orderNumber,
-        nextStatus,
-      );
-
-      window.localStorage.setItem(ORDER_STORAGE_KEY, JSON.stringify(nextOrders));
-      setOrders(nextOrders);
-      setError(null);
-      setLastUpdate(`تم نقل ${order.orderNumber} إلى ${getOrderStatusMeta(nextStatus).label}.`);
-
-      trackAnalyticsEvent("ops_order_status_update", {
-        source_path: pathname,
-        source_page_type: getPageType(pathname),
-        order_reference: order.orderNumber,
-        previous_status: order.status,
-        next_status: nextStatus,
-        payment_method: order.paymentMethodId,
+        trackAnalyticsEvent("ops_order_status_update", {
+          source_path: pathname,
+          source_page_type: getPageType(pathname),
+          order_reference: updatedOrder.orderNumber,
+          previous_status: previousStatus,
+          next_status: nextStatus,
+          payment_method: updatedOrder.paymentMethodId,
+        });
+      })
+      .catch((updateError: unknown) => {
+        setError(
+          updateError instanceof Error
+            ? updateError.message
+            : "تعذر تحديث حالة الطلب داخل authority الحالية.",
+        );
       });
-    } catch {
-      setError("تعذر حفظ الحالة الجديدة داخل التخزين المحلي لهذا المتصفح.");
-    }
   };
 
   return (
@@ -181,33 +189,32 @@ export function OrdersOpsSurface() {
       <section className={styles.hero}>
         <div>
           <p className={styles.eyebrow}>Internal order ops</p>
-          <h1>لوحة تشغيلية محلية لمتابعة الطلبات قبل ربط backoffice حقيقي.</h1>
+          <h1>لوحة تشغيلية مركزية لمراجعة الطلبات وتحريك حالتها.</h1>
           <p className={styles.summary}>
-            هذه الطبقة لا تدّعي وجود نظام طلبات مركزي. هي dashboard محلية فوق
-            النموذج الحالي حتى يصبح لديك surface واضحة لمراجعة الطلبات وتحريك
-            حالتها واختبار التدفق التشغيلي قبل ربط الدفع والشحن والتنبيهات.
+            هذه الصفحة لم تعد تقرأ من متصفح منفصل. الطلبات هنا تأتي من authority
+            داخلية واحدة، حتى يصبح status flow قابلاً للمراجعة والتوسعة قبل ربط
+            OMS أو backend orders نهائية.
           </p>
         </div>
 
         <div className={styles.heroAside}>
           <div className={styles.metricCard}>
             <p>إجمالي الطلبات</p>
-            <strong>{metrics.totalOrders}</strong>
+            <strong>{isLoading ? "..." : metrics.totalOrders}</strong>
             <span>
-              {isHydrated
-                ? `إجمالي تقديري ${metrics.totalRevenue} ر.س ومتوسط ${metrics.averageOrderValue} ر.س للطلب.`
-                : "جارٍ استعادة الطلبات المحلية من هذا المتصفح."}
+              {isLoading
+                ? "جاري استعادة queue الداخلية."
+                : `إجمالي تقديري ${metrics.totalRevenue} ر.س ومتوسط ${metrics.averageOrderValue} ر.س للطلب.`}
             </span>
           </div>
 
           <div className={styles.noticeCard}>
             <p className={styles.eyebrow}>Operational scope</p>
-            <h2>طلبات داخلية + gate + noindex</h2>
+            <h2>authority داخلية + gate + noindex</h2>
             <p>
-              هذه الصفحة داخلية ومقصودة للتشغيل المحلي فقط في هذه المرحلة. ما
-              زال backend orders وownership الفعلية للشحن والدفع غير
-              محسومين، لكن surface نفسها أصبحت خلف access gate بدل البقاء
-              مكشوفة.
+              هذه الصفحة داخلية ومحمية، لكنها ليست OMS production بعد. الهدف هنا
+              تثبيت queue حقيقية ومسار حالات واضح قبل الدفع والشحن والإشعارات
+              النهائية.
             </p>
           </div>
         </div>
@@ -240,7 +247,7 @@ export function OrdersOpsSurface() {
           <p className={styles.sectionTitle}>Queue</p>
           <h2>قائمة الطلبات التشغيلية</h2>
           <p>
-            فلتر الحالة والبحث هنا يسمحان بمراجعة الطلبات المحلية حسب المرجع أو
+            فلتر الحالة والبحث هنا يسمحان بمراجعة الطلبات الداخلية حسب المرجع أو
             المدينة أو آخر 4 أرقام من الجوال أو اسم المنتج.
           </p>
 
@@ -282,14 +289,11 @@ export function OrdersOpsSurface() {
           {lastUpdate ? <div className={styles.inlineNotice}>{lastUpdate}</div> : null}
 
           <div className={styles.ordersGrid}>
-            {!isHydrated ? (
+            {isLoading ? (
               <article className={styles.emptyCard}>
                 <p className={styles.eyebrow}>Orders</p>
-                <h1>جارٍ تحميل طبقة التشغيل المحلية</h1>
-                <p>
-                  يتم الآن استعادة الطلبات المحفوظة على هذا المتصفح حتى تظهر queue
-                  التشغيلية كاملة.
-                </p>
+                <h1>جاري تحميل طبقة الطلبات المركزية</h1>
+                <p>يتم الآن استعادة الطلبات من authority الداخلية الحالية.</p>
               </article>
             ) : filteredOrders.length ? (
               filteredOrders.map((order) => {
@@ -388,8 +392,8 @@ export function OrdersOpsSurface() {
                 <h1>لا توجد طلبات تطابق الفلتر الحالي</h1>
                 <p>
                   {orders.length
-                    ? "غيّر حالة الفلتر أو نص البحث لإظهار الطلبات المحلية المتاحة."
-                    : "لم يتم إنشاء أي طلب محلي بعد على هذا المتصفح، لذلك ستظل هذه اللوحة فارغة حتى يكتمل أول checkout."}
+                    ? "غيّر حالة الفلتر أو نص البحث لإظهار الطلبات المتاحة."
+                    : "لم يتم إنشاء أي طلب داخل authority الحالية بعد."}
                 </p>
               </article>
             )}
@@ -401,15 +405,15 @@ export function OrdersOpsSurface() {
           <h2>ما الذي تغلقه هذه الطبقة؟</h2>
           <div className={styles.linkList}>
             <div className={styles.infoBullet}>
-              تجعل order flow الحالي قابلًا للمراجعة بدل أن يبقى local-only بلا
-              surface تشغيلية.
+              تجعل order flow الحالي قابلاً للمراجعة من authority واحدة بدل
+              التشتت بين متصفحات متعددة.
             </div>
             <div className={styles.infoBullet}>
               تختبر تسلسل الحالات قبل بناء ownership حقيقي للدفع والشحن
               والإشعارات.
             </div>
             <div className={styles.infoBullet}>
-              توضح الفجوة المتبقية: auth, backend orders, supplier sync, وnotifications.
+              توضح الفجوة المتبقية: auth حقيقية، database، supplier sync، وOMS.
             </div>
           </div>
 

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, rmSync } from "node:fs";
 import { createRequire } from "node:module";
 import process from "node:process";
 import { setTimeout as delay } from "node:timers/promises";
@@ -10,6 +10,10 @@ const port = Number(process.env.SMOKE_PORT ?? 3066);
 const host = process.env.SMOKE_HOST ?? "127.0.0.1";
 const baseUrl = `http://${host}:${port}`;
 const opsAccessCode = process.env.SMOKE_OPS_ACCESS_CODE ?? "smoke-ops-access";
+const orderAuthoritySecret =
+  process.env.SMOKE_ORDER_AUTHORITY_SECRET ?? "smoke-order-authority";
+const orderAuthorityFile =
+  process.env.SMOKE_ORDER_AUTHORITY_FILE ?? ".data/smoke-orders.json";
 const nextCliPath = require.resolve("next/dist/bin/next");
 
 if (!existsSync(".next/BUILD_ID")) {
@@ -30,6 +34,14 @@ function appendLog(chunk) {
 
 function formatRecentLogs() {
   return outputBuffer.join("").trim();
+}
+
+function safeCleanupOrderStore() {
+  try {
+    rmSync(orderAuthorityFile, { force: true });
+  } catch {
+    // Ignore smoke cleanup failures.
+  }
 }
 
 async function shutdownServer() {
@@ -103,9 +115,9 @@ async function fetchHead(pathname, init = {}) {
   });
 }
 
-async function postJson(pathname, body, init = {}) {
+async function sendJson(method, pathname, body, init = {}) {
   return fetchJson(pathname, {
-    method: "POST",
+    method,
     headers: {
       "Content-Type": "application/json",
       ...(init.headers ?? {}),
@@ -122,11 +134,14 @@ function assertIncludes(body, marker, pathname) {
   );
 }
 
-function extractCookie(response) {
+function extractCookie(response, cookieName) {
   const setCookieHeader = response.headers.get("set-cookie");
+  assert.ok(setCookieHeader, `Expected response to include ${cookieName} cookie`);
 
-  assert.ok(setCookieHeader, "Expected auth response to include a session cookie");
-  return setCookieHeader.split(";")[0];
+  const match = setCookieHeader.match(new RegExp(`${cookieName}=[^;]+`));
+  assert.ok(match, `Expected ${cookieName} cookie in Set-Cookie header`);
+
+  return match[0];
 }
 
 const publicSmokeChecks = [
@@ -233,6 +248,8 @@ process.on("SIGTERM", () => {
   void shutdownServer().finally(() => process.exit(1));
 });
 
+safeCleanupOrderStore();
+
 server = spawn(process.execPath, [nextCliPath, "start", "--port", String(port)], {
   cwd: process.cwd(),
   env: {
@@ -240,6 +257,8 @@ server = spawn(process.execPath, [nextCliPath, "start", "--port", String(port)],
     NEXT_PUBLIC_SITE_URL: baseUrl,
     OPS_ACCESS_CODE: opsAccessCode,
     ENFORCE_OPS_ACCESS: "true",
+    ORDER_AUTHORITY_SECRET: orderAuthoritySecret,
+    ORDER_AUTHORITY_FILE: orderAuthorityFile,
   },
   stdio: ["ignore", "pipe", "pipe"],
 });
@@ -288,7 +307,65 @@ try {
     }
   }
 
-  const { response: loginResponse, body: loginBody } = await postJson(
+  const { response: createOrderResponse, body: createOrderBody } = await sendJson(
+    "POST",
+    "/api/orders",
+    {
+      items: [
+        {
+          productSlug: "radiant-dew-serum",
+          sku: "RD-30",
+          quantity: 1,
+        },
+      ],
+      checkout: {
+        fullName: "Smoke Test Customer",
+        phone: "0501234567",
+        email: "smoke@example.com",
+        city: "الرياض",
+        district: "العليا",
+        addressLine: "شارع الملك فهد، مبنى 10",
+        notes: "Smoke test order",
+        shippingMethodId: "express",
+        paymentMethodId: "payment_link",
+        acceptPolicies: true,
+        acceptUpdates: true,
+      },
+    },
+  );
+  assert.equal(createOrderResponse.status, 201);
+  assert.ok(createOrderBody.order.orderNumber, "Expected created order reference");
+
+  const recentOrderCookie = extractCookie(
+    createOrderResponse,
+    "cozmateks-recent-order",
+  );
+
+  const { response: recentOrderResponse, body: recentOrderBody } = await fetchJson(
+    `/api/orders/${encodeURIComponent(createOrderBody.order.orderNumber)}`,
+    {
+      headers: {
+        Cookie: recentOrderCookie,
+      },
+    },
+  );
+  assert.equal(recentOrderResponse.status, 200);
+  assert.equal(
+    recentOrderBody.order.orderNumber,
+    createOrderBody.order.orderNumber,
+  );
+
+  const { response: trackedOrderResponse, body: trackedOrderBody } = await fetchJson(
+    `/api/orders/${encodeURIComponent(createOrderBody.order.orderNumber)}?phoneLastFour=4567`,
+  );
+  assert.equal(trackedOrderResponse.status, 200);
+  assert.equal(
+    trackedOrderBody.order.orderNumber,
+    createOrderBody.order.orderNumber,
+  );
+
+  const { response: loginResponse, body: loginBody } = await sendJson(
+    "POST",
     "/api/ops-access/login",
     {
       accessCode: opsAccessCode,
@@ -299,7 +376,37 @@ try {
   assert.equal(loginBody.ok, true);
   assert.equal(loginBody.redirectTo, "/ops");
 
-  const opsCookie = extractCookie(loginResponse);
+  const opsCookie = extractCookie(loginResponse, "cozmateks-ops-session");
+
+  const { response: opsOrdersResponse, body: opsOrdersBody } = await fetchJson(
+    "/api/ops/orders",
+    {
+      headers: {
+        Cookie: opsCookie,
+      },
+    },
+  );
+  assert.equal(opsOrdersResponse.status, 200);
+  assert.ok(
+    opsOrdersBody.orders.some(
+      (order) => order.orderNumber === createOrderBody.order.orderNumber,
+    ),
+    "Expected ops orders API to include the smoke order",
+  );
+
+  const { response: updateOrderResponse, body: updateOrderBody } = await sendJson(
+    "PATCH",
+    `/api/ops/orders/${encodeURIComponent(createOrderBody.order.orderNumber)}`,
+    {},
+    {
+      headers: {
+        Cookie: opsCookie,
+      },
+    },
+  );
+  assert.equal(updateOrderResponse.status, 200);
+  assert.equal(updateOrderBody.previousStatus, "payment_pending");
+  assert.equal(updateOrderBody.nextStatus, "confirmed");
 
   for (const check of protectedOpsChecks) {
     const { response, body } = await fetchText(check.pathname, {
@@ -333,4 +440,5 @@ try {
   process.exitCode = 1;
 } finally {
   await shutdownServer();
+  safeCleanupOrderStore();
 }

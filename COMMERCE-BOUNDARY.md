@@ -41,7 +41,8 @@ These routes remain valid public surfaces for IA, SEO, and future merchandising,
 - discovery-to-product internal linking
 - local cart intent
 - checkout handoff UX
-- tracking UX
+- order creation through in-app authority APIs
+- tracking UX over the same authority
 - analytics markers and smoke validation
 
 ### Internal Ops Rehearsal Owns Now
@@ -50,14 +51,16 @@ These routes remain valid public surfaces for IA, SEO, and future merchandising,
 - `/ops/orders`
 - `/ops/catalog`
 - `/ops/fulfillment`
+- protected ops order APIs
 - local KPI rehearsal
 - local supplier and stock rehearsal
+- centralized order queue review and status rehearsal
 - local fulfillment routing logic
 - local notification planning
 
 ### Must Move To Real Backend Ownership Before Launch
 
-- canonical order record
+- durable canonical order record
 - stock truth
 - supplier sync
 - payment orchestration
@@ -79,7 +82,7 @@ This is not final authentication. It is a safe boundary that stops the internal 
 
 Launch cannot be considered complete while these remain local or provisional:
 
-- order persistence
+- file-backed order persistence
 - payment provider handoff
 - shipment dispatch ownership
 - notification delivery ownership

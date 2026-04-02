@@ -32,6 +32,10 @@ Without these three secrets, the deploy workflow remains intentionally inactive.
 
 - `NEXT_PUBLIC_SITE_URL`
   Use this when you want a fixed canonical production URL such as `https://cozmateks.com`.
+- `ORDER_AUTHORITY_SECRET`
+  Required once transactional routes are deployed anywhere outside local development. Use a strong server-only value distinct from `OPS_ACCESS_CODE`.
+- `ORDER_AUTHORITY_FILE`
+  Optional override for the current file-backed order authority path. Keep it on persistent storage if you use it outside local or CI rehearsal environments.
 - `OPS_ACCESS_CODE`
   Required for protecting `/ops/*` in production. Use a strong internal-only value and do not expose it client-side.
 - `ENFORCE_OPS_ACCESS`
@@ -53,7 +57,8 @@ If `NEXT_PUBLIC_SITE_URL` is absent, the app now falls back in this order:
 4. Push to `main` or trigger the workflow manually.
 5. Confirm the deployment URL returns `200` on `/api/health`.
 6. Confirm unauthenticated `/ops` redirects to `/ops-access`.
-7. Confirm the homepage, product page, article page, `cart`, and `sitemap.xml` render correctly after deployment.
+7. Confirm checkout can create an order and tracking can read it back in the chosen environment without losing the authority file between requests.
+8. Confirm the homepage, product page, article page, `cart`, and `sitemap.xml` render correctly after deployment.
 
 ## Rollback Path
 
@@ -76,4 +81,5 @@ If `NEXT_PUBLIC_SITE_URL` is absent, the app now falls back in this order:
 
 - No Vercel credentials are configured on this machine or in GitHub secrets yet.
 - No linked Vercel project exists inside this repository yet.
+- The current transactional order authority is file-backed and not durable enough for a real production launch on ephemeral/serverless hosting without a persistent backend replacement.
 - Legal/business production data is still provisional, so a public launch claim would still be premature even after the first deploy.
