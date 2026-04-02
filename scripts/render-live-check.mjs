@@ -344,6 +344,25 @@ async function fetchJson(pathname, init = {}) {
   }
 }
 
+async function fetchText(pathname, init = {}) {
+  const response = await fetch(`${baseUrl}${pathname}`, {
+    cache: "no-store",
+    ...init,
+  });
+
+  return {
+    response,
+    body: await response.text(),
+  };
+}
+
+function assertIncludes(body, marker, pathname) {
+  assert.ok(
+    body.includes(marker),
+    `Expected ${pathname} to include marker ${JSON.stringify(marker)}.`,
+  );
+}
+
 async function waitForHealth() {
   const deadline = Date.now() + timeoutSeconds * 1000;
   let lastFailureMessage = "Health endpoint has not responded yet.";
@@ -438,6 +457,27 @@ try {
   );
   assert.equal(sessionResponse.status, 200);
   assert.equal(sessionBody?.session?.username, username);
+
+  const { response: releasePageResponse, body: releasePageBody } = await fetchText(
+    "/ops/release",
+    {
+      headers: {
+        Cookie: opsCookie,
+      },
+    },
+  );
+  assert.equal(releasePageResponse.status, 200);
+  assertIncludes(releasePageBody, "Internal release readiness", "/ops/release");
+  assertIncludes(
+    releasePageBody,
+    "Record a protected release decision",
+    "/ops/release",
+  );
+  assertIncludes(
+    releasePageBody,
+    "Current blocked items requiring acknowledgement",
+    "/ops/release",
+  );
 
   const { response: releaseResponse, body: releaseBody } = await fetchJson(
     "/api/ops/release",

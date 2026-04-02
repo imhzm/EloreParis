@@ -556,6 +556,8 @@ const protectedOpsChecks = [
     pathname: "/ops/release",
     markers: [
       "Internal release readiness",
+      "Record a protected release decision",
+      "Current blocked items requiring acknowledgement",
       "Runtime preflight",
       "Runtime drift",
       "Release decisions",

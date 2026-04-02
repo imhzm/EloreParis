@@ -12,6 +12,15 @@ import type {
 import type { ReleasePacketArtifact } from "@/lib/release-packet-types";
 import type { ReleaseReadinessSnapshot } from "@/lib/release-readiness-types";
 
+export type OpsReleaseDecisionInput = {
+  verdict: ReleaseDecisionRecord["verdict"];
+  rationale: string;
+  notes: string[];
+  acknowledgedBlockedItemIds: string[];
+  releasePacketGeneratedAt: string;
+  reviewToken: string;
+};
+
 async function parseApiError(response: Response, fallbackMessage: string) {
   try {
     const payload = (await response.json()) as { error?: string };
@@ -162,6 +171,31 @@ export async function fetchOpsReleasePacket() {
 
   return (await response.json()) as {
     releasePacket: ReleasePacketArtifact;
+  };
+}
+
+export async function publishOpsReleaseDecision(
+  releaseDecision: OpsReleaseDecisionInput,
+) {
+  const response = await fetch("/api/ops/release/decisions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ releaseDecision }),
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      await parseApiError(
+        response,
+        "Unable to record the protected release decision in the current runtime.",
+      ),
+    );
+  }
+
+  return (await response.json()) as {
+    releaseDecisionRecord: ReleaseDecisionRecord;
   };
 }
 

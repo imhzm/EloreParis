@@ -12,6 +12,7 @@ export type AnalyticsEventName =
   | "filter_apply"
   | "ops_notification_status_update"
   | "ops_order_status_update"
+  | "ops_release_decision_submit"
   | "search_submit"
   | "search_result_click"
   | "track_order_lookup";

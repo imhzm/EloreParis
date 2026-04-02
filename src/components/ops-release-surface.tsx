@@ -4,13 +4,16 @@ import { useEffect, useMemo, useState } from "react";
 import { OpsNav } from "@/components/ops-nav";
 import { TrackedLink } from "@/components/tracked-link";
 import {
+  fetchOpsSessionSummary,
   fetchOpsReleaseComparison,
   fetchOpsReleaseDecisions,
   fetchOpsReleaseEvidence,
   fetchOpsReleaseHistory,
   fetchOpsReleasePacket,
   fetchOpsReleaseReadiness,
+  publishOpsReleaseDecision,
 } from "@/lib/ops-control-client";
+import { getPageType, trackAnalyticsEvent } from "@/lib/analytics";
 import type { ReleaseEvidenceReport } from "@/lib/release-evidence-types";
 import type {
   ReleaseDecisionRecord,
@@ -22,7 +25,21 @@ import type {
   ReleaseReadinessGate,
   ReleaseReadinessSnapshot,
 } from "@/lib/release-readiness-types";
+import type { OpsSessionSummary } from "@/lib/ops-types";
 import styles from "./order-flow.module.css";
+
+type ReleaseSurfaceData = {
+  snapshot: ReleaseReadinessSnapshot | null;
+  evidence: ReleaseEvidenceReport | null;
+  releaseHistory: ReleasePackageRecord[];
+  releaseComparison: ReleasePackageComparison | null;
+  releaseDecisions: ReleaseDecisionRecord[];
+  releasePacket: ReleasePacketArtifact | null;
+  opsSession: OpsSessionSummary | null;
+  error: string | null;
+};
+
+const RELEASE_SURFACE_PATH = "/ops/release";
 
 function getStatusLabel(status: ReleaseReadinessGate["status"]) {
   switch (status) {
@@ -95,6 +112,70 @@ function formatToken(value: string) {
   return `${value.slice(0, 14)}…`;
 }
 
+function parseDecisionNotes(value: string) {
+  return Array.from(
+    new Set(
+      value
+        .split(/\r?\n/u)
+        .map((note) => note.trim())
+        .filter((note) => note.length > 0),
+    ),
+  );
+}
+
+async function loadReleaseSurfaceData(): Promise<ReleaseSurfaceData> {
+  const [
+    readinessResult,
+    evidenceResult,
+    historyResult,
+    comparisonResult,
+    decisionsResult,
+    packetResult,
+    sessionResult,
+  ] = await Promise.allSettled([
+    fetchOpsReleaseReadiness(),
+    fetchOpsReleaseEvidence(),
+    fetchOpsReleaseHistory(),
+    fetchOpsReleaseComparison(),
+    fetchOpsReleaseDecisions(),
+    fetchOpsReleasePacket(),
+    fetchOpsSessionSummary(),
+  ]);
+
+  return {
+    snapshot:
+      readinessResult.status === "fulfilled"
+        ? readinessResult.value.releaseReadiness
+        : null,
+    evidence:
+      evidenceResult.status === "fulfilled"
+        ? evidenceResult.value.releaseEvidence
+        : null,
+    releaseHistory:
+      historyResult.status === "fulfilled"
+        ? historyResult.value.releasePackages
+        : [],
+    releaseComparison:
+      comparisonResult.status === "fulfilled"
+        ? comparisonResult.value.releaseComparison
+        : null,
+    releaseDecisions:
+      decisionsResult.status === "fulfilled"
+        ? decisionsResult.value.releaseDecisions
+        : [],
+    releasePacket:
+      packetResult.status === "fulfilled" ? packetResult.value.releasePacket : null,
+    opsSession:
+      sessionResult.status === "fulfilled" ? sessionResult.value.session : null,
+    error:
+      readinessResult.status === "fulfilled"
+        ? null
+        : readinessResult.reason instanceof Error
+          ? readinessResult.reason.message
+          : "Unable to load the current release blockers from the protected runtime.",
+  };
+}
+
 export function OpsReleaseSurface() {
   const [snapshot, setSnapshot] = useState<ReleaseReadinessSnapshot | null>(null);
   const [evidence, setEvidence] = useState<ReleaseEvidenceReport | null>(null);
@@ -103,74 +184,67 @@ export function OpsReleaseSurface() {
     useState<ReleasePackageComparison | null>(null);
   const [releaseDecisions, setReleaseDecisions] = useState<ReleaseDecisionRecord[]>([]);
   const [releasePacket, setReleasePacket] = useState<ReleasePacketArtifact | null>(null);
+  const [opsSession, setOpsSession] = useState<OpsSessionSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedVerdict, setSelectedVerdict] =
+    useState<ReleaseDecisionRecord["verdict"]>("hold");
+  const [rationale, setRationale] = useState("");
+  const [notesInput, setNotesInput] = useState("");
+  const [acknowledgedBlockedItemIds, setAcknowledgedBlockedItemIds] = useState<string[]>([]);
+  const [publishError, setPublishError] = useState<string | null>(null);
+  const [publishNotice, setPublishNotice] = useState<string | null>(null);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
-    void Promise.allSettled([
-      fetchOpsReleaseReadiness(),
-      fetchOpsReleaseEvidence(),
-      fetchOpsReleaseHistory(),
-      fetchOpsReleaseComparison(),
-      fetchOpsReleaseDecisions(),
-      fetchOpsReleasePacket(),
-    ])
-      .then(
-        ([
-          readinessResult,
-          evidenceResult,
-          historyResult,
-          comparisonResult,
-          decisionsResult,
-          packetResult,
-        ]) => {
-          if (readinessResult.status === "fulfilled") {
-            setSnapshot(readinessResult.value.releaseReadiness);
-            setError(null);
-          } else {
-            setSnapshot(null);
-            setError(
-              readinessResult.reason instanceof Error
-                ? readinessResult.reason.message
-                : "Unable to load the current release blockers from the protected runtime.",
-            );
-          }
+    let isActive = true;
 
-          if (evidenceResult.status === "fulfilled") {
-            setEvidence(evidenceResult.value.releaseEvidence);
-          } else {
-            setEvidence(null);
-          }
+    if (reloadKey === 0) {
+      setIsLoading(true);
+    } else {
+      setIsRefreshing(true);
+    }
 
-          if (historyResult.status === "fulfilled") {
-            setReleaseHistory(historyResult.value.releasePackages);
-          } else {
-            setReleaseHistory([]);
-          }
+    void loadReleaseSurfaceData()
+      .then((data) => {
+        if (!isActive) {
+          return;
+        }
 
-          if (comparisonResult.status === "fulfilled") {
-            setReleaseComparison(comparisonResult.value.releaseComparison);
-          } else {
-            setReleaseComparison(null);
-          }
-
-          if (decisionsResult.status === "fulfilled") {
-            setReleaseDecisions(decisionsResult.value.releaseDecisions);
-          } else {
-            setReleaseDecisions([]);
-          }
-
-          if (packetResult.status === "fulfilled") {
-            setReleasePacket(packetResult.value.releasePacket);
-          } else {
-            setReleasePacket(null);
-          }
-        },
-      )
+        setSnapshot(data.snapshot);
+        setEvidence(data.evidence);
+        setReleaseHistory(data.releaseHistory);
+        setReleaseComparison(data.releaseComparison);
+        setReleaseDecisions(data.releaseDecisions);
+        setReleasePacket(data.releasePacket);
+        setOpsSession(data.opsSession);
+        setError(data.error);
+      })
       .finally(() => {
+        if (!isActive) {
+          return;
+        }
+
         setIsLoading(false);
+        setIsRefreshing(false);
       });
-  }, []);
+
+    return () => {
+      isActive = false;
+    };
+  }, [reloadKey]);
+
+  useEffect(() => {
+    const currentBlockedItemIds = new Set(
+      (releasePacket?.currentArtifact.blockedItems ?? []).map((item) => item.id),
+    );
+
+    setAcknowledgedBlockedItemIds((currentValue) =>
+      currentValue.filter((itemId) => currentBlockedItemIds.has(itemId)),
+    );
+  }, [releasePacket]);
 
   const metrics = useMemo(
     () => ({
@@ -191,6 +265,158 @@ export function OpsReleaseSurface() {
     }),
     [snapshot],
   );
+
+  const decisionNotes = useMemo(() => parseDecisionNotes(notesInput), [notesInput]);
+  const blockedItems = releasePacket?.currentArtifact.blockedItems ?? [];
+  const isManagerSession = opsSession?.role === "manager";
+  const packetExpired = releasePacket
+    ? Date.parse(releasePacket.reviewExpiresAt) <= Date.now()
+    : false;
+  const approvalDisabledReason =
+    !releasePacket?.latestPublishedRecord
+      ? "Publish a protected release package before recording an approval."
+      : packetExpired
+        ? "Refresh the executive release packet before recording an approval."
+        : releasePacket.overallStatus === "blocked"
+          ? "Approval stays disabled while the current executive packet is still blocked."
+          : releaseComparison?.status !== "unchanged"
+            ? "Approval stays disabled until runtime drift returns to unchanged."
+            : !releasePacket.currentArtifact.releaseEvidence
+              ? "Approval stays disabled until executable release evidence exists in the current runtime."
+              : null;
+
+  useEffect(() => {
+    if (selectedVerdict === "approve" && approvalDisabledReason) {
+      setSelectedVerdict("hold");
+    }
+  }, [approvalDisabledReason, selectedVerdict]);
+
+  function handleBlockedItemToggle(itemId: string) {
+    setAcknowledgedBlockedItemIds((currentValue) =>
+      currentValue.includes(itemId)
+        ? currentValue.filter((value) => value !== itemId)
+        : [...currentValue, itemId],
+    );
+  }
+
+  async function handleReleaseDecisionSubmit(
+    event: React.FormEvent<HTMLFormElement>,
+  ) {
+    event.preventDefault();
+    setPublishError(null);
+    setPublishNotice(null);
+
+    if (!opsSession) {
+      setPublishError(
+        "The current ops session is still loading. Refresh the release surface and try again.",
+      );
+      return;
+    }
+
+    if (!isManagerSession) {
+      setPublishError(
+        "Only manager sessions can record protected release decisions from this surface.",
+      );
+      return;
+    }
+
+    if (!releasePacket) {
+      setPublishError(
+        "The latest executive release packet is unavailable. Reload the page before recording a decision.",
+      );
+      return;
+    }
+
+    if (!releasePacket.latestPublishedRecord) {
+      setPublishError(
+        "A protected release package must be published before a release decision can be recorded.",
+      );
+      return;
+    }
+
+    if (packetExpired) {
+      setPublishError(
+        "The executive release packet has expired. Refresh the release surface before recording a decision.",
+      );
+      return;
+    }
+
+    const normalizedRationale = rationale.trim();
+
+    if (normalizedRationale.length < 16 || normalizedRationale.length > 500) {
+      setPublishError(
+        "Rationale must be between 16 and 500 characters before the decision can be recorded.",
+      );
+      return;
+    }
+
+    if (decisionNotes.length > 6 || decisionNotes.some((note) => note.length > 240)) {
+      setPublishError(
+        "Notes must stay within 6 lines and each note must stay under 240 characters.",
+      );
+      return;
+    }
+
+    const missingAcknowledgements = blockedItems.filter(
+      (item) => !acknowledgedBlockedItemIds.includes(item.id),
+    );
+
+    if (missingAcknowledgements.length > 0) {
+      setPublishError(
+        "Acknowledge every current blocked release item before recording the decision from the release surface.",
+      );
+      return;
+    }
+
+    if (selectedVerdict === "approve" && approvalDisabledReason) {
+      setPublishError(approvalDisabledReason);
+      return;
+    }
+
+    setIsPublishing(true);
+
+    try {
+      const { releaseDecisionRecord } = await publishOpsReleaseDecision({
+        verdict: selectedVerdict,
+        rationale: normalizedRationale,
+        notes: decisionNotes,
+        acknowledgedBlockedItemIds,
+        releasePacketGeneratedAt: releasePacket.generatedAt,
+        reviewToken: releasePacket.reviewToken,
+      });
+
+      trackAnalyticsEvent("ops_release_decision_submit", {
+        source_path: RELEASE_SURFACE_PATH,
+        source_page_type: getPageType(RELEASE_SURFACE_PATH),
+        verdict: releaseDecisionRecord.verdict,
+        compare_status: releaseDecisionRecord.compareStatus,
+        overall_status: releaseDecisionRecord.overallStatus,
+        blocked_count: releaseDecisionRecord.blockedCount,
+        warning_count: releaseDecisionRecord.warningCount,
+        ready_count: releaseDecisionRecord.readyCount,
+        acknowledged_blocked_item_count:
+          releaseDecisionRecord.acknowledgedBlockedItemIds.length,
+        target_base_url: releaseDecisionRecord.targetBaseUrl,
+      });
+
+      setPublishNotice(
+        `Recorded a ${releaseDecisionRecord.verdict} decision against ${releaseDecisionRecord.releasePackageRecordId} using the latest executive packet.`,
+      );
+      setRationale("");
+      setNotesInput("");
+      setAcknowledgedBlockedItemIds([]);
+      setSelectedVerdict("hold");
+      setReloadKey((currentValue) => currentValue + 1);
+    } catch (submissionError) {
+      setPublishError(
+        submissionError instanceof Error
+          ? submissionError.message
+          : "Unable to record the protected release decision in the current runtime.",
+      );
+    } finally {
+      setIsPublishing(false);
+    }
+  }
 
   return (
     <div className={styles.page}>
@@ -731,6 +957,223 @@ export function OpsReleaseSurface() {
           Packages and drift explain what changed. The decision trail explains whether the latest
           protected package was left on hold or explicitly approved, and why.
         </p>
+
+        <article className={styles.lineItem}>
+          <div className={styles.lineHead}>
+            <div>
+              <h3>Record a protected release decision</h3>
+              <p className={styles.lineMeta}>
+                Manager-authored decisions stay bound to the latest executive packet, review window,
+                and blocker acknowledgement trail.
+              </p>
+            </div>
+            <div className={styles.linePrice}>{opsSession?.role ?? "loading..."}</div>
+          </div>
+
+          <p className={styles.summary}>
+            Current blocked items requiring acknowledgement are always taken from the latest
+            executive packet before a protected release decision can be recorded.
+          </p>
+
+          {publishError ? <div className={styles.inlineError}>{publishError}</div> : null}
+          {publishNotice ? <div className={styles.inlineNotice}>{publishNotice}</div> : null}
+          {isRefreshing ? (
+            <div className={styles.inlineNotice}>
+              Refreshing the executive packet and decision trail after the latest protected action.
+            </div>
+          ) : null}
+
+          {!opsSession ? (
+            <div className={styles.inlineNotice}>
+              Loading the current ops session before enabling decision publication.
+            </div>
+          ) : !isManagerSession ? (
+            <div className={styles.inlineNotice}>
+              This session is <strong>{opsSession.role}</strong>. Review remains visible here, but
+              only manager sessions can record protected hold or approve decisions.
+            </div>
+          ) : !releasePacket ? (
+            <div className={styles.inlineNotice}>
+              The executive packet is unavailable right now, so the decision composer cannot be
+              armed yet.
+            </div>
+          ) : (
+            <>
+              <div className={styles.referenceCard}>
+                <div className={styles.referenceRow}>
+                  <span>Manager session</span>
+                  <strong className={styles.referenceValue}>{opsSession.name}</strong>
+                </div>
+                <div className={styles.referenceRow}>
+                  <span>Latest package</span>
+                  <strong className={styles.referenceValue}>
+                    {releasePacket.latestPublishedRecord?.id ?? "none"}
+                  </strong>
+                </div>
+                <div className={styles.referenceRow}>
+                  <span>Review token</span>
+                  <strong className={styles.referenceValue}>
+                    {formatToken(releasePacket.reviewToken)}
+                  </strong>
+                </div>
+                <div className={styles.referenceRow}>
+                  <span>Review window</span>
+                  <strong className={styles.referenceValue}>
+                    {releasePacket.reviewWindowMinutes} min
+                  </strong>
+                </div>
+                <div className={styles.referenceRow}>
+                  <span>Refresh by</span>
+                  <strong className={styles.referenceValue}>
+                    {formatTimestamp(releasePacket.reviewExpiresAt)}
+                  </strong>
+                </div>
+                <div className={styles.referenceRow}>
+                  <span>Runtime drift</span>
+                  <strong className={styles.referenceValue}>
+                    {getComparisonStatusLabel(releasePacket.comparison.status)}
+                  </strong>
+                </div>
+              </div>
+
+              {approvalDisabledReason ? (
+                <div className={styles.inlineNotice}>{approvalDisabledReason}</div>
+              ) : null}
+
+              <form className={styles.actionColumn} onSubmit={handleReleaseDecisionSubmit}>
+                <div className={styles.fieldFull}>
+                  <span className={styles.fieldLabel}>Decision verdict</span>
+                  <div className={styles.radioGrid}>
+                    <label
+                      className={`${styles.optionCard} ${
+                        selectedVerdict === "hold" ? styles.optionCardActive : ""
+                      }`}
+                    >
+                      <div className={styles.optionHead}>
+                        <div>
+                          <strong>Hold</strong>
+                          <p className={styles.optionNote}>
+                            Record an honest hold while external deployment or approval blockers
+                            still remain.
+                          </p>
+                        </div>
+                        <input
+                          className={styles.optionRadio}
+                          type="radio"
+                          name="release-decision-verdict"
+                          checked={selectedVerdict === "hold"}
+                          onChange={() => setSelectedVerdict("hold")}
+                        />
+                      </div>
+                    </label>
+
+                    <label
+                      className={`${styles.optionCard} ${
+                        selectedVerdict === "approve" ? styles.optionCardActive : ""
+                      } ${approvalDisabledReason ? styles.optionCardDisabled : ""}`}
+                    >
+                      <div className={styles.optionHead}>
+                        <div>
+                          <strong>Approve</strong>
+                          <p className={styles.optionNote}>
+                            Available only when the latest protected package is in sync, unblocked,
+                            and backed by executable evidence.
+                          </p>
+                        </div>
+                        <input
+                          className={styles.optionRadio}
+                          type="radio"
+                          name="release-decision-verdict"
+                          checked={selectedVerdict === "approve"}
+                          disabled={Boolean(approvalDisabledReason)}
+                          onChange={() => setSelectedVerdict("approve")}
+                        />
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                <label className={styles.fieldFull}>
+                  <span className={styles.fieldLabel}>Decision rationale</span>
+                  <textarea
+                    className={styles.textArea}
+                    value={rationale}
+                    onChange={(event) => setRationale(event.currentTarget.value)}
+                    placeholder="Explain why this package should stay on hold or can be approved."
+                  />
+                  <span className={styles.helperText}>
+                    Use a concrete rationale between 16 and 500 characters.
+                  </span>
+                </label>
+
+                <label className={styles.fieldFull}>
+                  <span className={styles.fieldLabel}>Decision notes</span>
+                  <textarea
+                    className={styles.textArea}
+                    value={notesInput}
+                    onChange={(event) => setNotesInput(event.currentTarget.value)}
+                    placeholder="One supporting note per line. Keep the notes short and operational."
+                  />
+                  <span className={styles.helperText}>
+                    One note per line, up to 6 notes total.
+                  </span>
+                </label>
+
+                <div className={styles.fieldFull}>
+                  <span className={styles.fieldLabel}>
+                    Current blocked items requiring acknowledgement
+                  </span>
+                  {blockedItems.length ? (
+                    <div className={styles.summaryList}>
+                      {blockedItems.map((item) => {
+                        const isChecked = acknowledgedBlockedItemIds.includes(item.id);
+
+                        return (
+                          <label key={item.id} className={styles.checkboxRow}>
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => handleBlockedItemToggle(item.id)}
+                            />
+                            <span>
+                              <strong>{item.title}</strong>
+                              <br />
+                              {item.summary}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className={styles.inlineNotice}>
+                      No blocked items remain in this packet, so no blocker acknowledgement is
+                      required for the current decision.
+                    </div>
+                  )}
+                </div>
+
+                <div className={styles.actionColumn}>
+                  <button
+                    className={styles.primaryButton}
+                    type="submit"
+                    disabled={
+                      isPublishing ||
+                      isRefreshing ||
+                      !releasePacket.latestPublishedRecord ||
+                      packetExpired
+                    }
+                  >
+                    {isPublishing
+                      ? "Recording protected decision..."
+                      : selectedVerdict === "approve"
+                        ? "Record approval decision"
+                        : "Record hold decision"}
+                  </button>
+                </div>
+              </form>
+            </>
+          )}
+        </article>
 
         <div className={styles.ordersGrid}>
           {isLoading ? (
