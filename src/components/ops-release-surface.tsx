@@ -4,12 +4,16 @@ import { useEffect, useMemo, useState } from "react";
 import { OpsNav } from "@/components/ops-nav";
 import { TrackedLink } from "@/components/tracked-link";
 import {
+  fetchOpsReleaseComparison,
   fetchOpsReleaseEvidence,
   fetchOpsReleaseHistory,
   fetchOpsReleaseReadiness,
 } from "@/lib/ops-control-client";
 import type { ReleaseEvidenceReport } from "@/lib/release-evidence-types";
-import type { ReleasePackageRecord } from "@/lib/release-package-types";
+import type {
+  ReleasePackageComparison,
+  ReleasePackageRecord,
+} from "@/lib/release-package-types";
 import type {
   ReleaseReadinessGate,
   ReleaseReadinessSnapshot,
@@ -51,10 +55,31 @@ function formatTimestamp(value: string) {
   }
 }
 
+function getComparisonStatusLabel(status: ReleasePackageComparison["status"]) {
+  switch (status) {
+    case "unchanged":
+      return "In sync";
+    case "changed":
+      return "Drift detected";
+    case "unpublished":
+      return "Not published";
+  }
+}
+
+function formatDelta(delta: number) {
+  if (delta > 0) {
+    return `+${delta}`;
+  }
+
+  return String(delta);
+}
+
 export function OpsReleaseSurface() {
   const [snapshot, setSnapshot] = useState<ReleaseReadinessSnapshot | null>(null);
   const [evidence, setEvidence] = useState<ReleaseEvidenceReport | null>(null);
   const [releaseHistory, setReleaseHistory] = useState<ReleasePackageRecord[]>([]);
+  const [releaseComparison, setReleaseComparison] =
+    useState<ReleasePackageComparison | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -63,8 +88,9 @@ export function OpsReleaseSurface() {
       fetchOpsReleaseReadiness(),
       fetchOpsReleaseEvidence(),
       fetchOpsReleaseHistory(),
+      fetchOpsReleaseComparison(),
     ])
-      .then(([readinessResult, evidenceResult, historyResult]) => {
+      .then(([readinessResult, evidenceResult, historyResult, comparisonResult]) => {
         if (readinessResult.status === "fulfilled") {
           setSnapshot(readinessResult.value.releaseReadiness);
           setError(null);
@@ -87,6 +113,12 @@ export function OpsReleaseSurface() {
           setReleaseHistory(historyResult.value.releasePackages);
         } else {
           setReleaseHistory([]);
+        }
+
+        if (comparisonResult.status === "fulfilled") {
+          setReleaseComparison(comparisonResult.value.releaseComparison);
+        } else {
+          setReleaseComparison(null);
         }
       })
       .finally(() => {
@@ -304,6 +336,15 @@ export function OpsReleaseSurface() {
                 <span>Published release-package trail</span>
               </TrackedLink>
               <TrackedLink
+                href="/api/ops/release/compare"
+                analyticsLabel="ops_release_to_compare"
+                analyticsSurface="ops_release_links"
+                analyticsDestinationType="other"
+              >
+                <span>Release compare API</span>
+                <span>Runtime drift versus the latest published package</span>
+              </TrackedLink>
+              <TrackedLink
                 href="/ops/content"
                 analyticsLabel="ops_release_to_content"
                 analyticsSurface="ops_release_links"
@@ -387,6 +428,151 @@ export function OpsReleaseSurface() {
               <p className={styles.eyebrow}>Preflight</p>
               <h1>Runtime preflight snapshot is unavailable</h1>
               <p>Recheck environment values, then reload the protected release surface.</p>
+            </article>
+          )}
+        </div>
+      </section>
+
+      <section className={styles.mainCard}>
+        <p className={styles.sectionTitle}>Runtime drift</p>
+        <h2>Current runtime versus the latest published package</h2>
+        <p className={styles.summary}>
+          This comparison answers a narrower release question than raw history: does the current
+          runtime still match the latest published package, or has drift appeared since the last
+          protected publication?
+        </p>
+
+        <div className={styles.ordersGrid}>
+          {isLoading ? (
+            <article className={styles.emptyCard}>
+              <p className={styles.eyebrow}>Release compare</p>
+              <h1>Loading runtime drift summary</h1>
+              <p>Comparing the current runtime package with the latest protected publication.</p>
+            </article>
+          ) : releaseComparison ? (
+            <>
+              <article className={styles.lineItem}>
+                <div className={styles.lineHead}>
+                  <div>
+                    <h3>{getComparisonStatusLabel(releaseComparison.status)}</h3>
+                    <p className={styles.lineMeta}>
+                      Compared at {formatTimestamp(releaseComparison.comparedAt)}
+                    </p>
+                  </div>
+                  <div className={styles.linePrice}>
+                    {releaseComparison.latestPublishedRecord
+                      ? releaseComparison.latestPublishedRecord.id
+                      : "none"}
+                  </div>
+                </div>
+
+                <p>
+                  {releaseComparison.latestPublishedRecord
+                    ? `Current runtime is being compared against ${getVerificationModeLabel(
+                        releaseComparison.latestPublishedRecord.verificationMode,
+                      )} for ${releaseComparison.latestPublishedRecord.targetBaseUrl}.`
+                    : "No published package exists yet, so the current runtime is still ahead of the protected trail."}
+                </p>
+
+                <div className={styles.referenceCard}>
+                  <div className={styles.referenceRow}>
+                    <span>Blocked delta</span>
+                    <strong className={styles.referenceValue}>
+                      {formatDelta(releaseComparison.countDeltas.blocked.delta)}
+                    </strong>
+                  </div>
+                  <div className={styles.referenceRow}>
+                    <span>Warning delta</span>
+                    <strong className={styles.referenceValue}>
+                      {formatDelta(releaseComparison.countDeltas.warning.delta)}
+                    </strong>
+                  </div>
+                  <div className={styles.referenceRow}>
+                    <span>Ready delta</span>
+                    <strong className={styles.referenceValue}>
+                      {formatDelta(releaseComparison.countDeltas.ready.delta)}
+                    </strong>
+                  </div>
+                  <div className={styles.referenceRow}>
+                    <span>Current mode</span>
+                    <strong className={styles.referenceValue}>
+                      {getVerificationModeLabel(
+                        releaseComparison.currentArtifact.verificationMode,
+                      )}
+                    </strong>
+                  </div>
+                </div>
+
+                <div className={styles.summaryList}>
+                  {releaseComparison.summary.map((item) => (
+                    <div key={item} className={styles.infoBullet}>
+                      {item}
+                    </div>
+                  ))}
+                </div>
+              </article>
+
+              <article className={styles.lineItem}>
+                <div className={styles.lineHead}>
+                  <div>
+                    <h3>Changed fields</h3>
+                    <p className={styles.lineMeta}>
+                      Published package contract versus current runtime
+                    </p>
+                  </div>
+                </div>
+
+                <div className={styles.badgeRow}>
+                  <span>
+                    Overall status: {releaseComparison.changedFields.overallStatus ? "changed" : "stable"}
+                  </span>
+                  <span>
+                    Verification mode: {releaseComparison.changedFields.verificationMode ? "changed" : "stable"}
+                  </span>
+                  <span>
+                    Target URL: {releaseComparison.changedFields.targetBaseUrl ? "changed" : "stable"}
+                  </span>
+                  <span>
+                    Runtime environment: {releaseComparison.changedFields.runtimeEnvironment ? "changed" : "stable"}
+                  </span>
+                  <span>
+                    Next actions: {releaseComparison.changedFields.nextActions ? "changed" : "stable"}
+                  </span>
+                </div>
+
+                <div className={styles.summaryList}>
+                  <div className={styles.infoBullet}>
+                    Blocked items added:{" "}
+                    {releaseComparison.blockedItems.added.length
+                      ? releaseComparison.blockedItems.added.join(", ")
+                      : "none"}
+                  </div>
+                  <div className={styles.infoBullet}>
+                    Blocked items cleared:{" "}
+                    {releaseComparison.blockedItems.cleared.length
+                      ? releaseComparison.blockedItems.cleared.join(", ")
+                      : "none"}
+                  </div>
+                  <div className={styles.infoBullet}>
+                    Warning items added:{" "}
+                    {releaseComparison.warningItems.added.length
+                      ? releaseComparison.warningItems.added.join(", ")
+                      : "none"}
+                  </div>
+                  <div className={styles.infoBullet}>
+                    Warning items cleared:{" "}
+                    {releaseComparison.warningItems.cleared.length
+                      ? releaseComparison.warningItems.cleared.join(", ")
+                      : "none"}
+                  </div>
+                </div>
+              </article>
+            </>
+          ) : (
+            <article className={styles.emptyCard}>
+              <p className={styles.eyebrow}>Release compare</p>
+              <h1>Runtime drift summary is unavailable</h1>
+              <p>Recheck the protected compare API and the current release-package trail.</p>
             </article>
           )}
         </div>

@@ -4,7 +4,10 @@ import type {
 } from "@/lib/notification-types";
 import type { OpsAuditEntry, OpsSessionSummary } from "@/lib/ops-types";
 import type { ReleaseEvidenceReport } from "@/lib/release-evidence-types";
-import type { ReleasePackageRecord } from "@/lib/release-package-types";
+import type {
+  ReleasePackageComparison,
+  ReleasePackageRecord,
+} from "@/lib/release-package-types";
 import type { ReleaseReadinessSnapshot } from "@/lib/release-readiness-types";
 
 async function parseApiError(response: Response, fallbackMessage: string) {
@@ -109,6 +112,22 @@ export async function fetchOpsReleaseHistory() {
 
   return (await response.json()) as {
     releasePackages: ReleasePackageRecord[];
+  };
+}
+
+export async function fetchOpsReleaseComparison() {
+  const response = await fetch("/api/ops/release/compare", {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      await parseApiError(response, "تعذر تحميل مقارنة حزم الإطلاق الحالية."),
+    );
+  }
+
+  return (await response.json()) as {
+    releaseComparison: ReleasePackageComparison;
   };
 }
 

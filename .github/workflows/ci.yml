@@ -63,3 +63,13 @@ jobs:
             .artifacts/release-history.json
             .artifacts/release-history.md
           if-no-files-found: ignore
+
+      - name: Upload release diff artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-diff
+          path: |
+            .artifacts/release-diff.json
+            .artifacts/release-diff.md
+          if-no-files-found: ignore

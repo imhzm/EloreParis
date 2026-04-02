@@ -26,6 +26,7 @@
 - The latest executable smoke-evidence report is exposed through [`/api/ops/release/evidence`](D:/REDA/ksa%20cozmateks/src/app/api/ops/release/evidence/route.ts) and uploaded from CI as an artifact.
 - A combined release package is now exposed through [`/api/ops/release/package`](D:/REDA/ksa%20cozmateks/src/app/api/ops/release/package/route.ts) and uploaded from both CI and the live Render workflow as JSON plus Markdown artifacts.
 - Published release packages are now preserved through [`/api/ops/release/history`](D:/REDA/ksa%20cozmateks/src/app/api/ops/release/history/route.ts) and uploaded from both CI and the live Render workflow as release-history JSON plus Markdown artifacts.
+- Runtime drift versus the latest published package is now exposed through [`/api/ops/release/compare`](D:/REDA/ksa%20cozmateks/src/app/api/ops/release/compare/route.ts) and uploaded from both CI and the live Render workflow as release-diff JSON plus Markdown artifacts.
 - A manual Render deployment workflow now exists at [`deploy-render.yml`](D:/REDA/ksa%20cozmateks/.github/workflows/deploy-render.yml); it can trigger the deploy hook, wait for the live service to become healthy, and publish post-deploy evidence back into the deployed runtime.
 - Orders, notifications, and ops audit now share one SQLite-backed in-app authority with backward-compatible import from the older rehearsal JSON files.
 - Protected ops mutations require a trusted same-origin request instead of relying on signed cookies alone for write safety.
@@ -103,15 +104,16 @@ If you still want to use it for previews or one-off verification, it requires:
 8. Confirm `/api/ops/release/evidence` now reflects the latest live post-deploy verification report for the deployed build instead of staying empty.
 9. Confirm `/api/ops/release/package` now reflects the same live evidence plus the current blockers and next actions from the deployed runtime.
 10. Confirm `/api/ops/release/history` includes the newly published live release package record and preserves earlier publication entries.
-11. Confirm unauthenticated `/ops` redirects to `/ops-access`.
-12. Confirm the chosen ops identity can log in through username and password, reaches its allowed default route, and that a lower-privilege role cannot open unauthorized ops pages.
-13. Confirm origin-less or cross-origin attempts to mutate `/api/ops/*` and `/api/ops-access/logout` are rejected with `403`.
-14. Confirm repeated failed login attempts hit `429` throttling and recover only after the cooldown window.
-15. Confirm `/ops/notifications` can read queued delivery items and update a notification state without losing the shared authority database between requests or process restarts.
-16. Confirm `/ops/audit` can read recent login, order-state, notification-state, throttling, release-evidence publish, and release-package publish traces without losing the shared authority database between requests or process restarts.
-17. Confirm checkout can create an order and tracking can read it back in the chosen environment without losing the authority database between requests or process restarts.
-18. Confirm the homepage, product page, article page, `cart`, and `sitemap.xml` render correctly after deployment.
-19. Confirm public launch approval still matches [`CONTENT-OWNERSHIP.md`](D:/REDA/ksa%20cozmateks/CONTENT-OWNERSHIP.md), including sample-pack and business-input gates.
+11. Confirm `/api/ops/release/compare` reports `unchanged` immediately after a healthy live publication or surfaces any drift honestly if the runtime changed again.
+12. Confirm unauthenticated `/ops` redirects to `/ops-access`.
+13. Confirm the chosen ops identity can log in through username and password, reaches its allowed default route, and that a lower-privilege role cannot open unauthorized ops pages.
+14. Confirm origin-less or cross-origin attempts to mutate `/api/ops/*` and `/api/ops-access/logout` are rejected with `403`.
+15. Confirm repeated failed login attempts hit `429` throttling and recover only after the cooldown window.
+16. Confirm `/ops/notifications` can read queued delivery items and update a notification state without losing the shared authority database between requests or process restarts.
+17. Confirm `/ops/audit` can read recent login, order-state, notification-state, throttling, release-evidence publish, and release-package publish traces without losing the shared authority database between requests or process restarts.
+18. Confirm checkout can create an order and tracking can read it back in the chosen environment without losing the authority database between requests or process restarts.
+19. Confirm the homepage, product page, article page, `cart`, and `sitemap.xml` render correctly after deployment.
+20. Confirm public launch approval still matches [`CONTENT-OWNERSHIP.md`](D:/REDA/ksa%20cozmateks/CONTENT-OWNERSHIP.md), including sample-pack and business-input gates.
 
 ## Rollback Path
 
@@ -128,6 +130,7 @@ If you still want to use it for previews or one-off verification, it requires:
 - `/api/ops/release/evidence` reflects the most recent successful live post-deploy verification run
 - `/api/ops/release/package` reflects the latest live evidence plus the current blocker set from the deployed runtime
 - `/api/ops/release/history` preserves the publication trail for the latest live package and any prior verification snapshots
+- `/api/ops/release/compare` shows whether the deployed runtime still matches the latest published package or has drifted since publication
 - homepage response and metadata
 - unauthenticated `/ops` redirects to `/ops-access`
 - authenticated `/ops` dashboard still loads correctly

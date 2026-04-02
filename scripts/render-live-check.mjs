@@ -45,6 +45,16 @@ const releaseHistoryMarkdownArtifactPath = path.resolve(
   process.env.LIVE_RELEASE_HISTORY_MARKDOWN_PATH ??
     ".artifacts/render-live-release-history.md",
 );
+const releaseDiffArtifactPath = path.resolve(
+  process.cwd(),
+  process.env.LIVE_RELEASE_DIFF_ARTIFACT_PATH ??
+    ".artifacts/render-live-release-diff.json",
+);
+const releaseDiffMarkdownArtifactPath = path.resolve(
+  process.cwd(),
+  process.env.LIVE_RELEASE_DIFF_MARKDOWN_PATH ??
+    ".artifacts/render-live-release-diff.md",
+);
 
 if (!baseUrl) {
   throw new Error(
@@ -162,6 +172,34 @@ function writeReleaseHistoryArtifacts(releasePackages) {
   writeFileSync(
     releaseHistoryMarkdownArtifactPath,
     renderReleaseHistoryMarkdown(releasePackages),
+  );
+}
+
+function renderReleaseDiffMarkdown(releaseComparison) {
+  return [
+    "# Live Release Drift",
+    "",
+    `- Compared at: ${releaseComparison.comparedAt}`,
+    `- Status: ${releaseComparison.status}`,
+    `- Latest published record: ${releaseComparison.latestPublishedRecord?.id ?? "none"}`,
+    `- Blocked delta: ${releaseComparison.countDeltas.blocked.delta}`,
+    `- Warning delta: ${releaseComparison.countDeltas.warning.delta}`,
+    `- Ready delta: ${releaseComparison.countDeltas.ready.delta}`,
+    "",
+    "## Summary",
+    ...(releaseComparison.summary.length
+      ? releaseComparison.summary.map((item) => `- ${item}`)
+      : ["- No summary items."]),
+    "",
+  ].join("\n");
+}
+
+function writeReleaseDiffArtifacts(releaseComparison) {
+  mkdirSync(path.dirname(releaseDiffArtifactPath), { recursive: true });
+  writeFileSync(releaseDiffArtifactPath, JSON.stringify(releaseComparison, null, 2));
+  writeFileSync(
+    releaseDiffMarkdownArtifactPath,
+    renderReleaseDiffMarkdown(releaseComparison),
   );
 }
 
@@ -384,7 +422,7 @@ try {
       publicRouteChecks: 1,
       protectedRouteChecks: 2,
       assetChecks: 0,
-      apiChecks: 10,
+      apiChecks: 11,
     },
     checks: [
       {
@@ -415,6 +453,11 @@ try {
       {
         id: "live-release-history",
         title: "Release history readback from the deployed runtime",
+        count: 1,
+      },
+      {
+        id: "live-release-compare",
+        title: "Release compare readback from the deployed runtime",
         count: 1,
       },
     ],
@@ -519,7 +562,7 @@ try {
   );
   assert.equal(
     releasePackageBody?.releasePackage?.releaseEvidence?.summary.apiChecks,
-    10,
+    11,
   );
 
   const { response: releaseHistoryResponse, body: releaseHistoryBody } =
@@ -547,6 +590,25 @@ try {
   );
   writeReleasePackageArtifacts(livePublishedReleaseRecord.artifact);
   writeReleaseHistoryArtifacts(releaseHistoryBody.releasePackages);
+
+  const { response: releaseCompareResponse, body: releaseCompareBody } =
+    await fetchJson("/api/ops/release/compare", {
+      headers: {
+        Cookie: opsCookie,
+      },
+    });
+
+  assert.equal(
+    releaseCompareResponse.status,
+    200,
+    "Expected live release compare readback to return 200.",
+  );
+  assert.equal(releaseCompareBody?.releaseComparison?.status, "unchanged");
+  assert.equal(
+    releaseCompareBody?.releaseComparison?.latestPublishedRecord?.id,
+    publishReleasePackageBody?.releasePackageRecord?.id,
+  );
+  writeReleaseDiffArtifacts(releaseCompareBody.releaseComparison);
 
   const { response: auditResponse, body: auditBody } = await fetchJson(
     "/api/ops/audit",

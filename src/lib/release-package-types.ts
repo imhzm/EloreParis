@@ -45,3 +45,42 @@ export type ReleasePackageRecord = {
   readyCount: number;
   artifact: ReleasePackageArtifact;
 };
+
+export type ReleasePackageComparisonStatus =
+  | "unpublished"
+  | "unchanged"
+  | "changed";
+
+export type ReleasePackageCountDelta = {
+  published: number;
+  current: number;
+  delta: number;
+};
+
+export type ReleasePackageComparison = {
+  comparedAt: string;
+  status: ReleasePackageComparisonStatus;
+  latestPublishedRecord: ReleasePackageRecord | null;
+  currentArtifact: ReleasePackageArtifact;
+  countDeltas: {
+    blocked: ReleasePackageCountDelta;
+    warning: ReleasePackageCountDelta;
+    ready: ReleasePackageCountDelta;
+  };
+  changedFields: {
+    overallStatus: boolean;
+    verificationMode: boolean;
+    targetBaseUrl: boolean;
+    runtimeEnvironment: boolean;
+    nextActions: boolean;
+  };
+  blockedItems: {
+    added: string[];
+    cleared: string[];
+  };
+  warningItems: {
+    added: string[];
+    cleared: string[];
+  };
+  summary: string[];
+};

@@ -44,6 +44,11 @@ const releaseHistoryFile =
 const releaseHistoryMarkdownFile =
   process.env.SMOKE_RELEASE_HISTORY_MARKDOWN_PATH ??
   ".artifacts/release-history.md";
+const releaseDiffFile =
+  process.env.SMOKE_RELEASE_DIFF_PATH ?? ".artifacts/release-diff.json";
+const releaseDiffMarkdownFile =
+  process.env.SMOKE_RELEASE_DIFF_MARKDOWN_PATH ??
+  ".artifacts/release-diff.md";
 const standaloneStartScript = path.resolve(
   process.cwd(),
   "scripts/start-standalone.mjs",
@@ -93,6 +98,8 @@ function resetReleaseArtifacts() {
   safeRemoveAuthorityArtifact(releasePackageMarkdownFile);
   safeRemoveAuthorityArtifact(releaseHistoryFile);
   safeRemoveAuthorityArtifact(releaseHistoryMarkdownFile);
+  safeRemoveAuthorityArtifact(releaseDiffFile);
+  safeRemoveAuthorityArtifact(releaseDiffMarkdownFile);
 }
 
 function writeReleaseEvidence(report) {
@@ -191,6 +198,34 @@ function writeReleaseHistoryArtifacts(releasePackages) {
   writeFileSync(
     releaseHistoryMarkdownFile,
     renderReleaseHistoryMarkdown(releasePackages),
+  );
+}
+
+function renderReleaseDiffMarkdown(releaseComparison) {
+  return [
+    "# Release Drift",
+    "",
+    `- Compared at: ${releaseComparison.comparedAt}`,
+    `- Status: ${releaseComparison.status}`,
+    `- Latest published record: ${releaseComparison.latestPublishedRecord?.id ?? "none"}`,
+    `- Blocked delta: ${releaseComparison.countDeltas.blocked.delta}`,
+    `- Warning delta: ${releaseComparison.countDeltas.warning.delta}`,
+    `- Ready delta: ${releaseComparison.countDeltas.ready.delta}`,
+    "",
+    "## Summary",
+    ...(releaseComparison.summary.length
+      ? releaseComparison.summary.map((item) => `- ${item}`)
+      : ["- No summary items."]),
+    "",
+  ].join("\n");
+}
+
+function writeReleaseDiffArtifacts(releaseComparison) {
+  mkdirSync(path.dirname(releaseDiffFile), { recursive: true });
+  writeFileSync(releaseDiffFile, JSON.stringify(releaseComparison, null, 2));
+  writeFileSync(
+    releaseDiffMarkdownFile,
+    renderReleaseDiffMarkdown(releaseComparison),
   );
 }
 
@@ -418,9 +453,11 @@ const protectedOpsChecks = [
     markers: [
       "Internal release readiness",
       "Runtime preflight",
+      "Runtime drift",
       "Release history",
       "ops_release_to_health",
       "ops_release_to_history",
+      "ops_release_to_compare",
       'content="noindex, nofollow"',
     ],
   },
@@ -914,7 +951,7 @@ try {
       publicRouteChecks: publicSmokeChecks.length,
       protectedRouteChecks: protectedOpsChecks.length,
       assetChecks: assetChecks.length,
-      apiChecks: 16,
+      apiChecks: 17,
     },
     checks: [
       {
@@ -929,8 +966,8 @@ try {
       },
       {
         id: "api-contracts",
-        title: "Health, order, release, notification, audit, package, and history APIs",
-        count: 16,
+        title: "Health, order, release, notification, audit, package, history, and compare APIs",
+        count: 17,
       },
       {
         id: "release-assets",
@@ -990,7 +1027,7 @@ try {
   );
   assert.equal(
     releaseEvidenceBody.releaseEvidence.summary.apiChecks,
-    16,
+    17,
   );
 
   const {
@@ -1008,7 +1045,7 @@ try {
   );
   assert.equal(
     releasePackageBody.releasePackage.releaseEvidence?.summary.apiChecks,
-    16,
+    17,
   );
   assert.ok(
     releasePackageBody.releasePackage.blockedItems.some(
@@ -1036,7 +1073,7 @@ try {
   );
   assert.equal(
     publishReleasePackageBody.releasePackageRecord.artifact.releaseEvidence?.summary.apiChecks,
-    16,
+    17,
   );
 
   const {
@@ -1065,6 +1102,30 @@ try {
   );
   writeReleasePackageArtifacts(publishedReleaseRecord.artifact);
   writeReleaseHistoryArtifacts(releaseHistoryBody.releasePackages);
+
+  const {
+    response: releaseCompareResponse,
+    body: releaseCompareBody,
+  } = await fetchJson("/api/ops/release/compare", {
+    headers: {
+      Cookie: opsCookie,
+    },
+  });
+  assert.equal(
+    releaseCompareResponse.status,
+    200,
+    "Expected ops release compare API to return 200 for manager role",
+  );
+  assert.equal(releaseCompareBody.releaseComparison.status, "unchanged");
+  assert.equal(
+    releaseCompareBody.releaseComparison.latestPublishedRecord?.id,
+    publishReleasePackageBody.releasePackageRecord.id,
+  );
+  assert.equal(
+    releaseCompareBody.releaseComparison.countDeltas.blocked.delta,
+    0,
+  );
+  writeReleaseDiffArtifacts(releaseCompareBody.releaseComparison);
 
   const { response: releaseAuditResponse, body: releaseAuditBody } = await fetchJson(
     "/api/ops/audit",
