@@ -3,7 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { OpsNav } from "@/components/ops-nav";
 import { TrackedLink } from "@/components/tracked-link";
-import { fetchOpsReleaseReadiness } from "@/lib/ops-control-client";
+import {
+  fetchOpsReleaseEvidence,
+  fetchOpsReleaseReadiness,
+} from "@/lib/ops-control-client";
+import type { ReleaseEvidenceReport } from "@/lib/release-evidence-types";
 import type {
   ReleaseReadinessGate,
   ReleaseReadinessSnapshot,
@@ -21,24 +25,46 @@ function getStatusLabel(status: ReleaseReadinessGate["status"]) {
   }
 }
 
+function formatTimestamp(value: string) {
+  try {
+    return new Intl.DateTimeFormat("ar-SA", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }).format(new Date(value));
+  } catch {
+    return value;
+  }
+}
+
 export function OpsReleaseSurface() {
   const [snapshot, setSnapshot] = useState<ReleaseReadinessSnapshot | null>(null);
+  const [evidence, setEvidence] = useState<ReleaseEvidenceReport | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    void fetchOpsReleaseReadiness()
-      .then(({ releaseReadiness }) => {
-        setSnapshot(releaseReadiness);
-        setError(null);
-      })
-      .catch((loadError: unknown) => {
-        setSnapshot(null);
-        setError(
-          loadError instanceof Error
-            ? loadError.message
-            : "تعذر تحميل blockers الإطلاق الحية من سطح ops الداخلي.",
-        );
+    void Promise.allSettled([
+      fetchOpsReleaseReadiness(),
+      fetchOpsReleaseEvidence(),
+    ])
+      .then(([readinessResult, evidenceResult]) => {
+        if (readinessResult.status === "fulfilled") {
+          setSnapshot(readinessResult.value.releaseReadiness);
+          setError(null);
+        } else {
+          setSnapshot(null);
+          setError(
+            readinessResult.reason instanceof Error
+              ? readinessResult.reason.message
+              : "تعذر تحميل blockers الإطلاق الحية من سطح ops الداخلي.",
+          );
+        }
+
+        if (evidenceResult.status === "fulfilled") {
+          setEvidence(evidenceResult.value.releaseEvidence);
+        } else {
+          setEvidence(null);
+        }
       })
       .finally(() => {
         setIsLoading(false);
@@ -62,11 +88,11 @@ export function OpsReleaseSurface() {
       <section className={styles.hero}>
         <div>
           <p className={styles.eyebrow}>Internal release readiness</p>
-          <h1>Surface حية تكشف blockers الإطلاق من runtime نفسها بدل إبقائها في docs فقط.</h1>
+          <h1>سطح حي يكشف blockers الإطلاق من runtime نفسها بدل إبقائها في docs فقط.</h1>
           <p className={styles.summary}>
             هذا السطح لا يدّعي أن الإطلاق مكتمل. بل يجمع ما تبقى من blockers
-            الحقيقية: الاستضافة، authority التشغيلية، auth الداخلية، وموافقات المحتوى
-            العامة قبل أي claim عن launch readiness.
+            الحقيقية: الاستضافة، authority التشغيلية، auth الداخلية، موافقات
+            المحتوى العامة، وآخر evidence تحقق محفوظة قبل أي claim عن launch readiness.
           </p>
         </div>
 
@@ -155,6 +181,51 @@ export function OpsReleaseSurface() {
 
         <aside className={styles.summaryList}>
           <article className={styles.summaryCard}>
+            <p className={styles.sectionTitle}>Latest evidence</p>
+            <h2>آخر verification محفوظة</h2>
+            {evidence ? (
+              <div className={styles.summaryList}>
+                <div className={styles.infoBullet}>
+                  <strong>{formatTimestamp(evidence.generatedAt)}</strong>
+                  <br />
+                  آخر تقرير محفوظ من smoke verification.
+                </div>
+                <div className={styles.referenceCard}>
+                  <div className={styles.referenceRow}>
+                    <span>Public routes</span>
+                    <strong className={styles.referenceValue}>
+                      {evidence.summary.publicRouteChecks}
+                    </strong>
+                  </div>
+                  <div className={styles.referenceRow}>
+                    <span>Protected ops routes</span>
+                    <strong className={styles.referenceValue}>
+                      {evidence.summary.protectedRouteChecks}
+                    </strong>
+                  </div>
+                  <div className={styles.referenceRow}>
+                    <span>API checks</span>
+                    <strong className={styles.referenceValue}>
+                      {evidence.summary.apiChecks}
+                    </strong>
+                  </div>
+                  <div className={styles.referenceRow}>
+                    <span>Assets</span>
+                    <strong className={styles.referenceValue}>
+                      {evidence.summary.assetChecks}
+                    </strong>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className={styles.infoBullet}>
+                لا يوجد evidence محفوظة بعد في هذه البيئة. شغّل smoke verification أو
+                انتظر artifact الـ CI التالية.
+              </div>
+            )}
+          </article>
+
+          <article className={styles.summaryCard}>
             <p className={styles.sectionTitle}>Next actions</p>
             <h2>ما الذي يغلق blockers المتبقية؟</h2>
             <div className={styles.summaryList}>
@@ -178,6 +249,15 @@ export function OpsReleaseSurface() {
               >
                 <span>Health endpoint</span>
                 <span>Runtime health + authority mode</span>
+              </TrackedLink>
+              <TrackedLink
+                href="/api/ops/release/evidence"
+                analyticsLabel="ops_release_to_evidence"
+                analyticsSurface="ops_release_links"
+                analyticsDestinationType="other"
+              >
+                <span>Evidence API</span>
+                <span>Latest smoke report</span>
               </TrackedLink>
               <TrackedLink
                 href="/ops/content"

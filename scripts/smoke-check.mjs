@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { existsSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
+import path from "node:path";
 import process from "node:process";
 import { setTimeout as delay } from "node:timers/promises";
 
@@ -31,6 +32,10 @@ const opsAuditFile =
 const notificationAuthorityFile =
   process.env.SMOKE_NOTIFICATION_AUTHORITY_FILE ??
   ".data/smoke-notifications.json";
+const releaseEvidenceFile =
+  process.env.SMOKE_RELEASE_EVIDENCE_PATH ??
+  process.env.RELEASE_EVIDENCE_PATH ??
+  ".artifacts/release-evidence.json";
 const nextCliPath = require.resolve("next/dist/bin/next");
 
 if (!existsSync(".next/BUILD_ID")) {
@@ -69,6 +74,12 @@ function safeCleanupAuthorityArtifacts() {
   safeRemoveAuthorityArtifact(orderAuthorityFile);
   safeRemoveAuthorityArtifact(opsAuditFile);
   safeRemoveAuthorityArtifact(notificationAuthorityFile);
+  safeRemoveAuthorityArtifact(releaseEvidenceFile);
+}
+
+function writeReleaseEvidence(report) {
+  mkdirSync(path.dirname(releaseEvidenceFile), { recursive: true });
+  writeFileSync(releaseEvidenceFile, JSON.stringify(report, null, 2));
 }
 
 async function shutdownServer() {
@@ -366,6 +377,7 @@ server = spawn(process.execPath, [nextCliPath, "start", "--port", String(port)],
     ORDER_AUTHORITY_FILE: orderAuthorityFile,
     OPS_AUDIT_FILE: opsAuditFile,
     NOTIFICATION_AUTHORITY_FILE: notificationAuthorityFile,
+    RELEASE_EVIDENCE_PATH: releaseEvidenceFile,
   },
   stdio: ["ignore", "pipe", "pipe"],
 });
@@ -791,6 +803,69 @@ try {
       "/ops/catalog",
     ),
     "Expected catalog operator to be redirected away from /ops/release",
+  );
+
+  const releaseEvidence = {
+    generatedAt: new Date().toISOString(),
+    targetBaseUrl: baseUrl,
+    environment: health.environment,
+    commitReference: health.commitReference ?? null,
+    authorityStorage: {
+      engine: health.authorityStorage.engine,
+      durability: health.authorityStorage.durability,
+    },
+    summary: {
+      publicRouteChecks: publicSmokeChecks.length,
+      protectedRouteChecks: protectedOpsChecks.length,
+      assetChecks: assetChecks.length,
+      apiChecks: 8,
+    },
+    checks: [
+      {
+        id: "public-routes",
+        title: "Public route rendering and SEO markers",
+        count: publicSmokeChecks.length,
+      },
+      {
+        id: "protected-ops-routes",
+        title: "Protected ops routes behind authenticated sessions",
+        count: protectedOpsChecks.length,
+      },
+      {
+        id: "api-contracts",
+        title: "Health, orders, notifications, audit, and release APIs",
+        count: 8,
+      },
+      {
+        id: "release-assets",
+        title: "Release-facing assets and social preview surfaces",
+        count: assetChecks.length,
+      },
+    ],
+  };
+
+  writeReleaseEvidence(releaseEvidence);
+
+  const {
+    response: releaseEvidenceResponse,
+    body: releaseEvidenceBody,
+  } = await fetchJson("/api/ops/release/evidence", {
+    headers: {
+      Cookie: opsCookie,
+    },
+  });
+  assert.equal(
+    releaseEvidenceResponse.status,
+    200,
+    "Expected ops release evidence API to return 200 for manager role",
+  );
+  assert.equal(
+    releaseEvidenceBody.releaseEvidence.summary.publicRouteChecks,
+    publicSmokeChecks.length,
+  );
+  assert.equal(
+    releaseEvidenceBody.releaseEvidence.summary.protectedRouteChecks,
+    protectedOpsChecks.length,
   );
 
   const throttledIp = "198.51.100.42";
