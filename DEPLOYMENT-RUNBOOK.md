@@ -16,6 +16,7 @@
 
 - `lint`, `build`, and smoke regression checks run locally.
 - GitHub Actions CI runs `lint`, `build`, and smoke checks on every push.
+- The repository now expects `Node.js 22+` because the shared application authority uses the built-in `node:sqlite` runtime.
 - A secret-gated workflow now exists at [deploy-vercel.yml](D:/REDA/ksa%20cozmateks/.github/workflows/deploy-vercel.yml).
 - Health checks are exposed through [`/api/health`](D:/REDA/ksa%20cozmateks/src/app/api/health/route.ts).
 - Orders, notifications, and ops audit now share one SQLite-backed in-app authority with backward-compatible import from the older rehearsal JSON files.
