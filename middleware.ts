@@ -1,6 +1,8 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import {
+  canRoleAccessOpsPath,
+  getDefaultOpsPathForRole,
   getOpsAccessConfig,
   OPS_SESSION_COOKIE,
   sanitizeOpsNextPath,
@@ -26,11 +28,17 @@ export async function middleware(request: NextRequest) {
   }
 
   const sessionCookie = request.cookies.get(OPS_SESSION_COOKIE)?.value;
+  const session = sessionCookie
+    ? await verifyOpsSessionToken(sessionCookie, accessConfig)
+    : null;
 
-  if (
-    sessionCookie &&
-    (await verifyOpsSessionToken(sessionCookie, accessConfig.accessCode))
-  ) {
+  if (session) {
+    if (!canRoleAccessOpsPath(session.role, request.nextUrl.pathname)) {
+      const fallbackUrl = new URL(getDefaultOpsPathForRole(session.role), request.url);
+      fallbackUrl.searchParams.set("denied", request.nextUrl.pathname);
+      return NextResponse.redirect(fallbackUrl);
+    }
+
     return NextResponse.next();
   }
 

@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import { logOpsAuditEvent } from "@/lib/ops-audit";
 import {
   advanceAuthorityOrderStatus,
   assertOpsApiAccess,
@@ -18,10 +19,29 @@ export async function PATCH(
   context: OpsOrderRouteContext,
 ) {
   try {
-    await assertOpsApiAccess(request);
+    const session = await assertOpsApiAccess(request);
     const { orderNumber } = await context.params;
     const { order, previousStatus, nextStatus } =
       await advanceAuthorityOrderStatus(orderNumber);
+
+    if (session) {
+      await logOpsAuditEvent({
+        action: "ops_order_status_update",
+        actor: {
+          userId: session.userId,
+          name: session.name,
+          role: session.role,
+        },
+        entityType: "order",
+        entityId: order.orderNumber,
+        summary: `${session.name} moved ${order.orderNumber} from ${previousStatus} to ${nextStatus}.`,
+        metadata: {
+          previous_status: previousStatus,
+          next_status: nextStatus,
+          payment_method: order.paymentMethodId,
+        },
+      });
+    }
 
     return NextResponse.json({
       order,

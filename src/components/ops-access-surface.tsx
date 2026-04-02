@@ -3,16 +3,18 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { TrackedLink } from "@/components/tracked-link";
-import type { OpsAccessMode } from "@/lib/ops-access";
+import type { OpsAccessMode } from "@/lib/ops-types";
 import styles from "./order-flow.module.css";
 
 type OpsAccessSurfaceProps = {
   accessMode: OpsAccessMode;
+  deniedPath?: string;
   nextPath: string;
 };
 
 export function OpsAccessSurface({
   accessMode,
+  deniedPath,
   nextPath,
 }: OpsAccessSurfaceProps) {
   const router = useRouter();
@@ -105,6 +107,13 @@ export function OpsAccessSurface({
 
           {accessMode === "protected" ? (
             <>
+              {deniedPath ? (
+                <div className={styles.inlineError}>
+                  الجلسة الحالية لا تملك صلاحية الدخول إلى `{deniedPath}`. استخدم
+                  رمزًا مناسبًا للدور المطلوب أو ارجع إلى المسار الداخلي المسموح.
+                </div>
+              ) : null}
+
               <p>
                 الحماية مفعلة الآن. أدخل رمز الوصول الداخلي لمتابعة العمل على الأسطح التشغيلية.
               </p>
@@ -138,12 +147,14 @@ export function OpsAccessSurface({
           ) : accessMode === "setup_required" ? (
             <>
               <div className={styles.inlineError}>
-                الحماية مفعلة، لكن `OPS_ACCESS_CODE` غير مضبوط بعد في البيئة الحالية. لذلك
-                بقيت أسطح `/ops` مغلقة افتراضيًا بدل السماح بدخول غير محمي.
+                الحماية مفعلة، لكن `OPS_ACCESS_USERS_JSON` أو `OPS_ACCESS_CODE`
+                غير مضبوط بعد في البيئة الحالية. لذلك بقيت أسطح `/ops` مغلقة
+                افتراضيًا بدل السماح بدخول غير محمي.
               </div>
               <p>
-                أضف `OPS_ACCESS_CODE` إلى البيئة، ثم أعد التشغيل أو أعد النشر حتى تصبح البوابة
-                قابلة للاستخدام.
+                أضف مجموعة مستخدمين داخل `OPS_ACCESS_USERS_JSON` أو فعّل fallback
+                البسيط عبر `OPS_ACCESS_CODE`، ثم أعد التشغيل أو أعد النشر حتى تصبح
+                البوابة قابلة للاستخدام.
               </p>
             </>
           ) : (
@@ -222,6 +233,15 @@ export function OpsAccessSurface({
             >
               <span>إدارة fulfillment</span>
               <span>Routing</span>
+            </TrackedLink>
+            <TrackedLink
+              href="/ops/audit"
+              analyticsLabel="ops_access_to_audit"
+              analyticsSurface="ops_access_links"
+              analyticsDestinationType="ops_audit"
+            >
+              <span>سجل المراجعة</span>
+              <span>Audit</span>
             </TrackedLink>
           </div>
         </aside>

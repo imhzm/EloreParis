@@ -51,12 +51,15 @@ These routes remain valid public surfaces for IA, SEO, and future merchandising,
 - `/ops/orders`
 - `/ops/catalog`
 - `/ops/fulfillment`
+- `/ops/audit`
 - protected ops order APIs
+- protected ops session and audit APIs
 - local KPI rehearsal
 - local supplier and stock rehearsal
 - centralized order queue review and status rehearsal
 - local fulfillment routing logic
 - local notification planning
+- local session and order audit trace
 
 ### Must Move To Real Backend Ownership Before Launch
 
@@ -66,14 +69,15 @@ These routes remain valid public surfaces for IA, SEO, and future merchandising,
 - payment orchestration
 - shipping orchestration
 - delivery notifications
-- role-based ops access
-- audit trail for sensitive actions
+- identity-backed ops access
+- durable audit trail for sensitive actions
 
 ## Access Boundary
 
 - `/ops/*` is internal only
 - `/ops-access` is the only public entry point into the ops gate
-- production and enforced environments require `OPS_ACCESS_CODE`
+- production and enforced environments require either `OPS_ACCESS_USERS_JSON` or the legacy `OPS_ACCESS_CODE`
+- role-aware signed sessions currently gate dashboard, orders, fulfillment, catalog, and audit access
 - development may remain open unless `ENFORCE_OPS_ACCESS=true`
 
 This is not final authentication. It is a safe boundary that stops the internal rehearsal layer from remaining publicly exposed while the real backoffice is still unresolved.
@@ -83,8 +87,9 @@ This is not final authentication. It is a safe boundary that stops the internal 
 Launch cannot be considered complete while these remain local or provisional:
 
 - file-backed order persistence
+- file-backed ops audit persistence
 - payment provider handoff
 - shipment dispatch ownership
 - notification delivery ownership
 - final legal/business data
-- real ops roles and permissions
+- real ops identities, roles, and permissions

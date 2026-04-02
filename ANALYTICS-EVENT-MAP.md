@@ -16,6 +16,7 @@ This project now tracks the minimum event set needed to answer early-stage store
 8. How often does the internal operations layer advance centralized rehearsal order states before a real backoffice is selected?
 9. Which in-app authority orders require manual review, split-shipment coordination, or COD fallback inside the rehearsal layer?
 10. Are protected internal ops surfaces still reachable and reviewable after the access gate is enabled?
+11. Can internal operators still move between dashboard, orders, fulfillment, catalog, and audit surfaces without losing route-level visibility after role gating is enabled?
 
 ## Event Set
 
@@ -234,6 +235,7 @@ Tracked properties:
 - Internal `/ops/orders` queue actions and tracking shortcuts
 - Internal `/ops/fulfillment` routing queue, notification review, and order-tracking shortcuts
 - Internal `/ops-access` gate plus logout action through the protected ops navigation
+- Internal `/ops`, `/ops/orders`, `/ops/fulfillment`, `/ops/catalog`, and `/ops/audit` navigation links under the role-aware session model
 - FAQ route links into tracking, trust policies, and contact
 - Contact route links into FAQ, tracking, and trust support paths
 - About route links into trust, terms, contact, and shopping discovery

@@ -9,11 +9,16 @@ const require = createRequire(import.meta.url);
 const port = Number(process.env.SMOKE_PORT ?? 3066);
 const host = process.env.SMOKE_HOST ?? "127.0.0.1";
 const baseUrl = `http://${host}:${port}`;
-const opsAccessCode = process.env.SMOKE_OPS_ACCESS_CODE ?? "smoke-ops-access";
+const opsManagerCode =
+  process.env.SMOKE_OPS_MANAGER_CODE ?? "smoke-ops-manager";
+const opsCatalogCode =
+  process.env.SMOKE_OPS_CATALOG_CODE ?? "smoke-ops-catalog";
 const orderAuthoritySecret =
   process.env.SMOKE_ORDER_AUTHORITY_SECRET ?? "smoke-order-authority";
 const orderAuthorityFile =
   process.env.SMOKE_ORDER_AUTHORITY_FILE ?? ".data/smoke-orders.json";
+const opsAuditFile =
+  process.env.SMOKE_OPS_AUDIT_FILE ?? ".data/smoke-ops-audit.json";
 const nextCliPath = require.resolve("next/dist/bin/next");
 
 if (!existsSync(".next/BUILD_ID")) {
@@ -39,6 +44,12 @@ function formatRecentLogs() {
 function safeCleanupOrderStore() {
   try {
     rmSync(orderAuthorityFile, { force: true });
+  } catch {
+    // Ignore smoke cleanup failures.
+  }
+
+  try {
+    rmSync(opsAuditFile, { force: true });
   } catch {
     // Ignore smoke cleanup failures.
   }
@@ -193,6 +204,14 @@ const publicSmokeChecks = [
     ],
   },
   {
+    pathname: "/ops-access?next=%2Fops%2Faudit",
+    markers: [
+      "Ops access gate",
+      "ops_access_to_audit",
+      'content="noindex, nofollow"',
+    ],
+  },
+  {
     pathname: "/sitemap.xml",
     markers: [
       "/shop/haircare",
@@ -236,6 +255,14 @@ const protectedOpsChecks = [
       'content="noindex, nofollow"',
     ],
   },
+  {
+    pathname: "/ops/audit",
+    markers: [
+      "Internal audit",
+      "ops_audit_to_orders",
+      'content="noindex, nofollow"',
+    ],
+  },
 ];
 
 const assetChecks = ["/og-product.svg", "/og-journal.svg"];
@@ -255,10 +282,25 @@ server = spawn(process.execPath, [nextCliPath, "start", "--port", String(port)],
   env: {
     ...process.env,
     NEXT_PUBLIC_SITE_URL: baseUrl,
-    OPS_ACCESS_CODE: opsAccessCode,
+    OPS_ACCESS_USERS_JSON: JSON.stringify([
+      {
+        id: "manager",
+        name: "Smoke Manager",
+        role: "manager",
+        accessCode: opsManagerCode,
+      },
+      {
+        id: "catalog",
+        name: "Smoke Catalog",
+        role: "catalog_operator",
+        accessCode: opsCatalogCode,
+      },
+    ]),
+    OPS_ACCESS_SIGNING_SECRET: "smoke-ops-signing-secret",
     ENFORCE_OPS_ACCESS: "true",
     ORDER_AUTHORITY_SECRET: orderAuthoritySecret,
     ORDER_AUTHORITY_FILE: orderAuthorityFile,
+    OPS_AUDIT_FILE: opsAuditFile,
   },
   stdio: ["ignore", "pipe", "pipe"],
 });
@@ -368,7 +410,7 @@ try {
     "POST",
     "/api/ops-access/login",
     {
-      accessCode: opsAccessCode,
+      accessCode: opsManagerCode,
       nextPath: "/ops",
     },
   );
@@ -377,6 +419,17 @@ try {
   assert.equal(loginBody.redirectTo, "/ops");
 
   const opsCookie = extractCookie(loginResponse, "cozmateks-ops-session");
+
+  const { response: opsSessionResponse, body: opsSessionBody } = await fetchJson(
+    "/api/ops/session",
+    {
+      headers: {
+        Cookie: opsCookie,
+      },
+    },
+  );
+  assert.equal(opsSessionResponse.status, 200);
+  assert.equal(opsSessionBody.session.role, "manager");
 
   const { response: opsOrdersResponse, body: opsOrdersBody } = await fetchJson(
     "/api/ops/orders",
@@ -408,6 +461,28 @@ try {
   assert.equal(updateOrderBody.previousStatus, "payment_pending");
   assert.equal(updateOrderBody.nextStatus, "confirmed");
 
+  const { response: auditResponse, body: auditBody } = await fetchJson(
+    "/api/ops/audit",
+    {
+      headers: {
+        Cookie: opsCookie,
+      },
+    },
+  );
+  assert.equal(auditResponse.status, 200);
+  assert.ok(
+    auditBody.auditEntries.some((entry) => entry.action === "ops_login_success"),
+    "Expected audit API to include a login success entry",
+  );
+  assert.ok(
+    auditBody.auditEntries.some(
+      (entry) =>
+        entry.action === "ops_order_status_update" &&
+        entry.entityId === createOrderBody.order.orderNumber,
+    ),
+    "Expected audit API to include the smoke order status update",
+  );
+
   for (const check of protectedOpsChecks) {
     const { response, body } = await fetchText(check.pathname, {
       headers: {
@@ -424,6 +499,50 @@ try {
       assertIncludes(body, marker, check.pathname);
     }
   }
+
+  const { response: catalogLoginResponse, body: catalogLoginBody } = await sendJson(
+    "POST",
+    "/api/ops-access/login",
+    {
+      accessCode: opsCatalogCode,
+      nextPath: "/ops",
+    },
+  );
+  assert.equal(catalogLoginResponse.status, 200);
+  assert.equal(catalogLoginBody.redirectTo, "/ops/catalog");
+
+  const catalogCookie = extractCookie(
+    catalogLoginResponse,
+    "cozmateks-ops-session",
+  );
+
+  const catalogRedirectResponse = await fetch(`${baseUrl}/ops/orders`, {
+    cache: "no-store",
+    headers: {
+      Cookie: catalogCookie,
+    },
+    redirect: "manual",
+  });
+  assert.equal(catalogRedirectResponse.status, 307);
+  assert.ok(
+    (catalogRedirectResponse.headers.get("location") ?? "").includes(
+      "/ops/catalog",
+    ),
+    "Expected catalog operator to be redirected back to /ops/catalog",
+  );
+
+  const { response: forbiddenOrdersApiResponse, body: forbiddenOrdersApiBody } =
+    await fetchJson("/api/ops/orders", {
+      headers: {
+        Cookie: catalogCookie,
+      },
+    });
+  assert.equal(forbiddenOrdersApiResponse.status, 403);
+  assert.match(
+    forbiddenOrdersApiBody.error,
+    /permission/i,
+    "Expected role-aware permission error for catalog operator",
+  );
 
   console.log(`Smoke checks passed against ${baseUrl}`);
 } catch (error) {

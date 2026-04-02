@@ -36,10 +36,16 @@ Without these three secrets, the deploy workflow remains intentionally inactive.
   Required once transactional routes are deployed anywhere outside local development. Use a strong server-only value distinct from `OPS_ACCESS_CODE`.
 - `ORDER_AUTHORITY_FILE`
   Optional override for the current file-backed order authority path. Keep it on persistent storage if you use it outside local or CI rehearsal environments.
+- `OPS_ACCESS_USERS_JSON`
+  Preferred way to define internal ops users and roles. Example shape: `[{"id":"ops-manager","name":"Ops manager","role":"manager","accessCode":"..."}]`.
 - `OPS_ACCESS_CODE`
-  Required for protecting `/ops/*` in production. Use a strong internal-only value and do not expose it client-side.
+  Legacy fallback for protecting `/ops/*` in production when you only need one manager-style internal code. Use a strong internal-only value and do not expose it client-side.
+- `OPS_ACCESS_SIGNING_SECRET`
+  Strong server-only secret for signing ops sessions. Required whenever you use multiple ops users or want the session secret to be distinct from access codes.
 - `ENFORCE_OPS_ACCESS`
   Optional local/staging override. Set to `true` when you want to test the ops gate outside production.
+- `OPS_AUDIT_FILE`
+  Optional override for the current file-backed ops audit log path. Keep it on persistent storage if you use it outside local or CI rehearsal environments.
 
 If `NEXT_PUBLIC_SITE_URL` is absent, the app now falls back in this order:
 
@@ -57,8 +63,10 @@ If `NEXT_PUBLIC_SITE_URL` is absent, the app now falls back in this order:
 4. Push to `main` or trigger the workflow manually.
 5. Confirm the deployment URL returns `200` on `/api/health`.
 6. Confirm unauthenticated `/ops` redirects to `/ops-access`.
-7. Confirm checkout can create an order and tracking can read it back in the chosen environment without losing the authority file between requests.
-8. Confirm the homepage, product page, article page, `cart`, and `sitemap.xml` render correctly after deployment.
+7. Confirm the chosen ops role reaches its allowed default route and that a lower-privilege role cannot open unauthorized ops pages.
+8. Confirm `/ops/audit` can read recent login and order-state traces without losing the audit file between requests.
+9. Confirm checkout can create an order and tracking can read it back in the chosen environment without losing the authority file between requests.
+10. Confirm the homepage, product page, article page, `cart`, and `sitemap.xml` render correctly after deployment.
 
 ## Rollback Path
 
@@ -72,6 +80,8 @@ If `NEXT_PUBLIC_SITE_URL` is absent, the app now falls back in this order:
 - homepage response and metadata
 - unauthenticated `/ops` redirects to `/ops-access`
 - authenticated `/ops` dashboard still loads correctly
+- authorized roles only see the ops routes they are allowed to use
+- `/ops/audit` still loads and shows recent traces after login
 - product and journal share-preview tags
 - `cart` and `checkout` still marked `noindex, nofollow`
 - smoke-critical routes still load correctly
@@ -82,4 +92,5 @@ If `NEXT_PUBLIC_SITE_URL` is absent, the app now falls back in this order:
 - No Vercel credentials are configured on this machine or in GitHub secrets yet.
 - No linked Vercel project exists inside this repository yet.
 - The current transactional order authority is file-backed and not durable enough for a real production launch on ephemeral/serverless hosting without a persistent backend replacement.
+- The current ops audit authority is file-backed and not durable enough for long-lived production auditing on ephemeral/serverless hosting without a persistent backend replacement.
 - Legal/business production data is still provisional, so a public launch claim would still be premature even after the first deploy.

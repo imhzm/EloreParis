@@ -5,8 +5,8 @@
 - Start date: 2026-04-01
 - Last updated: 2026-04-02
 - Current phase: `implementation`
-- Overall completion: `86%`
-- Current focus: centralized order authority plus protected `/ops` access over the existing fulfillment, catalog, and order rehearsal layer
+- Overall completion: `89%`
+- Current focus: role-aware `/ops` sessions, internal audit trail, and centralized order authority over the existing fulfillment, catalog, and order rehearsal layer
 - Forecast status: `date not committed yet`
 - Working estimate: `12-16 weeks for an MVP after stack, catalog model, and integration scope are frozen`
 
@@ -16,12 +16,12 @@ Progress is tracked against SkyWave phases, not by ad-hoc task count.
 
 | Phase | Weight | Status | Progress | Exit gate |
 | --- | ---: | --- | ---: | --- |
-| Discovery | 15% | In Progress | 86% | Brief, sitemap, user flows, MVP boundary, backlog, open decisions |
-| Design and Architecture | 20% | In Progress | 80% | Design system direction, page architecture, stack and data decisions |
-| Implementation | 35% | In Progress | 98% | Public storefront and required internal surfaces implemented |
-| Validation | 10% | In Progress | 95% | Lint, typecheck, tests, UX QA, SEO/schema QA, accessibility QA |
-| Release | 10% | In Progress | 78% | Deployment target, configs, monitoring, legal/trust gates, rollback path |
-| Growth and Automation | 10% | In Progress | 55% | CRM flows, SEO growth loops, analytics maturity, post-launch automations |
+| Discovery | 15% | In Progress | 87% | Brief, sitemap, user flows, MVP boundary, backlog, open decisions |
+| Design and Architecture | 20% | In Progress | 83% | Design system direction, page architecture, stack and data decisions |
+| Implementation | 35% | In Progress | 99% | Public storefront and required internal surfaces implemented |
+| Validation | 10% | In Progress | 97% | Lint, typecheck, tests, UX QA, SEO/schema QA, accessibility QA |
+| Release | 10% | In Progress | 86% | Deployment target, configs, monitoring, legal/trust gates, rollback path |
+| Growth and Automation | 10% | In Progress | 60% | CRM flows, SEO growth loops, analytics maturity, post-launch automations |
 
 ## Current Discovery Checklist
 
@@ -118,6 +118,9 @@ Progress is tracked against SkyWave phases, not by ad-hoc task count.
 - [x] Added a centralized in-app order authority with protected API routes and recent-order cookie access
 - [x] Moved checkout creation, confirmation, tracking, and internal ops order reads off browser-only storage into shared application authority
 - [x] Expanded smoke coverage to exercise order create, track, and ops status updates through the new API authority layer
+- [x] Added role-aware ops sessions with per-route authorization and role-specific fallbacks for `/ops/*`
+- [x] Added an internal `/ops/audit` surface plus a local audit authority for session and order-state traces
+- [x] Expanded smoke coverage to verify ops session state, audit visibility, and forbidden-role redirects across protected ops routes
 - [ ] Freeze content ownership and sample requirements
 
 ## Current Status by Quality Layer
@@ -128,11 +131,11 @@ Progress is tracked against SkyWave phases, not by ad-hoc task count.
 | SEO / AEO / GEO | In Progress | Metadata, route structure, internal links, journal flow, robots, sitemap, and release-facing share metadata now cover the broader shop atlas plus collection, ingredient, concern, routine, product, trust, FAQ, contact, about, terms, and internal search discovery templates, with dedicated commerce/editorial social previews on PDPs and articles, deploy-safe absolute URL resolution for hosted environments, filtered collection states canonicalized back to the main category URL, and transactional `cart` / `checkout` routes marked `noindex,nofollow` |
 | Schema strategy | In Progress | JSON-LD foundations exist on home, category, ingredient, concern, routine, product, journal, article, trust, FAQ, contact, about, and terms routes, and filtered collection plus ingredient discovery states now emit result-aware `ItemList` markup |
 | Accessibility | In Progress | Semantic layout and skip-link exist; full QA is still pending, but smoke coverage now protects core route rendering from silent regressions |
-| Security / Privacy | In Progress | Trust, privacy, shipping, returns, authenticity, FAQ, contact, about, and terms surfaces now exist as real public routes, track-order now uses order reference plus phone last-4 or a short-lived recent-order cookie instead of exposing full customer details, `/ops/*` and ops APIs now sit behind the internal access gate, and the app emits safe default security headers; real business data, final support channels, and legal review are still pending |
+| Security / Privacy | In Progress | Trust, privacy, shipping, returns, authenticity, FAQ, contact, about, and terms surfaces now exist as real public routes, track-order now uses order reference plus phone last-4 or a short-lived recent-order cookie instead of exposing full customer details, `/ops/*` and ops APIs now sit behind a role-aware internal access gate with signed sessions and route-level permission checks, and the app emits safe default security headers; real business data, final support channels, and legal review are still pending |
 | Performance / CWV | In Progress | Next.js foundation is in place; runtime and asset optimization still pending |
-| Analytics / Conversion | In Progress | Page views, global navigation, core CTA instrumentation, internal search submit/result events including ingredient result groups, collection `filter_apply`, ingredient route links, `add_to_cart`, `cart_update`, `checkout_start`, `checkout_option_change`, `checkout_complete`, `track_order_lookup`, internal ops route page typing, and internal `ops_order_status_update` are now wired against the centralized in-app order authority; real payment completion and lifecycle notifications are still pending |
+| Analytics / Conversion | In Progress | Page views, global navigation, core CTA instrumentation, internal search submit/result events including ingredient result groups, collection `filter_apply`, ingredient route links, `add_to_cart`, `cart_update`, `checkout_start`, `checkout_option_change`, `checkout_complete`, `track_order_lookup`, internal ops route page typing including `/ops/audit`, and internal `ops_order_status_update` are now wired against the centralized in-app order authority; real payment completion and lifecycle notifications are still pending |
 | Content system | In Progress | Editorial, concern, routine, product, collection, trust, FAQ, contact, about, and terms shells exist, but voice remains provisional until real samples exist |
-| Release / Ops | In Progress | Local runtime is stable on port `3056`, checkout now writes order references into a centralized in-app authority instead of browser-only storage, confirmation and tracking now read from protected API routes, internal `/ops`, `/ops/catalog`, `/ops/fulfillment`, and `/ops/orders` surfaces now rehearse KPI review, catalog ownership, routing, supplier exceptions, notification planning, and order progression through guarded APIs without claiming a real backoffice, `/ops-access` plus middleware now gate those internal routes in production-safe environments, the codebase is now on GitHub with CI verified on push, branded fallback plus manifest surfaces now exist, `/api/health` is available for deployment checks, dedicated share-preview assets now exist at both site and high-value surface level for release distribution, smoke checks now guard critical release surfaces plus order create/read/update flows in CI, and a secret-gated Vercel deployment workflow plus explicit runbook now exist; first live deployment, monitoring ownership, real RBAC, and real order backend ownership are still pending |
+| Release / Ops | In Progress | Local runtime is stable on port `3056`, checkout now writes order references into a centralized in-app authority instead of browser-only storage, confirmation and tracking now read from protected API routes, internal `/ops`, `/ops/catalog`, `/ops/fulfillment`, `/ops/orders`, and `/ops/audit` surfaces now rehearse KPI review, catalog ownership, routing, supplier exceptions, notification planning, session tracing, and order progression through guarded APIs without claiming a real backoffice, `/ops-access` plus middleware now gate those internal routes with role-aware signed sessions in production-safe environments, the codebase is now on GitHub with CI verified on push, branded fallback plus manifest surfaces now exist, `/api/health` is available for deployment checks, dedicated share-preview assets now exist at both site and high-value surface level for release distribution, smoke checks now guard critical release surfaces plus order create/read/update flows and ops access control in CI, and a secret-gated Vercel deployment workflow plus explicit runbook now exist; first live deployment, monitoring ownership, real RBAC, and real order backend ownership are still pending |
 
 ## Milestone Log
 
@@ -238,11 +241,14 @@ Progress is tracked against SkyWave phases, not by ad-hoc task count.
 - Order confirmation and tracking now read from centralized authority through recent-order cookie access or order-reference-plus-phone verification.
 - Internal `/ops/orders`, `/ops/fulfillment`, and `/ops` surfaces now read from the same authority and advance order state through protected ops APIs.
 - Smoke regression now creates, reads, and updates a real smoke order through the authority APIs before verifying the protected ops surfaces.
+- `/ops-access` now supports role-aware signed sessions instead of one shared access code session, and protected routes can redirect a valid but under-permitted role back to its allowed area.
+- A real internal `/ops/audit` surface now exposes a local audit stream for ops login success/failure, logout, and order-state transitions before durable audit infrastructure exists.
+- Smoke regression now verifies ops session state, audit visibility, and forbidden-role denial paths in addition to order authority flows.
 
 ## Immediate Next Actions
 
 1. Replace the current file-backed order authority with real backend authority for orders, stock, supplier sync, payment, shipping, and notifications.
-2. Upgrade the new `/ops-access` gate into real RBAC and audited internal auth after backend ownership is active.
+2. Replace the current role-coded `/ops-access` session with identity-backed RBAC and durable audit storage after backend ownership is active.
 3. Supply Vercel credentials and execute the first real deployment from this repository.
 4. Replace provisional legal/business/support data with approved operating details before launch claims.
 

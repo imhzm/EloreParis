@@ -11,6 +11,11 @@
   flex-wrap: wrap;
 }
 
+.opsNavCluster {
+  display: grid;
+  gap: 10px;
+}
+
 .opsNav {
   display: flex;
   flex-wrap: wrap;
@@ -40,6 +45,21 @@
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.opsSessionSummary {
+  display: grid;
+  gap: 2px;
+  color: var(--aubergine-ink);
+}
+
+.opsSessionSummary strong {
+  font-size: 0.95rem;
+}
+
+.opsSessionSummary span {
+  color: var(--muted);
+  font-size: 0.82rem;
 }
 
 .opsNavButton {

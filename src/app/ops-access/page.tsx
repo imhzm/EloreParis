@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import { OpsAccessSurface } from "@/components/ops-access-surface";
 import { StorefrontShell } from "@/components/storefront-shell";
 import {
+  canRoleAccessOpsPath,
+  getDefaultOpsPathForRole,
   getOpsAccessConfig,
   OPS_SESSION_COOKIE,
   sanitizeOpsNextPath,
@@ -12,6 +14,7 @@ import {
 
 type OpsAccessPageProps = {
   searchParams: Promise<{
+    denied?: string;
     next?: string;
   }>;
 };
@@ -29,23 +32,33 @@ export const metadata: Metadata = {
 export default async function OpsAccessPage({
   searchParams,
 }: OpsAccessPageProps) {
-  const { next } = await searchParams;
+  const { next, denied } = await searchParams;
   const nextPath = sanitizeOpsNextPath(next);
   const accessConfig = getOpsAccessConfig();
   const cookieStore = await cookies();
   const sessionToken = cookieStore.get(OPS_SESSION_COOKIE)?.value;
 
-  if (
+  const session = (
     accessConfig.mode === "protected" &&
     sessionToken &&
-    (await verifyOpsSessionToken(sessionToken, accessConfig.accessCode))
-  ) {
-    redirect(nextPath);
+    (await verifyOpsSessionToken(sessionToken, accessConfig))
+  ) || null;
+
+  if (session) {
+    redirect(
+      canRoleAccessOpsPath(session.role, nextPath)
+        ? nextPath
+        : getDefaultOpsPathForRole(session.role),
+    );
   }
 
   return (
     <StorefrontShell activeHref="">
-      <OpsAccessSurface accessMode={accessConfig.mode} nextPath={nextPath} />
+      <OpsAccessSurface
+        accessMode={accessConfig.mode}
+        nextPath={nextPath}
+        deniedPath={denied}
+      />
     </StorefrontShell>
   );
 }

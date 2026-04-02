@@ -135,6 +135,10 @@ export function getPageType(pathname: string) {
     return "ops_orders";
   }
 
+  if (pathname === "/ops/audit") {
+    return "ops_audit";
+  }
+
   if (pathname.startsWith("/trust/")) {
     return "trust_policy";
   }

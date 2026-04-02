@@ -14,9 +14,8 @@ import {
 } from "@/lib/checkout-validation";
 import { getCheckoutRules } from "@/lib/fulfillment";
 import {
-  getOpsAccessConfig,
-  OPS_SESSION_COOKIE,
-  verifyOpsSessionToken,
+  assertOpsRequestAccess,
+  OpsAccessError,
 } from "@/lib/ops-access";
 import {
   createStoredOrder,
@@ -232,27 +231,13 @@ export async function advanceAuthorityOrderStatus(orderNumber: string) {
 }
 
 export async function assertOpsApiAccess(request: NextRequest) {
-  const accessConfig = getOpsAccessConfig();
+  try {
+    return await assertOpsRequestAccess(request, "/api/ops/orders");
+  } catch (error) {
+    if (error instanceof OpsAccessError) {
+      throw new OrderAuthorityError(error.message, error.statusCode);
+    }
 
-  if (!accessConfig.isProtectionActive) {
-    return;
+    throw error;
   }
-
-  if (!accessConfig.isConfigured) {
-    throw new OrderAuthorityError(
-      "OPS access is enabled but OPS_ACCESS_CODE is not configured.",
-      503,
-    );
-  }
-
-  const sessionCookie = request.cookies.get(OPS_SESSION_COOKIE)?.value;
-
-  if (
-    sessionCookie &&
-    (await verifyOpsSessionToken(sessionCookie, accessConfig.accessCode))
-  ) {
-    return;
-  }
-
-  throw new OrderAuthorityError("Ops access is required for this endpoint.", 401);
 }

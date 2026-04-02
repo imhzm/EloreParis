@@ -3,9 +3,14 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { getPageType, trackAnalyticsEvent } from "@/lib/analytics";
+import type { OpsSessionSummary } from "@/lib/ops-types";
 import styles from "./order-flow.module.css";
 
-export function OpsSessionActions() {
+type OpsSessionActionsProps = {
+  session: OpsSessionSummary | null;
+};
+
+export function OpsSessionActions({ session }: OpsSessionActionsProps) {
   const pathname = usePathname() ?? "/ops";
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -39,6 +44,11 @@ export function OpsSessionActions() {
 
   return (
     <div className={styles.opsNavActions}>
+      {session ? (
+        <span className={styles.opsNavMeta}>
+          Session: {session.role} · {session.userId}
+        </span>
+      ) : null}
       <button
         type="button"
         className={styles.opsNavButton}
