@@ -24,6 +24,26 @@ const childProcess = spawn(process.execPath, [standaloneServerFile], {
   stdio: "inherit",
 });
 
+function stopChildProcess(signal) {
+  if (childProcess.exitCode !== null || childProcess.killed) {
+    return;
+  }
+
+  childProcess.kill(signal);
+}
+
+process.on("SIGINT", () => {
+  stopChildProcess("SIGINT");
+});
+
+process.on("SIGTERM", () => {
+  stopChildProcess("SIGTERM");
+});
+
+process.on("exit", () => {
+  stopChildProcess("SIGTERM");
+});
+
 childProcess.on("error", (error) => {
   console.error(error);
   process.exit(1);
