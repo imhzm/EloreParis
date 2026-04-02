@@ -39,6 +39,11 @@ const releasePackageFile =
 const releasePackageMarkdownFile =
   process.env.SMOKE_RELEASE_PACKAGE_MARKDOWN_PATH ??
   ".artifacts/release-package.md";
+const releaseHistoryFile =
+  process.env.SMOKE_RELEASE_HISTORY_PATH ?? ".artifacts/release-history.json";
+const releaseHistoryMarkdownFile =
+  process.env.SMOKE_RELEASE_HISTORY_MARKDOWN_PATH ??
+  ".artifacts/release-history.md";
 const standaloneStartScript = path.resolve(
   process.cwd(),
   "scripts/start-standalone.mjs",
@@ -86,6 +91,8 @@ function resetReleaseArtifacts() {
   safeRemoveAuthorityArtifact(releaseEvidenceFile);
   safeRemoveAuthorityArtifact(releasePackageFile);
   safeRemoveAuthorityArtifact(releasePackageMarkdownFile);
+  safeRemoveAuthorityArtifact(releaseHistoryFile);
+  safeRemoveAuthorityArtifact(releaseHistoryMarkdownFile);
 }
 
 function writeReleaseEvidence(report) {
@@ -151,6 +158,39 @@ function writeReleasePackageArtifacts(releasePackage) {
   writeFileSync(
     releasePackageMarkdownFile,
     renderReleasePackageMarkdown(releasePackage),
+  );
+}
+
+function renderReleaseHistoryMarkdown(releasePackages) {
+  if (!releasePackages.length) {
+    return "# Release History\n\n- No published release packages are stored yet.\n";
+  }
+
+  return [
+    "# Release History",
+    "",
+    ...releasePackages.flatMap((record) => [
+      `## ${record.id}`,
+      "",
+      `- Published at: ${record.publishedAt}`,
+      `- Actor: ${record.actor.name} (${record.actor.role})`,
+      `- Verification mode: ${record.verificationMode}`,
+      `- Target base URL: ${record.targetBaseUrl}`,
+      `- Overall status: ${record.overallStatus}`,
+      `- Blocked items: ${record.blockedCount}`,
+      `- Warning items: ${record.warningCount}`,
+      `- Ready items: ${record.readyCount}`,
+      "",
+    ]),
+  ].join("\n");
+}
+
+function writeReleaseHistoryArtifacts(releasePackages) {
+  mkdirSync(path.dirname(releaseHistoryFile), { recursive: true });
+  writeFileSync(releaseHistoryFile, JSON.stringify(releasePackages, null, 2));
+  writeFileSync(
+    releaseHistoryMarkdownFile,
+    renderReleaseHistoryMarkdown(releasePackages),
   );
 }
 
@@ -378,7 +418,9 @@ const protectedOpsChecks = [
     markers: [
       "Internal release readiness",
       "Runtime preflight",
+      "Release history",
       "ops_release_to_health",
+      "ops_release_to_history",
       'content="noindex, nofollow"',
     ],
   },
@@ -395,6 +437,7 @@ const protectedOpsChecks = [
     markers: [
       "Internal audit",
       "ops_audit_to_orders",
+      "ops_audit_to_release",
       'content="noindex, nofollow"',
     ],
   },
@@ -746,40 +789,6 @@ try {
   assert.equal(updateNotificationBody.previousStatus, "queued");
   assert.equal(updateNotificationBody.nextStatus, "sent");
 
-  const { response: auditResponse, body: auditBody } = await fetchJson(
-    "/api/ops/audit",
-    {
-      headers: {
-        Cookie: opsCookie,
-      },
-    },
-  );
-  assert.equal(
-    auditResponse.status,
-    200,
-    "Expected ops audit API to return 200 for manager role",
-  );
-  assert.ok(
-    auditBody.auditEntries.some((entry) => entry.action === "ops_login_success"),
-    "Expected audit API to include a login success entry",
-  );
-  assert.ok(
-    auditBody.auditEntries.some(
-      (entry) =>
-        entry.action === "ops_order_status_update" &&
-        entry.entityId === createOrderBody.order.orderNumber,
-    ),
-    "Expected audit API to include the smoke order status update",
-  );
-  assert.ok(
-    auditBody.auditEntries.some(
-      (entry) =>
-        entry.action === "ops_notification_status_update" &&
-        entry.entityId === smokeNotification.id,
-    ),
-    "Expected audit API to include the smoke notification status update",
-  );
-
   for (const check of protectedOpsChecks) {
     const { response, body } = await fetchText(check.pathname, {
       headers: {
@@ -905,7 +914,7 @@ try {
       publicRouteChecks: publicSmokeChecks.length,
       protectedRouteChecks: protectedOpsChecks.length,
       assetChecks: assetChecks.length,
-      apiChecks: 11,
+      apiChecks: 16,
     },
     checks: [
       {
@@ -920,8 +929,8 @@ try {
       },
       {
         id: "api-contracts",
-        title: "Health, order, release, notification, audit, and package APIs",
-        count: 11,
+        title: "Health, order, release, notification, audit, package, and history APIs",
+        count: 16,
       },
       {
         id: "release-assets",
@@ -937,6 +946,26 @@ try {
   };
 
   writeReleaseEvidence(releaseEvidence);
+
+  const {
+    response: publishEvidenceResponse,
+    body: publishEvidenceBody,
+  } = await sendJson("POST", "/api/ops/release/evidence", {
+    releaseEvidence,
+  }, {
+    headers: {
+      Cookie: opsCookie,
+    },
+  });
+  assert.equal(
+    publishEvidenceResponse.status,
+    201,
+    "Expected ops release evidence publish API to return 201 for manager role",
+  );
+  assert.equal(
+    publishEvidenceBody.releaseEvidence.verificationMode,
+    "local_smoke",
+  );
 
   const {
     response: releaseEvidenceResponse,
@@ -959,6 +988,10 @@ try {
     releaseEvidenceBody.releaseEvidence.summary.protectedRouteChecks,
     protectedOpsChecks.length,
   );
+  assert.equal(
+    releaseEvidenceBody.releaseEvidence.summary.apiChecks,
+    16,
+  );
 
   const {
     response: releasePackageResponse,
@@ -975,7 +1008,7 @@ try {
   );
   assert.equal(
     releasePackageBody.releasePackage.releaseEvidence?.summary.apiChecks,
-    11,
+    16,
   );
   assert.ok(
     releasePackageBody.releasePackage.blockedItems.some(
@@ -983,7 +1016,105 @@ try {
     ),
     "Expected release package to include the hosting-runtime blocker in local smoke mode",
   );
-  writeReleasePackageArtifacts(releasePackageBody.releasePackage);
+
+  const {
+    response: publishReleasePackageResponse,
+    body: publishReleasePackageBody,
+  } = await sendJson("POST", "/api/ops/release/package", {}, {
+    headers: {
+      Cookie: opsCookie,
+    },
+  });
+  assert.equal(
+    publishReleasePackageResponse.status,
+    201,
+    "Expected ops release package publish API to return 201 for manager role",
+  );
+  assert.equal(
+    publishReleasePackageBody.releasePackageRecord.verificationMode,
+    "local_smoke",
+  );
+  assert.equal(
+    publishReleasePackageBody.releasePackageRecord.artifact.releaseEvidence?.summary.apiChecks,
+    16,
+  );
+
+  const {
+    response: releaseHistoryResponse,
+    body: releaseHistoryBody,
+  } = await fetchJson("/api/ops/release/history", {
+    headers: {
+      Cookie: opsCookie,
+    },
+  });
+  assert.equal(
+    releaseHistoryResponse.status,
+    200,
+    "Expected ops release history API to return 200 for manager role",
+  );
+  const publishedReleaseRecord = releaseHistoryBody.releasePackages.find(
+    (record) => record.id === publishReleasePackageBody.releasePackageRecord.id,
+  );
+  assert.ok(
+    publishedReleaseRecord,
+    "Expected ops release history API to include the newly published release package",
+  );
+  assert.equal(
+    publishedReleaseRecord.artifact.releaseEvidence?.verificationMode,
+    "local_smoke",
+  );
+  writeReleasePackageArtifacts(publishedReleaseRecord.artifact);
+  writeReleaseHistoryArtifacts(releaseHistoryBody.releasePackages);
+
+  const { response: releaseAuditResponse, body: releaseAuditBody } = await fetchJson(
+    "/api/ops/audit",
+    {
+      headers: {
+        Cookie: opsCookie,
+      },
+    },
+  );
+  assert.equal(
+    releaseAuditResponse.status,
+    200,
+    "Expected ops audit API to return 200 after release publication flows",
+  );
+  assert.ok(
+    releaseAuditBody.auditEntries.some((entry) => entry.action === "ops_login_success"),
+    "Expected audit API to include a login success entry",
+  );
+  assert.ok(
+    releaseAuditBody.auditEntries.some(
+      (entry) =>
+        entry.action === "ops_order_status_update" &&
+        entry.entityId === createOrderBody.order.orderNumber,
+    ),
+    "Expected audit API to include the smoke order status update",
+  );
+  assert.ok(
+    releaseAuditBody.auditEntries.some(
+      (entry) =>
+        entry.action === "ops_notification_status_update" &&
+        entry.entityId === smokeNotification.id,
+    ),
+    "Expected audit API to include the smoke notification status update",
+  );
+  assert.ok(
+    releaseAuditBody.auditEntries.some(
+      (entry) =>
+        entry.action === "ops_release_evidence_publish" &&
+        entry.metadata.verification_mode === "local_smoke",
+    ),
+    "Expected audit API to include the local smoke release evidence publication",
+  );
+  assert.ok(
+    releaseAuditBody.auditEntries.some(
+      (entry) =>
+        entry.action === "ops_release_package_publish" &&
+        entry.entityId === publishReleasePackageBody.releasePackageRecord.id,
+    ),
+    "Expected audit API to include the release package publication entry",
+  );
 
   const throttledIp = "198.51.100.42";
 

@@ -48,6 +48,8 @@ jobs:
           LIVE_EVIDENCE_ARTIFACT_PATH: .artifacts/render-live-evidence.json
           LIVE_RELEASE_PACKAGE_ARTIFACT_PATH: .artifacts/render-live-release-package.json
           LIVE_RELEASE_PACKAGE_MARKDOWN_PATH: .artifacts/render-live-release-package.md
+          LIVE_RELEASE_HISTORY_ARTIFACT_PATH: .artifacts/render-live-release-history.json
+          LIVE_RELEASE_HISTORY_MARKDOWN_PATH: .artifacts/render-live-release-history.md
         run: npm run test:render-live
 
       - name: Upload live release evidence artifact
@@ -66,4 +68,14 @@ jobs:
           path: |
             .artifacts/render-live-release-package.json
             .artifacts/render-live-release-package.md
+          if-no-files-found: ignore
+
+      - name: Upload live release history artifact
+        if: steps.credentials.outputs.configured == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: render-live-release-history
+          path: |
+            .artifacts/render-live-release-history.json
+            .artifacts/render-live-release-history.md
           if-no-files-found: ignore

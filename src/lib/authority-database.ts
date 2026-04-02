@@ -9,6 +9,7 @@ const authorityTableDirectory = {
   orders: "authority_orders",
   notifications: "authority_notifications",
   audit: "authority_ops_audit",
+  releasePackages: "authority_release_packages",
 } as const;
 
 type AuthorityTable = keyof typeof authorityTableDirectory;
@@ -72,6 +73,21 @@ function initializeAuthorityDatabase(database: DatabaseSync) {
 
     CREATE INDEX IF NOT EXISTS idx_authority_ops_audit_entity
       ON authority_ops_audit (entity_type, entity_id, created_at DESC);
+
+    CREATE TABLE IF NOT EXISTS authority_release_packages (
+      id TEXT PRIMARY KEY,
+      published_at TEXT NOT NULL,
+      overall_status TEXT NOT NULL,
+      verification_mode TEXT NOT NULL,
+      target_base_url TEXT NOT NULL,
+      payload_json TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_authority_release_packages_published_at
+      ON authority_release_packages (published_at DESC);
+
+    CREATE INDEX IF NOT EXISTS idx_authority_release_packages_verification_mode
+      ON authority_release_packages (verification_mode, published_at DESC);
 
     CREATE TABLE IF NOT EXISTS authority_ops_login_throttle (
       throttle_key TEXT PRIMARY KEY,

@@ -53,3 +53,13 @@ jobs:
             .artifacts/release-package.json
             .artifacts/release-package.md
           if-no-files-found: ignore
+
+      - name: Upload release history artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-history
+          path: |
+            .artifacts/release-history.json
+            .artifacts/release-history.md
+          if-no-files-found: ignore

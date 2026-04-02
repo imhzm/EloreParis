@@ -35,6 +35,16 @@ const releasePackageMarkdownArtifactPath = path.resolve(
   process.env.LIVE_RELEASE_PACKAGE_MARKDOWN_PATH ??
     ".artifacts/render-live-release-package.md",
 );
+const releaseHistoryArtifactPath = path.resolve(
+  process.cwd(),
+  process.env.LIVE_RELEASE_HISTORY_ARTIFACT_PATH ??
+    ".artifacts/render-live-release-history.json",
+);
+const releaseHistoryMarkdownArtifactPath = path.resolve(
+  process.cwd(),
+  process.env.LIVE_RELEASE_HISTORY_MARKDOWN_PATH ??
+    ".artifacts/render-live-release-history.md",
+);
 
 if (!baseUrl) {
   throw new Error(
@@ -119,6 +129,39 @@ function writeReleasePackageArtifacts(releasePackage) {
   writeFileSync(
     releasePackageMarkdownArtifactPath,
     renderReleasePackageMarkdown(releasePackage),
+  );
+}
+
+function renderReleaseHistoryMarkdown(releasePackages) {
+  if (!releasePackages.length) {
+    return "# Live Release History\n\n- No published release packages are stored yet.\n";
+  }
+
+  return [
+    "# Live Release History",
+    "",
+    ...releasePackages.flatMap((record) => [
+      `## ${record.id}`,
+      "",
+      `- Published at: ${record.publishedAt}`,
+      `- Actor: ${record.actor.name} (${record.actor.role})`,
+      `- Verification mode: ${record.verificationMode}`,
+      `- Target base URL: ${record.targetBaseUrl}`,
+      `- Overall status: ${record.overallStatus}`,
+      `- Blocked items: ${record.blockedCount}`,
+      `- Warning items: ${record.warningCount}`,
+      `- Ready items: ${record.readyCount}`,
+      "",
+    ]),
+  ].join("\n");
+}
+
+function writeReleaseHistoryArtifacts(releasePackages) {
+  mkdirSync(path.dirname(releaseHistoryArtifactPath), { recursive: true });
+  writeFileSync(releaseHistoryArtifactPath, JSON.stringify(releasePackages, null, 2));
+  writeFileSync(
+    releaseHistoryMarkdownArtifactPath,
+    renderReleaseHistoryMarkdown(releasePackages),
   );
 }
 
@@ -341,7 +384,7 @@ try {
       publicRouteChecks: 1,
       protectedRouteChecks: 2,
       assetChecks: 0,
-      apiChecks: 6,
+      apiChecks: 10,
     },
     checks: [
       {
@@ -366,7 +409,12 @@ try {
       },
       {
         id: "live-release-package",
-        title: "Release package readback from the deployed runtime",
+        title: "Release package publication and readback from the deployed runtime",
+        count: 2,
+      },
+      {
+        id: "live-release-history",
+        title: "Release history readback from the deployed runtime",
         count: 1,
       },
     ],
@@ -427,6 +475,25 @@ try {
     "live_postdeploy",
   );
 
+  const { response: publishReleasePackageResponse, body: publishReleasePackageBody } =
+    await fetchJson("/api/ops/release/package", {
+      method: "POST",
+      headers: {
+        ...trustedMutationHeaders,
+        Cookie: opsCookie,
+      },
+    });
+
+  assert.equal(
+    publishReleasePackageResponse.status,
+    201,
+    "Expected live release package publication to return 201.",
+  );
+  assert.equal(
+    publishReleasePackageBody?.releasePackageRecord?.verificationMode,
+    "live_postdeploy",
+  );
+
   const { response: releasePackageResponse, body: releasePackageBody } =
     await fetchJson("/api/ops/release/package", {
       headers: {
@@ -450,7 +517,63 @@ try {
     ),
     "Expected the live release package to keep surfacing the remaining content blocker honestly.",
   );
-  writeReleasePackageArtifacts(releasePackageBody.releasePackage);
+  assert.equal(
+    releasePackageBody?.releasePackage?.releaseEvidence?.summary.apiChecks,
+    10,
+  );
+
+  const { response: releaseHistoryResponse, body: releaseHistoryBody } =
+    await fetchJson("/api/ops/release/history", {
+      headers: {
+        Cookie: opsCookie,
+      },
+    });
+
+  assert.equal(
+    releaseHistoryResponse.status,
+    200,
+    "Expected live release history readback to return 200.",
+  );
+  const livePublishedReleaseRecord = releaseHistoryBody?.releasePackages?.find(
+    (record) => record.id === publishReleasePackageBody?.releasePackageRecord?.id,
+  );
+  assert.ok(
+    livePublishedReleaseRecord,
+    "Expected live release history to include the newly published release package.",
+  );
+  assert.equal(
+    livePublishedReleaseRecord?.artifact?.releaseEvidence?.verificationMode,
+    "live_postdeploy",
+  );
+  writeReleasePackageArtifacts(livePublishedReleaseRecord.artifact);
+  writeReleaseHistoryArtifacts(releaseHistoryBody.releasePackages);
+
+  const { response: auditResponse, body: auditBody } = await fetchJson(
+    "/api/ops/audit",
+    {
+      headers: {
+        Cookie: opsCookie,
+      },
+    },
+  );
+
+  assert.equal(auditResponse.status, 200);
+  assert.ok(
+    auditBody?.auditEntries?.some(
+      (entry) =>
+        entry.action === "ops_release_evidence_publish" &&
+        entry.metadata.verification_mode === "live_postdeploy",
+    ),
+    "Expected the live audit trail to include the post-deploy evidence publication.",
+  );
+  assert.ok(
+    auditBody?.auditEntries?.some(
+      (entry) =>
+        entry.action === "ops_release_package_publish" &&
+        entry.entityId === publishReleasePackageBody?.releasePackageRecord?.id,
+    ),
+    "Expected the live audit trail to include the release package publication.",
+  );
 
   const logoutResponse = await fetch(`${baseUrl}/api/ops-access/logout`, {
     method: "POST",

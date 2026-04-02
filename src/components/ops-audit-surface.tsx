@@ -18,6 +18,7 @@ const auditFilters: AuditFilter[] = [
   "ops_order_status_update",
   "ops_notification_status_update",
   "ops_release_evidence_publish",
+  "ops_release_package_publish",
 ];
 
 function formatTimestamp(value: string) {
@@ -34,19 +35,21 @@ function formatTimestamp(value: string) {
 function getAuditActionLabel(action: OpsAuditAction) {
   switch (action) {
     case "ops_login_success":
-      return "نجاح تسجيل الدخول";
+      return "Ops login success";
     case "ops_login_failure":
-      return "فشل تسجيل الدخول";
+      return "Ops login failure";
     case "ops_login_rate_limited":
-      return "تقييد دخول التشغيل";
+      return "Ops login throttled";
     case "ops_logout":
-      return "إنهاء الجلسة";
+      return "Ops logout";
     case "ops_order_status_update":
-      return "تحديث حالة طلب";
+      return "Order status updated";
     case "ops_notification_status_update":
-      return "تحديث حالة إشعار";
+      return "Notification status updated";
     case "ops_release_evidence_publish":
-      return "نشر evidence الإطلاق";
+      return "Release evidence published";
+    case "ops_release_package_publish":
+      return "Release package published";
   }
 }
 
@@ -67,7 +70,7 @@ export function OpsAuditSurface() {
         setError(
           loadError instanceof Error
             ? loadError.message
-            : "تعذر تحميل سجل المراجعة الحالي.",
+            : "Unable to load the internal audit stream.",
         );
       })
       .finally(() => {
@@ -95,6 +98,9 @@ export function OpsAuditSurface() {
       releaseEvidencePublishes: auditEntries.filter(
         (entry) => entry.action === "ops_release_evidence_publish",
       ).length,
+      releasePackagePublishes: auditEntries.filter(
+        (entry) => entry.action === "ops_release_package_publish",
+      ).length,
       loginEvents: auditEntries.filter(
         (entry) =>
           entry.action === "ops_login_success" ||
@@ -112,11 +118,12 @@ export function OpsAuditSurface() {
       <section className={styles.hero}>
         <div>
           <p className={styles.eyebrow}>Internal audit</p>
-          <h1>سجل مراجعة صريح لجلسات التشغيل والإجراءات الحساسة داخل `/ops`.</h1>
+          <h1>A durable review stream for protected ops sessions and sensitive internal actions.</h1>
           <p className={styles.summary}>
-            هذه الصفحة لا تدّعي SIEM أو backoffice نهائي، لكنها تثبت trace واضح
-            لجلسات الدخول والخروج وتحديثات حالات الطلبات قبل الانتقال إلى RBAC
-            ومخزن سجلات تشغيلي فعلي.
+            This surface does not claim a final SIEM or compliance archive. It keeps a clear,
+            searchable trace for ops logins, throttling, order changes, notification changes,
+            release-evidence publication, and release-package publication inside the current
+            runtime.
           </p>
         </div>
 
@@ -126,17 +133,18 @@ export function OpsAuditSurface() {
             <strong>{isLoading ? "..." : metrics.total}</strong>
             <span>
               {isLoading
-                ? "جارٍ تحميل سجل المراجعة."
-                : `${metrics.loginEvents} أحداث جلسات و${metrics.statusUpdates} تحديثات طلب و${metrics.notificationUpdates} تحديثات إشعار و${metrics.releaseEvidencePublishes} أحداث release evidence مسجلة.`}
+                ? "Loading audit coverage."
+                : `${metrics.loginEvents} session events, ${metrics.statusUpdates} order updates, ${metrics.notificationUpdates} notification updates, ${metrics.releaseEvidencePublishes} evidence publishes, and ${metrics.releasePackagePublishes} release-package publishes.`}
             </span>
           </div>
 
           <div className={styles.noticeCard}>
             <p className={styles.eyebrow}>Scope</p>
-            <h2>ops sessions + order transitions</h2>
+            <h2>Protected runtime trace</h2>
             <p>
-              الطبقة الحالية تركز على traceability التشغيلي داخل التطبيق نفسه،
-              وليست على compliance archive خارجي أو immutable logs بعد.
+              The current layer focuses on traceability inside this application runtime. It is
+              useful for launch rehearsal and protected operations, but it is not a substitute for
+              an external immutable audit platform.
             </p>
           </div>
         </div>
@@ -145,14 +153,14 @@ export function OpsAuditSurface() {
       <section className={styles.layout}>
         <article className={styles.mainCard}>
           <p className={styles.sectionTitle}>Audit stream</p>
-          <h2>السجل الحالي</h2>
+          <h2>Current activity</h2>
 
           <div className={styles.filterChipRow}>
             {auditFilters.map((candidate) => {
               const isActive = filter === candidate;
               const label =
                 candidate === "all"
-                  ? "كل الأحداث"
+                  ? "All events"
                   : getAuditActionLabel(candidate);
 
               return (
@@ -174,8 +182,8 @@ export function OpsAuditSurface() {
             {isLoading ? (
               <article className={styles.emptyCard}>
                 <p className={styles.eyebrow}>Audit</p>
-                <h1>جارٍ تحميل سجل المراجعة</h1>
-                <p>يتم الآن استعادة أحدث الأحداث من authority المخصصة للمراجعة.</p>
+                <h1>Loading the audit stream</h1>
+                <p>Reading recent protected actions from the shared authority store.</p>
               </article>
             ) : filteredEntries.length ? (
               filteredEntries.map((entry) => (
@@ -208,9 +216,9 @@ export function OpsAuditSurface() {
               ))
             ) : (
               <article className={styles.emptyCard}>
-                <p className={styles.eyebrow}>No audit entries</p>
-                <h1>لا توجد أحداث تطابق الفلتر الحالي</h1>
-                <p>سيتوسع هذا السجل مع المزيد من جلسات ops وتحديثات الطلبات.</p>
+                <p className={styles.eyebrow}>No entries</p>
+                <h1>No audit entries match the current filter</h1>
+                <p>Run more protected ops actions or clear the filter to inspect the full stream.</p>
               </article>
             )}
           </div>
@@ -218,7 +226,7 @@ export function OpsAuditSurface() {
 
         <aside className={styles.summaryCard}>
           <p className={styles.sectionTitle}>Related ops paths</p>
-          <h2>المسارات المرتبطة بالسجل</h2>
+          <h2>Audit-adjacent surfaces</h2>
           <div className={styles.linkList}>
             <TrackedLink
               href="/ops/orders"
@@ -226,8 +234,8 @@ export function OpsAuditSurface() {
               analyticsSurface="ops_audit_links"
               analyticsDestinationType="ops_orders"
             >
-              <span>طابور الطلبات</span>
-              <span>Order state flow</span>
+              <span>Order queue</span>
+              <span>Order-state transitions</span>
             </TrackedLink>
             <TrackedLink
               href="/ops/fulfillment"
@@ -235,8 +243,8 @@ export function OpsAuditSurface() {
               analyticsSurface="ops_audit_links"
               analyticsDestinationType="ops_fulfillment"
             >
-              <span>لوحة fulfillment</span>
-              <span>Routing + notifications</span>
+              <span>Fulfillment board</span>
+              <span>Routing and notification decisions</span>
             </TrackedLink>
             <TrackedLink
               href="/ops/notifications"
@@ -244,17 +252,17 @@ export function OpsAuditSurface() {
               analyticsSurface="ops_audit_links"
               analyticsDestinationType="ops_notifications"
             >
-              <span>طابور الإشعارات</span>
-              <span>Delivery trace</span>
+              <span>Notification queue</span>
+              <span>Delivery-state handling</span>
             </TrackedLink>
             <TrackedLink
-              href="/ops"
-              analyticsLabel="ops_audit_to_dashboard"
+              href="/ops/release"
+              analyticsLabel="ops_audit_to_release"
               analyticsSurface="ops_audit_links"
-              analyticsDestinationType="ops_dashboard"
+              analyticsDestinationType="ops_release"
             >
-              <span>العودة إلى dashboard</span>
-              <span>KPIs + watchpoints</span>
+              <span>Release readiness</span>
+              <span>Blockers, evidence, and release packages</span>
             </TrackedLink>
           </div>
         </aside>

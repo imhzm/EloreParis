@@ -4,6 +4,7 @@ import type {
 } from "@/lib/notification-types";
 import type { OpsAuditEntry, OpsSessionSummary } from "@/lib/ops-types";
 import type { ReleaseEvidenceReport } from "@/lib/release-evidence-types";
+import type { ReleasePackageRecord } from "@/lib/release-package-types";
 import type { ReleaseReadinessSnapshot } from "@/lib/release-readiness-types";
 
 async function parseApiError(response: Response, fallbackMessage: string) {
@@ -92,6 +93,22 @@ export async function fetchOpsReleaseEvidence() {
 
   return (await response.json()) as {
     releaseEvidence: ReleaseEvidenceReport;
+  };
+}
+
+export async function fetchOpsReleaseHistory() {
+  const response = await fetch("/api/ops/release/history", {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      await parseApiError(response, "تعذر تحميل سجل حزم الإطلاق الحالية."),
+    );
+  }
+
+  return (await response.json()) as {
+    releasePackages: ReleasePackageRecord[];
   };
 }
 

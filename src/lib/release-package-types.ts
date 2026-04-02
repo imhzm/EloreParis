@@ -3,6 +3,7 @@ import type {
   ReleaseReadinessSnapshot,
   ReleaseReadinessStatus,
 } from "@/lib/release-readiness-types";
+import type { OpsAuditActor } from "@/lib/ops-types";
 
 export type ReleasePackageIssueSource = "gate" | "runtime_preflight";
 
@@ -30,4 +31,17 @@ export type ReleasePackageArtifact = {
   nextActions: string[];
   releaseReadiness: ReleaseReadinessSnapshot;
   releaseEvidence: ReleaseEvidenceReport | null;
+};
+
+export type ReleasePackageRecord = {
+  id: string;
+  publishedAt: string;
+  actor: OpsAuditActor;
+  overallStatus: ReleaseReadinessStatus;
+  verificationMode: ReleasePackageArtifact["verificationMode"];
+  targetBaseUrl: string;
+  blockedCount: number;
+  warningCount: number;
+  readyCount: number;
+  artifact: ReleasePackageArtifact;
 };

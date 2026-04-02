@@ -5,9 +5,11 @@ import { OpsNav } from "@/components/ops-nav";
 import { TrackedLink } from "@/components/tracked-link";
 import {
   fetchOpsReleaseEvidence,
+  fetchOpsReleaseHistory,
   fetchOpsReleaseReadiness,
 } from "@/lib/ops-control-client";
 import type { ReleaseEvidenceReport } from "@/lib/release-evidence-types";
+import type { ReleasePackageRecord } from "@/lib/release-package-types";
 import type {
   ReleaseReadinessGate,
   ReleaseReadinessSnapshot,
@@ -17,20 +19,24 @@ import styles from "./order-flow.module.css";
 function getStatusLabel(status: ReleaseReadinessGate["status"]) {
   switch (status) {
     case "ready":
-      return "جاهز";
+      return "Ready";
     case "warning":
-      return "تحذير";
+      return "Warning";
     case "blocked":
-      return "محجوب";
+      return "Blocked";
   }
 }
 
-function getVerificationModeLabel(mode: ReleaseEvidenceReport["verificationMode"]) {
+function getVerificationModeLabel(
+  mode: ReleaseEvidenceReport["verificationMode"] | ReleasePackageRecord["verificationMode"],
+) {
   switch (mode) {
     case "live_postdeploy":
       return "Live post-deploy";
     case "local_smoke":
       return "Local smoke";
+    case "runtime_snapshot":
+      return "Runtime snapshot";
   }
 }
 
@@ -48,6 +54,7 @@ function formatTimestamp(value: string) {
 export function OpsReleaseSurface() {
   const [snapshot, setSnapshot] = useState<ReleaseReadinessSnapshot | null>(null);
   const [evidence, setEvidence] = useState<ReleaseEvidenceReport | null>(null);
+  const [releaseHistory, setReleaseHistory] = useState<ReleasePackageRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -55,8 +62,9 @@ export function OpsReleaseSurface() {
     void Promise.allSettled([
       fetchOpsReleaseReadiness(),
       fetchOpsReleaseEvidence(),
+      fetchOpsReleaseHistory(),
     ])
-      .then(([readinessResult, evidenceResult]) => {
+      .then(([readinessResult, evidenceResult, historyResult]) => {
         if (readinessResult.status === "fulfilled") {
           setSnapshot(readinessResult.value.releaseReadiness);
           setError(null);
@@ -65,7 +73,7 @@ export function OpsReleaseSurface() {
           setError(
             readinessResult.reason instanceof Error
               ? readinessResult.reason.message
-              : "تعذر تحميل blockers الإطلاق الحية من سطح ops الداخلي.",
+              : "Unable to load the current release blockers from the protected runtime.",
           );
         }
 
@@ -73,6 +81,12 @@ export function OpsReleaseSurface() {
           setEvidence(evidenceResult.value.releaseEvidence);
         } else {
           setEvidence(null);
+        }
+
+        if (historyResult.status === "fulfilled") {
+          setReleaseHistory(historyResult.value.releasePackages);
+        } else {
+          setReleaseHistory([]);
         }
       })
       .finally(() => {
@@ -107,11 +121,12 @@ export function OpsReleaseSurface() {
       <section className={styles.hero}>
         <div>
           <p className={styles.eyebrow}>Internal release readiness</p>
-          <h1>سطح حي يكشف blockers الإطلاق من runtime نفسها بدل إبقائها في docs فقط.</h1>
+          <h1>A protected runtime surface for blockers, evidence, preflight, and release history.</h1>
           <p className={styles.summary}>
-            هذا السطح لا يدّعي أن الإطلاق مكتمل. بل يجمع ما تبقى من blockers
-            الحقيقية: الاستضافة، authority التشغيلية، auth الداخلية، موافقات
-            المحتوى العامة، وآخر evidence تحقق محفوظة قبل أي claim عن launch readiness.
+            This surface does not claim that launch is complete. It keeps the remaining blockers
+            visible: hosting, transactional authority, protected ops access, public-content
+            approval, runtime preflight, latest verification evidence, and now the durable release
+            package trail inside the application authority.
           </p>
         </div>
 
@@ -121,15 +136,15 @@ export function OpsReleaseSurface() {
             <strong>{isLoading ? "..." : getStatusLabel(metrics.overallStatus)}</strong>
             <span>
               {isLoading
-                ? "جارٍ تحميل حالة الإطلاق الحالية."
-                : `${metrics.blockedCount} blocked, ${metrics.warningCount} warning, ${metrics.readyCount} ready.`}
+                ? "Loading the current release status."
+                : `${metrics.blockedCount} blocked, ${metrics.warningCount} warnings, ${metrics.readyCount} ready.`}
             </span>
           </div>
 
           <div className={styles.noticeCard}>
             <p className={styles.eyebrow}>Runtime context</p>
             <h2>{snapshot?.runtimeEnvironment ?? "loading..."}</h2>
-            <p>{snapshot?.canonicalUrl ?? "جارٍ تحديد canonical URL الحالية."}</p>
+            <p>{snapshot?.canonicalUrl ?? "Resolving the current canonical URL."}</p>
           </div>
         </div>
       </section>
@@ -138,24 +153,24 @@ export function OpsReleaseSurface() {
         <article className={styles.statusSummaryCard}>
           <p className={styles.sectionTitle}>Blocked gates</p>
           <strong>{metrics.blockedCount}</strong>
-          <span>عدد البوابات التي تمنع claim الإطلاق الآن.</span>
+          <span>Current blockers that still prevent an honest launch claim.</span>
         </article>
         <article className={styles.statusSummaryCard}>
           <p className={styles.sectionTitle}>Warnings</p>
           <strong>{metrics.warningCount}</strong>
-          <span>بوابات تحسنت لكنها لم تصل بعد إلى production ownership نهائية.</span>
+          <span>Areas that work now but still miss final production ownership.</span>
         </article>
         <article className={styles.statusSummaryCard}>
           <p className={styles.sectionTitle}>Ready</p>
           <strong>{metrics.readyCount}</strong>
-          <span>بوابات release الأساسية التي أصبحت مغطاة بالفعل داخل المشروع.</span>
+          <span>Release gates already covered inside the repository and runtime.</span>
         </article>
       </section>
 
       <section className={styles.layout}>
         <article className={styles.mainCard}>
           <p className={styles.sectionTitle}>Release gates</p>
-          <h2>الحالة الحالية لكل gate</h2>
+          <h2>Current gate status</h2>
 
           {error ? <div className={styles.inlineError}>{error}</div> : null}
 
@@ -163,8 +178,8 @@ export function OpsReleaseSurface() {
             {isLoading ? (
               <article className={styles.emptyCard}>
                 <p className={styles.eyebrow}>Release</p>
-                <h1>جارٍ تحميل blockers الإطلاق</h1>
-                <p>يتم الآن جمع المؤشرات الحية من authorities والبيئة الحالية.</p>
+                <h1>Loading current blockers</h1>
+                <p>Collecting live release signals from the protected runtime.</p>
               </article>
             ) : snapshot ? (
               snapshot.gates.map((gate) => (
@@ -191,8 +206,8 @@ export function OpsReleaseSurface() {
             ) : (
               <article className={styles.emptyCard}>
                 <p className={styles.eyebrow}>Release</p>
-                <h1>تعذر إنشاء snapshot الجاهزية الحالية</h1>
-                <p>تحقق من APIs الداخلية أو من تهيئة بيئة التشغيل الحالية.</p>
+                <h1>Release snapshot is unavailable</h1>
+                <p>Recheck the protected runtime APIs and current environment contract.</p>
               </article>
             )}
           </div>
@@ -201,7 +216,7 @@ export function OpsReleaseSurface() {
         <aside className={styles.summaryList}>
           <article className={styles.summaryCard}>
             <p className={styles.sectionTitle}>Latest evidence</p>
-            <h2>آخر verification محفوظة</h2>
+            <h2>Current verification report</h2>
             {evidence ? (
               <div className={styles.summaryList}>
                 <div className={styles.infoBullet}>
@@ -230,15 +245,15 @@ export function OpsReleaseSurface() {
               </div>
             ) : (
               <div className={styles.infoBullet}>
-                لا يوجد evidence محفوظة بعد في هذه البيئة. شغّل smoke verification محليًا
-                أو نفّذ مسار الـ Render live verification بعد أول deploy.
+                No release evidence is stored yet in this runtime. Run the smoke suite locally or
+                execute the live Render verification flow after the first deploy.
               </div>
             )}
           </article>
 
           <article className={styles.summaryCard}>
             <p className={styles.sectionTitle}>Next actions</p>
-            <h2>ما الذي يغلق blockers المتبقية؟</h2>
+            <h2>What closes the remaining blockers?</h2>
             <div className={styles.summaryList}>
               {(snapshot?.nextActions ?? []).map((action) => (
                 <div key={action} className={styles.infoBullet}>
@@ -250,7 +265,7 @@ export function OpsReleaseSurface() {
 
           <article className={styles.summaryCard}>
             <p className={styles.sectionTitle}>Related surfaces</p>
-            <h2>مسارات مرتبطة بالإطلاق</h2>
+            <h2>Release-adjacent paths</h2>
             <div className={styles.linkList}>
               <TrackedLink
                 href="/api/health"
@@ -259,7 +274,7 @@ export function OpsReleaseSurface() {
                 analyticsDestinationType="other"
               >
                 <span>Health endpoint</span>
-                <span>Runtime health + authority mode</span>
+                <span>Runtime health and authority mode</span>
               </TrackedLink>
               <TrackedLink
                 href="/api/ops/release/evidence"
@@ -280,6 +295,15 @@ export function OpsReleaseSurface() {
                 <span>Combined blockers, preflight, and latest evidence</span>
               </TrackedLink>
               <TrackedLink
+                href="/api/ops/release/history"
+                analyticsLabel="ops_release_to_history"
+                analyticsSurface="ops_release_links"
+                analyticsDestinationType="other"
+              >
+                <span>Release history API</span>
+                <span>Published release-package trail</span>
+              </TrackedLink>
+              <TrackedLink
                 href="/ops/content"
                 analyticsLabel="ops_release_to_content"
                 analyticsSurface="ops_release_links"
@@ -295,7 +319,7 @@ export function OpsReleaseSurface() {
                 analyticsDestinationType="ops_audit"
               >
                 <span>Audit trace</span>
-                <span>Sessions + protected mutations</span>
+                <span>Sessions and protected mutations</span>
               </TrackedLink>
             </div>
           </article>
@@ -306,9 +330,9 @@ export function OpsReleaseSurface() {
         <p className={styles.sectionTitle}>Runtime preflight</p>
         <h2>Live runtime contracts before the first real deploy</h2>
         <p className={styles.summary}>
-          This preflight layer shows whether the current runtime is actually aligned with the
-          frozen release path: public site URL, persistent writable paths, signing-secret quality,
-          and protected internal ops identities.
+          This preflight layer shows whether the current runtime is aligned with the frozen
+          release path: public site URL, persistent writable paths, signing-secret quality, and
+          protected internal ops identities.
         </p>
 
         <div className={styles.statusSummaryGrid}>
@@ -320,7 +344,7 @@ export function OpsReleaseSurface() {
           <article className={styles.statusSummaryCard}>
             <p className={styles.sectionTitle}>Blocked</p>
             <strong>{preflightMetrics.blockedCount}</strong>
-            <span>Environment items that still block an honest first live deploy.</span>
+            <span>Environment items that still block the first honest live deploy.</span>
           </article>
           <article className={styles.statusSummaryCard}>
             <p className={styles.sectionTitle}>Warnings</p>
@@ -362,7 +386,78 @@ export function OpsReleaseSurface() {
             <article className={styles.emptyCard}>
               <p className={styles.eyebrow}>Preflight</p>
               <h1>Runtime preflight snapshot is unavailable</h1>
-              <p>Recheck the current environment values, then reload the protected ops release surface.</p>
+              <p>Recheck environment values, then reload the protected release surface.</p>
+            </article>
+          )}
+        </div>
+      </section>
+
+      <section className={styles.mainCard}>
+        <p className={styles.sectionTitle}>Release history</p>
+        <h2>Published release packages</h2>
+        <p className={styles.summary}>
+          This stream keeps the last published release packages from the protected runtime so the
+          team can compare local smoke and live post-deploy states without relying on a single latest
+          file only.
+        </p>
+
+        <div className={styles.ordersGrid}>
+          {isLoading ? (
+            <article className={styles.emptyCard}>
+              <p className={styles.eyebrow}>Release history</p>
+              <h1>Loading published release packages</h1>
+              <p>Reading the durable release trail from the shared authority store.</p>
+            </article>
+          ) : releaseHistory.length ? (
+            releaseHistory.map((record) => (
+              <article key={record.id} className={styles.lineItem}>
+                <div className={styles.lineHead}>
+                  <div>
+                    <h3>{getVerificationModeLabel(record.verificationMode)}</h3>
+                    <p className={styles.lineMeta}>
+                      {formatTimestamp(record.publishedAt)} by {record.actor.name}
+                    </p>
+                  </div>
+                  <div className={styles.linePrice}>{getStatusLabel(record.overallStatus)}</div>
+                </div>
+
+                <p>
+                  {record.targetBaseUrl} with {record.blockedCount} blocked, {record.warningCount}{" "}
+                  warnings, and {record.readyCount} ready items.
+                </p>
+
+                <div className={styles.referenceCard}>
+                  <div className={styles.referenceRow}>
+                    <span>Record ID</span>
+                    <strong className={styles.referenceValue}>{record.id}</strong>
+                  </div>
+                  <div className={styles.referenceRow}>
+                    <span>Actor role</span>
+                    <strong className={styles.referenceValue}>{record.actor.role}</strong>
+                  </div>
+                  <div className={styles.referenceRow}>
+                    <span>Canonical URL</span>
+                    <strong className={styles.referenceValue}>
+                      {record.artifact.canonicalUrl}
+                    </strong>
+                  </div>
+                  <div className={styles.referenceRow}>
+                    <span>Evidence mode</span>
+                    <strong className={styles.referenceValue}>
+                      {record.artifact.releaseEvidence?.verificationMode ?? "runtime_snapshot"}
+                    </strong>
+                  </div>
+                </div>
+              </article>
+            ))
+          ) : (
+            <article className={styles.emptyCard}>
+              <p className={styles.eyebrow}>No release packages</p>
+              <h1>No package has been published to the durable runtime trail yet</h1>
+              <p>
+                Run the smoke suite or the live Render verification path again after this slice to
+                populate the release history stream.
+              </p>
             </article>
           )}
         </div>
