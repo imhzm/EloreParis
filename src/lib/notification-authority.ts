@@ -2,7 +2,6 @@ import "server-only";
 
 import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
-import path from "node:path";
 import {
   getAuthorityDatabase,
   getAuthorityMetaValue,
@@ -17,6 +16,7 @@ import type {
   StoredNotification,
 } from "@/lib/notification-types";
 import { getPhoneLastFour, type StoredOrder } from "@/lib/orders";
+import { resolveProjectPath } from "@/lib/runtime-paths";
 
 const NOTIFICATIONS_LEGACY_IMPORT_META_KEY = "legacy_notifications_import_v2";
 let authorityNotificationsReadyPromise: Promise<void> | null = null;
@@ -38,7 +38,7 @@ function getNotificationAuthorityFilePath() {
       ? configuredPath
       : ".data/notifications.json";
 
-  return path.resolve(/* turbopackIgnore: true */ process.cwd(), relativePath);
+  return resolveProjectPath(relativePath);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

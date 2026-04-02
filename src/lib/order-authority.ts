@@ -1,7 +1,6 @@
 import "server-only";
 
 import { readFile } from "node:fs/promises";
-import path from "node:path";
 import type { NextRequest } from "next/server";
 import {
   getAuthorityDatabase,
@@ -32,6 +31,7 @@ import {
   sanitizeStoredOrders,
   type StoredOrder,
 } from "@/lib/orders";
+import { resolveProjectPath } from "@/lib/runtime-paths";
 import { createSignedToken, verifySignedToken } from "@/lib/signed-token";
 
 export const RECENT_ORDER_COOKIE = "cozmateks-recent-order";
@@ -68,7 +68,7 @@ function getOrderAuthorityFilePath() {
       ? configuredPath
       : ".data/orders.json";
 
-  return path.resolve(/* turbopackIgnore: true */ process.cwd(), relativePath);
+  return resolveProjectPath(relativePath);
 }
 
 function getOrderAuthoritySecret() {

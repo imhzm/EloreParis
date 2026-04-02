@@ -1,9 +1,6 @@
-name: Deploy to Vercel
+name: Optional Deploy to Vercel
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 jobs:
@@ -26,7 +23,7 @@ jobs:
 
       - name: Skip deploy when Vercel secrets are missing
         if: steps.credentials.outputs.configured != 'true'
-        run: echo "Skipping Vercel deployment because required GitHub secrets are not configured yet."
+        run: echo "Skipping optional Vercel deployment because required GitHub secrets are not configured."
 
       - name: Checkout repository
         if: steps.credentials.outputs.configured == 'true'

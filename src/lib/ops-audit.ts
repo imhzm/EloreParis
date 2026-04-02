@@ -2,7 +2,6 @@ import "server-only";
 
 import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
-import path from "node:path";
 import {
   getAuthorityDatabase,
   getAuthorityMetaValue,
@@ -10,6 +9,7 @@ import {
   runAuthorityTransaction,
   setAuthorityMetaValue,
 } from "@/lib/authority-database";
+import { resolveProjectPath } from "@/lib/runtime-paths";
 import type { OpsAuditAction, OpsAuditActor, OpsAuditEntry } from "@/lib/ops-types";
 
 const OPS_AUDIT_LEGACY_IMPORT_META_KEY = "legacy_ops_audit_import_v2";
@@ -32,7 +32,7 @@ function getOpsAuditFilePath() {
       ? configuredPath
       : ".data/ops-audit.json";
 
-  return path.resolve(/* turbopackIgnore: true */ process.cwd(), relativePath);
+  return resolveProjectPath(relativePath);
 }
 
 function isAuditActor(value: unknown): value is OpsAuditActor {

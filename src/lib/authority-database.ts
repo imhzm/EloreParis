@@ -3,6 +3,7 @@ import "server-only";
 import { mkdirSync } from "node:fs";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
+import { resolveProjectPath } from "@/lib/runtime-paths";
 
 const authorityTableDirectory = {
   orders: "authority_orders",
@@ -93,7 +94,7 @@ export function getAuthorityDatabasePath() {
       ? configuredPath
       : ".data/authority.sqlite";
 
-  return path.resolve(/* turbopackIgnore: true */ process.cwd(), relativePath);
+  return resolveProjectPath(relativePath);
 }
 
 export function getAuthorityDatabase() {

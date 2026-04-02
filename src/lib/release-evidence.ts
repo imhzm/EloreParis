@@ -1,8 +1,8 @@
 import "server-only";
 
 import { existsSync, readFileSync } from "node:fs";
-import path from "node:path";
 import type { ReleaseEvidenceReport } from "@/lib/release-evidence-types";
+import { resolveProjectPath } from "@/lib/runtime-paths";
 
 export function getReleaseEvidencePath() {
   const configuredPath = process.env.RELEASE_EVIDENCE_PATH?.trim();
@@ -11,7 +11,7 @@ export function getReleaseEvidencePath() {
       ? configuredPath
       : ".artifacts/release-evidence.json";
 
-  return path.resolve(/* turbopackIgnore: true */ process.cwd(), relativePath);
+  return resolveProjectPath(relativePath);
 }
 
 export function readReleaseEvidence(): ReleaseEvidenceReport | null {

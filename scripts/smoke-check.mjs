@@ -1,12 +1,10 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
-import { createRequire } from "node:module";
 import path from "node:path";
 import process from "node:process";
 import { setTimeout as delay } from "node:timers/promises";
 
-const require = createRequire(import.meta.url);
 const port = Number(process.env.SMOKE_PORT ?? 3066);
 const host = process.env.SMOKE_HOST ?? "127.0.0.1";
 const baseUrl = `http://${host}:${port}`;
@@ -36,7 +34,10 @@ const releaseEvidenceFile =
   process.env.SMOKE_RELEASE_EVIDENCE_PATH ??
   process.env.RELEASE_EVIDENCE_PATH ??
   ".artifacts/release-evidence.json";
-const nextCliPath = require.resolve("next/dist/bin/next");
+const standaloneStartScript = path.resolve(
+  process.cwd(),
+  "scripts/start-standalone.mjs",
+);
 
 if (!existsSync(".next/BUILD_ID")) {
   throw new Error("Production build not found. Run `npm run build` before `npm run test:smoke`.");
@@ -347,11 +348,13 @@ process.on("SIGTERM", () => {
 
 safeCleanupAuthorityArtifacts();
 
-server = spawn(process.execPath, [nextCliPath, "start", "--port", String(port)], {
+server = spawn(process.execPath, [standaloneStartScript], {
   cwd: process.cwd(),
   env: {
     ...process.env,
     NEXT_PUBLIC_SITE_URL: baseUrl,
+    PORT: String(port),
+    HOSTNAME: host,
     OPS_AUTH_USERS_JSON: JSON.stringify([
       {
         id: "manager",

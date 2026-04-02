@@ -6,7 +6,7 @@
 - Last updated: 2026-04-02
 - Current phase: `release`
 - Overall completion: `99%`
-- Current focus: final external-provider blockers plus executable QA evidence surfaced through internal release readiness
+- Current focus: first live-host blockers after freezing the primary persistent hosting path and surfacing executable release evidence
 - Forecast status: `date not committed yet`
 - Working estimate: `12-16 weeks for an MVP after stack, catalog model, and integration scope are frozen`
 
@@ -111,7 +111,7 @@ Progress is tracked against SkyWave phases, not by ad-hoc task count.
 - [x] Expanded order confirmation and track-order surfaces to expose fulfillment and notification state instead of bare status only
 - [x] Expanded analytics and smoke regression coverage for fulfillment and checkout-option behavior
 - [x] Freeze MVP scope vs later phases
-- [ ] Freeze hosting direction
+- [x] Freeze hosting direction
 - [x] Freeze commerce architecture and admin boundary
 - [x] Added a production-safe access gate for `/ops/*` plus a dedicated `/ops-access` entry surface
 - [x] Added smoke coverage for unauthenticated redirect plus authenticated access to the protected ops routes
@@ -148,7 +148,7 @@ Progress is tracked against SkyWave phases, not by ad-hoc task count.
 | Performance / CWV | In Progress | Next.js foundation is in place; runtime and asset optimization still pending |
 | Analytics / Conversion | In Progress | Page views, global navigation, core CTA instrumentation, internal search submit/result events including ingredient result groups, collection `filter_apply`, ingredient route links, `add_to_cart`, `cart_update`, `checkout_start`, `checkout_option_change`, `checkout_complete`, `track_order_lookup`, internal ops route page typing including `/ops/audit` and `/ops/notifications`, plus internal `ops_order_status_update` and `ops_notification_status_update` are now wired against the centralized in-app order and notification authorities; real payment completion and external lifecycle notifications are still pending |
 | Content system | In Progress | Editorial, concern, routine, product, collection, trust, FAQ, contact, about, and terms shells exist, and content ownership plus sample requirements are now frozen through a dedicated internal governance surface and release document, but voice remains provisional until real samples and approved business data exist |
-| Release / Ops | In Progress | Local runtime is stable on port `3056`, checkout now writes order references into a unified SQLite-backed in-app authority instead of browser-only or JSON-only storage, confirmation and tracking now read from protected API routes and real notification queue state, internal `/ops`, `/ops/catalog`, `/ops/content`, `/ops/release`, `/ops/fulfillment`, `/ops/orders`, `/ops/notifications`, and `/ops/audit` surfaces now rehearse KPI review, catalog ownership, content ownership freeze, live launch blockers, routing, supplier exceptions, notification delivery-state trace, session tracing, and order progression through guarded APIs without claiming a real backoffice, `/ops-access` plus middleware now gate those internal routes with role-aware signed sessions and identity-backed login in production-safe environments, protected ops mutations now require a trusted same-origin request, repeated login failures now throttle durably inside SQLite, the codebase is now on GitHub with CI verified on push, branded fallback plus manifest surfaces now exist, `/api/health` now exposes authority storage mode for deployment checks, `/api/ops/release` now exposes live release blockers from runtime state, `/api/ops/release/evidence` now exposes the latest executable smoke-evidence artifact, smoke checks now guard critical release surfaces plus order create/read/update, notification queue transitions, authority storage readiness, identity login, throttled login, release-readiness visibility, evidence generation, and ops access control in CI, and a secret-gated Vercel deployment workflow plus explicit runbook now exist; first live deployment, provider-backed auth, and real durable backend ownership are still pending |
+| Release / Ops | In Progress | Local runtime is stable on port `3056`, checkout now writes order references into a unified SQLite-backed in-app authority instead of browser-only or JSON-only storage, confirmation and tracking now read from protected API routes and real notification queue state, internal `/ops`, `/ops/catalog`, `/ops/content`, `/ops/release`, `/ops/fulfillment`, `/ops/orders`, `/ops/notifications`, and `/ops/audit` surfaces now rehearse KPI review, catalog ownership, content ownership freeze, live launch blockers, routing, supplier exceptions, notification delivery-state trace, session tracing, and order progression through guarded APIs without claiming a real backoffice, `/ops-access` plus middleware now gate those internal routes with role-aware signed sessions and identity-backed login in production-safe environments, protected ops mutations now require a trusted same-origin request, repeated login failures now throttle durably inside SQLite, the codebase is now on GitHub with CI verified on push, branded fallback plus manifest surfaces now exist, `/api/health` now exposes authority storage mode for deployment checks, `/api/ops/release` now exposes live release blockers from runtime state, `/api/ops/release/evidence` now exposes the latest executable smoke-evidence artifact, the build now emits a Next standalone runtime, the repository now freezes the primary host to a Render persistent web service through `render.yaml`, smoke checks now boot the standalone server path, and the Vercel workflow is retained as a manual-only secondary path; first live deployment, provider-backed auth, and real durable backend ownership are still pending |
 
 ## Milestone Log
 
@@ -243,6 +243,9 @@ Progress is tracked against SkyWave phases, not by ad-hoc task count.
 - A real internal `/ops/release` route plus `/api/ops/release` now expose live launch blockers from runtime state instead of leaving deployment and provider gaps only in docs.
 - Release blockers now surface the current canonical URL, authority durability mode, ops auth maturity, and public-content approval gates in one protected internal screen.
 - Smoke verification now writes `.artifacts/release-evidence.json`, `/api/ops/release/evidence` exposes it to internal ops, and GitHub Actions uploads it as a reusable artifact for release review.
+- The production build now emits and prepares a Next standalone runtime, and the production start path now follows the standalone server instead of `next start`.
+- Hosting direction is now frozen around a Render web service with a persistent disk through `render.yaml`, while the previous Vercel workflow remains manual-only as a secondary path.
+- `/ops/release` now treats hosting direction as a first-class gate instead of leaving the deploy target mismatch only in docs.
 - Checkout now applies city-aware shipping and payment eligibility rules before creating an order reference instead of treating every option as always available.
 - A real internal `/ops/fulfillment` route now exposes carrier recommendation, split-shipment logic, COD eligibility, and notification planning for locally saved orders.
 - Order confirmation and track-order surfaces now explain fulfillment state and notification readiness instead of showing the order status alone.
@@ -278,7 +281,7 @@ Progress is tracked against SkyWave phases, not by ad-hoc task count.
 
 1. Replace the current SQLite-backed in-app authority with real backend authority for orders, stock, supplier sync, payment, shipping, and delivery ownership.
 2. Replace the current env-backed internal ops identities and signed sessions with provider-backed auth, durable RBAC, and shared audit ownership after backend ownership is active.
-3. Supply Vercel credentials and execute the first real deployment from this repository.
+3. Create the first real Render service from `render.yaml`, attach the persistent disk, and bind the production domain.
 4. Replace provisional legal/business/support data and provisional brand samples with approved operating details before launch claims.
 
 ## Tracking Rules

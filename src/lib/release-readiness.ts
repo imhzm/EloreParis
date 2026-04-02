@@ -4,6 +4,7 @@ import {
   getContentGovernanceSummary,
 } from "@/lib/content-governance";
 import { getAuthorityStorageInfo } from "@/lib/authority-database";
+import { getHostingDirection } from "@/lib/hosting-direction";
 import { getOpsAccessConfig } from "@/lib/ops-access";
 import type {
   ReleaseReadinessGate,
@@ -48,6 +49,7 @@ function getOverallStatus(gates: ReleaseReadinessGate[]): ReleaseReadinessStatus
 export function getReleaseReadinessSnapshot(): ReleaseReadinessSnapshot {
   const authorityStorage = getAuthorityStorageInfo();
   const contentSummary = getContentGovernanceSummary();
+  const hostingDirection = getHostingDirection();
   const opsAccessConfig = getOpsAccessConfig();
 
   const gates: ReleaseReadinessGate[] = [
@@ -63,26 +65,40 @@ export function getReleaseReadinessSnapshot(): ReleaseReadinessSnapshot {
       ],
     },
     {
+      id: "hosting-direction",
+      title: "Hosting direction freeze",
+      status: "ready",
+      summary:
+        "The repository now freezes the primary runtime to a Render web service that runs the Next standalone server on persistent storage, which matches the current SQLite-backed operational authorities.",
+      details: [
+        `Primary provider: ${hostingDirection.primaryProvider}`,
+        `Service type: ${hostingDirection.primaryServiceType}`,
+        `Runtime artifact: ${hostingDirection.runtimeArtifact}`,
+        `Persistent state path: ${hostingDirection.persistencePath}`,
+        `Secondary path: ${hostingDirection.optionalSecondaryPath}`,
+      ],
+    },
+    {
       id: "hosting-runtime",
       title: "Hosted canonical runtime",
       status: isLocalCanonicalUrl(siteUrl) ? "blocked" : "ready",
       summary: isLocalCanonicalUrl(siteUrl)
-        ? "Canonical URLs still resolve to a local runtime, so launch-readiness cannot be claimed yet."
+        ? "Canonical URLs still resolve to a local runtime because no live hosted Render environment or production domain is wired yet."
         : "Canonical URLs now resolve to a hosted runtime instead of a local fallback.",
       details: isLocalCanonicalUrl(siteUrl)
         ? [
             `Current canonical URL: ${siteUrl}`,
-            "A real hosted deployment plus production credentials is still required.",
+            "A real Render deployment plus production domain configuration is still required.",
           ]
         : [`Current canonical URL: ${siteUrl}`],
     },
     {
       id: "transactional-backend",
       title: "Durable transactional authority",
-      status: authorityStorage.engine === "sqlite" ? "blocked" : "ready",
+      status: authorityStorage.engine === "sqlite" ? "warning" : "ready",
       summary:
         authorityStorage.engine === "sqlite"
-          ? "Orders, notifications, and audit logs still depend on app-local SQLite storage instead of a shared durable backend."
+          ? "Orders, notifications, and audit logs now match the frozen persistent-host path, but they still run on single-host SQLite instead of a shared durable backend."
           : "Transactional state is backed by a non-local shared authority.",
       details: [
         `Current storage engine: ${authorityStorage.engine}`,
@@ -128,8 +144,8 @@ export function getReleaseReadinessSnapshot(): ReleaseReadinessSnapshot {
     canonicalUrl: siteUrl,
     gates,
     nextActions: [
-      "Link the project to a real hosted runtime and add the production deployment credentials.",
-      "Replace the current SQLite-backed authority with a shared durable backend for orders, notifications, and audit data.",
+      "Create the primary Render web service from render.yaml, attach the persistent disk, and bind the production domain.",
+      "Keep the current SQLite-backed authority only as a single-host launch path; replace it with a shared durable backend for orders, notifications, and audit data when the backend ownership phase starts.",
       "Upgrade the current signed-session ops gate into provider-backed auth and real RBAC.",
       "Clear the remaining sample-pack, legal, and business-input gates tracked in CONTENT-OWNERSHIP.md before public launch claims.",
     ],
