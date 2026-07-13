@@ -54,6 +54,54 @@ function hasNextActionsChanged(
   return publishedActions.some((action, index) => action !== currentActions[index]);
 }
 
+function getRuntimeSecretAlignmentSignature(
+  artifact: ReleasePackageArtifact,
+) {
+  return JSON.stringify(artifact.runtimeSecretAlignment);
+}
+
+function hasRuntimeSecretAlignmentChanged(
+  publishedRecord: ReleasePackageRecord | null,
+  currentArtifact: ReleasePackageArtifact,
+) {
+  if (!publishedRecord) {
+    return false;
+  }
+
+  return (
+    getRuntimeSecretAlignmentSignature(publishedRecord.artifact) !==
+    getRuntimeSecretAlignmentSignature(currentArtifact)
+  );
+}
+
+function getChangedRuntimeSecretBindingIds(
+  publishedArtifact: ReleasePackageArtifact,
+  currentArtifact: ReleasePackageArtifact,
+) {
+  const publishedBindings = new Map(
+    publishedArtifact.runtimeSecretAlignment.bindings.map((binding) => [
+      binding.id,
+      binding,
+    ]),
+  );
+
+  return currentArtifact.runtimeSecretAlignment.bindings
+    .filter((binding) => {
+      const publishedBinding = publishedBindings.get(binding.id);
+
+      if (!publishedBinding) {
+        return true;
+      }
+
+      return (
+        publishedBinding.status !== binding.status ||
+        publishedBinding.currentMode !== binding.currentMode ||
+        publishedBinding.nextAction !== binding.nextAction
+      );
+    })
+    .map((binding) => binding.id);
+}
+
 function buildComparisonSummary(
   latestPublishedRecord: ReleasePackageRecord | null,
   currentArtifact: ReleasePackageArtifact,
@@ -93,6 +141,18 @@ function buildComparisonSummary(
   if (comparison.changedFields.targetBaseUrl) {
     summary.push(
       `Target base URL changed from ${latestPublishedRecord.targetBaseUrl} to ${currentArtifact.targetBaseUrl}.`,
+    );
+  }
+
+  if (comparison.changedFields.runtimeSecretAlignment) {
+    const changedBindingIds = getChangedRuntimeSecretBindingIds(
+      latestPublishedRecord.artifact,
+      currentArtifact,
+    );
+    summary.push(
+      changedBindingIds.length
+        ? `Runtime secret alignment changed across: ${changedBindingIds.join(", ")}.`
+        : `Runtime secret alignment changed from ${latestPublishedRecord.artifact.runtimeSecretAlignment.overallStatus} to ${currentArtifact.runtimeSecretAlignment.overallStatus}.`,
     );
   }
 
@@ -153,6 +213,7 @@ export function buildReleasePackageComparison(): ReleasePackageComparison {
         verificationMode: false,
         targetBaseUrl: false,
         runtimeEnvironment: false,
+        runtimeSecretAlignment: false,
         nextActions: false,
       },
       blockedItems: {
@@ -195,6 +256,10 @@ export function buildReleasePackageComparison(): ReleasePackageComparison {
     targetBaseUrl: latestPublishedRecord.targetBaseUrl !== currentArtifact.targetBaseUrl,
     runtimeEnvironment:
       latestPublishedRecord.artifact.runtimeEnvironment !== currentArtifact.runtimeEnvironment,
+    runtimeSecretAlignment: hasRuntimeSecretAlignmentChanged(
+      latestPublishedRecord,
+      currentArtifact,
+    ),
     nextActions: hasNextActionsChanged(latestPublishedRecord, currentArtifact),
   };
 
@@ -207,6 +272,7 @@ export function buildReleasePackageComparison(): ReleasePackageComparison {
       changedFields.verificationMode ||
       changedFields.targetBaseUrl ||
       changedFields.runtimeEnvironment ||
+      changedFields.runtimeSecretAlignment ||
       changedFields.nextActions ||
       blockedAdded.length > 0 ||
       blockedCleared.length > 0 ||

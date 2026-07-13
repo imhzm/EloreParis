@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 
 export default function OpsAuditPage() {
   return (
-    <StorefrontShell activeHref="/ops">
+    <StorefrontShell activeHref="/ops/audit">
       <OpsAuditSurface />
     </StorefrontShell>
   );

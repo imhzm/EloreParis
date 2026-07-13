@@ -49,6 +49,44 @@ function hasNextActionsChanged(
   return baselineActions.some((action, index) => action !== currentActions[index]);
 }
 
+function hasRuntimeSecretAlignmentChanged(
+  baselineRecord: ReleasePackageRecord,
+  currentArtifact: ReleasePackageArtifact,
+) {
+  return (
+    JSON.stringify(baselineRecord.artifact.runtimeSecretAlignment) !==
+    JSON.stringify(currentArtifact.runtimeSecretAlignment)
+  );
+}
+
+function getChangedRuntimeSecretBindingIds(
+  baselineRecord: ReleasePackageRecord,
+  currentArtifact: ReleasePackageArtifact,
+) {
+  const baselineBindings = new Map(
+    baselineRecord.artifact.runtimeSecretAlignment.bindings.map((binding) => [
+      binding.id,
+      binding,
+    ]),
+  );
+
+  return currentArtifact.runtimeSecretAlignment.bindings
+    .filter((binding) => {
+      const baselineBinding = baselineBindings.get(binding.id);
+
+      if (!baselineBinding) {
+        return true;
+      }
+
+      return (
+        baselineBinding.status !== binding.status ||
+        baselineBinding.currentMode !== binding.currentMode ||
+        baselineBinding.nextAction !== binding.nextAction
+      );
+    })
+    .map((binding) => binding.id);
+}
+
 function buildMissingDelta(
   status: ReleasePacketDecisionDelta["status"],
 ): ReleasePacketDecisionDelta {
@@ -129,6 +167,18 @@ function buildDecisionDeltaSummary(
     );
   }
 
+  if (delta.changedFields?.runtimeSecretAlignment) {
+    const changedBindingIds = getChangedRuntimeSecretBindingIds(
+      baselineRecord,
+      currentArtifact,
+    );
+    summary.push(
+      changedBindingIds.length
+        ? `Runtime secret alignment changed since the latest decision across: ${changedBindingIds.join(", ")}.`
+        : `Runtime secret alignment changed from ${baselineRecord.artifact.runtimeSecretAlignment.overallStatus} to ${currentArtifact.runtimeSecretAlignment.overallStatus}.`,
+    );
+  }
+
   if (delta.blockedItems?.added.length) {
     summary.push(`Blocked items added since the latest decision: ${delta.blockedItems.added.join(", ")}.`);
   }
@@ -195,6 +245,7 @@ export function buildReleaseDecisionDelta(
       baselineRecord.verificationMode !== currentArtifact.verificationMode ||
       baselineRecord.targetBaseUrl !== currentArtifact.targetBaseUrl ||
       baselineRecord.artifact.runtimeEnvironment !== currentArtifact.runtimeEnvironment ||
+      hasRuntimeSecretAlignmentChanged(baselineRecord, currentArtifact) ||
       hasNextActionsChanged(baselineRecord, currentArtifact) ||
       blockedAdded.length > 0 ||
       blockedCleared.length > 0 ||
@@ -229,6 +280,10 @@ export function buildReleaseDecisionDelta(
       targetBaseUrl: baselineRecord.targetBaseUrl !== currentArtifact.targetBaseUrl,
       runtimeEnvironment:
         baselineRecord.artifact.runtimeEnvironment !== currentArtifact.runtimeEnvironment,
+      runtimeSecretAlignment: hasRuntimeSecretAlignmentChanged(
+        baselineRecord,
+        currentArtifact,
+      ),
       nextActions: hasNextActionsChanged(baselineRecord, currentArtifact),
     },
     blockedItems: {

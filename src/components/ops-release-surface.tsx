@@ -109,6 +109,17 @@ function getComparisonStatusLabel(status: ReleasePackageComparison["status"]) {
   }
 }
 
+function getRuntimeStageLabel(stage: ReleasePacketArtifact["runtimeMonitoring"]["stage"]) {
+  switch (stage) {
+    case "local":
+      return "Local";
+    case "preview":
+      return "Preview";
+    case "production":
+      return "Production";
+  }
+}
+
 function formatDelta(delta: number) {
   if (delta > 0) {
     return `+${delta}`;
@@ -664,35 +675,32 @@ export function OpsReleaseSurface() {
   }
 
   return (
-    <div className={styles.page}>
+    <div className={`${styles.page} ${styles.opsDashboard} ${styles.opsRelease}`}>
       <OpsNav activeHref="/ops/release" />
 
       <section className={styles.hero}>
         <div>
-          <p className={styles.eyebrow}>Internal release readiness</p>
-          <h1>A protected runtime surface for blockers, evidence, preflight, and release history.</h1>
+          <p className={styles.eyebrow}>جاهزية الإطلاق</p>
+          <h1>قرار الإطلاق يبدأ من الدليل، لا من الانطباع.</h1>
           <p className={styles.summary}>
-            This surface does not claim that launch is complete. It keeps the remaining blockers
-            visible: hosting, transactional authority, protected ops access, public-content
-            approval, runtime preflight, latest verification evidence, the durable release
-            package trail, the release decision trail, and an executive packet inside the
-            application authority.
+            راجعي العوائق والاختبارات ودليل التحقق وسجل القرارات قبل اعتماد أي
+            إطلاق. تظل الاستضافة والتكاملات والمحتوى والرجوع الآمن ظاهرة في مكان واحد.
           </p>
         </div>
 
         <div className={styles.heroAside}>
           <div className={styles.metricCard}>
-            <p>Overall status</p>
+            <p>الحالة العامة</p>
             <strong>{isLoading ? "..." : getStatusLabel(metrics.overallStatus)}</strong>
             <span>
               {isLoading
-                ? "Loading the current release status."
-                : `${metrics.blockedCount} blocked, ${metrics.warningCount} warnings, ${metrics.readyCount} ready.`}
+                ? "جارٍ تحميل حالة الإطلاق."
+                : `${metrics.blockedCount} عائق، ${metrics.warningCount} تحذير، ${metrics.readyCount} جاهز.`}
             </span>
           </div>
 
           <div className={styles.noticeCard}>
-            <p className={styles.eyebrow}>Runtime context</p>
+            <p className={styles.eyebrow}>بيئة التشغيل</p>
             <h2>{snapshot?.runtimeEnvironment ?? "loading..."}</h2>
             <p>{snapshot?.canonicalUrl ?? "Resolving the current canonical URL."}</p>
           </div>
@@ -701,17 +709,17 @@ export function OpsReleaseSurface() {
 
       <section className={styles.statusSummaryGrid}>
         <article className={styles.statusSummaryCard}>
-          <p className={styles.sectionTitle}>Blocked gates</p>
+          <p className={styles.sectionTitle}>بوابات محجوبة</p>
           <strong>{metrics.blockedCount}</strong>
           <span>Current blockers that still prevent an honest launch claim.</span>
         </article>
         <article className={styles.statusSummaryCard}>
-          <p className={styles.sectionTitle}>Warnings</p>
+          <p className={styles.sectionTitle}>تحذيرات</p>
           <strong>{metrics.warningCount}</strong>
           <span>Areas that work now but still miss final production ownership.</span>
         </article>
         <article className={styles.statusSummaryCard}>
-          <p className={styles.sectionTitle}>Ready</p>
+          <p className={styles.sectionTitle}>جاهز</p>
           <strong>{metrics.readyCount}</strong>
           <span>Release gates already covered inside the repository and runtime.</span>
         </article>
@@ -719,8 +727,8 @@ export function OpsReleaseSurface() {
 
       <section className={styles.layout}>
         <article className={styles.mainCard}>
-          <p className={styles.sectionTitle}>Release gates</p>
-          <h2>Current gate status</h2>
+          <p className={styles.sectionTitle}>بوابات الإطلاق</p>
+          <h2>الحالة الحالية لكل بوابة</h2>
 
           {error ? <div className={styles.inlineError}>{error}</div> : null}
 
@@ -1006,6 +1014,253 @@ export function OpsReleaseSurface() {
               <div className={styles.infoBullet}>
                 No release evidence is stored yet in this runtime. Run the smoke suite locally or
                 execute the live Render verification flow after the first deploy.
+              </div>
+            )}
+          </article>
+
+          <article className={styles.summaryCard}>
+            <p className={styles.sectionTitle}>Runtime posture</p>
+            <h2>Search and deployment visibility</h2>
+            {releasePacket ? (
+              <>
+                <div className={styles.referenceCard}>
+                  <div className={styles.referenceRow}>
+                    <span>Posture status</span>
+                    <strong className={styles.referenceValue}>
+                      {getStatusLabel(releasePacket.runtimeMonitoring.status)}
+                    </strong>
+                  </div>
+                  <div className={styles.referenceRow}>
+                    <span>Runtime stage</span>
+                    <strong className={styles.referenceValue}>
+                      {getRuntimeStageLabel(releasePacket.runtimeMonitoring.stage)}
+                    </strong>
+                  </div>
+                  <div className={styles.referenceRow}>
+                    <span>Search visibility</span>
+                    <strong className={styles.referenceValue}>
+                      {releasePacket.runtimeMonitoring.searchIndexingEnabled
+                        ? "Indexable"
+                        : "Noindex"}
+                    </strong>
+                  </div>
+                </div>
+
+                <div className={styles.inlineNotice}>
+                  {releasePacket.runtimeMonitoring.summary}
+                </div>
+
+                <div className={styles.summaryList}>
+                  {releasePacket.runtimeMonitoring.details.map((detail) => (
+                    <div key={detail} className={styles.infoBullet}>
+                      {detail}
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className={styles.infoBullet}>
+                Runtime monitoring posture is unavailable until the executive release packet is loaded.
+              </div>
+            )}
+          </article>
+
+          <article className={styles.summaryCard}>
+            <p className={styles.sectionTitle}>Rollback checkpoint</p>
+            <h2>Trusted fallback package</h2>
+            {releasePacket ? (
+              <>
+                <div className={styles.referenceCard}>
+                  <div className={styles.referenceRow}>
+                    <span>Baseline status</span>
+                    <strong className={styles.referenceValue}>
+                      {getStatusLabel(releasePacket.rollbackBaseline.status)}
+                    </strong>
+                  </div>
+                  <div className={styles.referenceRow}>
+                    <span>Approved package</span>
+                    <strong className={styles.referenceValue}>
+                      {releasePacket.rollbackBaseline.packageRecordId ?? "none"}
+                    </strong>
+                  </div>
+                  <div className={styles.referenceRow}>
+                    <span>Decision verdict</span>
+                    <strong className={styles.referenceValue}>
+                      {releasePacket.rollbackBaseline.decisionVerdict
+                        ? getDecisionVerdictLabel(
+                            releasePacket.rollbackBaseline.decisionVerdict,
+                          )
+                        : "none"}
+                    </strong>
+                  </div>
+                  <div className={styles.referenceRow}>
+                    <span>Published at</span>
+                    <strong className={styles.referenceValue}>
+                      {releasePacket.rollbackBaseline.packagePublishedAt
+                        ? formatTimestamp(releasePacket.rollbackBaseline.packagePublishedAt)
+                        : "none"}
+                    </strong>
+                  </div>
+                </div>
+
+                <div className={styles.inlineNotice}>
+                  {releasePacket.rollbackBaseline.summary}
+                </div>
+
+                <div className={styles.summaryList}>
+                  {releasePacket.rollbackBaseline.details.map((detail) => (
+                    <div key={detail} className={styles.infoBullet}>
+                      {detail}
+                    </div>
+                  ))}
+                  <div className={styles.infoBullet}>
+                    Next: {releasePacket.rollbackBaseline.nextAction}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className={styles.infoBullet}>
+                Rollback baseline is unavailable until the executive release packet is loaded.
+              </div>
+            )}
+          </article>
+
+          <article className={styles.summaryCard}>
+            <p className={styles.sectionTitle}>Runtime secrets</p>
+            <h2>Executive secret alignment</h2>
+            {releasePacket ? (
+              <>
+                <div className={styles.referenceCard}>
+                  <div className={styles.referenceRow}>
+                    <span>Overall status</span>
+                    <strong className={styles.referenceValue}>
+                      {getStatusLabel(releasePacket.runtimeSecretAlignment.overallStatus)}
+                    </strong>
+                  </div>
+                  <div className={styles.referenceRow}>
+                    <span>Blocked bindings</span>
+                    <strong className={styles.referenceValue}>
+                      {releasePacket.runtimeSecretAlignment.blockedCount}
+                    </strong>
+                  </div>
+                  <div className={styles.referenceRow}>
+                    <span>Warnings</span>
+                    <strong className={styles.referenceValue}>
+                      {releasePacket.runtimeSecretAlignment.warningCount}
+                    </strong>
+                  </div>
+                  <div className={styles.referenceRow}>
+                    <span>Ready</span>
+                    <strong className={styles.referenceValue}>
+                      {releasePacket.runtimeSecretAlignment.readyCount}
+                    </strong>
+                  </div>
+                </div>
+
+                <div className={styles.inlineNotice}>
+                  {releasePacket.runtimeSecretAlignment.summary}
+                </div>
+
+                <div className={styles.summaryList}>
+                  {releasePacket.runtimeSecretAlignment.bindings.map((binding) => (
+                    <div key={binding.id} className={styles.infoBullet}>
+                      <strong>{binding.label}</strong>
+                      <br />
+                      {getStatusLabel(binding.status)} via {binding.currentMode}
+                      <br />
+                      {binding.summary}
+                      <br />
+                      Target env: {binding.envVar}
+                      <br />
+                      {binding.details.join(" ")}
+                      <br />
+                      Next: {binding.nextAction}
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className={styles.infoBullet}>
+                Runtime secret alignment is unavailable until the executive release packet is loaded.
+              </div>
+            )}
+          </article>
+
+          <article className={styles.summaryCard}>
+            <p className={styles.sectionTitle}>Integration contract</p>
+            <h2>Auth, payment, and shipping reality</h2>
+            {releasePacket ? (
+              <>
+                <div className={styles.referenceCard}>
+                  <div className={styles.referenceRow}>
+                    <span>Overall status</span>
+                    <strong className={styles.referenceValue}>
+                      {getStatusLabel(releasePacket.integrationContract.overallStatus)}
+                    </strong>
+                  </div>
+                  <div className={styles.referenceRow}>
+                    <span>Blocked lanes</span>
+                    <strong className={styles.referenceValue}>
+                      {releasePacket.integrationContract.blockedCount}
+                    </strong>
+                  </div>
+                  <div className={styles.referenceRow}>
+                    <span>Warning lanes</span>
+                    <strong className={styles.referenceValue}>
+                      {releasePacket.integrationContract.warningCount}
+                    </strong>
+                  </div>
+                  <div className={styles.referenceRow}>
+                    <span>Ready lanes</span>
+                    <strong className={styles.referenceValue}>
+                      {releasePacket.integrationContract.readyCount}
+                    </strong>
+                  </div>
+                </div>
+
+                <div className={styles.inlineNotice}>
+                  {releasePacket.integrationContract.summary}
+                </div>
+
+                <div className={styles.linkList}>
+                  {releasePacket.integrationContract.lanes.map((lane) => (
+                    <TrackedLink
+                      key={lane.id}
+                      href={lane.ownerPath}
+                      analyticsLabel={`ops_release_contract_${lane.id}`}
+                      analyticsSurface="ops_release_integration_contract"
+                      analyticsDestinationType={
+                        lane.ownerPath.startsWith("/api/") ? "other" : "ops_route"
+                      }
+                    >
+                      <span>
+                        {lane.title} ({getStatusLabel(lane.status)})
+                      </span>
+                      <span>{lane.nextAction}</span>
+                    </TrackedLink>
+                  ))}
+                </div>
+
+                <div className={styles.summaryList}>
+                  {releasePacket.integrationContract.lanes.map((lane) => (
+                    <div key={`${lane.id}-detail`} className={styles.infoBullet}>
+                      <strong>{lane.title}</strong>
+                      <br />
+                      {lane.currentMode}
+                      <br />
+                      {lane.evidence}
+                      <br />
+                      Missing bindings:{" "}
+                      {lane.missingBindings.length
+                        ? lane.missingBindings.join(" ")
+                        : "none"}
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className={styles.infoBullet}>
+                The integration contract is unavailable until the executive release packet is loaded.
               </div>
             )}
           </article>
@@ -1347,6 +1602,9 @@ export function OpsReleaseSurface() {
                   </span>
                   <span>
                     Runtime environment: {releaseComparison.changedFields.runtimeEnvironment ? "changed" : "stable"}
+                  </span>
+                  <span>
+                    Runtime secrets: {releaseComparison.changedFields.runtimeSecretAlignment ? "changed" : "stable"}
                   </span>
                   <span>
                     Next actions: {releaseComparison.changedFields.nextActions ? "changed" : "stable"}

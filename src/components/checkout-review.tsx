@@ -9,7 +9,10 @@ import {
   type CheckoutSubmissionInput,
   validateCheckoutSubmission,
 } from "@/lib/checkout-validation";
-import { getCheckoutRules } from "@/lib/fulfillment";
+import {
+  getCheckoutProviderHandoff,
+  getCheckoutRules,
+} from "@/lib/fulfillment";
 import { createOrderThroughAuthority } from "@/lib/order-authority-client";
 import {
   getPaymentMethodById,
@@ -20,7 +23,8 @@ import {
   type PaymentMethodId,
   type ShippingMethodId,
 } from "@/lib/orders";
-import { footerPolicyLinks } from "@/lib/site-content";
+import { collectionDirectory, footerPolicyLinks } from "@/lib/site-content";
+import { getSupplierRecord, getVariantOperations } from "@/lib/variant-operations";
 import styles from "./order-flow.module.css";
 
 type CheckoutFormState = CheckoutCustomerDetails & {
@@ -43,6 +47,21 @@ const initialFormState: CheckoutFormState = {
   acceptPolicies: false,
   acceptUpdates: false,
 };
+
+function dedupeBy<T>(items: T[], getKey: (item: T) => string) {
+  const seen = new Set<string>();
+
+  return items.filter((item) => {
+    const key = getKey(item);
+
+    if (seen.has(key)) {
+      return false;
+    }
+
+    seen.add(key);
+    return true;
+  });
+}
 
 export function CheckoutReview() {
   const pathname = usePathname() ?? "/checkout";
@@ -71,10 +90,166 @@ export function CheckoutReview() {
     getShippingMethodById(effectiveShippingMethodId) ?? shippingMethods[0];
   const selectedPayment =
     getPaymentMethodById(effectivePaymentMethodId) ?? paymentMethods[0];
+  const providerHandoff = useMemo(
+    () =>
+      getCheckoutProviderHandoff(
+        lines,
+        formState.city,
+        subtotal,
+        effectiveShippingMethodId,
+        effectivePaymentMethodId,
+      ),
+    [
+      effectivePaymentMethodId,
+      effectiveShippingMethodId,
+      formState.city,
+      lines,
+      subtotal,
+    ],
+  );
   const totalEstimate = useMemo(
     () => subtotal + selectedShipping.estimatedFee,
     [selectedShipping.estimatedFee, subtotal],
   );
+  const cartProducts = dedupeBy(
+    lines.map((line) => line.product),
+    (product) => product.slug,
+  );
+  const cartCollections = dedupeBy(
+    cartProducts.map((product) => collectionDirectory[product.collection]),
+    (collection) => collection.href,
+  );
+  const checkoutRoutes = dedupeBy(
+    cartProducts.flatMap((product) =>
+      product.pairings.map((route) => ({
+        ...route,
+        productName: product.name,
+      })),
+    ),
+    (route) => route.href,
+  ).slice(0, 3);
+  const authorityLines = lines.map((line) => {
+    const variantOperations = getVariantOperations(
+      line.product.slug,
+      line.variant.sku,
+    );
+    const supplier = variantOperations
+      ? getSupplierRecord(variantOperations.supplierId)
+      : null;
+    const requiresStockReview = Boolean(
+      variantOperations &&
+        variantOperations.stockOnHand <= variantOperations.lowStockThreshold,
+    );
+    const routeLabel = !variantOperations
+      ? "Catalog mapping required"
+      : line.variant.availability === "PreOrder" ||
+          supplier?.fulfillmentModel === "dropship"
+        ? "Supplier direct handoff"
+        : requiresStockReview
+          ? "Manual stock confirmation"
+          : "Local stock dispatch";
+
+    return {
+      key: line.key,
+      productName: line.product.name,
+      supplierName: supplier?.name ?? "Supplier mapping pending",
+      supplierId: variantOperations?.supplierId ?? "pending",
+      supplierMode: supplier?.fulfillmentModel ?? "unknown",
+      routeLabel,
+      shippingClass: variantOperations?.shippingClass ?? "pending",
+      stockOnHand: variantOperations?.stockOnHand ?? 0,
+      lowStockThreshold: variantOperations?.lowStockThreshold ?? 0,
+      codEligible: variantOperations?.codEligible ?? false,
+      requiresReview:
+        line.variant.availability === "PreOrder" || requiresStockReview || !variantOperations,
+    };
+  });
+  const supplierCount = new Set(
+    authorityLines.map((line) => line.supplierId),
+  ).size;
+  const shippingClassCount = new Set(
+    authorityLines.map((line) => line.shippingClass),
+  ).size;
+  const reviewCount = authorityLines.filter((line) => line.requiresReview).length;
+  const authorityModeTitle =
+    supplierCount > 1
+      ? "Mixed-supplier handoff"
+      : authorityLines[0]
+        ? `${authorityLines[0].supplierName}`
+        : "Authority preview pending";
+  const authorityModeBody =
+    supplierCount > 1
+      ? "السلة الآن تمر عبر أكثر من supplier lane، لذلك أي إضافة جديدة يجب أن تبرر split-shipment أو اختلاف lead time بدل رفع العدد فقط."
+      : authorityLines[0]
+        ? `المسار الحالي أقرب إلى ${authorityLines[0].supplierMode === "dropship" ? "supplier-assisted fulfillment" : authorityLines[0].supplierMode === "hybrid" ? "hybrid fulfillment" : "direct fulfillment"}، لذا المطلوب الآن إغلاق التنفيذ لا إعادة توسيع السلة.`
+        : "لا توجد authority preview كافية بعد لهذه السلة.";
+  const bundleEconomicsRules = [
+    supplierCount > 1
+      ? "السلة لم تعد single-lane bundle، لذلك أي add-on جديد قد يرفع split shipment بدل أن يرفع القيمة بوضوح."
+      : shippingClassCount > 1
+        ? "العناصر الحالية تشترك في supplier واحد لكن تختلف في shipping class، لذا الأفضل تثبيت القرار قبل أي توسعة جديدة."
+        : "العناصر الحالية تسير داخل lane تشغيلية متقاربة، لذلك يمكن إغلاق القرار كباقة منضبطة بدل إعادة فتح browse loop.",
+    reviewCount > 0
+      ? `${reviewCount} عنصر/عناصر تحتاج stock أو lead-time review قبل اعتبار checkout مسارًا مباشرًا بالكامل.`
+      : "لا توجد line-level review blockers إضافية على العناصر الحالية داخل authority preview.",
+    authorityLines.every((line) => line.codEligible)
+      ? "من جهة الـ SKU نفسها لا يوجد COD blocker، وما يتبقى الآن هو قواعد المدينة والإجمالي داخل checkout."
+      : "يوجد SKU واحد على الأقل يدفع السلة نحو payment-link authority، لذلك لا تتعاملي مع COD كافتراض تلقائي هنا.",
+  ];
+
+  const bundleModeTitle =
+    cartProducts.length === 1
+      ? "Single-product intent"
+      : cartCollections.length === 1
+        ? `Starter bundle داخل ${cartCollections[0]?.title ?? "المسار الحالي"}`
+        : "Mixed basket";
+
+  const bundleModeBody =
+    cartProducts.length === 1
+      ? "السلة ليست bundle كاملة بعد. إذا احتجت خطوة إضافية فلتكن واحدة فقط تخدم نفس الروتين."
+      : cartCollections.length === 1
+        ? "السلة أقرب إلى routine starter bundle منضبط، لذلك لا تضيفي عنصرًا جديدًا إلا إذا كان يكمل نفس النية."
+        : "السلة الآن مختلطة بين أكثر من مسار، لذلك الأولوية هي تنقية القرار لا رفع العدد.";
+
+  const executionModeBody = checkoutRules.manualReviewReasons.length
+    ? checkoutRules.manualReviewReasons[0]
+    : checkoutRules.codEligible
+      ? "التنفيذ الحالي يسمح بمسار COD دون إعادة فتح القرار من جديد."
+      : "إذا بقي التردد تنفيذيًا فقط، فاكتفي بمسار الدفع الحالي ولا تعودي إلى مقارنة واسعة.";
+
+  const checkoutSignals = [
+    {
+      label: "Intent summary",
+      title:
+        cartCollections.length === 1
+          ? `نية السلة: ${cartCollections[0]?.title ?? "مسار واحد"}`
+          : "نية السلة: متعددة المسارات",
+      body:
+        cartProducts.length === 1
+          ? `القرار يدور حول ${cartProducts[0]?.name}، لذلك checkout يجب أن يغلق التنفيذ لا أن يعيد المقارنة.`
+          : `السلة تحتوي ${cartProducts.length} منتجات، لذا المطلوب الآن هو تأكيد الترتيب والتنفيذ قبل أي توسعة جديدة.`,
+    },
+    {
+      label: "Execution mode",
+      title: selectedPayment.label,
+      body: executionModeBody,
+    },
+    {
+      label: "Bundle framing",
+      title: bundleModeTitle,
+      body: bundleModeBody,
+    },
+  ];
+
+  const checkoutGuardrails = [
+    checkoutRules.manualReviewReasons.length
+      ? "إذا كان الاعتراض تنفيذيًا، احسميه هنا عبر المدينة والشحن والدفع بدل العودة إلى PDP."
+      : "بما أن القواعد الحالية واضحة، لا تعيدي فتح مقارنة المنتج إذا كان القرار نفسه محسومًا.",
+    cartProducts.length === 1
+      ? "إذا احتجت خطوة تكميلية، route واحدة داعمة تكفي. لا تحولي checkout إلى رحلة اكتشاف جديدة."
+      : "إذا كانت السلة متعددة المنتجات، راجعي أن كل عنصر يخدم نفس المناسبة أو الروتين قبل التأكيد.",
+    `الإجمالي الحالي ${totalEstimate} ر.س مع ${selectedShipping.label}، لذلك أي إضافة جديدة يجب أن تبرر نفسها بوضوح لا بالرغبة العامة في الزيادة.`,
+  ];
 
   function updateField<Field extends keyof CheckoutFormState>(
     field: Field,
@@ -132,7 +307,7 @@ export function CheckoutReview() {
     return (
       <section className={styles.emptyCard}>
         <p className={styles.eyebrow}>Checkout</p>
-        <h1>جاري تحميل خطوة تثبيت الطلب</h1>
+        <h1>جارٍ تحميل خطوة تثبيت الطلب</h1>
         <p>
           يتم الآن استعادة السلة حتى تظهر تفاصيل الطلب ونموذج التسليم بالشكل
           الصحيح.
@@ -250,8 +425,8 @@ export function CheckoutReview() {
             <p>إجمالي العناصر</p>
             <strong>{cartCount}</strong>
             <span>
-              يتم استخدام عناصر السلة الحالية لبناء قرار تشغيلي أوضح: نافذة خدمة،
-              أهلية COD، وحدود fulfillment قبل تثبيت المرجع.
+              يتم استخدام عناصر السلة الحالية لبناء قرار تشغيلي أوضح: نافذة
+              خدمة، أهلية COD، وحدود fulfillment قبل تثبيت المرجع.
             </span>
           </div>
 
@@ -276,6 +451,16 @@ export function CheckoutReview() {
             تأكيده وتتبع حالته لاحقًا دون طلب بيانات غير لازمة.
           </p>
 
+          <div className={styles.statusSummaryGrid}>
+            {checkoutSignals.map((signal) => (
+              <article key={signal.label} className={styles.statusSummaryCard}>
+                <p className={styles.eyebrow}>{signal.label}</p>
+                <strong>{signal.title}</strong>
+                <p>{signal.body}</p>
+              </article>
+            ))}
+          </div>
+
           <div className={styles.lineList}>
             {lines.map((line) => (
               <article key={line.key} className={styles.lineItem}>
@@ -299,6 +484,88 @@ export function CheckoutReview() {
                 </div>
               </article>
             ))}
+          </div>
+
+          <div className={styles.catalogPanelGrid}>
+            <article className={styles.referenceCard}>
+              <p className={styles.eyebrow}>Checkout compression</p>
+              <h3>احسمي آخر اعتراض قبل التأكيد</h3>
+              <div className={styles.cardActions}>
+                {checkoutGuardrails.map((item) => (
+                  <div key={item} className={styles.infoBullet}>
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </article>
+
+          <article className={styles.referenceCard}>
+            <p className={styles.eyebrow}>Commerce authority handoff</p>
+            <h3>هذا الـ checkout يغلق المسار التشغيلي قبل إنشاء المرجع نفسه.</h3>
+            <div className={styles.cardActions}>
+              <div className={styles.infoBullet}>
+                  <strong>{authorityModeTitle}</strong>
+                  <p>{authorityModeBody}</p>
+                </div>
+                {authorityLines.map((line) => (
+                  <div key={line.key} className={styles.infoBullet}>
+                    <strong>{line.productName}</strong>
+                    <p>
+                      {line.routeLabel} عبر {line.supplierName} مع shipping class {line.shippingClass}
+                      {line.requiresReview
+                        ? `، ومراجعة تشغيلية عند ${line.stockOnHand}/${line.lowStockThreshold} قطعة.`
+                      : "."}
+                    </p>
+                  </div>
+                ))}
+                <div className={styles.infoBullet}>
+                  <strong>{providerHandoff.providerReadinessLabel}</strong>
+                  <p>
+                    {providerHandoff.paymentLaneLabel} + {providerHandoff.shippingLaneLabel}
+                    {" | "}
+                    {providerHandoff.nextAction}
+                  </p>
+                </div>
+              </div>
+            </article>
+
+            <article className={styles.referenceCard}>
+              <p className={styles.eyebrow}>Provider-bound bundle economics</p>
+              <h3>ارفعي القيمة فقط إذا بقيت الإضافة داخل نفس lane التشغيلية</h3>
+              <p>
+                هنا لا نضيف منتجات عشوائيًا داخل checkout. الإضافة الجيدة يجب أن
+                تخدم نفس النية ونفس handoff التشغيلي، لا أن تخلق supplier lane أو
+                shipping class جديدة في آخر لحظة.
+              </p>
+              <div className={styles.cardActions}>
+                {bundleEconomicsRules.map((rule) => (
+                  <div key={rule} className={styles.infoBullet}>
+                    {rule}
+                  </div>
+                ))}
+              </div>
+              {checkoutRoutes.length ? (
+                <div className={styles.linkList}>
+                  {checkoutRoutes.map((route) => (
+                    <TrackedLink
+                      key={route.href}
+                      href={route.href}
+                      analyticsLabel={`checkout_support_route_${route.href.split("/").filter(Boolean).at(-1) ?? "route"}`}
+                      analyticsSurface="checkout_bundle_framing"
+                      analyticsDestinationType="support_route"
+                    >
+                      <span>{route.label}</span>
+                      <span>{route.productName}</span>
+                    </TrackedLink>
+                  ))}
+                </div>
+              ) : (
+                <div className={styles.infoBullet}>
+                  ستظهر هنا routes داعمة إضافية كلما توسعت طبقة pairings في
+                  الكتالوج الحي.
+                </div>
+              )}
+            </article>
           </div>
 
           <div className={styles.formGrid}>
@@ -523,7 +790,7 @@ export function CheckoutReview() {
 
           <div className={styles.actionColumn}>
             <button className={styles.primaryButton} type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "جاري تثبيت الطلب..." : "تثبيت الطلب وإنشاء المرجع"}
+              {isSubmitting ? "جارٍ تثبيت الطلب..." : "تثبيت الطلب وإنشاء المرجع"}
             </button>
 
             <TrackedLink
@@ -573,6 +840,20 @@ export function CheckoutReview() {
               <span>آلية الدفع</span>
               <strong className={styles.summaryValue}>{selectedPayment.label}</strong>
             </div>
+            <div className={styles.summaryRow}>
+              <span>Bundle mode</span>
+              <strong className={styles.summaryValue}>{bundleModeTitle}</strong>
+            </div>
+            <div className={styles.summaryRow}>
+              <span>Authority mode</span>
+              <strong className={styles.summaryValue}>{authorityModeTitle}</strong>
+            </div>
+            <div className={styles.summaryRow}>
+              <span>Provider state</span>
+              <strong className={styles.summaryValue}>
+                {providerHandoff.providerReadinessLabel}
+              </strong>
+            </div>
           </div>
 
           <div className={styles.inlineNotice}>
@@ -580,7 +861,54 @@ export function CheckoutReview() {
             database أو منصة الطلبات النهائية مؤجلة إلى phase التشغيل التالية.
           </div>
 
+          <article className={styles.referenceCard}>
+            <p className={styles.eyebrow}>Current handoff</p>
+            <div className={styles.referenceRow}>
+              <span>Payment path</span>
+              <strong className={styles.referenceValue}>
+                {providerHandoff.paymentLaneLabel}
+              </strong>
+            </div>
+            <div className={styles.referenceRow}>
+              <span>Shipping path</span>
+              <strong className={styles.referenceValue}>
+                {providerHandoff.shippingLaneLabel}
+              </strong>
+            </div>
+            <div className={styles.referenceRow}>
+              <span>Provider state</span>
+              <strong className={styles.referenceValue}>
+                {providerHandoff.providerReadinessLabel}
+              </strong>
+            </div>
+            <div className={styles.referenceRow}>
+              <span>Next owner</span>
+              <strong className={styles.referenceValue}>
+                {providerHandoff.nextOwnerLabel}
+              </strong>
+            </div>
+            <div className={styles.referenceRow}>
+              <span>Supplier lanes</span>
+              <strong className={styles.referenceValue}>
+                {providerHandoff.supplierLaneCount}
+              </strong>
+            </div>
+            <span className={styles.helperText}>{providerHandoff.nextAction}</span>
+          </article>
+
           <div className={styles.linkList}>
+            {checkoutRoutes.map((route) => (
+              <TrackedLink
+                key={route.href}
+                href={route.href}
+                analyticsLabel={`checkout_sidebar_route_${route.href.split("/").filter(Boolean).at(-1) ?? "route"}`}
+                analyticsSurface="checkout_sidebar"
+                analyticsDestinationType="support_route"
+              >
+                <span>{route.label}</span>
+                <span>{route.productName}</span>
+              </TrackedLink>
+            ))}
             {footerPolicyLinks.map((policy) => (
               <TrackedLink
                 key={policy.href}

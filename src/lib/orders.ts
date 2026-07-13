@@ -1,4 +1,13 @@
 import type { ResolvedCartLine } from "@/lib/cart";
+import { getProductBySlug } from "@/lib/site-content";
+import {
+  getSupplierRecord,
+  getVariantOperations,
+  type ShippingClass,
+  type SupplierAuthorityRoute,
+  type SupplierId,
+  type SupplierRecord,
+} from "@/lib/variant-operations";
 
 export type ShippingMethodId = "standard" | "express";
 export type PaymentMethodId = "payment_link" | "cash_on_delivery";
@@ -8,6 +17,20 @@ export type OrderStatus =
   | "confirmed"
   | "processing"
   | "out_for_delivery";
+
+export type OrderPaymentBindingState =
+  | "pending"
+  | "link_sent"
+  | "confirmed"
+  | "not_required";
+
+export type OrderShippingBindingState = "pending" | "booked" | "in_transit";
+
+export type OrderProviderBindingAction =
+  | "payment_link_sent"
+  | "payment_confirmed"
+  | "shipping_booked"
+  | "shipping_in_transit";
 
 export type ShippingMethod = {
   id: ShippingMethodId;
@@ -35,6 +58,23 @@ export type CheckoutCustomerDetails = {
   notes: string;
 };
 
+export type StoredOrderLineCatalogTruth = {
+  availability: "InStock" | "PreOrder";
+  mappingStatus: "mapped" | "pending";
+  supplierId: SupplierId | null;
+  supplierName: string;
+  fulfillmentModel: SupplierRecord["fulfillmentModel"] | "unmapped";
+  truthSourceLabel: string;
+  continuityOwnerLabel: string;
+  continuityRoute: SupplierAuthorityRoute;
+  continuityRule: string;
+  supplierSku: string | null;
+  shippingClass: ShippingClass | null;
+  stockOnHand: number;
+  lowStockThreshold: number;
+  codEligible: boolean;
+};
+
 export type StoredOrderLine = {
   key: string;
   productSlug: string;
@@ -47,6 +87,35 @@ export type StoredOrderLine = {
   unitPrice: number;
   lineTotal: number;
   shippingNote: string;
+  catalogTruth: StoredOrderLineCatalogTruth;
+};
+
+export type StoredOrderPaymentBinding = {
+  state: OrderPaymentBindingState;
+  providerLabel: string;
+  referenceId: string | null;
+  paymentUrl: string | null;
+  settlementReference: string | null;
+  settlementEventId: string | null;
+  updatedAt: string;
+  linkSentAt: string | null;
+  confirmedAt: string | null;
+};
+
+export type StoredOrderShippingBinding = {
+  state: OrderShippingBindingState;
+  providerLabel: string;
+  bookingReference: string | null;
+  trackingNumber: string | null;
+  carrierEventId: string | null;
+  updatedAt: string;
+  bookedAt: string | null;
+  inTransitAt: string | null;
+};
+
+export type StoredOrderProviderBindings = {
+  payment: StoredOrderPaymentBinding;
+  shipping: StoredOrderShippingBinding;
 };
 
 export type StoredOrder = {
@@ -61,6 +130,7 @@ export type StoredOrder = {
   allowOperationalUpdates: boolean;
   customer: CheckoutCustomerDetails;
   lines: StoredOrderLine[];
+  providerBindings: StoredOrderProviderBindings;
 };
 
 export type OrderTimelineStep = {
@@ -159,8 +229,323 @@ function normalizePhone(value: unknown) {
   return typeof value === "string" ? value.replace(/\s+/g, "").trim() : "";
 }
 
+function isCatalogAvailability(
+  value: unknown,
+): value is StoredOrderLineCatalogTruth["availability"] {
+  return value === "InStock" || value === "PreOrder";
+}
+
+function isCatalogMappingStatus(
+  value: unknown,
+): value is StoredOrderLineCatalogTruth["mappingStatus"] {
+  return value === "mapped" || value === "pending";
+}
+
 function isOrderStatus(value: unknown): value is OrderStatus {
   return typeof value === "string" && value in statusDirectory;
+}
+
+function isSupplierId(value: unknown): value is SupplierId {
+  return value === "atelier-core" || value === "desert-distribution";
+}
+
+function isSupplierAuthorityRoute(value: unknown): value is SupplierAuthorityRoute {
+  return (
+    value === "/ops/catalog" ||
+    value === "/ops/orders" ||
+    value === "/ops/fulfillment"
+  );
+}
+
+function isShippingClass(value: unknown): value is ShippingClass {
+  return value === "serum-light" || value === "foundation-standard";
+}
+
+function isOrderPaymentBindingState(
+  value: unknown,
+): value is OrderPaymentBindingState {
+  return (
+    value === "pending" ||
+    value === "link_sent" ||
+    value === "confirmed" ||
+    value === "not_required"
+  );
+}
+
+function isOrderShippingBindingState(
+  value: unknown,
+): value is OrderShippingBindingState {
+  return value === "pending" || value === "booked" || value === "in_transit";
+}
+
+function normalizeTimestamp(value: unknown, fallbackValue: string) {
+  return typeof value === "string" && value.trim() ? value : fallbackValue;
+}
+
+function getCurrentCatalogAvailability(productSlug: string, sku: string) {
+  return (
+    getProductBySlug(productSlug)?.variants.find((variant) => variant.sku === sku)
+      ?.availability ?? "PreOrder"
+  );
+}
+
+export function buildStoredOrderLineCatalogTruth(input: {
+  productSlug: string;
+  sku: string;
+  availability: StoredOrderLineCatalogTruth["availability"];
+}): StoredOrderLineCatalogTruth {
+  const variantOperations = getVariantOperations(input.productSlug, input.sku);
+
+  if (!variantOperations) {
+    return {
+      availability: input.availability,
+      mappingStatus: "pending",
+      supplierId: null,
+      supplierName: "Supplier mapping pending",
+      fulfillmentModel: "unmapped",
+      truthSourceLabel: "Catalog mapping pending",
+      continuityOwnerLabel: "Catalog review desk",
+      continuityRoute: "/ops/catalog",
+      continuityRule:
+        "Restore supplier mapping inside catalog authority before treating this SKU as supplier-backed inventory.",
+      supplierSku: null,
+      shippingClass: null,
+      stockOnHand: 0,
+      lowStockThreshold: 0,
+      codEligible: false,
+    };
+  }
+
+  const supplier = getSupplierRecord(variantOperations.supplierId);
+
+  return {
+    availability: input.availability,
+    mappingStatus: "mapped",
+    supplierId: supplier.id,
+    supplierName: supplier.name,
+    fulfillmentModel: supplier.fulfillmentModel,
+    truthSourceLabel: supplier.truthSourceLabel,
+    continuityOwnerLabel: supplier.defaultAuthorityOwnerLabel,
+    continuityRoute: supplier.defaultAuthorityRoute,
+    continuityRule: supplier.continuityRule,
+    supplierSku: variantOperations.supplierSku,
+    shippingClass: variantOperations.shippingClass,
+    stockOnHand: variantOperations.stockOnHand,
+    lowStockThreshold: variantOperations.lowStockThreshold,
+    codEligible: variantOperations.codEligible,
+  };
+}
+
+function normalizeStoredOrderLineCatalogTruth(
+  value: unknown,
+  fallbackInput: {
+    productSlug: string;
+    sku: string;
+    availability: StoredOrderLineCatalogTruth["availability"];
+  },
+): StoredOrderLineCatalogTruth {
+  const fallbackTruth = buildStoredOrderLineCatalogTruth(fallbackInput);
+
+  if (!isRecord(value)) {
+    return fallbackTruth;
+  }
+
+  return {
+    availability: isCatalogAvailability(value.availability)
+      ? value.availability
+      : fallbackTruth.availability,
+    mappingStatus: isCatalogMappingStatus(value.mappingStatus)
+      ? value.mappingStatus
+      : fallbackTruth.mappingStatus,
+    supplierId:
+      value.supplierId === null
+        ? null
+        : isSupplierId(value.supplierId)
+          ? value.supplierId
+          : fallbackTruth.supplierId,
+    supplierName:
+      typeof value.supplierName === "string"
+        ? value.supplierName
+        : fallbackTruth.supplierName,
+    fulfillmentModel:
+      value.fulfillmentModel === "direct" ||
+      value.fulfillmentModel === "dropship" ||
+      value.fulfillmentModel === "hybrid" ||
+      value.fulfillmentModel === "unmapped"
+        ? value.fulfillmentModel
+        : fallbackTruth.fulfillmentModel,
+    truthSourceLabel:
+      typeof value.truthSourceLabel === "string"
+        ? value.truthSourceLabel
+        : fallbackTruth.truthSourceLabel,
+    continuityOwnerLabel:
+      typeof value.continuityOwnerLabel === "string"
+        ? value.continuityOwnerLabel
+        : fallbackTruth.continuityOwnerLabel,
+    continuityRoute: isSupplierAuthorityRoute(value.continuityRoute)
+      ? value.continuityRoute
+      : fallbackTruth.continuityRoute,
+    continuityRule:
+      typeof value.continuityRule === "string"
+        ? value.continuityRule
+        : fallbackTruth.continuityRule,
+    supplierSku:
+      typeof value.supplierSku === "string" ? value.supplierSku : fallbackTruth.supplierSku,
+    shippingClass:
+      value.shippingClass === null
+        ? null
+        : isShippingClass(value.shippingClass)
+          ? value.shippingClass
+          : fallbackTruth.shippingClass,
+    stockOnHand:
+      typeof value.stockOnHand === "number" ? value.stockOnHand : fallbackTruth.stockOnHand,
+    lowStockThreshold:
+      typeof value.lowStockThreshold === "number"
+        ? value.lowStockThreshold
+        : fallbackTruth.lowStockThreshold,
+    codEligible:
+      typeof value.codEligible === "boolean"
+        ? value.codEligible
+        : fallbackTruth.codEligible,
+  };
+}
+
+export function getStoredOrderLineCatalogTruth(line: StoredOrderLine) {
+  return line.catalogTruth;
+}
+
+type OrderProviderLabels = {
+  paymentProviderLabel?: string;
+  shippingProviderLabel?: string;
+};
+
+const defaultProviderLabels = {
+  paymentProviderLabel: "Payment callback contract",
+  shippingProviderLabel: "Shipping callback contract",
+} satisfies Required<OrderProviderLabels>;
+
+export function createStoredOrderProviderBindings(
+  paymentMethodId: PaymentMethodId,
+  createdAt: string,
+  providerLabels: OrderProviderLabels = {},
+): StoredOrderProviderBindings {
+  const labels = {
+    ...defaultProviderLabels,
+    ...providerLabels,
+  };
+
+  return {
+    payment: {
+      state: paymentMethodId === "payment_link" ? "pending" : "not_required",
+      providerLabel: labels.paymentProviderLabel,
+      referenceId: null,
+      paymentUrl: null,
+      settlementReference: null,
+      settlementEventId: null,
+      updatedAt: createdAt,
+      linkSentAt: null,
+      confirmedAt: paymentMethodId === "payment_link" ? null : createdAt,
+    },
+    shipping: {
+      state: "pending",
+      providerLabel: labels.shippingProviderLabel,
+      bookingReference: null,
+      trackingNumber: null,
+      carrierEventId: null,
+      updatedAt: createdAt,
+      bookedAt: null,
+      inTransitAt: null,
+    },
+  };
+}
+
+function normalizeStoredOrderProviderBindings(
+  value: unknown,
+  paymentMethodId: PaymentMethodId,
+  createdAt: string,
+): StoredOrderProviderBindings {
+  if (!isRecord(value)) {
+    return createStoredOrderProviderBindings(paymentMethodId, createdAt);
+  }
+
+  const defaultBindings = createStoredOrderProviderBindings(paymentMethodId, createdAt);
+  const paymentValue = isRecord(value.payment) ? value.payment : null;
+  const shippingValue = isRecord(value.shipping) ? value.shipping : null;
+
+  return {
+    payment: {
+      state:
+        paymentValue && isOrderPaymentBindingState(paymentValue.state)
+          ? paymentValue.state
+          : defaultBindings.payment.state,
+      providerLabel:
+        paymentValue && typeof paymentValue.providerLabel === "string"
+          ? paymentValue.providerLabel
+          : defaultBindings.payment.providerLabel,
+      referenceId:
+        paymentValue && typeof paymentValue.referenceId === "string"
+          ? paymentValue.referenceId
+          : null,
+      paymentUrl:
+        paymentValue && typeof paymentValue.paymentUrl === "string"
+          ? paymentValue.paymentUrl
+          : null,
+      settlementReference:
+        paymentValue && typeof paymentValue.settlementReference === "string"
+          ? paymentValue.settlementReference
+          : null,
+      settlementEventId:
+        paymentValue && typeof paymentValue.settlementEventId === "string"
+          ? paymentValue.settlementEventId
+          : null,
+      updatedAt: normalizeTimestamp(
+        paymentValue?.updatedAt,
+        defaultBindings.payment.updatedAt,
+      ),
+      linkSentAt:
+        paymentValue && typeof paymentValue.linkSentAt === "string"
+          ? paymentValue.linkSentAt
+          : null,
+      confirmedAt:
+        paymentValue && typeof paymentValue.confirmedAt === "string"
+          ? paymentValue.confirmedAt
+          : defaultBindings.payment.confirmedAt,
+    },
+    shipping: {
+      state:
+        shippingValue && isOrderShippingBindingState(shippingValue.state)
+          ? shippingValue.state
+          : defaultBindings.shipping.state,
+      providerLabel:
+        shippingValue && typeof shippingValue.providerLabel === "string"
+          ? shippingValue.providerLabel
+          : defaultBindings.shipping.providerLabel,
+      bookingReference:
+        shippingValue && typeof shippingValue.bookingReference === "string"
+          ? shippingValue.bookingReference
+          : null,
+      trackingNumber:
+        shippingValue && typeof shippingValue.trackingNumber === "string"
+          ? shippingValue.trackingNumber
+          : null,
+      carrierEventId:
+        shippingValue && typeof shippingValue.carrierEventId === "string"
+          ? shippingValue.carrierEventId
+          : null,
+      updatedAt: normalizeTimestamp(
+        shippingValue?.updatedAt,
+        defaultBindings.shipping.updatedAt,
+      ),
+      bookedAt:
+        shippingValue && typeof shippingValue.bookedAt === "string"
+          ? shippingValue.bookedAt
+          : null,
+      inTransitAt:
+        shippingValue && typeof shippingValue.inTransitAt === "string"
+          ? shippingValue.inTransitAt
+          : null,
+    },
+  };
 }
 
 export function getPhoneLastFour(phone: string) {
@@ -196,6 +581,7 @@ export function createStoredOrder(input: {
   shippingMethodId: ShippingMethodId;
   paymentMethodId: PaymentMethodId;
   allowOperationalUpdates: boolean;
+  providerLabels?: OrderProviderLabels;
 }) {
   const shippingMethod =
     getShippingMethodById(input.shippingMethodId) ?? shippingMethods[0];
@@ -204,9 +590,11 @@ export function createStoredOrder(input: {
   const subtotal = input.lines.reduce((sum, line) => sum + line.lineTotal, 0);
   const shippingFeeEstimate = shippingMethod.estimatedFee;
 
+  const createdAt = new Date().toISOString();
+
   return {
     orderNumber: buildOrderNumber(),
-    createdAt: new Date().toISOString(),
+    createdAt,
     status:
       paymentMethod.id === "payment_link" ? "payment_pending" : "received",
     subtotal,
@@ -236,7 +624,17 @@ export function createStoredOrder(input: {
       unitPrice: line.variant.price,
       lineTotal: line.lineTotal,
       shippingNote: line.product.shippingNote,
+      catalogTruth: buildStoredOrderLineCatalogTruth({
+        productSlug: line.product.slug,
+        sku: line.variant.sku,
+        availability: line.variant.availability,
+      }),
     })),
+    providerBindings: createStoredOrderProviderBindings(
+      paymentMethod.id,
+      createdAt,
+      input.providerLabels,
+    ),
   } satisfies StoredOrder;
 }
 
@@ -308,6 +706,11 @@ function normalizeStoredOrder(value: unknown): StoredOrder | null {
         unitPrice: line.unitPrice,
         lineTotal: line.lineTotal,
         shippingNote: line.shippingNote,
+        catalogTruth: normalizeStoredOrderLineCatalogTruth(line.catalogTruth, {
+          productSlug: line.productSlug,
+          sku: line.sku,
+          availability: getCurrentCatalogAvailability(line.productSlug, line.sku),
+        }),
       } satisfies StoredOrderLine;
     })
     .filter((line): line is StoredOrderLine => Boolean(line));
@@ -339,6 +742,11 @@ function normalizeStoredOrder(value: unknown): StoredOrder | null {
       notes: normalizeText(customer.notes),
     },
     lines: normalizedLines,
+    providerBindings: normalizeStoredOrderProviderBindings(
+      value.providerBindings,
+      paymentMethod.id,
+      value.createdAt,
+    ),
   };
 }
 

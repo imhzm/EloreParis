@@ -1,6 +1,175 @@
 .page {
+  --commerce-ink: #052f2d;
+  --commerce-deep: #031d1c;
+  --commerce-mint: #75e2c7;
+  --commerce-cream: #fffaf2;
+  --commerce-line: rgba(197, 244, 229, 0.16);
   display: grid;
-  gap: 24px;
+  gap: 0;
+  margin-inline: calc(50% - 50vw);
+  color: var(--commerce-cream);
+  background:
+    radial-gradient(circle at 76% 8%, rgba(117, 226, 199, 0.2), transparent 28rem),
+    linear-gradient(180deg, var(--commerce-deep), #073b37 48%, #f2eee7 100%);
+}
+
+.opsDashboard {
+  --ops-panel: rgba(2, 24, 23, 0.72);
+  --ops-panel-strong: rgba(2, 18, 18, 0.88);
+  --ops-border: rgba(117, 226, 199, 0.18);
+  --ops-text-soft: rgba(255, 250, 242, 0.72);
+  isolation: isolate;
+  min-height: 100svh;
+  background:
+    radial-gradient(circle at 12% 8%, rgba(117, 226, 199, 0.18), transparent 28rem),
+    radial-gradient(circle at 84% 18%, rgba(222, 177, 132, 0.12), transparent 32rem),
+    linear-gradient(180deg, #021514 0%, #052f2d 44%, #031d1c 100%);
+}
+
+.opsDashboard::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    linear-gradient(rgba(255, 250, 242, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 250, 242, 0.028) 1px, transparent 1px);
+  background-size: 72px 72px;
+  mask-image: linear-gradient(180deg, transparent, #000 16%, #000 72%, transparent);
+}
+
+.opsDashboard .statusSummaryGrid {
+  padding: 0 max(24px, calc((100vw - 1180px) / 2)) clamp(56px, 7vw, 96px);
+  background: transparent;
+}
+
+.opsDashboard .statusSummaryCard {
+  min-height: 156px;
+  align-content: space-between;
+  border-color: var(--ops-border);
+  background:
+    radial-gradient(circle at 88% 10%, rgba(117, 226, 199, 0.18), transparent 52%),
+    var(--ops-panel);
+  box-shadow: 0 26px 68px rgba(0, 12, 12, 0.28);
+}
+
+.opsDashboard .statusSummaryCard strong,
+.opsDashboard .statusSummaryCard p {
+  color: var(--commerce-cream);
+}
+
+.opsDashboard .statusSummaryCard .sectionTitle {
+  color: var(--commerce-mint);
+}
+
+.opsDashboard .layout {
+  padding-top: 0;
+  background: transparent;
+}
+
+.opsDashboard .opsNavWrap {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  padding: 12px max(24px, calc((100vw - 1180px) / 2));
+  border-bottom: 1px solid rgba(117, 226, 199, 0.12);
+  background: rgba(3, 29, 28, 0.78);
+  backdrop-filter: blur(22px);
+}
+
+.opsDashboard .opsNavLink,
+.opsDashboard .opsNavButton {
+  border-color: rgba(255, 250, 242, 0.16);
+  background: rgba(255, 250, 242, 0.08);
+  color: var(--commerce-cream);
+}
+
+.opsDashboard .opsNavLinkActive {
+  border-color: rgba(117, 226, 199, 0.38);
+  background: rgba(117, 226, 199, 0.16);
+}
+
+.opsDashboard .opsSessionSummary,
+.opsDashboard .opsNavMeta,
+.opsDashboard .opsSessionSummary span {
+  color: rgba(255, 250, 242, 0.7);
+}
+
+.opsDashboard .opsSessionSummary strong { color: var(--commerce-cream); }
+
+:is(.opsOrders, .opsCatalog, .opsFulfillment, .opsNotifications) .filterBar {
+  position: sticky;
+  top: 96px;
+  z-index: 3;
+  padding: 18px;
+  border: 1px solid var(--ops-border);
+  border-radius: 24px;
+  background: rgba(2, 24, 23, 0.82);
+  box-shadow: 0 22px 60px rgba(0, 12, 12, 0.24);
+  backdrop-filter: blur(22px);
+}
+
+.opsOrders .filterBar { background: rgba(2, 24, 23, 0.84); }
+
+:is(.opsOrders, .opsCatalog, .opsFulfillment, .opsNotifications, .opsRelease, .opsAudit) .emptyCard {
+  min-height: 0;
+  padding: 28px;
+  border: 1px dashed rgba(117, 226, 199, 0.28);
+  border-radius: 24px;
+  background: rgba(2, 24, 23, 0.6);
+  box-shadow: none;
+}
+
+:is(.opsOrders, .opsCatalog, .opsFulfillment, .opsNotifications, .opsRelease, .opsAudit) .emptyCard :is(h1, h2) {
+  color: var(--commerce-cream);
+}
+
+:is(.opsOrders, .opsCatalog, .opsFulfillment, .opsNotifications, .opsRelease, .opsAudit) .emptyCard p {
+  color: var(--ops-text-soft);
+}
+
+:is(.opsOrders, .opsCatalog, .opsFulfillment, .opsNotifications, .opsRelease, .opsAudit) .emptyCard .eyebrow {
+  color: var(--commerce-mint);
+}
+
+:is(.opsOrders, .opsCatalog, .opsFulfillment, .opsNotifications, .opsContent, .opsRelease, .opsAudit) .lineItem {
+  border-color: var(--ops-border);
+  background:
+    radial-gradient(circle at 96% 0%, rgba(117, 226, 199, 0.1), transparent 44%),
+    rgba(3, 29, 28, 0.72);
+  box-shadow: 0 22px 60px rgba(0, 12, 12, 0.22);
+}
+
+.opsOrders .lineItem { background: rgba(3, 29, 28, 0.74); }
+
+.opsOrders .primaryButton {
+  min-height: 46px;
+  cursor: pointer;
+}
+
+.opsContent .mainCard,
+.opsContent .summaryCard {
+  border-color: var(--ops-border);
+}
+
+.opsRelease > .mainCard {
+  width: min(calc(100% - 48px), 1180px);
+  margin: 0 auto 24px;
+}
+
+.opsRelease > .mainCard:last-of-type { margin-bottom: 96px; }
+
+.opsAudit .filterChipRow {
+  position: sticky;
+  top: 96px;
+  z-index: 3;
+  padding: 16px;
+  border: 1px solid var(--ops-border);
+  border-radius: 22px;
+  background: rgba(2, 24, 23, 0.82);
+  box-shadow: 0 22px 60px rgba(0, 12, 12, 0.24);
+  backdrop-filter: blur(22px);
 }
 
 .opsNavWrap {
@@ -97,6 +266,13 @@
   display: grid;
   grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
   gap: 24px;
+  min-height: min(820px, 88svh);
+  align-items: center;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+  padding: clamp(48px, 8vw, 112px) max(24px, calc((100vw - 1180px) / 2));
 }
 
 .heroAside {
@@ -126,7 +302,15 @@
 .hero h1 {
   font-size: clamp(2.1rem, 5vw, 3.6rem);
   max-width: 10ch;
+  color: var(--commerce-cream);
 }
+
+.hero .summary,
+.hero p,
+.hero .eyebrow,
+.noticeCard p { color: rgba(255, 250, 242, 0.7); }
+
+.hero .eyebrow { color: var(--commerce-mint); }
 
 .summary,
 .hero p,
@@ -166,6 +350,10 @@
   display: grid;
   grid-template-columns: minmax(0, 1.25fr) minmax(300px, 0.75fr);
   gap: 18px;
+  padding: clamp(56px, 8vw, 112px) max(24px, calc((100vw - 1180px) / 2));
+  background:
+    radial-gradient(circle at 12% 28%, rgba(117, 226, 199, 0.13), transparent 25rem),
+    var(--commerce-ink);
 }
 
 .statusSummaryGrid {
@@ -452,6 +640,187 @@
   display: grid;
   gap: 16px;
   align-self: start;
+  position: sticky;
+  top: 104px;
+}
+
+.mainCard,
+.summaryCard {
+  border-color: var(--commerce-line);
+  background: rgba(255, 250, 242, 0.96);
+  box-shadow: 0 28px 90px rgba(0, 12, 12, 0.24);
+}
+
+.opsDashboard :is(.mainCard, .summaryCard) {
+  border-color: var(--ops-border);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(117, 226, 199, 0.1), transparent 36%),
+    rgba(2, 24, 23, 0.76);
+  box-shadow: 0 30px 100px rgba(0, 12, 12, 0.32);
+}
+
+.opsDashboard :is(.mainCard h2, .summaryCard h2, .lineHead h3, .linePrice, .summaryValue, .referenceValue, .timelineItem strong, .authMethodHeader h3) {
+  color: var(--commerce-cream);
+}
+
+.opsDashboard :is(.summary, .mainCard p, .summaryCard p, .lineMeta, .helperText, .optionNote, .timelineItem p, .opsSessionSummary span) {
+  color: var(--ops-text-soft);
+}
+
+.opsDashboard :is(.eyebrow, .sectionTitle, .fieldLabel) {
+  color: var(--commerce-mint);
+}
+
+.opsDashboard :is(.authMethodCard, .optionCard, .referenceCard, .timelineItem, .infoBullet, .linkList a) {
+  border-color: rgba(117, 226, 199, 0.14);
+  background:
+    radial-gradient(circle at 92% 8%, rgba(117, 226, 199, 0.08), transparent 42%),
+    rgba(255, 250, 242, 0.06);
+  color: var(--commerce-cream);
+}
+
+.opsDashboard :is(.badgeRow span, .timelineBadge, .timelineCompactItem, .filterChip) {
+  border-color: rgba(117, 226, 199, 0.2);
+  background: rgba(117, 226, 199, 0.08);
+  color: rgba(255, 250, 242, 0.84);
+}
+
+.opsDashboard :is(.filterChipActive, .optionCardActive, .timelineCurrent, .timelineCompactCurrent) {
+  border-color: rgba(117, 226, 199, 0.42);
+  background: rgba(117, 226, 199, 0.16);
+  color: var(--commerce-cream);
+}
+
+.opsDashboard :is(.textInput, .textArea) {
+  border-color: rgba(117, 226, 199, 0.18);
+  background: rgba(255, 250, 242, 0.08);
+  color: var(--commerce-cream);
+}
+
+.opsDashboard :is(.textInput, .textArea)::placeholder {
+  color: rgba(255, 250, 242, 0.48);
+}
+
+.opsDashboard .summaryRow {
+  border-top-color: rgba(117, 226, 199, 0.14);
+}
+
+.opsDashboard .linkList a span:last-child {
+  color: var(--commerce-mint);
+}
+
+.opsDashboard :is(.primaryButton, .primaryLink) {
+  border: 1px solid rgba(117, 226, 199, 0.26);
+  background:
+    radial-gradient(circle at 80% 12%, rgba(255, 250, 242, 0.18), transparent 44%),
+    linear-gradient(135deg, #0fb79d, #052f2d);
+  color: var(--commerce-cream);
+}
+
+.opsDashboard :is(.secondaryButton, .secondaryLink, .opsNavButton) {
+  border-color: rgba(255, 250, 242, 0.18);
+  background: rgba(255, 250, 242, 0.08);
+  color: var(--commerce-cream);
+}
+
+.opsDashboard :is(.inlineNotice, .inlineError) {
+  border-color: rgba(117, 226, 199, 0.2);
+  background: rgba(255, 250, 242, 0.08);
+  color: var(--commerce-cream);
+}
+
+.emptyCard {
+  min-height: 62svh;
+  align-content: center;
+  border: 0;
+  border-radius: 0;
+  padding-inline: max(24px, calc((100vw - 1180px) / 2));
+  background:
+    radial-gradient(circle at 78% 18%, rgba(117, 226, 199, 0.2), transparent 28rem),
+    #031d1c;
+  box-shadow: none;
+}
+
+.emptyCard h1,
+.emptyCard h2 { color: #fffaf2; }
+
+.emptyCard p { color: rgba(255, 250, 242, 0.7); }
+
+.emptyCard .eyebrow { color: #75e2c7; }
+
+.emptyCard .secondaryLink {
+  border-color: rgba(255, 250, 242, 0.22);
+  color: var(--commerce-cream);
+  background: rgba(255, 250, 242, 0.08);
+}
+
+.noticeCard {
+  border-color: rgba(117, 226, 199, 0.2);
+  background: rgba(3, 29, 28, 0.72);
+  box-shadow: 0 24px 70px rgba(0, 12, 12, 0.3);
+}
+
+.noticeCard h2 { color: var(--commerce-cream); }
+
+.metricCard {
+  border: 1px solid rgba(117, 226, 199, 0.25);
+  background:
+    radial-gradient(circle at 85% 15%, rgba(117, 226, 199, 0.25), transparent 45%),
+    rgba(2, 23, 22, 0.9);
+}
+
+.lineItem,
+.optionCard,
+.referenceCard,
+.statusSummaryCard,
+.linkList a {
+  transition: transform 220ms ease, border-color 220ms ease, background-color 220ms ease;
+}
+
+.lineItem:hover,
+.referenceCard:hover,
+.statusSummaryCard:hover,
+.linkList a:hover {
+  transform: translateY(-3px);
+  border-color: rgba(5, 47, 45, 0.24);
+  background: #fff;
+}
+
+.opsDashboard :is(.lineItem:hover, .referenceCard:hover, .statusSummaryCard:hover, .linkList a:hover) {
+  border-color: rgba(117, 226, 199, 0.34);
+  background:
+    radial-gradient(circle at 90% 0%, rgba(117, 226, 199, 0.16), transparent 44%),
+    rgba(7, 59, 55, 0.86);
+}
+
+.primaryButton,
+.primaryLink { background: var(--commerce-ink); }
+
+.primaryButton:focus-visible,
+.secondaryButton:focus-visible,
+.primaryLink:focus-visible,
+.secondaryLink:focus-visible,
+.textInput:focus-visible,
+.textArea:focus-visible,
+.optionCard:focus-within {
+  outline: 3px solid var(--commerce-mint);
+  outline-offset: 3px;
+}
+
+@supports (animation-timeline: view()) {
+  .mainCard,
+  .summaryCard,
+  .timelineItem,
+  .referenceCard {
+    animation: commerceReveal both linear;
+    animation-timeline: view();
+    animation-range: entry 8% cover 32%;
+  }
+}
+
+@keyframes commerceReveal {
+  from { opacity: 0; transform: translateY(48px) scale(0.985); }
+  to { opacity: 1; transform: none; }
 }
 
 .summaryRow {
@@ -601,9 +970,34 @@
   .authMethodsGrid {
     grid-template-columns: 1fr;
   }
+
+  .summaryCard { position: static; }
 }
 
 @media (max-width: 780px) {
+  .hero { min-height: 72svh; padding-inline: 20px; }
+
+  .layout { padding: 52px 20px 76px; }
+
+  .opsDashboard .statusSummaryGrid {
+    padding: 0 20px 56px;
+  }
+
+  .opsDashboard .statusSummaryCard { min-height: 132px; }
+
+  .opsDashboard .opsNavWrap { padding-inline: 20px; }
+
+  :is(.opsOrders, .opsCatalog, .opsFulfillment, .opsNotifications) .filterBar {
+    position: static;
+    padding: 14px;
+  }
+
+  .opsRelease > .mainCard {
+    width: calc(100% - 40px);
+    margin-bottom: 18px;
+  }
+
+  .opsAudit .filterChipRow { position: static; padding: 12px; }
   .hero,
   .mainCard,
   .summaryCard,
@@ -623,4 +1017,17 @@
   .referenceRow {
     align-items: flex-start;
   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mainCard,
+  .summaryCard,
+  .timelineItem,
+  .referenceCard { animation: none !important; }
+
+  .lineItem,
+  .optionCard,
+  .referenceCard,
+  .statusSummaryCard,
+  .linkList a { transition: none; }
 }

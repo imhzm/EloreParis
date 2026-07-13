@@ -72,6 +72,7 @@ export type ReleasePacketDecisionDelta = {
     verificationMode: boolean;
     targetBaseUrl: boolean;
     runtimeEnvironment: boolean;
+    runtimeSecretAlignment: boolean;
     nextActions: boolean;
   } | null;
   blockedItems: {
@@ -83,6 +84,79 @@ export type ReleasePacketDecisionDelta = {
     cleared: string[];
   } | null;
   summary: string[];
+};
+
+export type ReleaseProviderIntegrationLane = {
+  id:
+    | "ops_auth"
+    | "customer_order_access"
+    | "payment_routing"
+    | "shipping_execution"
+    | "notification_delivery";
+  title: string;
+  status: ReleaseReadinessStatus;
+  ownerPath: string;
+  currentMode: string;
+  evidence: string;
+  nextAction: string;
+  missingBindings: string[];
+};
+
+export type ReleaseProviderIntegrationContract = {
+  overallStatus: ReleaseReadinessStatus;
+  blockedCount: number;
+  warningCount: number;
+  readyCount: number;
+  summary: string;
+  lanes: ReleaseProviderIntegrationLane[];
+};
+
+export type ReleaseRuntimeSecretBinding = {
+  id:
+    | "order_authority"
+    | "ops_access_signing"
+    | "auth_provider_callback"
+    | "payment_provider_callback"
+    | "shipping_provider_callback"
+    | "notification_provider_callback";
+  label: string;
+  envVar: string;
+  status: ReleaseReadinessStatus;
+  currentMode: string;
+  summary: string;
+  nextAction: string;
+  details: string[];
+};
+
+export type ReleaseRuntimeSecretAlignment = {
+  overallStatus: ReleaseReadinessStatus;
+  blockedCount: number;
+  warningCount: number;
+  readyCount: number;
+  summary: string;
+  bindings: ReleaseRuntimeSecretBinding[];
+};
+
+export type ReleaseRuntimeMonitoring = {
+  status: ReleaseReadinessStatus;
+  stage: "local" | "preview" | "production";
+  searchIndexingEnabled: boolean;
+  summary: string;
+  details: string[];
+};
+
+export type ReleaseRollbackBaseline = {
+  status: ReleaseReadinessStatus;
+  summary: string;
+  nextAction: string;
+  packageRecordId: string | null;
+  packagePublishedAt: string | null;
+  verificationMode: ReleasePackageArtifact["verificationMode"] | null;
+  targetBaseUrl: string | null;
+  decisionId: string | null;
+  decisionVerdict: ReleaseDecisionRecord["verdict"] | null;
+  decidedAt: string | null;
+  details: string[];
 };
 
 export type ReleasePacketArtifact = {
@@ -107,4 +181,8 @@ export type ReleasePacketArtifact = {
   latestDecisionDelta: ReleasePacketDecisionDelta;
   comparison: ReleasePackageComparison;
   contentGovernance: ContentGovernanceSummary;
+  runtimeSecretAlignment: ReleaseRuntimeSecretAlignment;
+  integrationContract: ReleaseProviderIntegrationContract;
+  runtimeMonitoring: ReleaseRuntimeMonitoring;
+  rollbackBaseline: ReleaseRollbackBaseline;
 };

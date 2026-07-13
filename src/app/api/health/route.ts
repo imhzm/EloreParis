@@ -1,4 +1,6 @@
 import { getAuthorityStorageInfo } from "@/lib/authority-database";
+import { getSearchRuntimeStage, isSearchIndexingEnabled } from "@/lib/search-visibility";
+import { getSiteUrl } from "@/lib/site-content";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
@@ -22,12 +24,17 @@ function getCommitReference() {
 
 export function GET() {
   const authorityStorage = getAuthorityStorageInfo();
+  const runtimeStage = getSearchRuntimeStage();
+  const searchIndexingEnabled = isSearchIndexingEnabled();
 
   return NextResponse.json(
     {
       status: "ok",
       service: "cozmateks-storefront",
       environment: getEnvironmentLabel(),
+      runtimeStage,
+      searchIndexingEnabled,
+      canonicalUrl: getSiteUrl(),
       commitReference: getCommitReference(),
       authorityStorage: {
         engine: authorityStorage.engine,

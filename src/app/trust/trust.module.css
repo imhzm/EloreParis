@@ -1,13 +1,19 @@
 .page {
   display: grid;
   gap: 24px;
+  --aubergine-ink: #fff7ef;
+  --muted: rgba(255, 244, 235, 0.7);
+  --mauve-stone: #e4b98d;
+  padding: clamp(18px, 3vw, 38px);
+  border-radius: 36px;
+  background: radial-gradient(circle at 85% 16%, rgba(206, 145, 100, 0.2), transparent 24%), linear-gradient(155deg, #10121b, #1c1726 48%, #261b27);
 }
 
 .hero,
 .notice,
 .sectionCard {
-  border: 1px solid var(--line);
-  background: var(--surface);
+  border: 1px solid rgba(255, 236, 214, 0.13);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.025)), rgba(20, 18, 28, 0.72);
   backdrop-filter: blur(14px);
   box-shadow: var(--shadow);
   border-radius: 30px;
@@ -78,7 +84,7 @@
 .sectionCardLink:hover {
   transform: translateY(-2px);
   border-color: rgba(72, 51, 70, 0.22);
-  background: rgba(255, 252, 248, 0.96);
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .sectionCard ul {

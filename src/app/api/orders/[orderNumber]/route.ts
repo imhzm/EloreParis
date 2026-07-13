@@ -1,8 +1,17 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import {
+  createAuthorityCustomerAccessHandoffPath,
+  createAuthorityCustomerAccessToken,
+  createAuthorityOrderAccessToken,
+  CUSTOMER_ACCESS_COOKIE,
+  CUSTOMER_ACCESS_MAX_AGE_SECONDS,
+  getAuthorityOrderForCustomerAccessCookie,
+  getAuthorityOrderForAccessCookie,
   getAuthorityOrderForRecentAccess,
   getAuthorityOrderForTracking,
+  ORDER_ACCESS_COOKIE,
+  ORDER_ACCESS_MAX_AGE_SECONDS,
   OrderAuthorityError,
   RECENT_ORDER_COOKIE,
 } from "@/lib/order-authority";
@@ -21,10 +30,17 @@ export async function GET(request: NextRequest, context: OrderRouteContext) {
     const url = new URL(request.url);
     const phoneLastFour = url.searchParams.get("phoneLastFour")?.trim() ?? "";
     const recentOrderToken = request.cookies.get(RECENT_ORDER_COOKIE)?.value;
+    const orderAccessToken = request.cookies.get(ORDER_ACCESS_COOKIE)?.value;
+    const customerAccessToken = request.cookies.get(CUSTOMER_ACCESS_COOKIE)?.value;
 
     const order = phoneLastFour
       ? await getAuthorityOrderForTracking(orderNumber, phoneLastFour)
-      : await getAuthorityOrderForRecentAccess(orderNumber, recentOrderToken);
+      : (await getAuthorityOrderForAccessCookie(orderNumber, orderAccessToken)) ??
+        (await getAuthorityOrderForCustomerAccessCookie(
+          orderNumber,
+          customerAccessToken,
+        )) ??
+        (await getAuthorityOrderForRecentAccess(orderNumber, recentOrderToken));
 
     if (!order) {
       return NextResponse.json(
@@ -34,8 +50,36 @@ export async function GET(request: NextRequest, context: OrderRouteContext) {
     }
 
     const notifications = await listAuthorityNotificationsForOrder(order);
+    const nextOrderAccessToken = await createAuthorityOrderAccessToken(
+      order.orderNumber,
+    );
 
-    return NextResponse.json({ order, notifications });
+    const response = NextResponse.json({
+      order,
+      notifications,
+      customerAccessHandoffPath:
+        await createAuthorityCustomerAccessHandoffPath(order),
+    });
+    response.cookies.set({
+      name: ORDER_ACCESS_COOKIE,
+      value: nextOrderAccessToken,
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: ORDER_ACCESS_MAX_AGE_SECONDS,
+    });
+    response.cookies.set({
+      name: CUSTOMER_ACCESS_COOKIE,
+      value: await createAuthorityCustomerAccessToken(order),
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: CUSTOMER_ACCESS_MAX_AGE_SECONDS,
+    });
+
+    return response;
   } catch (error) {
     if (error instanceof OrderAuthorityError) {
       return NextResponse.json(

@@ -1,8 +1,13 @@
 import "server-only";
 
 import { normalizeReleaseEvidenceReport } from "@/lib/release-evidence";
+import { getRuntimeSecretAlignmentSnapshot } from "@/lib/provider-runtime-config";
+import { buildProviderIntegrationContract } from "@/lib/provider-integration-contract";
 import {
   buildReleaseOwnerSummaries,
+  getReleaseCommerceOwner,
+  getReleaseDeliveryOwner,
+  getReleaseSecurityOwner,
   normalizeReleaseActionOwner,
 } from "@/lib/release-ownership";
 import type { ReleaseEvidenceReport } from "@/lib/release-evidence-types";
@@ -12,7 +17,13 @@ import type {
   ReleasePackageRecord,
 } from "@/lib/release-package-types";
 import type {
+  ReleaseProviderIntegrationLane,
+  ReleaseRuntimeSecretAlignment,
+  ReleaseRuntimeSecretBinding,
+} from "@/lib/release-packet-types";
+import type {
   ReleaseReadinessGate,
+  ReleaseReadinessOwnerSummary,
   ReleaseReadinessSnapshot,
   ReleaseReadinessStatus,
   ReleaseRuntimePreflightCheck,
@@ -47,11 +58,113 @@ function mapPreflightToIssue(
   };
 }
 
-function collectIssues(snapshot: ReleaseReadinessSnapshot) {
+function getProviderIssueOwner(lane: ReleaseProviderIntegrationLane) {
+  switch (lane.id) {
+    case "ops_auth":
+      return getReleaseSecurityOwner();
+    case "shipping_execution":
+      return getReleaseDeliveryOwner();
+    case "notification_delivery":
+    case "customer_order_access":
+    case "payment_routing":
+      return getReleaseCommerceOwner();
+    default:
+      return getReleaseCommerceOwner();
+  }
+}
+
+function mapProviderLaneToIssue(
+  lane: ReleaseProviderIntegrationLane,
+): ReleasePackageIssue {
+  return {
+    id: lane.id,
+    title: lane.title,
+    status: lane.status,
+    source: "provider_contract",
+    summary: lane.evidence,
+    details: [
+      `Current mode: ${lane.currentMode}`,
+      `Owner path: ${lane.ownerPath}`,
+      ...lane.missingBindings,
+    ],
+    owner: getProviderIssueOwner(lane),
+    resolutionAction: lane.nextAction,
+  };
+}
+
+function getRuntimeSecretIssueOwner(binding: ReleaseRuntimeSecretBinding) {
+  switch (binding.id) {
+    case "shipping_provider_callback":
+      return getReleaseDeliveryOwner();
+    case "payment_provider_callback":
+    case "notification_provider_callback":
+      return getReleaseCommerceOwner();
+    case "auth_provider_callback":
+    case "order_authority":
+    case "ops_access_signing":
+      return getReleaseSecurityOwner();
+    default:
+      return getReleaseSecurityOwner();
+  }
+}
+
+function shouldExposeRuntimeSecretIssue(binding: ReleaseRuntimeSecretBinding) {
+  return (
+    binding.status !== "ready" &&
+    (binding.id === "auth_provider_callback" ||
+      binding.id === "payment_provider_callback" ||
+      binding.id === "shipping_provider_callback" ||
+      binding.id === "notification_provider_callback")
+  );
+}
+
+function mapRuntimeSecretBindingToIssue(
+  binding: ReleaseRuntimeSecretBinding,
+): ReleasePackageIssue {
+  return {
+    id: `runtime-secret-${binding.id}`,
+    title: binding.label,
+    status: binding.status,
+    source: "runtime_secret",
+    summary: binding.summary,
+    details: [
+      `Environment binding: ${binding.envVar}`,
+      `Current mode: ${binding.currentMode}`,
+      ...binding.details,
+    ],
+    owner: getRuntimeSecretIssueOwner(binding),
+    resolutionAction: binding.nextAction,
+  };
+}
+
+function collectIssues(
+  snapshot: ReleaseReadinessSnapshot,
+  runtimeSecretAlignment: ReleaseRuntimeSecretAlignment,
+) {
   return [
     ...snapshot.gates.map((gate) => mapGateToIssue(gate)),
     ...snapshot.runtimePreflight.checks.map((check) => mapPreflightToIssue(check)),
+    ...buildProviderIntegrationContract().lanes.map((lane) =>
+      mapProviderLaneToIssue(lane),
+    ),
+    ...runtimeSecretAlignment.bindings
+      .filter((binding) => shouldExposeRuntimeSecretIssue(binding))
+      .map((binding) => mapRuntimeSecretBindingToIssue(binding)),
   ];
+}
+
+function getAggregateIssueStatus(
+  issues: ReleasePackageIssue[],
+): ReleaseReadinessStatus {
+  if (issues.some((issue) => issue.status === "blocked")) {
+    return "blocked";
+  }
+
+  if (issues.some((issue) => issue.status === "warning")) {
+    return "warning";
+  }
+
+  return "ready";
 }
 
 function isReleaseReadinessStatus(value: unknown): value is ReleaseReadinessStatus {
@@ -124,6 +237,56 @@ function normalizeReleaseRuntimePreflightCheck(
   };
 }
 
+function isReleaseOwnerLane(value: unknown) {
+  return (
+    value === "delivery" ||
+    value === "platform" ||
+    value === "security" ||
+    value === "commerce" ||
+    value === "content"
+  );
+}
+
+function normalizeReleaseReadinessOwnerSummary(
+  value: unknown,
+): ReleaseReadinessOwnerSummary | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const summary = value as Record<string, unknown>;
+
+  if (
+    typeof summary.ownerId !== "string" ||
+    typeof summary.ownerLabel !== "string" ||
+    !isReleaseOwnerLane(summary.lane) ||
+    typeof summary.defaultPath !== "string" ||
+    typeof summary.blockedCount !== "number" ||
+    typeof summary.warningCount !== "number" ||
+    typeof summary.readyCount !== "number" ||
+    !Array.isArray(summary.itemIds) ||
+    !Array.isArray(summary.itemTitles) ||
+    typeof summary.nextStep !== "string"
+  ) {
+    return null;
+  }
+
+  return {
+    ownerId: summary.ownerId,
+    ownerLabel: summary.ownerLabel,
+    lane: summary.lane,
+    defaultPath: summary.defaultPath,
+    blockedCount: summary.blockedCount,
+    warningCount: summary.warningCount,
+    readyCount: summary.readyCount,
+    itemIds: summary.itemIds.filter((item): item is string => typeof item === "string"),
+    itemTitles: summary.itemTitles.filter(
+      (item): item is string => typeof item === "string",
+    ),
+    nextStep: summary.nextStep,
+  };
+}
+
 function normalizeReleaseReadinessSnapshot(
   value: unknown,
 ): ReleaseReadinessSnapshot | null {
@@ -149,6 +312,13 @@ function normalizeReleaseReadinessSnapshot(
       : null;
   const nextActions = Array.isArray(snapshot.nextActions)
     ? snapshot.nextActions.filter((action): action is string => typeof action === "string")
+    : null;
+  const ownerSummaries = Array.isArray(snapshot.ownerSummaries)
+    ? snapshot.ownerSummaries
+        .map((summary) => normalizeReleaseReadinessOwnerSummary(summary))
+        .filter(
+          (summary): summary is ReleaseReadinessOwnerSummary => summary !== null,
+        )
     : null;
 
   if (
@@ -202,10 +372,10 @@ function normalizeReleaseReadinessSnapshot(
           : runtimePreflightChecks.filter((check) => check.status === "ready").length,
       checks: runtimePreflightChecks,
     },
-    ownerSummaries: buildReleaseOwnerSummaries([
-      ...gates,
-      ...runtimePreflightChecks,
-    ]),
+    ownerSummaries:
+      ownerSummaries && ownerSummaries.length
+        ? ownerSummaries
+        : buildReleaseOwnerSummaries([...gates, ...runtimePreflightChecks]),
     nextActions,
   };
 }
@@ -221,7 +391,10 @@ function normalizeReleasePackageIssue(value: unknown): ReleasePackageIssue | nul
     typeof issue.id !== "string" ||
     typeof issue.title !== "string" ||
     !isReleaseReadinessStatus(issue.status) ||
-    (issue.source !== "gate" && issue.source !== "runtime_preflight") ||
+    (issue.source !== "gate" &&
+      issue.source !== "runtime_preflight" &&
+      issue.source !== "provider_contract" &&
+      issue.source !== "runtime_secret") ||
     typeof issue.summary !== "string" ||
     !Array.isArray(issue.details)
   ) {
@@ -253,13 +426,100 @@ function isOpsAuditActor(value: unknown): value is OpsAuditActor {
   );
 }
 
+function isRuntimeSecretBindingId(value: unknown): value is ReleaseRuntimeSecretBinding["id"] {
+  return (
+    value === "order_authority" ||
+    value === "ops_access_signing" ||
+    value === "auth_provider_callback" ||
+    value === "payment_provider_callback" ||
+    value === "shipping_provider_callback" ||
+    value === "notification_provider_callback"
+  );
+}
+
+function normalizeReleaseRuntimeSecretBinding(
+  value: unknown,
+): ReleaseRuntimeSecretBinding | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const binding = value as Record<string, unknown>;
+
+  if (
+    !isRuntimeSecretBindingId(binding.id) ||
+    typeof binding.label !== "string" ||
+    typeof binding.envVar !== "string" ||
+    !isReleaseReadinessStatus(binding.status) ||
+    typeof binding.currentMode !== "string" ||
+    typeof binding.summary !== "string" ||
+    typeof binding.nextAction !== "string" ||
+    !Array.isArray(binding.details)
+  ) {
+    return null;
+  }
+
+  return {
+    id: binding.id,
+    label: binding.label,
+    envVar: binding.envVar,
+    status: binding.status,
+    currentMode: binding.currentMode,
+    summary: binding.summary,
+    nextAction: binding.nextAction,
+    details: binding.details.filter((detail): detail is string => typeof detail === "string"),
+  };
+}
+
+function normalizeReleaseRuntimeSecretAlignment(
+  value: unknown,
+): ReleaseRuntimeSecretAlignment | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const alignment = value as Record<string, unknown>;
+  const bindings = Array.isArray(alignment.bindings)
+    ? alignment.bindings
+        .map((binding) => normalizeReleaseRuntimeSecretBinding(binding))
+        .filter((binding): binding is ReleaseRuntimeSecretBinding => binding !== null)
+    : null;
+
+  if (
+    !isReleaseReadinessStatus(alignment.overallStatus) ||
+    typeof alignment.blockedCount !== "number" ||
+    typeof alignment.warningCount !== "number" ||
+    typeof alignment.readyCount !== "number" ||
+    typeof alignment.summary !== "string" ||
+    !bindings
+  ) {
+    return null;
+  }
+
+  return {
+    overallStatus: alignment.overallStatus,
+    blockedCount: alignment.blockedCount,
+    warningCount: alignment.warningCount,
+    readyCount: alignment.readyCount,
+    summary: alignment.summary,
+    bindings,
+  };
+}
+
 export function buildReleasePackageArtifact(
   snapshot: ReleaseReadinessSnapshot,
   releaseEvidence: ReleaseEvidenceReport | null,
 ): ReleasePackageArtifact {
-  const issues = collectIssues(snapshot);
+  const runtimeSecretAlignment = getRuntimeSecretAlignmentSnapshot();
+  const issues = collectIssues(snapshot, runtimeSecretAlignment);
   const blockedItems = issues.filter((issue) => issue.status === "blocked");
   const warningItems = issues.filter((issue) => issue.status === "warning");
+  const runtimeSecretActions = runtimeSecretAlignment.bindings
+    .filter((binding) => shouldExposeRuntimeSecretIssue(binding))
+    .map((binding) => binding.nextAction);
+  const nextActions = Array.from(
+    new Set([...snapshot.nextActions, ...runtimeSecretActions]),
+  );
 
   return {
     generatedAt: new Date().toISOString(),
@@ -267,14 +527,15 @@ export function buildReleasePackageArtifact(
     targetBaseUrl: releaseEvidence?.targetBaseUrl ?? snapshot.canonicalUrl,
     runtimeEnvironment: snapshot.runtimeEnvironment,
     canonicalUrl: snapshot.canonicalUrl,
-    overallStatus: snapshot.overallStatus,
+    overallStatus: getAggregateIssueStatus(issues),
     blockedCount: blockedItems.length,
     warningCount: warningItems.length,
     readyCount: issues.filter((issue) => issue.status === "ready").length,
     blockedItems,
     warningItems,
-    nextActions: snapshot.nextActions,
+    nextActions,
     releaseReadiness: snapshot,
+    runtimeSecretAlignment,
     releaseEvidence,
   };
 }
@@ -305,6 +566,9 @@ export function normalizeReleasePackageArtifact(
       ? null
       : normalizeReleaseEvidenceReport(artifact.releaseEvidence);
   const releaseReadiness = normalizeReleaseReadinessSnapshot(artifact.releaseReadiness);
+  const runtimeSecretAlignment =
+    normalizeReleaseRuntimeSecretAlignment(artifact.runtimeSecretAlignment) ??
+    getRuntimeSecretAlignmentSnapshot();
 
   if (
     typeof artifact.generatedAt !== "string" ||
@@ -322,6 +586,7 @@ export function normalizeReleasePackageArtifact(
     !warningItems ||
     !nextActions ||
     !releaseReadiness ||
+    !runtimeSecretAlignment ||
     (artifact.releaseEvidence !== null &&
       artifact.releaseEvidence !== undefined &&
       !releaseEvidence)
@@ -330,10 +595,22 @@ export function normalizeReleasePackageArtifact(
   }
 
   return {
-    ...artifact,
+    generatedAt: artifact.generatedAt,
+    verificationMode: artifact.verificationMode,
+    targetBaseUrl: artifact.targetBaseUrl,
+    runtimeEnvironment: artifact.runtimeEnvironment,
+    canonicalUrl: artifact.canonicalUrl,
+    overallStatus: artifact.overallStatus,
+    blockedCount: artifact.blockedCount,
+    warningCount: artifact.warningCount,
+    readyCount: artifact.readyCount,
+    blockedItems,
+    warningItems,
+    nextActions,
     releaseReadiness,
+    runtimeSecretAlignment,
     releaseEvidence,
-  } as ReleasePackageArtifact;
+  };
 }
 
 export function normalizeReleasePackageRecord(

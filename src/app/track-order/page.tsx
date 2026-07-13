@@ -8,17 +8,14 @@ type TrackOrderPageProps = {
 
 export const metadata: Metadata = {
   title: "تتبع الطلب",
-  description:
-    "تتبع مرجع الطلب داخل النسخة التأسيسية الحالية عبر رقم الطلب وآخر 4 أرقام من الجوال.",
+  description: "تتبع مرجع الطلب داخل النسخة الحالية عبر رقم الطلب وآخر 4 أرقام من الجوال.",
   robots: {
     index: false,
     follow: false,
   },
 };
 
-export default async function TrackOrderPage({
-  searchParams,
-}: TrackOrderPageProps) {
+export default async function TrackOrderPage({ searchParams }: TrackOrderPageProps) {
   const { order } = await searchParams;
 
   return (

@@ -82,7 +82,7 @@ export function OpsNav({ activeHref }: OpsNavProps) {
         setLoadError(
           error instanceof Error
             ? error.message
-            : "تعذر تحميل سياق جلسة ops الحالية.",
+            : "تعذر تحميل سياق جلسة لوحة التحكم الحالية.",
         );
       });
   }, []);
@@ -130,7 +130,7 @@ export function OpsNav({ activeHref }: OpsNavProps) {
         ) : loadError ? (
           <span className={styles.opsNavMeta}>{loadError}</span>
         ) : (
-          <span className={styles.opsNavMeta}>جارٍ تحميل جلسة ops...</span>
+          <span className={styles.opsNavMeta}>جارٍ تحميل جلسة لوحة التحكم...</span>
         )}
       </div>
 

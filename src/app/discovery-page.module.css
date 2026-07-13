@@ -1,30 +1,74 @@
 .page {
+  position: relative;
   display: grid;
-  gap: 24px;
+  gap: 28px;
+  isolation: isolate;
+}
+
+.page::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at top right, rgba(199, 154, 88, 0.18), transparent 32%),
+    radial-gradient(circle at bottom left, rgba(178, 143, 136, 0.18), transparent 28%);
+  filter: blur(2px);
 }
 
 .hero,
 .sectionCard,
 .asideCard,
 .faqCard {
-  border: 1px solid var(--line);
-  background: var(--surface);
-  backdrop-filter: blur(14px);
-  box-shadow: var(--shadow);
-  border-radius: 30px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(64, 46, 55, 0.1);
+  background:
+    radial-gradient(circle at top right, rgba(216, 181, 174, 0.14), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(247, 241, 234, 0.88)),
+    var(--surface-pearl);
+  box-shadow:
+    0 28px 70px rgba(43, 28, 40, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(16px);
+  border-radius: 32px;
+  animation: fade-up 520ms var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1)) both;
+}
+
+.hero::after,
+.sectionCard::after,
+.asideCard::after,
+.faqCard::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.86),
+    rgba(199, 154, 88, 0.32),
+    rgba(255, 255, 255, 0)
+  );
 }
 
 .hero,
 .sectionCard,
 .asideCard,
 .faqCard {
-  padding: 30px;
+  padding: clamp(24px, 3vw, 34px);
 }
 
 .hero {
   display: grid;
   grid-template-columns: minmax(0, 1.18fr) minmax(280px, 0.82fr);
   gap: 24px;
+  background:
+    radial-gradient(circle at 14% 18%, rgba(216, 181, 174, 0.16), transparent 26%),
+    radial-gradient(circle at top right, rgba(199, 154, 88, 0.16), transparent 28%),
+    linear-gradient(145deg, rgba(255, 249, 245, 0.97), rgba(244, 234, 227, 0.92)),
+    var(--surface-pearl);
 }
 
 .eyebrow,
@@ -32,8 +76,8 @@
 .metricLabel,
 .stepNumber {
   color: var(--mauve-stone);
-  font-size: 0.83rem;
-  letter-spacing: 0.08em;
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
@@ -44,15 +88,21 @@
 .variantCard h3,
 .relatedCard h3,
 .stepCard h3,
-.faqItem h3 {
-  margin-top: 14px;
+.faqItem h3,
+.signalCard h3,
+.summaryPanel h3,
+.emptyPanel h3 {
+  margin: 14px 0 0;
   color: var(--aubergine-ink);
-  line-height: 1.12;
+  line-height: 1.08;
 }
 
 .hero h1 {
-  font-size: clamp(2.4rem, 5vw, 4rem);
+  font-size: clamp(2.8rem, 5vw, 4.4rem);
   max-width: 11ch;
+  text-wrap: balance;
+  line-height: 0.9;
+  letter-spacing: -0.045em;
 }
 
 .summary,
@@ -66,18 +116,29 @@
 .list li,
 .linkList a,
 .chipList span,
-.chipList a {
+.chipList a,
+.signalCard p,
+.summaryPanel p,
+.emptyPanel p {
   color: var(--muted);
-  line-height: 1.9;
+  line-height: 1.85;
 }
 
 .summary {
   margin-top: 16px;
-  max-width: 46rem;
+  max-width: 48rem;
+}
+
+.sectionLead {
+  margin-top: 14px;
+  max-width: 56rem;
+  color: var(--muted);
+  line-height: 1.85;
 }
 
 .badgeList,
-.chipList {
+.chipList,
+.pillStack {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
@@ -86,14 +147,31 @@
 
 .badgeList span,
 .chipList span,
-.chipList a {
+.chipList a,
+.pillStack span,
+.filterSummary span {
   display: inline-flex;
   align-items: center;
+  gap: 8px;
   padding: 10px 14px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.56);
+  background: rgba(255, 255, 255, 0.74);
   border: 1px solid rgba(43, 28, 40, 0.08);
   text-decoration: none;
+  transition:
+    transform var(--ease-luxury),
+    border-color 180ms ease,
+    background 180ms ease,
+    box-shadow var(--ease-luxury);
+}
+
+.chipList a:hover,
+.linkList a:hover,
+.primaryLink:hover,
+.secondaryLink:hover,
+.stepLink:hover,
+.inlineLink:hover {
+  transform: translateY(-2px);
 }
 
 .actionRow {
@@ -105,24 +183,50 @@
 
 .primaryLink,
 .secondaryLink {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 44px;
-  padding: 0 18px;
+  min-height: 46px;
+  padding: 0 20px;
   border-radius: 999px;
   text-decoration: none;
-  font-weight: 600;
+  font-weight: 700;
+  transition:
+    transform var(--ease-luxury),
+    box-shadow var(--ease-luxury),
+    border-color var(--ease-luxury),
+    background var(--ease-luxury);
+}
+
+.primaryLink::after,
+.secondaryLink::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 -22%;
+  width: 34%;
+  pointer-events: none;
+  background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.34), transparent);
+  animation: button-sheen 7.2s ease-in-out infinite;
+  opacity: 0.62;
+  mix-blend-mode: screen;
 }
 
 .primaryLink {
   color: #f8efe8;
-  background: var(--aubergine-ink);
+  background:
+    linear-gradient(135deg, rgba(43, 28, 40, 1), rgba(77, 48, 61, 0.96));
+  border-color: rgba(199, 154, 88, 0.2);
+  box-shadow: 0 18px 30px rgba(43, 28, 40, 0.18);
 }
 
 .secondaryLink {
   color: var(--aubergine-ink);
-  background: rgba(255, 255, 255, 0.56);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.84), rgba(248, 239, 229, 0.76)),
+    rgba(255, 255, 255, 0.72);
   border: 1px solid rgba(43, 28, 40, 0.12);
 }
 
@@ -132,10 +236,25 @@
 }
 
 .metricCard {
+  position: relative;
+  overflow: hidden;
   padding: 24px;
-  border-radius: 24px;
-  background: rgba(43, 28, 40, 0.94);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at top right, rgba(199, 154, 88, 0.24), transparent 40%),
+    linear-gradient(160deg, rgba(43, 28, 40, 0.98), rgba(70, 42, 56, 0.95));
   color: #f8efe8;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.metricCard::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 38%),
+    radial-gradient(circle at bottom left, rgba(255, 255, 255, 0.08), transparent 34%);
 }
 
 .priceRow {
@@ -165,12 +284,50 @@
 
 .statRow {
   padding-top: 12px;
-  border-top: 1px solid rgba(248, 239, 232, 0.18);
+  border-top: 1px solid rgba(248, 239, 232, 0.14);
 }
 
 .statRow strong {
   display: block;
-  font-size: 1rem;
+  font-size: 1.02rem;
+}
+
+.signalStrip,
+.splitGrid {
+  display: grid;
+  gap: 14px;
+  margin-top: 22px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.splitGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.signalCard,
+.summaryPanel,
+.emptyPanel,
+.infoCard,
+.variantCard,
+.relatedCard,
+.stepCard {
+  position: relative;
+  overflow: hidden;
+  padding: 20px;
+  border: 1px solid rgba(43, 28, 40, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(249, 242, 237, 0.74));
+  border-radius: 24px;
+  transition:
+    transform var(--ease-luxury),
+    border-color var(--ease-luxury),
+    box-shadow var(--ease-luxury);
+}
+
+.signalCard p,
+.summaryPanel p,
+.emptyPanel p {
+  margin-top: 10px;
 }
 
 .contentGrid {
@@ -200,20 +357,14 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.infoCard,
-.variantCard,
-.relatedCard,
-.stepCard {
-  padding: 20px;
-  border: 1px solid rgba(43, 28, 40, 0.08);
-  background: rgba(255, 255, 255, 0.56);
-  border-radius: 24px;
+.cardGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .infoCard strong {
   display: block;
   color: var(--aubergine-ink);
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .variantTop {
@@ -247,6 +398,10 @@
   margin-top: 16px;
 }
 
+.metaGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .metaItem,
 .faqItem {
   padding-top: 14px;
@@ -267,7 +422,8 @@
 }
 
 .linkList a,
-.stepLink {
+.stepLink,
+.inlineLink {
   color: var(--aubergine-ink);
   text-decoration: none;
 }
@@ -279,8 +435,12 @@
   gap: 12px;
   padding: 14px 16px;
   border: 1px solid rgba(43, 28, 40, 0.08);
-  background: rgba(255, 255, 255, 0.56);
+  background: rgba(255, 255, 255, 0.68);
   border-radius: 20px;
+  transition:
+    transform var(--ease-luxury),
+    border-color var(--ease-luxury),
+    box-shadow var(--ease-luxury);
 }
 
 .linkList a span:last-child {
@@ -288,25 +448,202 @@
   font-size: 0.78rem;
 }
 
-.stepLink {
+.stepLink,
+.inlineLink {
   display: inline-flex;
   margin-top: 14px;
-  font-weight: 600;
+  font-weight: 700;
+}
+
+.stepLink {
+  padding-bottom: 2px;
+  border-bottom: 1px solid rgba(43, 28, 40, 0.18);
+}
+
+.stepCard h3,
+.relatedCard h3,
+.infoCard h3,
+.signalCard h3,
+.summaryPanel h3,
+.emptyPanel h3 {
+  font-size: 1.28rem;
+}
+
+.stepNumber {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(199, 154, 88, 0.14);
+}
+
+.emptyPanel {
+  border-style: dashed;
+  background:
+    linear-gradient(135deg, rgba(247, 241, 234, 0.98), rgba(216, 181, 174, 0.18));
+}
+
+/* The discovery pages continue the cinematic atmosphere after their opening scene. */
+.page {
+  --aubergine-ink: #fff7ef;
+  --muted: rgba(255, 244, 235, 0.7);
+  --mauve-stone: #e4b98d;
+  position: relative;
+  padding: clamp(18px, 3vw, 38px);
+  border-radius: 36px;
+  background:
+    radial-gradient(circle at 86% 12%, rgba(206, 145, 100, 0.2), transparent 24%),
+    radial-gradient(circle at 10% 52%, rgba(113, 79, 130, 0.24), transparent 31%),
+    linear-gradient(155deg, #10121b, #1c1726 48%, #261b27);
+}
+
+.page::before {
+  opacity: 0.72;
+  background:
+    linear-gradient(115deg, transparent 0 48%, rgba(255, 239, 219, 0.045) 48.2% 48.4%, transparent 48.6%),
+    radial-gradient(circle at 74% 34%, rgba(242, 181, 128, 0.13), transparent 25%);
+}
+
+.hero,
+.sectionCard,
+.asideCard,
+.faqCard,
+.signalCard,
+.summaryPanel,
+.emptyPanel,
+.infoCard,
+.variantCard,
+.relatedCard,
+.stepCard {
+  border-color: rgba(255, 236, 214, 0.13);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.025)),
+    rgba(20, 18, 28, 0.72);
+  box-shadow: 0 26px 64px rgba(0, 0, 0, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.hero::after,
+.sectionCard::after,
+.asideCard::after,
+.faqCard::after {
+  background: linear-gradient(90deg, rgba(242, 190, 139, 0.68), rgba(255, 255, 255, 0.08), transparent);
+}
+
+.linkList a,
+.badgeList span,
+.chipList span,
+.chipList a,
+.pillStack span,
+.filterSummary span {
+  border-color: rgba(255, 237, 216, 0.14);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.linkList a,
+.stepLink,
+.inlineLink,
+.infoCard strong,
+.metaItem strong {
+  color: #fff7ef;
+}
+
+.metaItem,
+.faqItem,
+.statRow,
+.stepLink {
+  border-color: rgba(255, 236, 214, 0.14);
 }
 
 .emptyCopy {
   margin-top: 12px;
 }
 
+.faqItem h3 {
+  font-size: 1.08rem;
+}
+
+@keyframes cinematic-section-rise {
+  from {
+    opacity: 0.18;
+    transform: translateY(42px) scale(0.975);
+    filter: saturate(0.72);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: saturate(1);
+  }
+}
+
+@supports (animation-timeline: view()) {
+  .sectionCard,
+  .asideCard,
+  .faqCard,
+  .signalCard,
+  .summaryPanel,
+  .infoCard,
+  .variantCard,
+  .relatedCard,
+  .stepCard {
+    animation: cinematic-section-rise linear both;
+    animation-timeline: view();
+    animation-range: entry 4% cover 38%;
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+    filter: blur(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .signalCard:hover,
+  .summaryPanel:hover,
+  .infoCard:hover,
+  .relatedCard:hover,
+  .stepCard:hover {
+    transform: translateY(-4px);
+    border-color: rgba(199, 154, 88, 0.26);
+    box-shadow: var(--shadow-lift);
+  }
+
+  .variantCard:hover {
+    transform: translateY(-6px) scale(1.01);
+    border-color: rgba(199, 154, 88, 0.28);
+    box-shadow: 0 24px 42px rgba(43, 28, 40, 0.12);
+  }
+}
+
 @media (max-width: 1080px) {
   .hero,
-  .contentGrid {
+  .contentGrid,
+  .signalStrip,
+  .splitGrid {
     grid-template-columns: 1fr;
   }
 
   .mainColumn,
   .sideColumn {
     grid-column: span 1;
+  }
+}
+
+@media (max-width: 820px) {
+  .infoGrid,
+  .cardGrid,
+  .variantGrid,
+  .metaGrid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -319,14 +656,39 @@
     border-radius: 24px;
   }
 
-  .infoGrid,
-  .cardGrid,
-  .variantGrid {
-    grid-template-columns: 1fr;
-  }
-
   .primaryLink,
   .secondaryLink {
     width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero,
+  .sectionCard,
+  .asideCard,
+  .faqCard,
+  .signalCard,
+  .summaryPanel,
+  .infoCard,
+  .variantCard,
+  .relatedCard,
+  .stepCard,
+  .linkList a,
+  .primaryLink,
+  .secondaryLink,
+  .stepLink,
+  .inlineLink,
+  .chipList a,
+  .badgeList span,
+  .chipList span,
+  .pillStack span {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+
+  .primaryLink::after,
+  .secondaryLink::after {
+    animation: none !important;
   }
 }

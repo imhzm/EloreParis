@@ -202,23 +202,22 @@ export function OpsNotificationsSurface() {
   }
 
   return (
-    <div className={styles.page}>
+    <div className={`${styles.page} ${styles.opsDashboard} ${styles.opsNotifications}`}>
       <OpsNav activeHref="/ops/notifications" />
 
       <section className={styles.hero}>
         <div>
-          <p className={styles.eyebrow}>Internal notifications</p>
-          <h1>طابور تشغيلي واضح للرسائل بدل الاكتفاء بخطة fulfillment مشتقة فقط.</h1>
+          <p className={styles.eyebrow}>إدارة الإشعارات</p>
+          <h1>كل رسالة في حالتها الصحيحة، قبل أن تصل للعميل.</h1>
           <p className={styles.summary}>
-            هذه الصفحة تحول تحديثات الطلب من نية مشتقة إلى queue حقيقية قابلة
-            للمتابعة: ما الذي ينتظر الإرسال، وما الذي أرسل، وما الذي حُجب
-            تشغيليًا لأن العميلة لم توافق على التحديثات.
+            راجعي تحديثات الطلب والدفع والشحن، وميّزي ما ينتظر الإرسال عما تم
+            إرساله أو حُجب وفق تفضيلات العميل وحدود التشغيل الحالية.
           </p>
         </div>
 
         <div className={styles.heroAside}>
           <div className={styles.metricCard}>
-            <p>Total notifications</p>
+            <p>إجمالي الإشعارات</p>
             <strong>{isLoading ? "..." : metrics.total}</strong>
             <span>
               {isLoading
@@ -228,11 +227,11 @@ export function OpsNotificationsSurface() {
           </div>
 
           <div className={styles.noticeCard}>
-            <p className={styles.eyebrow}>Scope</p>
-            <h2>queue مركزية فوق order authority</h2>
+            <p className={styles.eyebrow}>نطاق التشغيل</p>
+            <h2>سجل مركزي لحالة كل رسالة</h2>
             <p>
-              هذه ليست منصة رسائل نهائية أو مزود إشعارات خارجي، لكنها تمنح
-              التشغيل trace واضحًا لما أصبح message-ready داخل التطبيق نفسه.
+              يعرض هذا السطح حالة الرسائل داخل النظام. الربط مع مزود الإرسال
+              الخارجي يظل واضحًا ضمن حدود الجاهزية الحالية.
             </p>
           </div>
         </div>

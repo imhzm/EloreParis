@@ -5,6 +5,7 @@ import path from "node:path";
 import { getAuthorityDatabasePath } from "@/lib/authority-database";
 import { getHostingDirection } from "@/lib/hosting-direction";
 import { getOpsAccessConfig } from "@/lib/ops-access";
+import { getRuntimeSigningSecretBindings } from "@/lib/provider-runtime-config";
 import {
   getReleasePlatformOwner,
   getReleaseSecurityOwner,
@@ -27,7 +28,7 @@ function isHostedUrl(url: string) {
 }
 
 function getOverallStatus(
-  checks: ReleaseRuntimePreflightCheck[],
+  checks: ReadonlyArray<{ status: ReleaseReadinessStatus }>,
 ): ReleaseReadinessStatus {
   if (checks.some((check) => check.status === "blocked")) {
     return "blocked";
@@ -38,33 +39,6 @@ function getOverallStatus(
   }
 
   return "ready";
-}
-
-function looksLikePlaceholder(value: string) {
-  return /(replace|placeholder|example|changeme|todo|your-|set-this)/i.test(
-    value,
-  );
-}
-
-function describeSecret(name: string, value: string | undefined) {
-  if (!value) {
-    return `${name}: missing`;
-  }
-
-  if (looksLikePlaceholder(value)) {
-    return `${name}: placeholder text is still configured`;
-  }
-
-  return `${name}: configured (${value.length} chars)`;
-}
-
-function isStrongConfiguredSecret(value: string | undefined) {
-  if (!value) {
-    return false;
-  }
-
-  const trimmedValue = value.trim();
-  return trimmedValue.length >= 24 && !looksLikePlaceholder(trimmedValue);
 }
 
 function normalizePathForComparison(candidatePath: string) {
@@ -124,8 +98,6 @@ export function getReleaseRuntimePreflightSnapshot(): ReleaseRuntimePreflightSna
   const releaseEvidencePathAccess = getPathWriteAccess(releaseEvidencePath);
   const nextPublicSiteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
   const renderExternalUrl = process.env.RENDER_EXTERNAL_URL?.trim();
-  const orderAuthoritySecret = process.env.ORDER_AUTHORITY_SECRET?.trim();
-  const opsAccessSigningSecret = process.env.OPS_ACCESS_SIGNING_SECRET?.trim();
   const identityUsers = opsAccessConfig.users.filter(
     (user) => Boolean(user.username) && Boolean(user.passwordHash),
   );
@@ -134,6 +106,11 @@ export function getReleaseRuntimePreflightSnapshot(): ReleaseRuntimePreflightSna
   );
   const platformOwner = getReleasePlatformOwner();
   const securityOwner = getReleaseSecurityOwner();
+  const signingSecretBindings = getRuntimeSigningSecretBindings();
+  const signingSecretStatus = getOverallStatus(signingSecretBindings);
+  const signingSecretResolution =
+    signingSecretBindings.find((binding) => binding.status !== "ready")?.nextAction ??
+    "Keep ORDER_AUTHORITY_SECRET and OPS_ACCESS_SIGNING_SECRET rotation explicit inside the hosted runtime.";
 
   const checks: ReleaseRuntimePreflightCheck[] = [
     {
@@ -197,23 +174,19 @@ export function getReleaseRuntimePreflightSnapshot(): ReleaseRuntimePreflightSna
     {
       id: "signing-secrets",
       title: "Signing secrets quality",
-      status:
-        isStrongConfiguredSecret(orderAuthoritySecret) &&
-        isStrongConfiguredSecret(opsAccessSigningSecret)
-          ? "ready"
-          : "blocked",
+      status: signingSecretStatus,
       summary:
-        isStrongConfiguredSecret(orderAuthoritySecret) &&
-        isStrongConfiguredSecret(opsAccessSigningSecret)
-          ? "The runtime now has explicit non-placeholder secrets for order tokens and ops sessions."
-          : "The runtime still depends on missing, placeholder, or weak signing secrets for protected order and ops flows.",
-      details: [
-        describeSecret("ORDER_AUTHORITY_SECRET", orderAuthoritySecret),
-        describeSecret("OPS_ACCESS_SIGNING_SECRET", opsAccessSigningSecret),
-      ],
+        signingSecretStatus === "ready"
+          ? "Order-token and ops-session signing now resolve from dedicated runtime secrets."
+          : signingSecretStatus === "warning"
+            ? "Effective signing secrets exist, but at least one protected path still depends on a shared or derived fallback binding."
+            : "The runtime still depends on missing, placeholder, or weak effective signing secrets for protected order and ops flows.",
+      details: signingSecretBindings.flatMap((binding) => [
+        `${binding.label}: ${binding.summary}`,
+        ...binding.details,
+      ]),
       owner: securityOwner,
-      resolutionAction:
-        "Set strong non-placeholder ORDER_AUTHORITY_SECRET and OPS_ACCESS_SIGNING_SECRET values in the hosted runtime environment.",
+      resolutionAction: signingSecretResolution,
     },
     {
       id: "ops-bootstrap-identities",

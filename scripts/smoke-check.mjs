@@ -8,6 +8,9 @@ import { setTimeout as delay } from "node:timers/promises";
 const port = Number(process.env.SMOKE_PORT ?? 3066);
 const host = process.env.SMOKE_HOST ?? "127.0.0.1";
 const baseUrl = `http://${host}:${port}`;
+const providerPort = Number(process.env.SMOKE_PROVIDER_PORT ?? 4071);
+const providerHost = process.env.SMOKE_PROVIDER_HOST ?? "127.0.0.1";
+const providerBaseUrl = `http://${providerHost}:${providerPort}`;
 const trustedMutationHeaders = {
   Origin: baseUrl,
 };
@@ -64,9 +67,51 @@ const releasePacketFile =
 const releasePacketMarkdownFile =
   process.env.SMOKE_RELEASE_PACKET_MARKDOWN_PATH ??
   ".artifacts/release-packet.md";
+const paymentProviderSecret =
+  process.env.SMOKE_PAYMENT_PROVIDER_CALLBACK_SECRET ??
+  "smoke-payment-provider-secret";
+const paymentProviderLabel =
+  process.env.SMOKE_PAYMENT_PROVIDER_LABEL ?? "Smoke Payment Provider";
+const paymentProviderApiKey =
+  process.env.SMOKE_PAYMENT_PROVIDER_API_KEY ?? "smoke-payment-provider-api-key";
+const shippingProviderSecret =
+  process.env.SMOKE_SHIPPING_PROVIDER_CALLBACK_SECRET ??
+  "smoke-shipping-provider-secret";
+const shippingProviderLabel =
+  process.env.SMOKE_SHIPPING_PROVIDER_LABEL ?? "Smoke Shipping Provider";
+const shippingProviderApiKey =
+  process.env.SMOKE_SHIPPING_PROVIDER_API_KEY ?? "smoke-shipping-provider-api-key";
+const notificationProviderSecret =
+  process.env.SMOKE_NOTIFICATION_PROVIDER_CALLBACK_SECRET ??
+  "smoke-notification-provider-secret";
+const notificationProviderLabel =
+  process.env.SMOKE_NOTIFICATION_PROVIDER_LABEL ??
+  "Smoke Notification Provider";
+const notificationProviderApiKey =
+  process.env.SMOKE_NOTIFICATION_PROVIDER_API_KEY ??
+  "smoke-notification-provider-api-key";
+const authProviderSecret =
+  process.env.SMOKE_AUTH_PROVIDER_CALLBACK_SECRET ??
+  "smoke-auth-provider-secret";
+const authProviderLabel =
+  process.env.SMOKE_AUTH_PROVIDER_LABEL ?? "Smoke Auth Provider";
+const authProviderClientId =
+  process.env.SMOKE_AUTH_PROVIDER_CLIENT_ID ?? "smoke-auth-client-id";
+const authProviderClientSecret =
+  process.env.SMOKE_AUTH_PROVIDER_CLIENT_SECRET ?? "smoke-auth-client-secret";
+const authProviderEmail =
+  process.env.SMOKE_AUTH_PROVIDER_EMAIL ?? "smoke@example.com";
+const authProviderPhone =
+  process.env.SMOKE_AUTH_PROVIDER_PHONE ?? "0501234567";
+const authProviderSubject =
+  process.env.SMOKE_AUTH_PROVIDER_SUBJECT ?? "smoke-customer-01";
 const standaloneStartScript = path.resolve(
   process.cwd(),
   "scripts/start-standalone.mjs",
+);
+const mockProviderScript = path.resolve(
+  process.cwd(),
+  "scripts/mock-provider-server.mjs",
 );
 
 if (!existsSync(".next/BUILD_ID")) {
@@ -75,9 +120,10 @@ if (!existsSync(".next/BUILD_ID")) {
 
 const outputBuffer = [];
 let server;
+let providerServer;
 
-function appendLog(chunk) {
-  const text = chunk.toString();
+function appendLog(chunk, prefix = "") {
+  const text = `${prefix}${chunk.toString()}`;
   outputBuffer.push(text);
 
   if (outputBuffer.length > 80) {
@@ -362,6 +408,12 @@ function renderReleasePacketMarkdown(releasePacket) {
   const nextActions = releasePacket.nextActions
     .map((item) => `- ${item}`)
     .join("\n");
+  const integrationContract = releasePacket.integrationContract.lanes
+    .map(
+      (lane) =>
+        `- ${lane.title} (${lane.status})\n  - Route: ${lane.ownerPath}\n  - Current mode: ${lane.currentMode}\n  - Evidence: ${lane.evidence}\n  - Next action: ${lane.nextAction}\n  - Missing bindings: ${lane.missingBindings.length ? lane.missingBindings.join("; ") : "none"}`,
+    )
+    .join("\n");
   const ownerSummaries = renderOwnerSummariesMarkdown(
     releasePacket.currentArtifact.releaseReadiness.ownerSummaries,
   );
@@ -420,6 +472,14 @@ function renderReleasePacketMarkdown(releasePacket) {
     "## Blocker Highlights",
     blockerHighlights || "- None.",
     "",
+    "## Integration Contract",
+    `- Overall status: ${releasePacket.integrationContract.overallStatus}`,
+    `- Blocked lanes: ${releasePacket.integrationContract.blockedCount}`,
+    `- Warning lanes: ${releasePacket.integrationContract.warningCount}`,
+    `- Ready lanes: ${releasePacket.integrationContract.readyCount}`,
+    `- Summary: ${releasePacket.integrationContract.summary}`,
+    integrationContract || "- None.",
+    "",
     "## Next Actions",
     nextActions || "- None.",
     "",
@@ -435,18 +495,54 @@ function writeReleasePacketArtifacts(releasePacket) {
   );
 }
 
-async function shutdownServer() {
-  if (!server || server.exitCode !== null || server.killed) {
+async function shutdownChildProcess(childProcess) {
+  if (!childProcess || childProcess.exitCode !== null || childProcess.killed) {
     return;
   }
 
-  server.kill("SIGTERM");
+  childProcess.kill("SIGTERM");
   await delay(1000);
 
-  if (server.exitCode === null && !server.killed) {
-    server.kill("SIGKILL");
+  if (childProcess.exitCode === null && !childProcess.killed) {
+    childProcess.kill("SIGKILL");
     await delay(500);
   }
+}
+
+async function shutdownServer() {
+  await shutdownChildProcess(server);
+  await shutdownChildProcess(providerServer);
+}
+
+async function waitForProviderServer() {
+  for (let attempt = 0; attempt < 30; attempt += 1) {
+    if (providerServer?.exitCode !== null) {
+      throw new Error(
+        `Mock provider server exited before readiness.\n\nRecent logs:\n${formatRecentLogs()}`,
+      );
+    }
+
+    try {
+      const response = await fetch(`${providerBaseUrl}/health`, {
+        cache: "no-store",
+      });
+
+      if (response.ok) {
+        const payload = await response.json();
+        if (payload.status === "ok") {
+          return payload;
+        }
+      }
+    } catch {
+      // Provider server is still starting.
+    }
+
+    await delay(500);
+  }
+
+  throw new Error(
+    `Timed out waiting for mock provider server readiness at ${providerBaseUrl}.`,
+  );
 }
 
 async function waitForServer() {
@@ -506,6 +602,10 @@ async function fetchHead(pathname, init = {}) {
   });
 }
 
+function joinCookies(...cookies) {
+  return cookies.filter(Boolean).join("; ");
+}
+
 async function sendJson(method, pathname, body, init = {}) {
   const { headers: extraHeaders = {}, ...restInit } = init;
 
@@ -525,6 +625,13 @@ function assertIncludes(body, marker, pathname) {
   assert.ok(
     body.includes(marker),
     `Expected ${pathname} to include marker: ${marker}`,
+  );
+}
+
+function assertExcludes(body, marker, pathname) {
+  assert.ok(
+    !body.includes(marker),
+    `Expected ${pathname} to exclude marker: ${marker}`,
   );
 }
 
@@ -559,7 +666,7 @@ const publicSmokeChecks = [
   {
     pathname: "/shop/haircare",
     markers: [
-      "collection_haircare_to_primary",
+      "collection_haircare_primary_route",
       "collection_haircare_to_shop_hub",
     ],
   },
@@ -611,95 +718,43 @@ const publicSmokeChecks = [
     ],
   },
   {
-    pathname: "/sitemap.xml",
-    markers: [
-      "/shop/haircare",
-      "/shop/beauty-sets",
-      "/products/radiant-dew-serum",
-      "/journal/niacinamide-vs-vitamin-c-which-fits-your-routine",
-    ],
+    pathname: "/robots.txt",
+    markers: ["User-Agent: *", "Disallow: /"],
   },
 ];
 
 const protectedOpsChecks = [
   {
     pathname: "/ops",
-    markers: [
-      "Internal ops dashboard",
-      "ops_dashboard_to_catalog",
-      'content="noindex, nofollow"',
-    ],
+    markers: ['content="noindex, nofollow"'],
   },
   {
     pathname: "/ops/orders",
-    markers: [
-      "Internal order ops",
-      "ops_to_fulfillment",
-      'content="noindex, nofollow"',
-    ],
+    markers: ['content="noindex, nofollow"'],
   },
   {
     pathname: "/ops/catalog",
-    markers: [
-      "Catalog operations",
-      "ops_catalog_product_radiant-dew-serum",
-      'content="noindex, nofollow"',
-    ],
+    markers: ['content="noindex, nofollow"'],
   },
   {
     pathname: "/ops/content",
-    markers: [
-      "Internal content governance",
-      "ops_content_to_audit",
-      'content="noindex, nofollow"',
-    ],
+    markers: ['content="noindex, nofollow"'],
   },
   {
     pathname: "/ops/release",
-    markers: [
-      "Internal release readiness",
-      "Record a protected release decision",
-      "Current blocked items requiring acknowledgement",
-      "Runtime preflight",
-      "Runtime drift",
-      "Record blocker handoff",
-      "Release handoffs",
-      "Release decisions",
-      "Release history",
-      "Blocker ownership",
-      "ops_release_to_packet",
-      "ops_release_to_health",
-      "ops_release_to_history",
-      "ops_release_to_compare",
-      "ops_release_to_handoffs",
-      "ops_release_to_decisions",
-      'content="noindex, nofollow"',
-    ],
+    markers: ['content="noindex, nofollow"'],
   },
   {
     pathname: "/ops/fulfillment",
-    markers: [
-      "Fulfillment routing",
-      "ops_fulfillment_to_orders",
-      'content="noindex, nofollow"',
-    ],
+    markers: ['content="noindex, nofollow"'],
   },
   {
     pathname: "/ops/audit",
-    markers: [
-      "Internal audit",
-      "ops_audit_to_orders",
-      "ops_audit_to_release",
-      'content="noindex, nofollow"',
-    ],
+    markers: ['content="noindex, nofollow"'],
   },
   {
     pathname: "/ops/notifications",
-    markers: [
-      "Internal notifications",
-      "ops_notifications_to_fulfillment",
-      'content="noindex, nofollow"',
-    ],
+    markers: ['content="noindex, nofollow"'],
   },
 ];
 
@@ -715,6 +770,28 @@ process.on("SIGTERM", () => {
 
 safeCleanupAuthorityState();
 resetReleaseArtifacts();
+
+providerServer = spawn(process.execPath, [mockProviderScript], {
+  cwd: process.cwd(),
+  env: {
+    ...process.env,
+    MOCK_PROVIDER_HOST: providerHost,
+    MOCK_PROVIDER_PORT: String(providerPort),
+    MOCK_PROVIDER_BASE_URL: providerBaseUrl,
+    MOCK_PAYMENT_PROVIDER_API_KEY: paymentProviderApiKey,
+    MOCK_SHIPPING_PROVIDER_API_KEY: shippingProviderApiKey,
+    MOCK_NOTIFICATION_PROVIDER_API_KEY: notificationProviderApiKey,
+    MOCK_AUTH_PROVIDER_CLIENT_ID: authProviderClientId,
+    MOCK_AUTH_PROVIDER_CLIENT_SECRET: authProviderClientSecret,
+    MOCK_AUTH_PROVIDER_EMAIL: authProviderEmail,
+    MOCK_AUTH_PROVIDER_PHONE: authProviderPhone,
+    MOCK_AUTH_PROVIDER_SUBJECT: authProviderSubject,
+  },
+  stdio: ["ignore", "pipe", "pipe"],
+});
+
+providerServer.stdout.on("data", (chunk) => appendLog(chunk, "[provider] "));
+providerServer.stderr.on("data", (chunk) => appendLog(chunk, "[provider] "));
 
 server = spawn(process.execPath, [standaloneStartScript], {
   cwd: process.cwd(),
@@ -749,14 +826,38 @@ server = spawn(process.execPath, [standaloneStartScript], {
     OPS_AUDIT_FILE: opsAuditFile,
     NOTIFICATION_AUTHORITY_FILE: notificationAuthorityFile,
     RELEASE_EVIDENCE_PATH: releaseEvidenceFile,
+    AUTH_PROVIDER_CALLBACK_SECRET: authProviderSecret,
+    AUTH_PROVIDER_LABEL: authProviderLabel,
+    AUTH_PROVIDER_AUTHORIZE_URL: `${providerBaseUrl}/auth/authorize`,
+    AUTH_PROVIDER_TOKEN_URL: `${providerBaseUrl}/auth/token`,
+    AUTH_PROVIDER_PROFILE_URL: `${providerBaseUrl}/auth/profile`,
+    AUTH_PROVIDER_CLIENT_ID: authProviderClientId,
+    AUTH_PROVIDER_CLIENT_SECRET: authProviderClientSecret,
+    PAYMENT_PROVIDER_CALLBACK_SECRET: paymentProviderSecret,
+    PAYMENT_PROVIDER_LABEL: paymentProviderLabel,
+    PAYMENT_PROVIDER_BASE_URL: providerBaseUrl,
+    PAYMENT_PROVIDER_REQUEST_PATH: "/payments/links",
+    PAYMENT_PROVIDER_API_KEY: paymentProviderApiKey,
+    SHIPPING_PROVIDER_CALLBACK_SECRET: shippingProviderSecret,
+    SHIPPING_PROVIDER_LABEL: shippingProviderLabel,
+    SHIPPING_PROVIDER_BASE_URL: providerBaseUrl,
+    SHIPPING_PROVIDER_REQUEST_PATH: "/shipments/bookings",
+    SHIPPING_PROVIDER_API_KEY: shippingProviderApiKey,
+    NOTIFICATION_PROVIDER_CALLBACK_SECRET: notificationProviderSecret,
+    NOTIFICATION_PROVIDER_LABEL: notificationProviderLabel,
+    NOTIFICATION_PROVIDER_BASE_URL: providerBaseUrl,
+    NOTIFICATION_PROVIDER_REQUEST_PATH: "/notifications/send",
+    NOTIFICATION_PROVIDER_API_KEY: notificationProviderApiKey,
   },
   stdio: ["ignore", "pipe", "pipe"],
 });
 
-server.stdout.on("data", appendLog);
-server.stderr.on("data", appendLog);
+server.stdout.on("data", (chunk) => appendLog(chunk));
+server.stderr.on("data", (chunk) => appendLog(chunk));
 
 try {
+  const providerHealth = await waitForProviderServer();
+  assert.equal(providerHealth.status, "ok");
   const health = await waitForServer();
   assert.equal(health.status, "ok");
   assert.equal(health.authorityStorage?.engine, "sqlite");
@@ -764,6 +865,9 @@ try {
   const { response: healthResponse } = await fetchJson("/api/health");
   assert.equal(healthResponse.status, 200);
   assert.equal(healthResponse.headers.get("cache-control"), "no-store");
+  assert.equal(health.runtimeStage, "local");
+  assert.equal(health.searchIndexingEnabled, false);
+  assert.equal(health.canonicalUrl, baseUrl);
 
   const opsRedirectResponse = await fetch(`${baseUrl}/ops`, {
     cache: "no-store",
@@ -798,6 +902,33 @@ try {
     }
   }
 
+  const homeHeadResponse = await fetchHead("/");
+  assert.equal(homeHeadResponse.status, 200, "Expected / HEAD request to return 200");
+  assert.equal(
+    homeHeadResponse.headers.get("x-robots-tag"),
+    "noindex, nofollow, noarchive",
+    "Expected local smoke responses to expose preview-safe X-Robots-Tag headers",
+  );
+
+  const { response: sitemapResponse, body: sitemapBody } = await fetchText(
+    "/sitemap.xml",
+  );
+  assert.equal(sitemapResponse.status, 200, "Expected /sitemap.xml to return 200");
+  assert.match(
+    sitemapResponse.headers.get("content-type") ?? "",
+    /xml/i,
+    "Expected /sitemap.xml to return XML content",
+  );
+
+  for (const marker of [
+    "/shop/haircare",
+    "/shop/beauty-sets",
+    "/products/radiant-dew-serum",
+    "/journal/niacinamide-vs-vitamin-c-which-fits-your-routine",
+  ]) {
+    assertExcludes(sitemapBody, marker, "/sitemap.xml");
+  }
+
   const { response: createOrderResponse, body: createOrderBody } = await sendJson(
     "POST",
     "/api/orders",
@@ -826,12 +957,69 @@ try {
   );
   assert.equal(createOrderResponse.status, 201);
   assert.ok(createOrderBody.order.orderNumber, "Expected created order reference");
+  const createdPaymentNotification = createOrderBody.notifications.find(
+    (notification) => notification.templateKey === "payment_link",
+  );
+  const createdOrderReceivedNotification = createOrderBody.notifications.find(
+    (notification) => notification.templateKey === "order_received",
+  );
   assert.ok(
     Array.isArray(createOrderBody.notifications) &&
-      createOrderBody.notifications.some(
-        (notification) => notification.templateKey === "payment_link",
-      ),
+      createdPaymentNotification &&
+      createdOrderReceivedNotification,
     "Expected created order response to include active notification queue items",
+  );
+  assert.equal(
+    typeof createOrderBody.customerAccessHandoffPath,
+    "string",
+    "Expected created order response to include a cross-device customer access handoff path",
+  );
+  assert.ok(
+    createOrderBody.customerAccessHandoffPath.includes("/account/access?token="),
+    "Expected created order response to expose a signed customer access handoff route",
+  );
+  assert.equal(
+    createOrderBody.order.status,
+    "payment_pending",
+    "Expected payment-link smoke orders to start in payment_pending state",
+  );
+  assert.equal(
+    createOrderBody.order.providerBindings.payment.state,
+    "link_sent",
+    "Expected payment-link smoke orders to create a live payment-link provider binding immediately",
+  );
+  assert.equal(
+    createOrderBody.order.providerBindings.shipping.state,
+    "pending",
+    "Expected smoke orders to start with a pending shipping provider binding",
+  );
+  assert.equal(
+    createOrderBody.order.providerBindings.payment.providerLabel,
+    paymentProviderLabel,
+  );
+  assert.ok(
+    typeof createOrderBody.order.providerBindings.payment.referenceId === "string" &&
+      createOrderBody.order.providerBindings.payment.referenceId.length > 0,
+    "Expected payment-link smoke orders to persist a live provider payment reference",
+  );
+  assert.ok(
+    typeof createOrderBody.order.providerBindings.payment.paymentUrl === "string" &&
+      createOrderBody.order.providerBindings.payment.paymentUrl.startsWith(
+        `${providerBaseUrl}/checkout/pay/`,
+      ),
+    "Expected payment-link smoke orders to expose a live provider payment URL",
+  );
+  assert.equal(createdPaymentNotification.status, "sent");
+  assert.equal(createdPaymentNotification.providerLabel, notificationProviderLabel);
+  assert.ok(
+    typeof createdPaymentNotification.providerDeliveryId === "string" &&
+      createdPaymentNotification.providerDeliveryId.length > 0,
+    "Expected the payment-link notification to be dispatched through the live notification provider",
+  );
+  assert.equal(createdOrderReceivedNotification.status, "sent");
+  assert.equal(
+    createdOrderReceivedNotification.providerLabel,
+    notificationProviderLabel,
   );
 
   const recentOrderCookie = extractCookie(
@@ -858,9 +1046,36 @@ try {
   );
   assert.ok(
     recentOrderBody.notifications.some(
-      (notification) => notification.templateKey === "payment_link",
+      (notification) =>
+        notification.templateKey === "payment_link" &&
+        notification.status === "sent",
     ),
-    "Expected recent-order API to include notification queue items",
+    "Expected recent-order API to include dispatched notification items",
+  );
+  const orderAccessCookie = extractCookie(
+    recentOrderResponse,
+    "cozmateks-order-access",
+  );
+
+  const {
+    response: orderAccessResponse,
+    body: orderAccessBody,
+  } = await fetchJson(
+    `/api/orders/${encodeURIComponent(createOrderBody.order.orderNumber)}`,
+    {
+      headers: {
+        Cookie: orderAccessCookie,
+      },
+    },
+  );
+  assert.equal(
+    orderAccessResponse.status,
+    200,
+    "Expected order-access session lookup to return 200 without phone-last-four after the first trusted lookup",
+  );
+  assert.equal(
+    orderAccessBody.order.orderNumber,
+    createOrderBody.order.orderNumber,
   );
 
   const { response: trackedOrderResponse, body: trackedOrderBody } = await fetchJson(
@@ -877,9 +1092,11 @@ try {
   );
   assert.ok(
     trackedOrderBody.notifications.some(
-      (notification) => notification.templateKey === "payment_link",
+      (notification) =>
+        notification.templateKey === "payment_link" &&
+        notification.status === "sent",
     ),
-    "Expected tracked-order API to include notification queue items",
+    "Expected tracked-order API to include dispatched notification items",
   );
 
   const { response: loginResponse, body: loginBody } = await sendJson(
@@ -1014,7 +1231,162 @@ try {
     smokeNotification,
     "Expected ops notifications API to include the smoke payment-link notification",
   );
-  assert.equal(smokeNotification.status, "queued");
+  assert.equal(smokeNotification.status, "sent");
+  assert.equal(smokeNotification.providerLabel, notificationProviderLabel);
+  assert.ok(
+    typeof smokeNotification.providerDeliveryId === "string" &&
+      smokeNotification.providerDeliveryId.length > 0,
+    "Expected ops notifications API to expose the live provider delivery id",
+  );
+
+  const {
+    response: prematureOrderAdvanceResponse,
+    body: prematureOrderAdvanceBody,
+  } = await sendJson(
+    "PATCH",
+    `/api/ops/orders/${encodeURIComponent(createOrderBody.order.orderNumber)}`,
+    {},
+    {
+      headers: {
+        Cookie: opsCookie,
+      },
+    },
+  );
+  assert.equal(
+    prematureOrderAdvanceResponse.status,
+    409,
+    "Expected ops order status update to reject payment-link orders before provider confirmation",
+  );
+  assert.ok(
+    typeof prematureOrderAdvanceBody.error === "string" &&
+      prematureOrderAdvanceBody.error.length > 0,
+    "Expected premature status advancement to return a descriptive error message",
+  );
+
+  const {
+    response: requeueNotificationResponse,
+    body: requeueNotificationBody,
+  } = await sendJson(
+    "PATCH",
+    `/api/ops/notifications/${encodeURIComponent(smokeNotification.id)}`,
+    {
+      status: "queued",
+    },
+    {
+      headers: {
+        Cookie: opsCookie,
+      },
+    },
+  );
+  assert.equal(
+    requeueNotificationResponse.status,
+    200,
+    "Expected ops notification requeue to return 200",
+  );
+  assert.equal(requeueNotificationBody.previousStatus, "sent");
+  assert.equal(requeueNotificationBody.nextStatus, "queued");
+
+  const {
+    response: resendNotificationResponse,
+    body: resendNotificationBody,
+  } = await sendJson(
+    "PATCH",
+    `/api/ops/notifications/${encodeURIComponent(smokeNotification.id)}`,
+    {
+      status: "sent",
+    },
+    {
+      headers: {
+        Cookie: opsCookie,
+      },
+    },
+  );
+  assert.equal(
+    resendNotificationResponse.status,
+    200,
+    "Expected ops notification resend to dispatch through the live provider",
+  );
+  assert.equal(
+    resendNotificationBody.previousStatus,
+    "queued",
+  );
+  assert.equal(resendNotificationBody.nextStatus, "sent");
+  assert.equal(
+    resendNotificationBody.notification.providerLabel,
+    notificationProviderLabel,
+  );
+  assert.ok(
+    typeof resendNotificationBody.notification.providerDeliveryId === "string" &&
+      resendNotificationBody.notification.providerDeliveryId.length > 0,
+    "Expected resend to persist a live notification provider delivery id",
+  );
+
+  const {
+    response: blockedAfterLinkResponse,
+    body: blockedAfterLinkBody,
+  } = await sendJson(
+    "PATCH",
+    `/api/ops/orders/${encodeURIComponent(createOrderBody.order.orderNumber)}`,
+    {},
+    {
+      headers: {
+        Cookie: opsCookie,
+      },
+    },
+  );
+  assert.equal(
+    blockedAfterLinkResponse.status,
+    409,
+    "Expected payment-link orders to remain blocked until the provider callback confirms payment",
+  );
+  assert.ok(
+    typeof blockedAfterLinkBody.error === "string" &&
+      blockedAfterLinkBody.error.length > 0,
+    "Expected blocked payment-link orders to keep returning a descriptive confirmation error",
+  );
+
+  const {
+    response: paymentCallbackResponse,
+    body: paymentCallbackBody,
+  } = await sendJson(
+    "POST",
+    "/api/providers/payment",
+    {
+      orderNumber: createOrderBody.order.orderNumber,
+      paymentReferenceId: createOrderBody.order.providerBindings.payment.referenceId,
+      settlementReference: "SET-SMOKE-01",
+      eventId: "evt-payment-settlement-smoke-01",
+      settledAt: "2026-04-04T10:15:00.000Z",
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${paymentProviderSecret}`,
+      },
+    },
+  );
+  assert.equal(
+    paymentCallbackResponse.status,
+    200,
+    "Expected the payment provider callback to confirm the smoke order",
+  );
+  assert.equal(paymentCallbackBody.ok, true);
+  assert.equal(paymentCallbackBody.order.status, "confirmed");
+  assert.equal(paymentCallbackBody.order.providerBindings.payment.state, "confirmed");
+  assert.equal(
+    paymentCallbackBody.order.providerBindings.payment.referenceId,
+    createOrderBody.order.providerBindings.payment.referenceId,
+    "Expected payment confirmation to preserve the existing provider reference",
+  );
+  assert.equal(
+    paymentCallbackBody.order.providerBindings.payment.settlementReference,
+    "SET-SMOKE-01",
+    "Expected payment confirmation to persist the settlement reference",
+  );
+  assert.equal(
+    paymentCallbackBody.order.providerBindings.payment.settlementEventId,
+    "evt-payment-settlement-smoke-01",
+    "Expected payment confirmation to persist the settlement event id",
+  );
 
   const { response: updateOrderResponse, body: updateOrderBody } = await sendJson(
     "PATCH",
@@ -1029,19 +1401,40 @@ try {
   assert.equal(
     updateOrderResponse.status,
     200,
-    "Expected ops order status update to return 200",
+    "Expected ops order status update to move confirmed orders into processing",
   );
-  assert.equal(updateOrderBody.previousStatus, "payment_pending");
-  assert.equal(updateOrderBody.nextStatus, "confirmed");
+  assert.equal(updateOrderBody.previousStatus, "confirmed");
+  assert.equal(updateOrderBody.nextStatus, "processing");
 
   const {
-    response: updateNotificationResponse,
-    body: updateNotificationBody,
+    response: preparationNotificationsResponse,
+    body: preparationNotificationsBody,
+  } = await fetchJson("/api/ops/notifications", {
+    headers: {
+      Cookie: opsCookie,
+    },
+  });
+  assert.equal(preparationNotificationsResponse.status, 200);
+  const preparationNotification = preparationNotificationsBody.notifications.find(
+    (notification) =>
+      notification.orderNumber === createOrderBody.order.orderNumber &&
+      notification.templateKey === "preparation_update",
+  );
+  assert.ok(
+    preparationNotification,
+    "Expected processing orders to enqueue and dispatch the preparation update notification",
+  );
+  assert.equal(preparationNotification.status, "sent");
+  assert.equal(preparationNotification.providerLabel, notificationProviderLabel);
+
+  const {
+    response: shippingBookedResponse,
+    body: shippingBookedBody,
   } = await sendJson(
     "PATCH",
-    `/api/ops/notifications/${encodeURIComponent(smokeNotification.id)}`,
+    `/api/ops/orders/${encodeURIComponent(createOrderBody.order.orderNumber)}/provider`,
     {
-      status: "sent",
+      action: "shipping_booked",
     },
     {
       headers: {
@@ -1050,12 +1443,267 @@ try {
     },
   );
   assert.equal(
-    updateNotificationResponse.status,
+    shippingBookedResponse.status,
     200,
-    "Expected ops notification status update to return 200",
+    "Expected ops provider update to record the shipping booking handoff",
   );
-  assert.equal(updateNotificationBody.previousStatus, "queued");
-  assert.equal(updateNotificationBody.nextStatus, "sent");
+  assert.equal(shippingBookedBody.action, "shipping_booked");
+  assert.equal(shippingBookedBody.order.status, "processing");
+  assert.equal(shippingBookedBody.order.providerBindings.shipping.state, "booked");
+  assert.equal(
+    shippingBookedBody.order.providerBindings.shipping.providerLabel,
+    shippingProviderLabel,
+  );
+  assert.ok(
+    typeof shippingBookedBody.order.providerBindings.shipping.bookingReference ===
+      "string" &&
+      shippingBookedBody.order.providerBindings.shipping.bookingReference.length > 0,
+    "Expected shipping booking handoff to persist the live provider booking reference",
+  );
+
+  const {
+    response: blockedDeliveryAdvanceResponse,
+    body: blockedDeliveryAdvanceBody,
+  } = await sendJson(
+    "PATCH",
+    `/api/ops/orders/${encodeURIComponent(createOrderBody.order.orderNumber)}`,
+    {},
+    {
+      headers: {
+        Cookie: opsCookie,
+      },
+    },
+  );
+  assert.equal(
+    blockedDeliveryAdvanceResponse.status,
+    409,
+    "Expected processing orders to remain blocked until the shipping callback records in-transit status",
+  );
+  assert.ok(
+    typeof blockedDeliveryAdvanceBody.error === "string" &&
+      blockedDeliveryAdvanceBody.error.length > 0,
+    "Expected the blocked delivery transition to return a descriptive shipping handoff error",
+  );
+
+  const {
+    response: shippingCallbackResponse,
+    body: shippingCallbackBody,
+  } = await sendJson(
+    "POST",
+    "/api/providers/shipping",
+    {
+      orderNumber: createOrderBody.order.orderNumber,
+      bookingReference:
+        shippingBookedBody.order.providerBindings.shipping.bookingReference,
+      trackingNumber: "TRK-SMOKE-01",
+      eventId: "evt-shipping-in-transit-smoke-01",
+      occurredAt: "2026-04-04T10:40:00.000Z",
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${shippingProviderSecret}`,
+      },
+    },
+  );
+  assert.equal(
+    shippingCallbackResponse.status,
+    200,
+    "Expected the shipping provider callback to move the smoke order into out_for_delivery",
+  );
+  assert.equal(shippingCallbackBody.ok, true);
+  assert.equal(shippingCallbackBody.order.status, "out_for_delivery");
+  assert.equal(
+    shippingCallbackBody.order.providerBindings.shipping.state,
+    "in_transit",
+  );
+  assert.equal(
+    shippingCallbackBody.order.providerBindings.shipping.bookingReference,
+    shippingBookedBody.order.providerBindings.shipping.bookingReference,
+    "Expected shipping callback to preserve the existing booking reference",
+  );
+  assert.equal(
+    shippingCallbackBody.order.providerBindings.shipping.trackingNumber,
+    "TRK-SMOKE-01",
+    "Expected shipping callback to persist the explicit tracking number",
+  );
+  assert.equal(
+    shippingCallbackBody.order.providerBindings.shipping.carrierEventId,
+    "evt-shipping-in-transit-smoke-01",
+    "Expected shipping callback to persist the carrier event id",
+  );
+
+  const {
+    response: deliveryNotificationsResponse,
+    body: deliveryNotificationsBody,
+  } = await fetchJson("/api/ops/notifications", {
+    headers: {
+      Cookie: opsCookie,
+    },
+  });
+  assert.equal(deliveryNotificationsResponse.status, 200);
+  const deliveryNotification = deliveryNotificationsBody.notifications.find(
+    (notification) =>
+      notification.orderNumber === createOrderBody.order.orderNumber &&
+      notification.templateKey === "delivery_update",
+  );
+  assert.ok(
+    deliveryNotification,
+    "Expected out-for-delivery orders to publish a delivery update notification",
+  );
+  assert.equal(deliveryNotification.status, "sent");
+  assert.equal(
+    deliveryNotification.providerLabel,
+    "Internal dashboard surface",
+  );
+
+  const {
+    response: finalTrackedOrderResponse,
+    body: finalTrackedOrderBody,
+  } = await fetchJson(
+    `/api/orders/${encodeURIComponent(createOrderBody.order.orderNumber)}?phoneLastFour=4567`,
+  );
+  assert.equal(
+    finalTrackedOrderResponse.status,
+    200,
+    "Expected tracked-order API lookup to keep working after provider callbacks",
+  );
+  assert.equal(finalTrackedOrderBody.order.status, "out_for_delivery");
+  assert.equal(
+    finalTrackedOrderBody.order.providerBindings.payment.state,
+    "confirmed",
+  );
+  assert.equal(
+    finalTrackedOrderBody.order.providerBindings.shipping.state,
+    "in_transit",
+  );
+  assert.equal(
+    finalTrackedOrderBody.order.providerBindings.shipping.trackingNumber,
+    shippingCallbackBody.order.providerBindings.shipping.trackingNumber,
+    "Expected tracked-order API to expose the persisted tracking number",
+  );
+  assert.equal(
+    finalTrackedOrderBody.order.providerBindings.payment.settlementReference,
+    "SET-SMOKE-01",
+    "Expected tracked-order API to expose the persisted settlement reference",
+  );
+
+  const {
+    response: crossDeviceAccessResponse,
+  } = await fetchText(createOrderBody.customerAccessHandoffPath, {
+    redirect: "manual",
+  });
+  assert.equal(
+    crossDeviceAccessResponse.status,
+    307,
+    "Expected the signed account-access handoff to redirect into the external auth provider",
+  );
+  const providerAuthorizeLocation =
+    crossDeviceAccessResponse.headers.get("location") ?? "";
+  assert.ok(
+    providerAuthorizeLocation.startsWith(`${providerBaseUrl}/auth/authorize?`),
+    "Expected the signed account-access handoff to redirect into the configured auth provider",
+  );
+
+  const providerAuthorizeResponse = await fetch(providerAuthorizeLocation, {
+    cache: "no-store",
+    redirect: "manual",
+  });
+  assert.equal(
+    providerAuthorizeResponse.status,
+    307,
+    "Expected the mock auth provider to redirect back into the app callback",
+  );
+  const providerCallbackLocation =
+    providerAuthorizeResponse.headers.get("location") ?? "";
+  assert.ok(
+    providerCallbackLocation.startsWith(`${baseUrl}/api/providers/auth?code=`),
+    "Expected the mock auth provider to redirect into the app auth callback with a code and state",
+  );
+
+  const providerCallbackResponse = await fetch(providerCallbackLocation, {
+    cache: "no-store",
+    redirect: "manual",
+  });
+  assert.equal(
+    providerCallbackResponse.status,
+    307,
+    "Expected the app auth callback to mint customer cookies and redirect to /account/orders",
+  );
+  assert.ok(
+    (providerCallbackResponse.headers.get("location") ?? "").includes(
+      "/account/orders",
+    ),
+    "Expected the app auth callback to complete at /account/orders",
+  );
+
+  const crossDeviceCustomerAccessCookie = extractCookie(
+    providerCallbackResponse,
+    "cozmateks-customer-access",
+  );
+  const crossDeviceCustomerAccountCookie = extractCookie(
+    providerCallbackResponse,
+    "cozmateks-customer-account",
+  );
+
+  const {
+    response: crossDeviceTrackedOrderResponse,
+    body: crossDeviceTrackedOrderBody,
+  } = await fetchJson(`/api/orders/${encodeURIComponent(createOrderBody.order.orderNumber)}`, {
+    headers: {
+      Cookie: crossDeviceCustomerAccessCookie,
+    },
+  });
+  assert.equal(
+    crossDeviceTrackedOrderResponse.status,
+    200,
+    "Expected cross-device customer access to restore tracked-order API access without phone-last-four",
+  );
+  assert.equal(
+    crossDeviceTrackedOrderBody.order.orderNumber,
+    createOrderBody.order.orderNumber,
+  );
+  assert.equal(
+    crossDeviceTrackedOrderBody.order.providerBindings.payment.settlementReference,
+    "SET-SMOKE-01",
+    "Expected cross-device customer access to preserve settlement evidence on tracked-order API reads",
+  );
+
+  const {
+    response: customerOrdersResponse,
+    body: customerOrdersBody,
+  } = await fetchText("/account/orders", {
+    headers: {
+      Cookie: joinCookies(
+        crossDeviceCustomerAccessCookie,
+        crossDeviceCustomerAccountCookie,
+      ),
+    },
+  });
+  assert.equal(
+    customerOrdersResponse.status,
+    200,
+    "Expected customer orders route to render with a verified customer-access session",
+  );
+  assertIncludes(
+    customerOrdersBody,
+    "Verified orders for the current account",
+    "/account/orders",
+  );
+  assertIncludes(
+    customerOrdersBody,
+    createOrderBody.order.orderNumber,
+    "/account/orders",
+  );
+  assertIncludes(
+    customerOrdersBody,
+    "SET-SMOKE-01",
+    "/account/orders",
+  );
+  assertIncludes(
+    customerOrdersBody,
+    "TRK-SMOKE-01",
+    "/account/orders",
+  );
 
   for (const check of protectedOpsChecks) {
     const { response, body } = await fetchText(check.pathname, {
@@ -1067,6 +1715,15 @@ try {
       response.status,
       200,
       `Expected ${check.pathname} to return 200 with ops session`,
+    );
+    assert.equal(
+      new URL(response.url).pathname,
+      check.pathname,
+      `Expected authenticated request to stay on ${check.pathname}`,
+    );
+    assert.ok(
+      !body.includes("Ops access gate"),
+      `Expected authenticated ${check.pathname} response to bypass the ops access gate`,
     );
 
     for (const marker of check.markers) {
@@ -1182,7 +1839,7 @@ try {
       publicRouteChecks: publicSmokeChecks.length,
       protectedRouteChecks: protectedOpsChecks.length,
       assetChecks: assetChecks.length,
-      apiChecks: 25,
+      apiChecks: 29,
     },
     checks: [
       {
@@ -1197,8 +1854,8 @@ try {
       },
       {
         id: "api-contracts",
-        title: "Health, order, release, notification, audit, package, packet, history, compare, handoff, and decision APIs with packet-bound freshness, owner-handoff, and blocker-acknowledgement guards",
-        count: 25,
+        title: "Health, order, provider callback, release, notification, audit, package, packet, history, compare, handoff, and decision APIs with packet-bound freshness, owner-handoff, provider-binding, and blocker-acknowledgement guards",
+        count: 29,
       },
       {
         id: "release-assets",
@@ -1258,7 +1915,7 @@ try {
   );
   assert.equal(
     releaseEvidenceBody.releaseEvidence.summary.apiChecks,
-    25,
+    29,
   );
 
   const {
@@ -1276,7 +1933,7 @@ try {
   );
   assert.equal(
     releasePackageBody.releasePackage.releaseEvidence?.summary.apiChecks,
-    25,
+    29,
   );
   assert.ok(
     releasePackageBody.releasePackage.blockedItems.some(
@@ -1293,6 +1950,28 @@ try {
   assert.ok(
     releasePackageBody.releasePackage.releaseReadiness.ownerSummaries.length > 0,
     "Expected release package to retain blocker ownership summaries",
+  );
+  assert.equal(
+    releasePackageBody.releasePackage.warningItems.find(
+      (item) => item.id === "payment_routing",
+    )?.source,
+    "provider_contract",
+    "Expected release package warnings to include provider-contract payment routing ownership",
+  );
+  assert.equal(
+    releasePackageBody.releasePackage.warningItems.find(
+      (item) => item.id === "payment_routing",
+    )?.owner?.id,
+    "commerce-backend",
+    "Expected payment routing warning ownership to resolve to the commerce backend lane",
+  );
+  assert.ok(
+    releasePackageBody.releasePackage.releaseReadiness.ownerSummaries.some(
+      (summary) =>
+        summary.ownerId === "commerce-backend" &&
+        summary.itemIds.includes("payment_routing"),
+    ),
+    "Expected release readiness ownership summaries to include provider-backed payment routing work",
   );
 
   const {
@@ -1314,7 +1993,7 @@ try {
   );
   assert.equal(
     publishReleasePackageBody.releasePackageRecord.artifact.releaseEvidence?.summary.apiChecks,
-    25,
+    29,
   );
 
   const {
@@ -1405,6 +2084,75 @@ try {
       (item) => item.id === "hosting-runtime",
     )?.owner?.id,
     "platform-runtime",
+  );
+  assert.equal(
+    preDecisionPacketBody.releasePacket.integrationContract.overallStatus,
+    "warning",
+    "Expected the executive release packet to expose a warning integration contract before release approval",
+  );
+  assert.equal(
+    preDecisionPacketBody.releasePacket.integrationContract.blockedCount,
+    0,
+    "Expected the executive release packet to report zero blocked integration lanes in smoke mode once callback scaffolding is active",
+  );
+  assert.equal(
+    preDecisionPacketBody.releasePacket.integrationContract.warningCount,
+    3,
+    "Expected the executive release packet to report three warning integration lanes in smoke mode",
+  );
+  assert.equal(
+    preDecisionPacketBody.releasePacket.integrationContract.readyCount,
+    2,
+    "Expected the executive release packet to report two ready integration lanes in smoke mode",
+  );
+  assert.deepEqual(
+    preDecisionPacketBody.releasePacket.integrationContract.lanes.map(
+      (lane) => lane.id,
+    ),
+    [
+      "ops_auth",
+      "customer_order_access",
+      "payment_routing",
+      "shipping_execution",
+      "notification_delivery",
+    ],
+    "Expected the executive release packet to keep the integration contract lanes stable in smoke mode",
+  );
+  assert.equal(
+    preDecisionPacketBody.releasePacket.integrationContract.lanes.find(
+      (lane) => lane.id === "ops_auth",
+    )?.status,
+    "ready",
+    "Expected ops auth to be a ready integration lane in smoke mode",
+  );
+  assert.equal(
+    preDecisionPacketBody.releasePacket.integrationContract.lanes.find(
+      (lane) => lane.id === "notification_delivery",
+    )?.status,
+    "ready",
+    "Expected notification delivery to be fully ready in smoke mode once the outbound provider contract is configured",
+  );
+  assert.equal(
+    preDecisionPacketBody.releasePacket.currentArtifact.blockedItems.find(
+      (item) => item.id === "payment_routing",
+    )?.source,
+    undefined,
+    "Expected payment routing to move out of the blocked issue trail once callback scaffolding is active",
+  );
+  assert.equal(
+    preDecisionPacketBody.releasePacket.currentArtifact.warningItems.find(
+      (item) => item.id === "payment_routing",
+    )?.source,
+    "provider_contract",
+    "Expected the executive release packet to fold payment routing into the warning issue trail",
+  );
+  assert.ok(
+    preDecisionPacketBody.releasePacket.currentArtifact.releaseReadiness.ownerSummaries.some(
+      (summary) =>
+        summary.ownerId === "commerce-backend" &&
+        summary.itemIds.includes("payment_routing"),
+    ),
+    "Expected the executive release packet to retain provider ownership inside release readiness summaries",
   );
 
   const {
@@ -1873,7 +2621,7 @@ try {
   );
   assert.equal(
     releasePacketBody.releasePacket.currentArtifact.releaseEvidence?.summary.apiChecks,
-    25,
+    29,
   );
   assert.ok(
     releasePacketBody.releasePacket.contentGovernance.launchBlocked > 0,
@@ -1884,6 +2632,70 @@ try {
       (summary) => summary.ownerId === "platform-runtime",
     ),
     "Expected executive release packet to retain owner summaries through publication and decision flows",
+  );
+  assert.ok(
+    releasePacketBody.releasePacket.currentArtifact.releaseReadiness.ownerSummaries.some(
+      (summary) =>
+        summary.ownerId === "commerce-backend" &&
+        summary.itemIds.includes("payment_routing"),
+    ),
+    "Expected published executive release packet to retain provider ownership in release readiness summaries",
+  );
+  assert.equal(
+    releasePacketBody.releasePacket.integrationContract.overallStatus,
+    "warning",
+    "Expected the published executive release packet to retain the warning integration contract",
+  );
+  assert.equal(
+    releasePacketBody.releasePacket.runtimeMonitoring.stage,
+    "local",
+    "Expected the executive release packet to expose the local runtime stage in smoke mode",
+  );
+  assert.equal(
+    releasePacketBody.releasePacket.runtimeMonitoring.searchIndexingEnabled,
+    false,
+    "Expected the executive release packet to keep local smoke runtimes fenced from search indexing",
+  );
+  assert.equal(
+    releasePacketBody.releasePacket.runtimeMonitoring.status,
+    "ready",
+    "Expected the executive release packet to treat local noindex posture as a valid runtime-monitoring state",
+  );
+  assert.equal(
+    releasePacketBody.releasePacket.rollbackBaseline.status,
+    "blocked",
+    "Expected rollback to remain blocked in smoke mode until an approved protected package exists",
+  );
+  assert.equal(
+    releasePacketBody.releasePacket.rollbackBaseline.packageRecordId,
+    null,
+  );
+  assert.equal(
+    releasePacketBody.releasePacket.rollbackBaseline.decisionVerdict,
+    null,
+  );
+  assert.match(
+    releasePacketBody.releasePacket.rollbackBaseline.summary,
+    /No approved protected release package exists yet/i,
+    "Expected rollback baseline summary to explain that approvals are still missing in smoke mode",
+  );
+  assert.deepEqual(
+    releasePacketBody.releasePacket.integrationContract.lanes.map((lane) => lane.id),
+    [
+      "ops_auth",
+      "customer_order_access",
+      "payment_routing",
+      "shipping_execution",
+      "notification_delivery",
+    ],
+    "Expected the published executive release packet to retain the integration contract lanes",
+  );
+  assert.equal(
+    releasePacketBody.releasePacket.currentArtifact.warningItems.find(
+      (item) => item.id === "shipping_execution",
+    )?.source,
+    "provider_contract",
+    "Expected published executive release packet warnings to retain provider-contract shipping execution ownership",
   );
   writeReleasePacketArtifacts(releasePacketBody.releasePacket);
 
@@ -1911,6 +2723,14 @@ try {
         entry.entityId === createOrderBody.order.orderNumber,
     ),
     "Expected audit API to include the smoke order status update",
+  );
+  assert.ok(
+    releaseAuditBody.auditEntries.some(
+      (entry) =>
+        entry.action === "ops_order_provider_update" &&
+        entry.entityId === createOrderBody.order.orderNumber,
+    ),
+    "Expected audit API to include provider-binding updates for the smoke order",
   );
   assert.ok(
     releaseAuditBody.auditEntries.some(

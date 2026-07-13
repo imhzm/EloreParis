@@ -6,9 +6,13 @@ import {
   OpsAccessError,
 } from "@/lib/ops-access";
 import {
+  getAuthorityNotificationById,
   NotificationAuthorityError,
   updateAuthorityNotificationStatus,
 } from "@/lib/notification-authority";
+import { deliverNotificationForOrder } from "@/lib/notification-dispatch";
+import { listAuthorityOrders, OrderAuthorityError } from "@/lib/order-authority";
+import { ProviderGatewayError } from "@/lib/provider-gateway";
 import type { NotificationDeliveryStatus } from "@/lib/notification-types";
 import {
   RequestHardeningError,
@@ -47,10 +51,52 @@ export async function PATCH(
     }
 
     const { notificationId } = await context.params;
-    const { notification, previousStatus } = await updateAuthorityNotificationStatus(
-      notificationId,
-      body.status,
-    );
+    const notificationRecord = await getAuthorityNotificationById(notificationId);
+
+    if (!notificationRecord) {
+      return NextResponse.json(
+        { error: "Notification record was not found in the current authority." },
+        { status: 404 },
+      );
+    }
+
+    const updateResult =
+      body.status === "sent"
+        ? await (async () => {
+            const orders = await listAuthorityOrders();
+            const order = orders.find(
+              (candidate) =>
+                candidate.orderNumber === notificationRecord.orderNumber,
+            );
+
+            if (!order) {
+              throw new NotificationAuthorityError(
+                "The notification order could not be found in the current authority.",
+                404,
+              );
+            }
+
+            const deliveredNotification = await deliverNotificationForOrder(
+              notificationRecord,
+              order,
+            );
+
+            if (deliveredNotification.id !== notificationRecord.id) {
+              throw new NotificationAuthorityError(
+                "The delivered notification does not match the requested record.",
+                409,
+              );
+            }
+
+            return {
+              notification: deliveredNotification,
+              previousStatus: notificationRecord.status,
+            };
+          })()
+        : await updateAuthorityNotificationStatus(notificationId, body.status, {
+            lastError: null,
+          });
+    const { notification, previousStatus } = updateResult;
 
     await logOpsAuditEvent({
       action: "ops_notification_status_update",
@@ -67,6 +113,8 @@ export async function PATCH(
         template_key: notification.templateKey,
         previous_status: previousStatus,
         next_status: body.status,
+        provider_label: notification.providerLabel ?? "missing",
+        provider_delivery_id: notification.providerDeliveryId ?? "missing",
       },
     });
 
@@ -79,6 +127,8 @@ export async function PATCH(
     if (
       error instanceof OpsAccessError ||
       error instanceof NotificationAuthorityError ||
+      error instanceof OrderAuthorityError ||
+      error instanceof ProviderGatewayError ||
       error instanceof RequestHardeningError
     ) {
       return NextResponse.json(

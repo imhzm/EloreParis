@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 
 export default function OpsReleasePage() {
   return (
-    <StorefrontShell activeHref="/ops">
+    <StorefrontShell activeHref="/ops/release">
       <OpsReleaseSurface />
     </StorefrontShell>
   );

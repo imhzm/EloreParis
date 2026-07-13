@@ -23,4 +23,8 @@ export type StoredNotification = {
   createdAt: string;
   updatedAt: string;
   sentAt: string | null;
+  providerLabel: string | null;
+  providerDeliveryId: string | null;
+  providerEventId: string | null;
+  lastError: string | null;
 };

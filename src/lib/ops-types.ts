@@ -28,6 +28,7 @@ export type OpsAuditAction =
   | "ops_login_rate_limited"
   | "ops_logout"
   | "ops_order_status_update"
+  | "ops_order_provider_update"
   | "ops_notification_status_update"
   | "ops_release_evidence_publish"
   | "ops_release_package_publish"

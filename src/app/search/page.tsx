@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Breadcrumb } from "@/components/breadcrumb";
 import { StorefrontShell } from "@/components/storefront-shell";
 import { SearchForm } from "@/components/search-form";
 import { TrackedLink } from "@/components/tracked-link";
@@ -99,23 +100,6 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         url: absoluteUrl(query ? `/search?q=${encodeURIComponent(query)}` : "/search"),
         inLanguage: "ar-SA",
       },
-      {
-        "@type": "BreadcrumbList",
-        itemListElement: [
-          {
-            "@type": "ListItem",
-            position: 1,
-            name: "الرئيسية",
-            item: absoluteUrl("/"),
-          },
-          {
-            "@type": "ListItem",
-            position: 2,
-            name: "البحث",
-            item: absoluteUrl("/search"),
-          },
-        ],
-      },
     ],
   };
 
@@ -128,6 +112,12 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       <StorefrontShell activeHref="/search">
         <div className={styles.page}>
           <section className={styles.hero}>
+            <Breadcrumb
+              items={[
+                { label: "الرئيسية", href: "/" },
+                { label: "البحث" },
+              ]}
+            />
             <div className={styles.heroPanel}>
               <p className={styles.eyebrow}>Internal search</p>
               <h1>ابحثي حسب المنتج أو المكوّن أو النية الشرائية بدل التصفح الأعمى.</h1>

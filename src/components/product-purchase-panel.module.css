@@ -1,6 +1,6 @@
 .panel {
   display: grid;
-  gap: 16px;
+  gap: 18px;
 }
 
 .variantList {
@@ -9,6 +9,9 @@
 }
 
 .variantButton {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
   width: 100%;
   display: grid;
   gap: 6px;
@@ -16,13 +19,27 @@
   text-align: right;
   border-radius: 22px;
   border: 1px solid rgba(43, 28, 40, 0.12);
-  background: rgba(255, 255, 255, 0.58);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(247, 241, 234, 0.72)),
+    var(--surface-pearl);
   color: var(--aubergine-ink);
+  box-shadow: 0 12px 24px rgba(43, 28, 40, 0.05);
   cursor: pointer;
   transition:
-    border-color 180ms ease,
-    transform 180ms ease,
-    background 180ms ease;
+    border-color var(--ease-luxury),
+    transform var(--ease-luxury),
+    background var(--ease-luxury),
+    box-shadow var(--ease-luxury);
+}
+
+.variantButton::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(199, 154, 88, 0.72), rgba(122, 95, 108, 0.28), transparent);
+  opacity: 0.85;
 }
 
 .variantButton strong {
@@ -40,7 +57,10 @@
 
 .variantActive {
   border-color: rgba(199, 154, 88, 0.75);
-  background: rgba(247, 241, 234, 0.9);
+  background:
+    radial-gradient(circle at top right, rgba(216, 181, 174, 0.16), transparent 34%),
+    linear-gradient(180deg, rgba(247, 241, 234, 0.94), rgba(255, 255, 255, 0.84));
+  box-shadow: 0 18px 32px rgba(43, 28, 40, 0.08);
   transform: translateY(-1px);
 }
 
@@ -50,6 +70,92 @@
 
 .availabilityPending {
   color: #7d561b;
+}
+
+.decisionGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.decisionCard,
+.supportCard {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border-radius: 24px;
+  border: 1px solid rgba(43, 28, 40, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(247, 241, 234, 0.72)),
+    var(--surface-pearl);
+  box-shadow: 0 14px 28px rgba(43, 28, 40, 0.05);
+  animation: soft-reveal var(--ease-reveal) both;
+  transition:
+    transform var(--ease-luxury),
+    border-color var(--ease-luxury),
+    box-shadow var(--ease-luxury);
+}
+
+.decisionCard strong,
+.questionItem strong,
+.cardHeading h3 {
+  color: var(--aubergine-ink);
+}
+
+.decisionCard p,
+.questionItem p,
+.cardHeading p {
+  color: var(--muted);
+  line-height: 1.8;
+}
+
+.cardLabel {
+  color: var(--mauve-stone);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.cardHeading {
+  display: grid;
+  gap: 6px;
+}
+
+.questionList,
+.routeList {
+  display: grid;
+  gap: 10px;
+}
+
+.questionItem {
+  display: grid;
+  gap: 6px;
+}
+
+.routeList a {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(43, 28, 40, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 250, 245, 0.88), rgba(247, 241, 234, 0.72)),
+    var(--surface-pearl);
+  color: var(--aubergine-ink);
+  text-decoration: none;
+  transition:
+    transform var(--ease-luxury),
+    border-color var(--ease-luxury),
+    box-shadow var(--ease-luxury);
+}
+
+.routeList a span:last-child {
+  color: var(--mauve-stone);
+  font-size: 0.78rem;
 }
 
 .controls {
@@ -76,7 +182,9 @@
   padding: 8px;
   border-radius: 999px;
   border: 1px solid rgba(43, 28, 40, 0.12);
-  background: rgba(255, 255, 255, 0.62);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.8), rgba(247, 241, 234, 0.68)),
+    var(--surface-pearl);
 }
 
 .quantityButton {
@@ -107,10 +215,21 @@
   color: var(--muted);
 }
 
+.priceStack {
+  display: grid;
+  justify-items: end;
+  gap: 4px;
+}
+
 .priceValue {
   color: var(--aubergine-ink);
   font-size: 1.6rem;
   font-weight: 700;
+}
+
+.compareValue {
+  color: var(--mauve-stone);
+  font-size: 0.86rem;
 }
 
 .actions {
@@ -122,6 +241,9 @@
 .primaryButton,
 .secondaryLink,
 .stickyButton {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -129,15 +251,34 @@
   border-radius: 999px;
   font-weight: 700;
   text-decoration: none;
+  transition:
+    transform var(--ease-luxury),
+    border-color var(--ease-luxury),
+    box-shadow var(--ease-luxury),
+    background var(--ease-luxury);
 }
 
 .primaryButton,
 .stickyButton {
   flex: 1 1 220px;
-  border: 0;
-  background: var(--aubergine-ink);
+  border: 1px solid rgba(199, 154, 88, 0.2);
+  background: linear-gradient(135deg, rgba(43, 28, 40, 1), rgba(84, 61, 77, 0.94));
   color: #fff8f3;
+  box-shadow: 0 18px 28px rgba(43, 28, 40, 0.14);
   cursor: pointer;
+}
+
+.primaryButton::after,
+.stickyButton::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 -22%;
+  width: 34%;
+  pointer-events: none;
+  background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.32), transparent);
+  animation: button-sheen 7s ease-in-out infinite;
+  opacity: 0.62;
+  mix-blend-mode: screen;
 }
 
 .primaryButton:disabled,
@@ -150,7 +291,9 @@
   flex: 1 1 180px;
   padding: 0 18px;
   border: 1px solid rgba(43, 28, 40, 0.12);
-  background: rgba(255, 255, 255, 0.58);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(247, 241, 234, 0.72)),
+    var(--surface-pearl);
   color: var(--aubergine-ink);
 }
 
@@ -171,7 +314,34 @@
 @media (hover: hover) and (pointer: fine) {
   .variantButton:hover {
     border-color: rgba(199, 154, 88, 0.5);
-    transform: translateY(-1px);
+    transform: translateY(-2px);
+    box-shadow: 0 20px 30px rgba(43, 28, 40, 0.08);
+  }
+
+  .decisionCard:hover,
+  .supportCard:hover {
+    transform: translateY(-3px);
+    border-color: rgba(199, 154, 88, 0.24);
+    box-shadow: var(--shadow-lift);
+  }
+
+  .routeList a:hover,
+  .secondaryLink:hover {
+    transform: translateY(-2px);
+    border-color: rgba(199, 154, 88, 0.24);
+    box-shadow: 0 18px 28px rgba(43, 28, 40, 0.08);
+  }
+
+  .primaryButton:hover,
+  .stickyButton:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 22px 34px rgba(43, 28, 40, 0.18);
+  }
+}
+
+@media (max-width: 920px) {
+  .decisionGrid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -182,6 +352,16 @@
 
   .panel {
     padding-bottom: 92px;
+  }
+
+  .quantityRow,
+  .priceRow {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .priceStack {
+    justify-items: start;
   }
 
   .stickyBar {
@@ -195,7 +375,9 @@
     padding: 12px 14px;
     border-radius: 24px;
     border: 1px solid rgba(43, 28, 40, 0.12);
-    background: rgba(255, 250, 245, 0.96);
+    background:
+      linear-gradient(180deg, rgba(255, 250, 245, 0.96), rgba(247, 241, 234, 0.92)),
+      var(--surface-pearl);
     box-shadow: 0 22px 48px rgba(43, 28, 40, 0.18);
     backdrop-filter: blur(18px);
   }
@@ -208,5 +390,24 @@
   .stickyMeta span {
     color: var(--muted);
     font-size: 0.85rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .variantButton,
+  .decisionCard,
+  .supportCard,
+  .routeList a,
+  .primaryButton,
+  .secondaryLink,
+  .stickyButton {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+
+  .primaryButton::after,
+  .stickyButton::after {
+    animation: none !important;
   }
 }

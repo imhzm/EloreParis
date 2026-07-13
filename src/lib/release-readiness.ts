@@ -1,6 +1,10 @@
 import "server-only";
 
 import {
+  buildProviderIntegrationContract,
+  buildProviderIntegrationOwnables,
+} from "@/lib/provider-integration-contract";
+import {
   getContentGovernanceSummary,
 } from "@/lib/content-governance";
 import { getAuthorityStorageInfo } from "@/lib/authority-database";
@@ -43,12 +47,14 @@ function getRuntimeEnvironment() {
   return process.env.NODE_ENV ?? "development";
 }
 
-function getOverallStatus(gates: ReleaseReadinessGate[]): ReleaseReadinessStatus {
-  if (gates.some((gate) => gate.status === "blocked")) {
+function getOverallStatus(
+  items: ReadonlyArray<{ status: ReleaseReadinessStatus }>,
+): ReleaseReadinessStatus {
+  if (items.some((item) => item.status === "blocked")) {
     return "blocked";
   }
 
-  if (gates.some((gate) => gate.status === "warning")) {
+  if (items.some((item) => item.status === "warning")) {
     return "warning";
   }
 
@@ -62,6 +68,8 @@ export function getReleaseReadinessSnapshot(): ReleaseReadinessSnapshot {
   const hostingDirection = getHostingDirection();
   const opsAccessConfig = getOpsAccessConfig();
   const runtimePreflight = getReleaseRuntimePreflightSnapshot();
+  const providerContract = buildProviderIntegrationContract();
+  const providerOwnables = buildProviderIntegrationOwnables(providerContract);
   const deliveryOwner = getReleaseDeliveryOwner();
   const platformOwner = getReleasePlatformOwner();
   const commerceOwner = getReleaseCommerceOwner();
@@ -171,13 +179,22 @@ export function getReleaseReadinessSnapshot(): ReleaseReadinessSnapshot {
   const ownerSummaries = buildReleaseOwnerSummaries([
     ...gates,
     ...runtimePreflight.checks,
+    ...providerOwnables,
   ]);
+  const releaseStatusItems = [...gates, ...providerOwnables];
+  const providerNextActions = Array.from(
+    new Set(
+      providerContract.lanes
+        .filter((lane) => lane.status !== "ready")
+        .map((lane) => lane.nextAction),
+    ),
+  );
 
   return {
-    overallStatus: getOverallStatus(gates),
-    blockedCount: gates.filter((gate) => gate.status === "blocked").length,
-    warningCount: gates.filter((gate) => gate.status === "warning").length,
-    readyCount: gates.filter((gate) => gate.status === "ready").length,
+    overallStatus: getOverallStatus(releaseStatusItems),
+    blockedCount: releaseStatusItems.filter((item) => item.status === "blocked").length,
+    warningCount: releaseStatusItems.filter((item) => item.status === "warning").length,
+    readyCount: releaseStatusItems.filter((item) => item.status === "ready").length,
     runtimeEnvironment: getRuntimeEnvironment(),
     canonicalUrl: siteUrl,
     gates,
@@ -186,6 +203,7 @@ export function getReleaseReadinessSnapshot(): ReleaseReadinessSnapshot {
     nextActions: [
       "Create the primary Render web service from render.yaml, attach the persistent disk, and set the deploy-hook plus live-base-url secrets for the manual Render workflow.",
       "Use the runtime preflight section inside /ops/release to clear the public URL, persistent path, signing-secret, and protected-identity blockers before the first live deploy claim.",
+      ...providerNextActions,
       "Keep the current SQLite-backed authority only as a single-host launch path; replace it with a shared durable backend for orders, notifications, and audit data when the backend ownership phase starts.",
       "Upgrade the current signed-session ops gate into provider-backed auth and real RBAC.",
       "Clear the remaining sample-pack, legal, and business-input gates tracked in CONTENT-OWNERSHIP.md before public launch claims.",

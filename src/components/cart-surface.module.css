@@ -1,13 +1,25 @@
 .page {
+  --commerce-ink: #052f2d;
+  --commerce-deep: #031d1c;
+  --commerce-mint: #75e2c7;
+  --commerce-cream: #fffaf2;
+  --commerce-line: rgba(197, 244, 229, 0.16);
   display: grid;
-  gap: 24px;
+  gap: 0;
+  margin-inline: calc(50% - 50vw);
+  color: var(--commerce-cream);
+  background:
+    radial-gradient(circle at 78% 8%, rgba(117, 226, 199, 0.2), transparent 28rem),
+    linear-gradient(180deg, var(--commerce-deep), #073b37 48%, #f2eee7 100%);
 }
 
 .hero,
 .mainCard,
 .summaryCard,
 .emptyCard,
-.noticeCard {
+.noticeCard,
+.supportCard,
+.checklistCard {
   border: 1px solid var(--line);
   background: var(--surface);
   backdrop-filter: blur(14px);
@@ -20,6 +32,13 @@
   display: grid;
   grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
   gap: 24px;
+  min-height: min(820px, 88svh);
+  align-items: center;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+  padding: clamp(48px, 8vw, 112px) max(24px, calc((100vw - 1180px) / 2));
 }
 
 .eyebrow,
@@ -34,7 +53,10 @@
 .mainCard h2,
 .summaryCard h2,
 .emptyCard h2,
-.noticeCard h2 {
+.noticeCard h2,
+.supportCard h3,
+.checklistCard h3,
+.signalCard h3 {
   margin-top: 14px;
   color: var(--aubergine-ink);
   line-height: 1.12;
@@ -43,7 +65,15 @@
 .hero h1 {
   font-size: clamp(2.2rem, 5vw, 3.8rem);
   max-width: 10ch;
+  color: var(--commerce-cream);
 }
+
+.hero .summary,
+.hero p,
+.hero .eyebrow,
+.noticeCard p { color: rgba(255, 250, 242, 0.7); }
+
+.hero .eyebrow { color: var(--commerce-mint); }
 
 .summary,
 .hero p,
@@ -52,7 +82,8 @@
 .emptyCard p,
 .noticeCard p,
 .lineMeta,
-.lineMeta strong {
+.questionItem p,
+.signalCard p {
   color: var(--muted);
   line-height: 1.9;
 }
@@ -86,12 +117,35 @@
   display: grid;
   grid-template-columns: minmax(0, 1.3fr) minmax(300px, 0.7fr);
   gap: 18px;
+  padding: clamp(56px, 8vw, 112px) max(24px, calc((100vw - 1180px) / 2));
+  background:
+    radial-gradient(circle at 12% 28%, rgba(117, 226, 199, 0.13), transparent 25rem),
+    var(--commerce-ink);
 }
 
-.lineList {
+.signalStrip,
+.lineList,
+.supportGrid,
+.questionList,
+.summaryList,
+.actionColumn,
+.checklist {
   display: grid;
   gap: 14px;
+}
+
+.signalStrip {
   margin-top: 18px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.signalCard {
+  display: grid;
+  gap: 8px;
+  padding: 20px;
+  border-radius: 24px;
+  border: 1px solid rgba(43, 28, 40, 0.08);
+  background: rgba(255, 255, 255, 0.6);
 }
 
 .lineItem {
@@ -105,6 +159,7 @@
 
 .lineHead,
 .lineFooter,
+.lineFooterGroup,
 .summaryRow {
   display: flex;
   align-items: center;
@@ -116,7 +171,8 @@
 .lineHead h3,
 .linePrice,
 .lineTotal,
-.summaryValue {
+.summaryValue,
+.questionItem strong {
   color: var(--aubergine-ink);
 }
 
@@ -126,24 +182,26 @@
   font-weight: 700;
 }
 
-.lineMeta {
-  display: grid;
-  gap: 6px;
-}
-
-.badgeRow {
+.badgeRow,
+.lineLinks {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
 }
 
-.badgeRow span {
+.badgeRow span,
+.inlineLink {
   padding: 8px 12px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.68);
   border: 1px solid rgba(43, 28, 40, 0.08);
+  background: rgba(255, 255, 255, 0.68);
   color: var(--aubergine-ink);
   font-size: 0.88rem;
+  text-decoration: none;
+}
+
+.inlineLink {
+  font-weight: 600;
 }
 
 .quantityControl {
@@ -179,15 +237,129 @@
   border-radius: 999px;
 }
 
+.supportGrid {
+  margin-top: 18px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.supportCard {
+  display: grid;
+  gap: 14px;
+}
+
+.questionItem {
+  display: grid;
+  gap: 6px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(43, 28, 40, 0.08);
+}
+
+.questionItem:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.questionItem span {
+  color: var(--mauve-stone);
+  font-size: 0.78rem;
+}
+
 .summaryCard {
   display: grid;
   gap: 16px;
   align-self: start;
+  position: sticky;
+  top: 104px;
 }
 
-.summaryList {
-  display: grid;
-  gap: 14px;
+.mainCard,
+.summaryCard,
+.supportCard,
+.checklistCard {
+  border-color: var(--commerce-line);
+  background: rgba(255, 250, 242, 0.96);
+  box-shadow: 0 28px 90px rgba(0, 12, 12, 0.24);
+}
+
+.emptyCard {
+  min-height: 62svh;
+  align-content: center;
+  border: 0;
+  border-radius: 0;
+  padding-inline: max(24px, calc((100vw - 1180px) / 2));
+  background:
+    radial-gradient(circle at 78% 18%, rgba(117, 226, 199, 0.2), transparent 28rem),
+    var(--commerce-deep);
+  box-shadow: none;
+}
+
+.emptyCard h1,
+.emptyCard h2 { color: var(--commerce-cream); }
+
+.emptyCard p { color: rgba(255, 250, 242, 0.7); }
+
+.emptyCard .eyebrow { color: var(--commerce-mint); }
+
+.emptyCard .secondaryLink {
+  border-color: rgba(255, 250, 242, 0.22);
+  color: var(--commerce-cream);
+  background: rgba(255, 250, 242, 0.08);
+}
+
+.noticeCard {
+  border-color: rgba(117, 226, 199, 0.2);
+  background: rgba(3, 29, 28, 0.72);
+  box-shadow: 0 24px 70px rgba(0, 12, 12, 0.3);
+}
+
+.noticeCard h2 { color: var(--commerce-cream); }
+
+.metricCard {
+  border: 1px solid rgba(117, 226, 199, 0.25);
+  background:
+    radial-gradient(circle at 85% 15%, rgba(117, 226, 199, 0.25), transparent 45%),
+    rgba(2, 23, 22, 0.9);
+}
+
+.lineItem,
+.signalCard,
+.linkList a {
+  transition: transform 220ms ease, border-color 220ms ease, background-color 220ms ease;
+}
+
+.lineItem:hover,
+.signalCard:hover,
+.linkList a:hover {
+  transform: translateY(-3px);
+  border-color: rgba(5, 47, 45, 0.24);
+  background: #fff;
+}
+
+.primaryLink,
+.quantityControl button { background: var(--commerce-ink); }
+
+.primaryLink:focus-visible,
+.secondaryLink:focus-visible,
+.ghostButton:focus-visible,
+.quantityControl button:focus-visible,
+.inlineLink:focus-visible {
+  outline: 3px solid var(--commerce-mint);
+  outline-offset: 3px;
+}
+
+@supports (animation-timeline: view()) {
+  .mainCard,
+  .supportCard,
+  .summaryCard {
+    animation: commerceReveal both linear;
+    animation-timeline: view();
+    animation-range: entry 8% cover 32%;
+  }
+}
+
+@keyframes commerceReveal {
+  from { opacity: 0; transform: translateY(48px) scale(0.985); }
+  to { opacity: 1; transform: none; }
 }
 
 .summaryRow {
@@ -200,9 +372,21 @@
   border-top: 0;
 }
 
-.actionColumn {
+.checklistCard {
   display: grid;
   gap: 12px;
+  padding: 22px;
+  border-radius: 24px;
+}
+
+.checklist {
+  margin: 0;
+  padding-inline-start: 20px;
+}
+
+.checklist li {
+  color: var(--muted);
+  line-height: 1.9;
 }
 
 .primaryLink,
@@ -258,24 +442,46 @@
 
 @media (max-width: 1080px) {
   .hero,
-  .layout {
+  .layout,
+  .signalStrip,
+  .supportGrid {
     grid-template-columns: 1fr;
   }
+
+  .summaryCard { position: static; }
 }
 
 @media (max-width: 780px) {
+  .page { margin-inline: calc(50% - 50vw); }
+
+  .hero { min-height: 72svh; padding-inline: 20px; }
+
+  .layout { padding: 52px 20px 76px; }
   .hero,
   .mainCard,
   .summaryCard,
   .emptyCard,
-  .noticeCard {
+  .noticeCard,
+  .supportCard,
+  .checklistCard {
     padding: 22px;
     border-radius: 24px;
   }
 
   .lineHead,
   .lineFooter,
+  .lineFooterGroup,
   .summaryRow {
     align-items: flex-start;
   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mainCard,
+  .supportCard,
+  .summaryCard { animation: none !important; }
+
+  .lineItem,
+  .signalCard,
+  .linkList a { transition: none; }
 }

@@ -1,11 +1,16 @@
 import { NextResponse } from "next/server";
 import {
+  createAuthorityCustomerAccessHandoffPath,
+  createAuthorityCustomerAccessToken,
   createAuthorityOrder,
+  CUSTOMER_ACCESS_COOKIE,
+  CUSTOMER_ACCESS_MAX_AGE_SECONDS,
   OrderAuthorityError,
   RECENT_ORDER_COOKIE,
   RECENT_ORDER_MAX_AGE_SECONDS,
 } from "@/lib/order-authority";
 import { listAuthorityNotificationsForOrder } from "@/lib/notification-authority";
+import { ProviderGatewayError } from "@/lib/provider-gateway";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -46,6 +51,8 @@ export async function POST(request: Request) {
       {
         order,
         notifications,
+        customerAccessHandoffPath:
+          await createAuthorityCustomerAccessHandoffPath(order),
       },
       { status: 201 },
     );
@@ -60,9 +67,22 @@ export async function POST(request: Request) {
       maxAge: RECENT_ORDER_MAX_AGE_SECONDS,
     });
 
+    response.cookies.set({
+      name: CUSTOMER_ACCESS_COOKIE,
+      value: await createAuthorityCustomerAccessToken(order),
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: CUSTOMER_ACCESS_MAX_AGE_SECONDS,
+    });
+
     return response;
   } catch (error) {
-    if (error instanceof OrderAuthorityError) {
+    if (
+      error instanceof OrderAuthorityError ||
+      error instanceof ProviderGatewayError
+    ) {
       return NextResponse.json(
         { error: error.message },
         { status: error.statusCode },

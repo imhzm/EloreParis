@@ -1,7 +1,10 @@
 import type { StoredCartItem } from "@/lib/cart";
 import type { CheckoutSubmissionInput } from "@/lib/checkout-validation";
 import type { StoredNotification } from "@/lib/notification-types";
-import type { StoredOrder } from "@/lib/orders";
+import type {
+  OrderProviderBindingAction,
+  StoredOrder,
+} from "@/lib/orders";
 
 type CreateOrderRequestInput = {
   items: StoredCartItem[];
@@ -11,12 +14,18 @@ type CreateOrderRequestInput = {
 type OrderResponse = {
   order: StoredOrder;
   notifications: StoredNotification[];
+  customerAccessHandoffPath?: string;
 };
 
 type OpsOrderUpdateResponse = {
   order: StoredOrder;
   previousStatus: StoredOrder["status"];
   nextStatus: StoredOrder["status"];
+};
+
+type OpsOrderProviderUpdateResponse = {
+  order: StoredOrder;
+  action: OrderProviderBindingAction;
 };
 
 async function parseApiResponse<T>(response: Response) {
@@ -99,4 +108,22 @@ export async function advanceOpsOrderFromAuthority(orderNumber: string) {
   });
 
   return parseApiResponse<OpsOrderUpdateResponse>(response);
+}
+
+export async function updateOpsOrderProviderBinding(
+  orderNumber: string,
+  action: OrderProviderBindingAction,
+) {
+  const response = await fetch(
+    `/api/ops/orders/${encodeURIComponent(orderNumber)}/provider`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ action }),
+    },
+  );
+
+  return parseApiResponse<OpsOrderProviderUpdateResponse>(response);
 }

@@ -4,12 +4,17 @@ import {
   products,
   type CollectionSlug,
 } from "@/lib/site-content";
-import type { StoredOrder } from "@/lib/orders";
+import { getOrderFulfillmentPlan } from "@/lib/fulfillment";
+import {
+  getStoredOrderLineCatalogTruth,
+  type StoredOrder,
+} from "@/lib/orders";
 import {
   getSupplierRecord,
   getSupplierRecords as getSharedSupplierRecords,
   getVariantOperationsByProduct,
   type ShippingClass,
+  type SupplierAuthorityRoute,
   type SupplierId,
   type SupplierRecord,
   type VariantOperationsRecord,
@@ -67,6 +72,74 @@ export type SupplierException = {
   productSlug: string;
   title: string;
   note: string;
+};
+
+export type CatalogAuthorityLane =
+  | "Catalog review desk"
+  | "Supplier follow-up"
+  | "Warehouse replenishment"
+  | "Merchandising hold"
+  | "Catalog stable";
+
+export type CatalogAuthorityRecord = {
+  productSlug: string;
+  productName: string;
+  authorityLane: CatalogAuthorityLane;
+  authorityNote: string;
+  liveOrderCount: number;
+  pendingDemandUnits: number;
+  manualReviewOrders: number;
+  lowStockVariantCount: number;
+  codRestrictedVariantCount: number;
+  supplierWarningCount: number;
+  affectedOrderNumbers: string[];
+  supplierStatus: "watch" | "stable";
+};
+
+export type CatalogAuthoritySnapshot = {
+  productsWithDemand: number;
+  pendingDemandUnits: number;
+  reviewRequiredProducts: number;
+  supplierFollowupProducts: number;
+  ownerLanes: Array<{ label: CatalogAuthorityLane; count: number }>;
+  records: Record<string, CatalogAuthorityRecord>;
+};
+
+export type SupplierAuthorityLane =
+  | "Supplier coordination"
+  | "Replenishment escalation"
+  | "Catalog truth watch"
+  | "Supplier stable";
+
+export type SupplierAuthorityRecord = {
+  supplierId: SupplierId;
+  supplierName: string;
+  authorityLane: SupplierAuthorityLane;
+  authorityNote: string;
+  supplierStatus: "watch" | "stable";
+  fulfillmentModel: SupplierRecord["fulfillmentModel"];
+  truthSourceLabel: string;
+  continuityOwnerLabel: string;
+  continuityRoute: SupplierAuthorityRoute;
+  continuityRule: string;
+  watchItemCount: number;
+  activeProductCount: number;
+  activeVariantCount: number;
+  lowStockVariantCount: number;
+  codRestrictedVariantCount: number;
+  liveOrderCount: number;
+  pendingDemandUnits: number;
+  affectedProductSlugs: string[];
+  affectedOrderNumbers: string[];
+};
+
+export type SupplierAuthoritySnapshot = {
+  suppliersWithDemand: number;
+  suppliersOnWatch: number;
+  suppliersNeedingReplenishment: number;
+  coordinationSuppliers: number;
+  ownerLanes: Array<{ label: SupplierAuthorityLane; count: number }>;
+  records: Record<SupplierId, SupplierAuthorityRecord>;
 };
 
 const catalogOverrides: Record<
@@ -280,6 +353,419 @@ export function getSupplierExceptionQueue(
 
 export function getSupplierSyncLogs() {
   return supplierSyncLogs;
+}
+
+function getCatalogAuthorityLane(input: {
+  manualReviewOrders: number;
+  lowStockVariantCount: number;
+  pendingDemandUnits: number;
+  supplierWarningCount: number;
+  dropshipVariantCount: number;
+  codRestrictedVariantCount: number;
+  liveOrderCount: number;
+}): Pick<CatalogAuthorityRecord, "authorityLane" | "authorityNote" | "supplierStatus"> {
+  if (
+    input.manualReviewOrders > 0 ||
+    (input.lowStockVariantCount > 0 && input.pendingDemandUnits > 0)
+  ) {
+    return {
+      authorityLane: "Catalog review desk",
+      authorityNote:
+        "هناك طلبات حية مرتبطة بمخزون منخفض أو review تشغيلي، لذلك قرار الكتالوج يجب أن يمر أولًا على desk المراجعة.",
+      supplierStatus: input.supplierWarningCount > 0 ? "watch" : "stable",
+    };
+  }
+
+  if (input.supplierWarningCount > 0 || input.dropshipVariantCount > 0) {
+    return {
+      authorityLane: "Supplier follow-up",
+      authorityNote:
+        "المنتج يعتمد على supplier watch أو dropship lane، لذلك المتابعة الصحيحة الآن هي تأكيد المورد لا إعادة فتح storefront copy.",
+      supplierStatus: "watch",
+    };
+  }
+
+  if (input.lowStockVariantCount > 0) {
+    return {
+      authorityLane: "Warehouse replenishment",
+      authorityNote:
+        "المخزون يقترب من threshold التشغيلي، لذلك الأولوية هي replenishment داخلي قبل توسعة demand.",
+      supplierStatus: "stable",
+    };
+  }
+
+  if (input.codRestrictedVariantCount > 0 && input.liveOrderCount > 0) {
+    return {
+      authorityLane: "Merchandising hold",
+      authorityNote:
+        "هناك طلبات حية مرتبطة بمتغيرات غير مناسبة لـ COD، لذلك يلزم ضبط handoff التجاري قبل توسيع العرض.",
+      supplierStatus: "stable",
+    };
+  }
+
+  return {
+    authorityLane: "Catalog stable",
+    authorityNote:
+      "سجل الكتالوج الحالي مستقر ولا يفرض handoff تشغيلي إضافي خارج المتابعة الروتينية.",
+    supplierStatus: "stable",
+  };
+}
+
+export function getCatalogAuthoritySnapshot(
+  orders: StoredOrder[],
+  catalogProducts = getCatalogAdminProducts(),
+): CatalogAuthoritySnapshot {
+  const exceptionMap = new Map<string, SupplierException[]>();
+  const supplierWatchCounts = new Map<SupplierId, number>();
+  const demandMap = new Map<
+    string,
+    {
+      liveOrderNumbers: Set<string>;
+      manualReviewOrders: Set<string>;
+      pendingDemandUnits: number;
+    }
+  >();
+
+  for (const exception of getSupplierExceptionQueue(catalogProducts)) {
+    const existing = exceptionMap.get(exception.productSlug) ?? [];
+    existing.push(exception);
+    exceptionMap.set(exception.productSlug, existing);
+  }
+
+  for (const log of getSupplierSyncLogs()) {
+    if (log.status === "warning" || log.status === "error") {
+      supplierWatchCounts.set(
+        log.supplierId,
+        (supplierWatchCounts.get(log.supplierId) ?? 0) + 1,
+      );
+    }
+  }
+
+  for (const order of orders) {
+    const plan = getOrderFulfillmentPlan(order);
+    const pendingDemand =
+      order.status === "received" || order.status === "payment_pending";
+
+    for (const line of order.lines) {
+      const existing = demandMap.get(line.productSlug) ?? {
+        liveOrderNumbers: new Set<string>(),
+        manualReviewOrders: new Set<string>(),
+        pendingDemandUnits: 0,
+      };
+
+      existing.liveOrderNumbers.add(order.orderNumber);
+
+      if (plan.requiresManualReview) {
+        existing.manualReviewOrders.add(order.orderNumber);
+      }
+
+      if (pendingDemand) {
+        existing.pendingDemandUnits += line.quantity;
+      }
+
+      demandMap.set(line.productSlug, existing);
+    }
+  }
+
+  const records = Object.fromEntries(
+    catalogProducts.map((product) => {
+      const demand = demandMap.get(product.productSlug);
+      const productExceptions = exceptionMap.get(product.productSlug) ?? [];
+      const lowStockVariantCount = product.variants.filter(
+        (variant) => variant.stockOnHand <= variant.lowStockThreshold,
+      ).length;
+      const codRestrictedVariantCount = product.variants.filter(
+        (variant) => !variant.codEligible,
+      ).length;
+      const dropshipVariantCount = product.variants.filter((variant) => {
+        const supplier = getSupplierRecord(variant.supplierId);
+        return (
+          supplier.fulfillmentModel === "dropship" ||
+          variant.availability === "PreOrder"
+        );
+      }).length;
+      const supplierWarningCount = Array.from(
+        new Set(product.variants.map((variant) => variant.supplierId)),
+      ).reduce(
+        (sum, supplierId) => sum + (supplierWatchCounts.get(supplierId) ?? 0),
+        0,
+      );
+      const liveOrderCount = demand?.liveOrderNumbers.size ?? 0;
+      const manualReviewOrders = demand?.manualReviewOrders.size ?? 0;
+      const pendingDemandUnits = demand?.pendingDemandUnits ?? 0;
+      const authority = getCatalogAuthorityLane({
+        manualReviewOrders,
+        lowStockVariantCount,
+        pendingDemandUnits,
+        supplierWarningCount:
+          supplierWarningCount +
+          productExceptions.filter((exception) => exception.severity !== "critical").length,
+        dropshipVariantCount,
+        codRestrictedVariantCount,
+        liveOrderCount,
+      });
+
+      return [
+        product.productSlug,
+        {
+          productSlug: product.productSlug,
+          productName: product.arabicName,
+          authorityLane: authority.authorityLane,
+          authorityNote: authority.authorityNote,
+          liveOrderCount,
+          pendingDemandUnits,
+          manualReviewOrders,
+          lowStockVariantCount,
+          codRestrictedVariantCount,
+          supplierWarningCount:
+            supplierWarningCount + productExceptions.length,
+          affectedOrderNumbers: Array.from(demand?.liveOrderNumbers ?? []).slice(0, 3),
+          supplierStatus: authority.supplierStatus,
+        } satisfies CatalogAuthorityRecord,
+      ];
+    }),
+  ) as Record<string, CatalogAuthorityRecord>;
+
+  const ownerLaneCounter = new Map<CatalogAuthorityLane, number>();
+
+  for (const record of Object.values(records)) {
+    ownerLaneCounter.set(
+      record.authorityLane,
+      (ownerLaneCounter.get(record.authorityLane) ?? 0) + 1,
+    );
+  }
+
+  return {
+    productsWithDemand: Object.values(records).filter(
+      (record) => record.liveOrderCount > 0,
+    ).length,
+    pendingDemandUnits: Object.values(records).reduce(
+      (sum, record) => sum + record.pendingDemandUnits,
+      0,
+    ),
+    reviewRequiredProducts: Object.values(records).filter(
+      (record) => record.authorityLane === "Catalog review desk",
+    ).length,
+    supplierFollowupProducts: Object.values(records).filter(
+      (record) => record.authorityLane === "Supplier follow-up",
+    ).length,
+    ownerLanes: Array.from(ownerLaneCounter.entries())
+      .map(([label, count]) => ({ label, count }))
+      .sort((left, right) => right.count - left.count),
+    records,
+  };
+}
+
+function getSupplierAuthorityLane(input: {
+  supplier: SupplierRecord;
+  watchItemCount: number;
+  lowStockVariantCount: number;
+  pendingDemandUnits: number;
+  liveOrderCount: number;
+  activeProductCount: number;
+}): Pick<
+  SupplierAuthorityRecord,
+  "authorityLane" | "authorityNote" | "supplierStatus"
+> {
+  if (
+    (input.watchItemCount > 0 && input.liveOrderCount > 0) ||
+    (input.supplier.fulfillmentModel === "dropship" &&
+      input.pendingDemandUnits > 0)
+  ) {
+    return {
+      authorityLane: "Supplier coordination",
+      authorityNote:
+        "الحقيقة التشغيلية هنا لا تكتمل من stock فقط؛ يجب أن يمر القرار عبر supplier confirmation وربط fulfillment قبل تثبيت الوعود التجارية.",
+      supplierStatus: "watch",
+    };
+  }
+
+  if (input.lowStockVariantCount > 0 && input.pendingDemandUnits > 0) {
+    return {
+      authorityLane: "Replenishment escalation",
+      authorityNote:
+        "هناك طلبات أو وحدات معلقة على مورد يقترب من threshold التشغيلي، لذلك أولوية هذا lane هي تأكيد replenishment لا توسيع العرض.",
+      supplierStatus: "watch",
+    };
+  }
+
+  if (input.watchItemCount > 0) {
+    return {
+      authorityLane: "Catalog truth watch",
+      authorityNote:
+        "المورد ما زال يحمل watch items داخل sync أو exception queue، لذا truth الحالية يجب أن تُقرأ بحذر حتى يثبت supplier lane من جديد.",
+      supplierStatus: "watch",
+    };
+  }
+
+  return {
+    authorityLane: "Supplier stable",
+    authorityNote:
+      input.activeProductCount > 0
+        ? "مسار المورد الحالي متماسك مع الحقيقة التشغيلية المنشورة داخل الكتالوج ولا يحتاج handoff إضافيًا خارج المتابعة الروتينية."
+        : "لا توجد سجلات catalog نشطة تربط هذا المورد بالحقيقة التشغيلية الحالية.",
+    supplierStatus: "stable",
+  };
+}
+
+export function getSupplierAuthoritySnapshot(
+  orders: StoredOrder[],
+  catalogProducts = getCatalogAdminProducts(),
+): SupplierAuthoritySnapshot {
+  const supplierProductSlugs = new Map<SupplierId, Set<string>>();
+  const supplierVariantCount = new Map<SupplierId, number>();
+  const lowStockVariantCount = new Map<SupplierId, number>();
+  const codRestrictedVariantCount = new Map<SupplierId, number>();
+  const watchItemCount = new Map<SupplierId, number>();
+  const liveOrderNumbers = new Map<SupplierId, Set<string>>();
+  const pendingDemandUnits = new Map<SupplierId, number>();
+
+  for (const product of catalogProducts) {
+    for (const variant of product.variants) {
+      const existingProducts =
+        supplierProductSlugs.get(variant.supplierId) ?? new Set<string>();
+      existingProducts.add(product.productSlug);
+      supplierProductSlugs.set(variant.supplierId, existingProducts);
+      supplierVariantCount.set(
+        variant.supplierId,
+        (supplierVariantCount.get(variant.supplierId) ?? 0) + 1,
+      );
+
+      if (variant.stockOnHand <= variant.lowStockThreshold) {
+        lowStockVariantCount.set(
+          variant.supplierId,
+          (lowStockVariantCount.get(variant.supplierId) ?? 0) + 1,
+        );
+      }
+
+      if (!variant.codEligible) {
+        codRestrictedVariantCount.set(
+          variant.supplierId,
+          (codRestrictedVariantCount.get(variant.supplierId) ?? 0) + 1,
+        );
+      }
+    }
+  }
+
+  for (const log of getSupplierSyncLogs()) {
+    if (log.status === "warning" || log.status === "error") {
+      watchItemCount.set(
+        log.supplierId,
+        (watchItemCount.get(log.supplierId) ?? 0) + 1,
+      );
+    }
+  }
+
+  for (const exception of getSupplierExceptionQueue(catalogProducts)) {
+    watchItemCount.set(
+      exception.supplierId,
+      (watchItemCount.get(exception.supplierId) ?? 0) + 1,
+    );
+  }
+
+  for (const order of orders) {
+    const orderPendingDemand =
+      order.status === "received" || order.status === "payment_pending";
+
+    for (const line of order.lines) {
+      const catalogTruth = getStoredOrderLineCatalogTruth(line);
+      const supplierId = catalogTruth.supplierId;
+
+      if (!supplierId) {
+        continue;
+      }
+
+      const supplierOrders = liveOrderNumbers.get(supplierId) ?? new Set<string>();
+      supplierOrders.add(order.orderNumber);
+      liveOrderNumbers.set(supplierId, supplierOrders);
+
+      const existingProducts = supplierProductSlugs.get(supplierId) ?? new Set<string>();
+      existingProducts.add(line.productSlug);
+      supplierProductSlugs.set(supplierId, existingProducts);
+
+      if (orderPendingDemand) {
+        pendingDemandUnits.set(
+          supplierId,
+          (pendingDemandUnits.get(supplierId) ?? 0) + line.quantity,
+        );
+      }
+    }
+  }
+
+  const ownerLaneCounter = new Map<SupplierAuthorityLane, number>();
+  const records = Object.fromEntries(
+    getSupplierRecords().map((supplier) => {
+      const affectedProductSlugs = Array.from(
+        supplierProductSlugs.get(supplier.id) ?? [],
+      );
+      const affectedOrderNumbers = Array.from(
+        liveOrderNumbers.get(supplier.id) ?? [],
+      );
+      const activeProductCount = affectedProductSlugs.length;
+      const activeVariantCount = supplierVariantCount.get(supplier.id) ?? 0;
+      const nextPendingDemandUnits = pendingDemandUnits.get(supplier.id) ?? 0;
+      const nextWatchItemCount = watchItemCount.get(supplier.id) ?? 0;
+      const nextLowStockVariantCount = lowStockVariantCount.get(supplier.id) ?? 0;
+      const authority = getSupplierAuthorityLane({
+        supplier,
+        watchItemCount: nextWatchItemCount,
+        lowStockVariantCount: nextLowStockVariantCount,
+        pendingDemandUnits: nextPendingDemandUnits,
+        liveOrderCount: affectedOrderNumbers.length,
+        activeProductCount,
+      });
+
+      ownerLaneCounter.set(
+        authority.authorityLane,
+        (ownerLaneCounter.get(authority.authorityLane) ?? 0) + 1,
+      );
+
+      return [
+        supplier.id,
+        {
+          supplierId: supplier.id,
+          supplierName: supplier.name,
+          authorityLane: authority.authorityLane,
+          authorityNote: authority.authorityNote,
+          supplierStatus: authority.supplierStatus,
+          fulfillmentModel: supplier.fulfillmentModel,
+          truthSourceLabel: supplier.truthSourceLabel,
+          continuityOwnerLabel: supplier.defaultAuthorityOwnerLabel,
+          continuityRoute: supplier.defaultAuthorityRoute,
+          continuityRule: supplier.continuityRule,
+          watchItemCount: nextWatchItemCount,
+          activeProductCount,
+          activeVariantCount,
+          lowStockVariantCount: nextLowStockVariantCount,
+          codRestrictedVariantCount:
+            codRestrictedVariantCount.get(supplier.id) ?? 0,
+          liveOrderCount: affectedOrderNumbers.length,
+          pendingDemandUnits: nextPendingDemandUnits,
+          affectedProductSlugs: affectedProductSlugs.slice(0, 4),
+          affectedOrderNumbers: affectedOrderNumbers.slice(0, 4),
+        } satisfies SupplierAuthorityRecord,
+      ];
+    }),
+  ) as Record<SupplierId, SupplierAuthorityRecord>;
+
+  return {
+    suppliersWithDemand: Object.values(records).filter(
+      (record) => record.liveOrderCount > 0,
+    ).length,
+    suppliersOnWatch: Object.values(records).filter(
+      (record) => record.supplierStatus === "watch",
+    ).length,
+    suppliersNeedingReplenishment: Object.values(records).filter(
+      (record) => record.authorityLane === "Replenishment escalation",
+    ).length,
+    coordinationSuppliers: Object.values(records).filter(
+      (record) => record.authorityLane === "Supplier coordination",
+    ).length,
+    ownerLanes: Array.from(ownerLaneCounter.entries())
+      .map(([label, count]) => ({ label, count }))
+      .sort((left, right) => right.count - left.count),
+    records,
+  };
 }
 
 function isOrderInMonth(order: StoredOrder, referenceDate: Date) {

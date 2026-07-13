@@ -2,6 +2,8 @@
 
 ## Snapshot
 
+- Scope note: this file tracks the repo engineering and release-readiness slice in detail, not the full roadmap-wide completion percentage.
+- Roadmap-wide master tracker: [ROADMAP-EXECUTION-TRACKER.md](ROADMAP-EXECUTION-TRACKER.md)
 - Start date: 2026-04-01
 - Last updated: 2026-04-02
 - Current phase: `release`
@@ -300,6 +302,9 @@ Progress is tracked against SkyWave phases, not by ad-hoc task count.
 - Repeated failed ops login attempts now throttle durably inside the shared SQLite authority, and smoke regression covers both throttled login and trusted-origin logout behavior.
 - A real internal `/ops/content` route now freezes public-content ownership, sample requirements, and launch blockers instead of leaving them as implicit release assumptions.
 - `CONTENT-OWNERSHIP.md` now acts as the written freeze for sample packs, business-input gates, and owner/approver responsibilities across the public content system.
+- Trusted customer order access now survives beyond the short recent-order window through a signed same-device order-access cookie, `/api/orders/[orderNumber]` refreshes that session after successful lookups, `/track-order` can resume from the current device session without re-entering phone-last-four, and smoke regression now proves the session-backed customer-access path before cross-device verification falls back.
+- Payment and shipping callbacks now persist explicit settlement references, booking references, tracking numbers, and carrier event ids inside the shared order authority, and the customer-facing confirmation/tracking surfaces plus smoke regression now prove those provider-bound identifiers instead of only observing status transitions.
+- Customer-level access now also has a real `/account/orders` hub backed by a signed customer-access cookie, so verified orders on the current device can be reviewed as one list from the shared authority instead of stopping at one-order tracking only.
 
 ## Immediate Next Actions
 

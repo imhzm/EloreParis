@@ -109,12 +109,10 @@ export function OpsAccessSurface({
       <section className={styles.hero}>
         <div>
           <p className={styles.eyebrow}>Ops access gate</p>
-          <h1>دخول داخلي مضبوط يفصل أسطح التشغيل عن الواجهة العامة ويقرب `/ops` من auth حقيقية.</h1>
+          <h1>بوابة آمنة لفريق التشغيل وإدارة الطلبات.</h1>
           <p className={styles.summary}>
-            هذه الصفحة لم تعد مجرد بوابة access code عامة. المسار الحالي يدفع
-            `/ops` نحو هوية داخلية role-aware يمكن تطويرها لاحقًا إلى RBAC كاملة
-            فوق backend ownership حقيقية، بدل تركها كرمز واحد مشترك بين كل
-            المشغلين.
+            سجّلي الدخول بالهوية المخصصة لك للوصول إلى الأدوات المسموح بها فقط.
+            كل جلسة مرتبطة بدور واضح، مع فصل كامل بين لوحة التشغيل وواجهة المتجر العامة.
           </p>
         </div>
 
@@ -123,8 +121,7 @@ export function OpsAccessSurface({
             <p>Protected routes</p>
             <strong>/ops/*</strong>
             <span>
-              يغطي هذا gate حاليًا: dashboard, orders, catalog, fulfillment,
-              notifications, وaudit مع فصل واضح بين الأدوار.
+              وصول منظم إلى الطلبات والكتالوج والشحن والإشعارات وسجل المراجعة.
             </span>
           </div>
 
@@ -132,8 +129,8 @@ export function OpsAccessSurface({
             <p className={styles.eyebrow}>Next destination</p>
             <h2>{nextPath}</h2>
             <p>
-              بعد نجاح التحقق سيتم تحويلك مباشرة إلى هذا المسار أو إلى fallback
-              مناسب لدورك الحالي إذا كان المسار المطلوب خارج صلاحياتك.
+              بعد التحقق ستنتقلين مباشرة إلى الوجهة المطلوبة، أو إلى الصفحة الرئيسية
+              المناسبة لدورك إذا لم تكن الوجهة ضمن صلاحياتك.
             </p>
           </div>
         </div>

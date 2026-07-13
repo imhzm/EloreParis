@@ -21,6 +21,14 @@ import { resolveProjectPath } from "@/lib/runtime-paths";
 const NOTIFICATIONS_LEGACY_IMPORT_META_KEY = "legacy_notifications_import_v2";
 let authorityNotificationsReadyPromise: Promise<void> | null = null;
 
+type NotificationStatusUpdateMetadata = {
+  sentAt?: string | null;
+  providerLabel?: string | null;
+  providerDeliveryId?: string | null;
+  providerEventId?: string | null;
+  lastError?: string | null;
+};
+
 export class NotificationAuthorityError extends Error {
   statusCode: number;
 
@@ -110,7 +118,19 @@ function normalizeNotification(value: unknown): StoredNotification | null {
     typeof value.createdAt !== "string" ||
     typeof value.updatedAt !== "string" ||
     !("sentAt" in value) ||
-    (typeof value.sentAt !== "string" && value.sentAt !== null)
+    (typeof value.sentAt !== "string" && value.sentAt !== null) ||
+    ("providerLabel" in value &&
+      typeof value.providerLabel !== "string" &&
+      value.providerLabel !== null) ||
+    ("providerDeliveryId" in value &&
+      typeof value.providerDeliveryId !== "string" &&
+      value.providerDeliveryId !== null) ||
+    ("providerEventId" in value &&
+      typeof value.providerEventId !== "string" &&
+      value.providerEventId !== null) ||
+    ("lastError" in value &&
+      typeof value.lastError !== "string" &&
+      value.lastError !== null)
   ) {
     return null;
   }
@@ -128,6 +148,15 @@ function normalizeNotification(value: unknown): StoredNotification | null {
     createdAt: value.createdAt,
     updatedAt: value.updatedAt,
     sentAt: value.sentAt,
+    providerLabel:
+      typeof value.providerLabel === "string" ? value.providerLabel : null,
+    providerDeliveryId:
+      typeof value.providerDeliveryId === "string"
+        ? value.providerDeliveryId
+        : null,
+    providerEventId:
+      typeof value.providerEventId === "string" ? value.providerEventId : null,
+    lastError: typeof value.lastError === "string" ? value.lastError : null,
   };
 }
 
@@ -284,6 +313,10 @@ function syncNotificationsForSingleOrder(
         createdAt: now,
         updatedAt: now,
         sentAt: null,
+        providerLabel: null,
+        providerDeliveryId: null,
+        providerEventId: null,
+        lastError: null,
       });
       didChange = true;
       continue;
@@ -349,6 +382,27 @@ export async function readAuthorityNotifications() {
   }
 }
 
+export async function getAuthorityNotificationById(notificationId: string) {
+  const notifications = await readAuthorityNotifications();
+  const normalizedId = notificationId.trim();
+
+  return notifications.find((notification) => notification.id === normalizedId) ?? null;
+}
+
+export async function getAuthorityNotificationByProviderDeliveryId(
+  providerDeliveryId: string,
+) {
+  const notifications = await readAuthorityNotifications();
+  const normalizedDeliveryId = providerDeliveryId.trim();
+
+  return (
+    notifications.find(
+      (notification) =>
+        notification.providerDeliveryId === normalizedDeliveryId,
+    ) ?? null
+  );
+}
+
 export async function syncNotificationQueueForOrders(orders: StoredOrder[]) {
   let notifications = await readAuthorityNotifications();
   let shouldWrite = false;
@@ -380,8 +434,13 @@ export async function listAuthorityNotificationsForOrder(order: StoredOrder) {
 export async function updateAuthorityNotificationStatus(
   notificationId: string,
   nextStatus: NotificationDeliveryStatus,
+  metadata: NotificationStatusUpdateMetadata = {},
 ) {
-  if (nextStatus !== "queued" && nextStatus !== "sent") {
+  if (
+    nextStatus !== "queued" &&
+    nextStatus !== "sent" &&
+    nextStatus !== "blocked"
+  ) {
     throw new NotificationAuthorityError(
       "حالة الإشعار المطلوبة غير مدعومة داخل طبقة التشغيل الحالية.",
       400,
@@ -403,7 +462,11 @@ export async function updateAuthorityNotificationStatus(
 
   const currentNotification = notifications[notificationIndex];
 
-  if (currentNotification.status === "blocked") {
+  if (
+    currentNotification.status === "blocked" &&
+    nextStatus !== "blocked" &&
+    !metadata.lastError
+  ) {
     throw new NotificationAuthorityError(
       "هذا الإشعار محجوب تشغيليًا ولا يمكن تحديثه يدويًا.",
       409,
@@ -415,7 +478,26 @@ export async function updateAuthorityNotificationStatus(
     ...currentNotification,
     status: nextStatus,
     updatedAt: now,
-    sentAt: nextStatus === "sent" ? now : null,
+    sentAt:
+      nextStatus === "sent" ? metadata.sentAt ?? now : metadata.sentAt ?? null,
+    providerLabel:
+      metadata.providerLabel !== undefined
+        ? metadata.providerLabel
+        : currentNotification.providerLabel,
+    providerDeliveryId:
+      metadata.providerDeliveryId !== undefined
+        ? metadata.providerDeliveryId
+        : currentNotification.providerDeliveryId,
+    providerEventId:
+      metadata.providerEventId !== undefined
+        ? metadata.providerEventId
+        : currentNotification.providerEventId,
+    lastError:
+      metadata.lastError !== undefined
+        ? metadata.lastError
+        : nextStatus === "sent"
+          ? null
+          : currentNotification.lastError,
   };
 
   notifications[notificationIndex] = nextNotification;

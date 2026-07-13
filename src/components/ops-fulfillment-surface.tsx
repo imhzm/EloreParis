@@ -53,6 +53,53 @@ function getFilterLabel(filter: FulfillmentFilter) {
   }
 }
 
+function getOwnerLane(
+  order: StoredOrder,
+  plan: ReturnType<typeof getOrderFulfillmentPlan>,
+) {
+  if (plan.requiresManualReview) {
+    return {
+      label: "Fulfillment review desk",
+      note:
+        plan.manualReviewReasons[0] ??
+        "هذا الطلب يحتاج قرارًا يدويًا قبل تثبيت مسار الشحن أو الدفع.",
+    };
+  }
+
+  if (plan.paymentLinkRequired && order.status === "payment_pending") {
+    return {
+      label: "Payment follow-up",
+      note: "المطلوب الآن إغلاق handoff الدفع أو إعادة إرساله قبل دفع الطلب إلى التجهيز.",
+    };
+  }
+
+  if (plan.splitShipment) {
+    return {
+      label: "Supplier coordination",
+      note: "الطلب موزع على أكثر من supplier lane ويحتاج تنسيقًا واضحًا قبل الإغلاق.",
+    };
+  }
+
+  if (order.status === "confirmed" || order.status === "processing") {
+    return {
+      label: "Warehouse ops",
+      note: "المطلوب الآن تثبيت dispatch window وتنفيذ lane الحالية بدون إعادة فتح القرار.",
+    };
+  }
+
+  if (order.status === "out_for_delivery") {
+    return {
+      label: "Delivery trace",
+      note: "الطلب خرج للتوصيل، لذلك الأولوية الآن هي تتبع الناقل والتحديثات النهائية.",
+    };
+  }
+
+  return {
+    label: "Customer confirmation",
+    note: "الطلب جاهز للانتقال المنضبط إلى الخطوة التالية دون blockers تشغيلية واضحة.",
+  };
+}
+
 export function OpsFulfillmentSurface() {
   const [orders, setOrders] = useState<StoredOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -81,10 +128,15 @@ export function OpsFulfillmentSurface() {
 
   const fulfillmentOrders = useMemo(
     () =>
-      orders.map((order) => ({
-        order,
-        plan: getOrderFulfillmentPlan(order),
-      })),
+      orders.map((order) => {
+        const plan = getOrderFulfillmentPlan(order);
+
+        return {
+          order,
+          plan,
+          ownerLane: getOwnerLane(order, plan),
+        };
+      }),
     [orders],
   );
 
@@ -108,6 +160,10 @@ export function OpsFulfillmentSurface() {
           .length,
       0,
     );
+    const paymentFollowupCount = fulfillmentOrders.filter(
+      (item) =>
+        item.plan.paymentLinkRequired && item.order.status === "payment_pending",
+    ).length;
 
     return {
       manualReviewCount,
@@ -115,13 +171,14 @@ export function OpsFulfillmentSurface() {
       splitShipmentCount,
       expressReadyCount,
       activeNotifications,
+      paymentFollowupCount,
     };
   }, [fulfillmentOrders]);
 
   const filteredOrders = useMemo(() => {
     const normalizedQuery = normalizeSearchText(query);
 
-    return fulfillmentOrders.filter(({ order, plan }) => {
+    return fulfillmentOrders.filter(({ order, plan, ownerLane }) => {
       if (filter === "manual_review" && !plan.requiresManualReview) {
         return false;
       }
@@ -147,8 +204,10 @@ export function OpsFulfillmentSurface() {
         order.customer.fullName,
         order.customer.city,
         plan.recommendedCarrier,
+        plan.supplierMode,
+        ownerLane.label,
         ...plan.linePlans.map((line) => line.productName),
-        ...plan.linePlans.map((line) => line.sku),
+        ...plan.linePlans.map((line) => `${line.sku} ${line.supplierName} ${line.routeLabel}`),
       ]
         .join(" ")
         .toLowerCase();
@@ -195,36 +254,34 @@ export function OpsFulfillmentSurface() {
   );
 
   return (
-    <div className={styles.page}>
+    <div className={`${styles.page} ${styles.opsDashboard} ${styles.opsFulfillment}`}>
       <OpsNav activeHref="/ops/fulfillment" />
 
       <section className={styles.hero}>
         <div>
-          <p className={styles.eyebrow}>Fulfillment routing</p>
-          <h1>لوحة داخلية توضّح كيف يتحرك كل طلب بين الشحن والدفع والموردين.</h1>
+          <p className={styles.eyebrow}>التجهيز والشحن</p>
+          <h1>اعرفي أين يقف كل طلب، ومن يملك الخطوة التالية.</h1>
           <p className={styles.summary}>
-            هذه الصفحة تغلق الفجوة بين checkout وops: أهلية COD، split shipment،
-            carrier المقترح، الإشعارات التشغيلية، والأسباب التي تفرض manual
-            review.
+            راجعي أهلية الدفع عند الاستلام، الشحنات المنقسمة، الناقل المقترح،
+            والحالات التي تحتاج مراجعة يدوية قبل بدء التنفيذ.
           </p>
         </div>
 
         <div className={styles.heroAside}>
           <div className={styles.metricCard}>
-            <p>Fulfillment orders</p>
+            <p>طلبات التنفيذ</p>
             <strong>{isLoading ? "..." : fulfillmentOrders.length}</strong>
             <span>
-              قراءة تشغيلية للطلبات الحالية عبر routing وnotifications بدل status
-              واحدة فقط.
+              قراءة موحدة لمسار الدفع والتجهيز والشحن لكل طلب نشط.
             </span>
           </div>
 
           <div className={styles.noticeCard}>
-            <p className={styles.eyebrow}>Scope</p>
-            <h2>routing من authority الداخلية الحالية</h2>
+            <p className={styles.eyebrow}>نطاق التشغيل</p>
+            <h2>قرارات تنفيذ واضحة من البيانات الحالية</h2>
             <p>
-              هذه surface داخلية للتجربة التشغيلية، وليست order orchestration
-              production بعد، لكنها لم تعد معزولة داخل متصفح واحد.
+              يعرض هذا السطح المسار المقترح وحدود التكامل الحالية، مع إبقاء الحالات
+              التي تحتاج قرارًا بشريًا ظاهرة قبل أي تنفيذ.
             </p>
           </div>
         </div>
@@ -255,6 +312,11 @@ export function OpsFulfillmentSurface() {
           <p className={styles.sectionTitle}>Active notifications</p>
           <strong>{metrics.activeNotifications}</strong>
           <span>تحديثات تشغيلية أصبحت جاهزة للإرسال أو المتابعة الآن.</span>
+        </article>
+        <article className={styles.statusSummaryCard}>
+          <p className={styles.sectionTitle}>Payment follow-up</p>
+          <strong>{metrics.paymentFollowupCount}</strong>
+          <span>طلبات ما زالت تحتاج إغلاق handoff الدفع قبل الانتقال للتجهيز.</span>
         </article>
       </section>
 
@@ -309,7 +371,7 @@ export function OpsFulfillmentSurface() {
                 <p>يتم الآن استعادة الطلبات من authority الحالية وتحويلها إلى queue قابلة للمراجعة.</p>
               </article>
             ) : filteredOrders.length ? (
-              filteredOrders.map(({ order, plan }) => (
+              filteredOrders.map(({ order, plan, ownerLane }) => (
                 <article key={order.orderNumber} className={styles.lineItem}>
                   <div className={styles.lineHead}>
                     <div>
@@ -339,6 +401,57 @@ export function OpsFulfillmentSurface() {
                   )}
 
                   <div className={styles.catalogPanelGrid}>
+                    <div className={styles.referenceCard}>
+                      <strong>Authority handoff</strong>
+                      <div className={styles.summaryList}>
+                        <div className={styles.referenceRow}>
+                          <span>Delivery zone</span>
+                          <strong className={styles.referenceValue}>{plan.deliveryZoneLabel}</strong>
+                        </div>
+                        <div className={styles.referenceRow}>
+                          <span>Supplier mode</span>
+                          <strong className={styles.referenceValue}>{plan.supplierMode}</strong>
+                        </div>
+                        <div className={styles.referenceRow}>
+                          <span>Owner lane</span>
+                          <strong className={styles.referenceValue}>{ownerLane.label}</strong>
+                        </div>
+                        <div className={styles.referenceRow}>
+                          <span>Payment authority</span>
+                          <strong className={styles.referenceValue}>
+                            {plan.paymentLinkRequired ? "Payment-link route" : "COD-safe route"}
+                          </strong>
+                        </div>
+                      </div>
+                      <span className={styles.helperText}>{ownerLane.note}</span>
+                    </div>
+
+                    <div className={styles.referenceCard}>
+                      <strong>Dispatch contract</strong>
+                      <div className={styles.summaryList}>
+                        <div className={styles.referenceRow}>
+                          <span>Carrier</span>
+                          <strong className={styles.referenceValue}>{plan.recommendedCarrier}</strong>
+                        </div>
+                        <div className={styles.referenceRow}>
+                          <span>Window</span>
+                          <strong className={styles.referenceValue}>{plan.estimatedDispatchWindow}</strong>
+                        </div>
+                        <div className={styles.referenceRow}>
+                          <span>Split shipment</span>
+                          <strong className={styles.referenceValue}>
+                            {plan.splitShipment ? "Required" : "No"}
+                          </strong>
+                        </div>
+                        <div className={styles.referenceRow}>
+                          <span>Express mode</span>
+                          <strong className={styles.referenceValue}>
+                            {plan.expressEligible ? "Eligible" : "Standard"}
+                          </strong>
+                        </div>
+                      </div>
+                    </div>
+
                     <div className={styles.referenceCard}>
                       <strong>Line routing</strong>
                       <div className={styles.summaryList}>
@@ -414,6 +527,10 @@ export function OpsFulfillmentSurface() {
           <h2>الأسطح المتصلة</h2>
 
           <div className={styles.linkList}>
+            <div className={styles.infoBullet}>
+              surface الـ fulfillment لم تعد carrier/status فقط؛ أصبحت تعرض owner lane
+              وpayment authority وdispatch contract لكل طلب.
+            </div>
             <TrackedLink
               href="/ops"
               analyticsLabel="ops_fulfillment_to_dashboard"

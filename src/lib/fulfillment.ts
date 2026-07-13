@@ -1,16 +1,19 @@
 import type { ResolvedCartLine } from "@/lib/cart";
+import {
+  buildStoredOrderLineCatalogTruth,
+  getStoredOrderLineCatalogTruth,
+} from "@/lib/orders";
 import type {
   PaymentMethodId,
   ShippingMethodId,
   StoredOrder,
+  StoredOrderLineCatalogTruth,
   StoredOrderLine,
 } from "@/lib/orders";
 import type { NotificationTemplateKey } from "@/lib/notification-types";
-import { getProductBySlug } from "@/lib/site-content";
 import {
-  getSupplierRecord,
-  getVariantOperations,
   type SupplierId,
+  type SupplierRecord,
 } from "@/lib/variant-operations";
 
 export type DeliveryZoneId = "pending" | "metro" | "major" | "extended";
@@ -38,9 +41,9 @@ export type FulfillmentLinePlan = {
   productSlug: string;
   productName: string;
   sku: string;
-  supplierId: SupplierId;
+  supplierId: SupplierId | "unmapped";
   supplierName: string;
-  fulfillmentModel: "direct" | "dropship" | "hybrid";
+  fulfillmentModel: SupplierRecord["fulfillmentModel"] | "unmapped";
   shippingClass: string;
   availability: "InStock" | "PreOrder";
   routeLabel: string;
@@ -74,13 +77,28 @@ export type OrderFulfillmentPlan = {
   notifications: FulfillmentNotification[];
 };
 
+export type ProviderHandoffState = "ready" | "staged" | "blocked";
+
+export type ProviderHandoffSnapshot = {
+  providerState: ProviderHandoffState;
+  providerReadinessLabel: string;
+  paymentLaneLabel: string;
+  shippingLaneLabel: string;
+  nextOwnerLabel: string;
+  nextAction: string;
+  blockerSummary: string;
+  blockers: string[];
+  supplierLaneCount: number;
+  shippingClassCount: number;
+};
+
 type CheckoutLineSnapshot = {
   productSlug: string;
   productName: string;
   sku: string;
   quantity: number;
   lineTotal: number;
-  availability: "InStock" | "PreOrder";
+  catalogTruth: StoredOrderLineCatalogTruth;
 };
 
 function normalizeArabic(value: string) {
@@ -151,13 +169,6 @@ function getDeliveryZone(city: string) {
   };
 }
 
-function getLineAvailability(productSlug: string, sku: string) {
-  const product = getProductBySlug(productSlug);
-  return (
-    product?.variants.find((variant) => variant.sku === sku)?.availability ?? "PreOrder"
-  );
-}
-
 function toCheckoutSnapshot(line: ResolvedCartLine): CheckoutLineSnapshot {
   return {
     productSlug: line.product.slug,
@@ -165,7 +176,11 @@ function toCheckoutSnapshot(line: ResolvedCartLine): CheckoutLineSnapshot {
     sku: line.variant.sku,
     quantity: line.quantity,
     lineTotal: line.lineTotal,
-    availability: line.variant.availability,
+    catalogTruth: buildStoredOrderLineCatalogTruth({
+      productSlug: line.product.slug,
+      sku: line.variant.sku,
+      availability: line.variant.availability,
+    }),
   };
 }
 
@@ -176,27 +191,30 @@ function toStoredSnapshot(line: StoredOrderLine): CheckoutLineSnapshot {
     sku: line.sku,
     quantity: line.quantity,
     lineTotal: line.lineTotal,
-    availability: getLineAvailability(line.productSlug, line.sku),
+    catalogTruth: getStoredOrderLineCatalogTruth(line),
   };
 }
 
 function buildFulfillmentLinePlans(lineSnapshots: CheckoutLineSnapshot[]) {
   return lineSnapshots.map<FulfillmentLinePlan>((line) => {
-    const variantOps = getVariantOperations(line.productSlug, line.sku);
-    const supplier = variantOps
-      ? getSupplierRecord(variantOps.supplierId)
-      : null;
+    const catalogTruth = line.catalogTruth;
     const requiresLowStockReview = Boolean(
-      variantOps && variantOps.stockOnHand <= variantOps.lowStockThreshold,
+      catalogTruth.mappingStatus === "mapped" &&
+        catalogTruth.stockOnHand <= catalogTruth.lowStockThreshold,
     );
     const requiresReview =
-      line.availability === "PreOrder" || requiresLowStockReview || !variantOps;
+      catalogTruth.availability === "PreOrder" ||
+      requiresLowStockReview ||
+      catalogTruth.mappingStatus !== "mapped";
 
     let routeLabel = "Local stock dispatch";
 
-    if (!variantOps) {
+    if (catalogTruth.mappingStatus !== "mapped") {
       routeLabel = "Catalog mapping required";
-    } else if (line.availability === "PreOrder" || supplier?.fulfillmentModel === "dropship") {
+    } else if (
+      catalogTruth.availability === "PreOrder" ||
+      catalogTruth.fulfillmentModel === "dropship"
+    ) {
       routeLabel = "Supplier direct handoff";
     } else if (requiresLowStockReview) {
       routeLabel = "Manual stock confirmation";
@@ -207,15 +225,15 @@ function buildFulfillmentLinePlans(lineSnapshots: CheckoutLineSnapshot[]) {
       productSlug: line.productSlug,
       productName: line.productName,
       sku: line.sku,
-      supplierId: variantOps?.supplierId ?? "desert-distribution",
-      supplierName: supplier?.name ?? "Supplier mapping pending",
-      fulfillmentModel: supplier?.fulfillmentModel ?? "dropship",
-      shippingClass: variantOps?.shippingClass ?? "foundation-standard",
-      availability: line.availability,
+      supplierId: catalogTruth.supplierId ?? "unmapped",
+      supplierName: catalogTruth.supplierName,
+      fulfillmentModel: catalogTruth.fulfillmentModel,
+      shippingClass: catalogTruth.shippingClass ?? "unmapped",
+      availability: catalogTruth.availability,
       routeLabel,
-      stockOnHand: variantOps?.stockOnHand ?? 0,
-      lowStockThreshold: variantOps?.lowStockThreshold ?? 0,
-      codEligible: variantOps?.codEligible ?? false,
+      stockOnHand: catalogTruth.stockOnHand,
+      lowStockThreshold: catalogTruth.lowStockThreshold,
+      codEligible: catalogTruth.codEligible,
       requiresReview,
     };
   });
@@ -233,8 +251,18 @@ function buildManualReviewReasons(
     reasons.add("يوجد عنصر يعمل كطلب ممتد ويحتاج تأكيد lead time قبل الجدولة.");
   }
 
-  if (linePlans.some((line) => line.stockOnHand <= line.lowStockThreshold)) {
+  if (
+    linePlans.some(
+      (line) =>
+        line.supplierId !== "unmapped" &&
+        line.stockOnHand <= line.lowStockThreshold,
+    )
+  ) {
     reasons.add("يوجد عنصر عند أو دون حد المخزون التشغيلي ويحتاج مراجعة قبل الاعتماد النهائي.");
+  }
+
+  if (linePlans.some((line) => line.supplierId === "unmapped")) {
+    reasons.add("يوجد SKU واحد على الأقل لم يُثبت supplier mapping الخاص به داخل catalog authority بعد.");
   }
 
   const supplierIds = new Set(linePlans.map((line) => line.supplierId));
@@ -281,7 +309,10 @@ export function getCheckoutRules(
   const deliveryZone = getDeliveryZone(city);
   const linePlans = buildFulfillmentLinePlans(lines.map(toCheckoutSnapshot));
   const hasDropshipOrPreOrder = linePlans.some(
-    (line) => line.fulfillmentModel === "dropship" || line.availability === "PreOrder",
+    (line) =>
+      line.fulfillmentModel === "dropship" ||
+      line.fulfillmentModel === "unmapped" ||
+      line.availability === "PreOrder",
   );
   const splitShipment = new Set(linePlans.map((line) => line.supplierId)).size > 1;
   const expressEligible =
@@ -494,12 +525,229 @@ function resolveDispatchWindow(
     : "خلال يوم عمل واحد.";
 }
 
+type ProviderHandoffInput = {
+  deliveryZoneLabel: string;
+  recommendedCarrier: string;
+  shippingMethodId: ShippingMethodId;
+  paymentMethodId: PaymentMethodId;
+  paymentLinkRequired: boolean;
+  requiresManualReview: boolean;
+  manualReviewReasons: string[];
+  splitShipment: boolean;
+  codEligible: boolean;
+  expressEligible: boolean;
+  linePlans: FulfillmentLinePlan[];
+};
+
+function getPaymentLaneLabel(
+  paymentMethodId: PaymentMethodId,
+  paymentLinkRequired: boolean,
+  codEligible: boolean,
+) {
+  if (paymentMethodId === "payment_link" || paymentLinkRequired) {
+    return "Payment-link ops handoff";
+  }
+
+  if (codEligible) {
+    return "COD confirmation gate";
+  }
+
+  return "Payment review handoff";
+}
+
+function getShippingLaneLabel(
+  shippingMethodId: ShippingMethodId,
+  recommendedCarrier: string,
+  expressEligible: boolean,
+  splitShipment: boolean,
+) {
+  if (splitShipment) {
+    return `Supplier coordination via ${recommendedCarrier}`;
+  }
+
+  if (shippingMethodId === "express" && expressEligible) {
+    return `Express dispatch via ${recommendedCarrier}`;
+  }
+
+  return `Standard dispatch via ${recommendedCarrier}`;
+}
+
+function buildProviderHandoffSnapshot({
+  deliveryZoneLabel,
+  recommendedCarrier,
+  shippingMethodId,
+  paymentMethodId,
+  paymentLinkRequired,
+  requiresManualReview,
+  manualReviewReasons,
+  splitShipment,
+  codEligible,
+  expressEligible,
+  linePlans,
+}: ProviderHandoffInput): ProviderHandoffSnapshot {
+  const supplierLaneCount = new Set(linePlans.map((line) => line.supplierId)).size;
+  const shippingClassCount = new Set(linePlans.map((line) => line.shippingClass)).size;
+  const paymentLaneLabel = getPaymentLaneLabel(
+    paymentMethodId,
+    paymentLinkRequired,
+    codEligible,
+  );
+  const shippingLaneLabel = getShippingLaneLabel(
+    shippingMethodId,
+    recommendedCarrier,
+    expressEligible,
+    splitShipment,
+  );
+
+  let providerState: ProviderHandoffState = "ready";
+  let providerReadinessLabel = "Provider contract active";
+  let nextOwnerLabel =
+    shippingMethodId === "express" && expressEligible
+      ? "Express dispatch desk"
+      : "Dispatch desk";
+  let nextAction = `انقل الطلب إلى ${shippingLaneLabel} داخل ${deliveryZoneLabel} بدون إعادة فتح القرار التجاري.`;
+
+  if (requiresManualReview) {
+    providerState = "blocked";
+    providerReadinessLabel = "Ops review required";
+    nextOwnerLabel = "Fulfillment review desk";
+    nextAction =
+      manualReviewReasons[0] ??
+      "أغلق مراجعة المخزون أو lead time أولًا قبل أي handoff للدفع أو الشحن.";
+  } else if (paymentLinkRequired) {
+    providerState = "staged";
+    providerReadinessLabel = "Payment handoff pending";
+    nextOwnerLabel = "Payment follow-up";
+    nextAction =
+      "أنشئ مرجع الطلب ثم أغلق handoff الدفع قبل دفع الطلب إلى مسار التجهيز أو الشحن.";
+  } else if (splitShipment) {
+    providerState = "staged";
+    providerReadinessLabel = "Supplier handoff staged";
+    nextOwnerLabel = "Supplier coordination";
+    nextAction =
+      "ثبّت supplier lanes الحالية أولًا ثم حرّك الطلب إلى نافذة dispatch واحدة واضحة.";
+  }
+
+  const blockers = requiresManualReview
+    ? manualReviewReasons
+    : [
+        ...(paymentLinkRequired
+          ? ["Handoff الدفع يجب أن يغلق قبل خروج الطلب من queue المراجعة الحالية."]
+          : []),
+        ...(splitShipment
+          ? ["يوجد أكثر من supplier lane فعالة، لذلك يلزم تنسيق الشحن قبل إغلاق handoff النهائي."]
+          : []),
+      ];
+
+  return {
+    providerState,
+    providerReadinessLabel,
+    paymentLaneLabel,
+    shippingLaneLabel,
+    nextOwnerLabel,
+    nextAction,
+    blockerSummary:
+      blockers[0] ?? "لا توجد blockers تشغيلية إضافية على handoff الحالي.",
+    blockers,
+    supplierLaneCount,
+    shippingClassCount,
+  };
+}
+
+function applyPersistedProviderBindings(
+  order: StoredOrder,
+  snapshot: ProviderHandoffSnapshot,
+): ProviderHandoffSnapshot {
+  if (snapshot.providerState === "blocked") {
+    return snapshot;
+  }
+
+  const paymentBinding = order.providerBindings.payment;
+  const shippingBinding = order.providerBindings.shipping;
+
+  if (order.paymentMethodId === "payment_link") {
+    if (paymentBinding.state === "pending") {
+      return {
+        ...snapshot,
+        providerState: "staged",
+        providerReadinessLabel: "Payment link not sent",
+        nextOwnerLabel: "Payment follow-up",
+        nextAction: `سجّل handoff الدفع عبر ${paymentBinding.providerLabel} قبل نقل الطلب إلى التأكيد أو التجهيز.`,
+        blockerSummary: "لم يتم تسجيل payment-link reference بعد داخل authority الحالية.",
+        blockers: [
+          "لم يتم تسجيل payment-link reference بعد داخل authority الحالية.",
+        ],
+      };
+    }
+
+    if (paymentBinding.state === "link_sent") {
+      return {
+        ...snapshot,
+        providerState: "staged",
+        providerReadinessLabel: "Payment callback pending",
+        nextOwnerLabel: "Payment callback",
+        nextAction: `انتظر callback التأكيد على ${paymentBinding.referenceId ?? "مرجع الدفع الحالي"} قبل دفع الطلب إلى حالة التأكيد.`,
+        blockerSummary:
+          "تم إرسال payment-link handoff لكن callback التأكيد لم تصل بعد.",
+        blockers: [
+          "تم إرسال payment-link handoff لكن callback التأكيد لم تصل بعد.",
+        ],
+      };
+    }
+  }
+
+  if (shippingBinding.state === "pending" && order.status === "processing") {
+    return {
+      ...snapshot,
+      providerState: "staged",
+      providerReadinessLabel: "Carrier booking pending",
+      nextOwnerLabel: "Shipping dispatch",
+      nextAction: `سجّل booking reference عبر ${shippingBinding.providerLabel} قبل الخروج للتوصيل.`,
+      blockerSummary: "لم يتم تسجيل booking reference للشحنة بعد.",
+      blockers: ["لم يتم تسجيل booking reference للشحنة بعد."],
+    };
+  }
+
+  if (shippingBinding.state === "booked") {
+    return {
+      ...snapshot,
+      providerState: "staged",
+      providerReadinessLabel: "Carrier booking confirmed",
+      nextOwnerLabel: "Carrier callback",
+      nextAction: `انتظر callback الخروج للتوصيل على ${shippingBinding.bookingReference ?? "مرجع الشحنة الحالي"} قبل إغلاق مسار الشحن.`,
+      blockerSummary:
+        "تم تسجيل booking reference لكن callback الخروج للتوصيل لم تصل بعد.",
+      blockers: [
+        "تم تسجيل booking reference لكن callback الخروج للتوصيل لم تصل بعد.",
+      ],
+    };
+  }
+
+  if (shippingBinding.state === "in_transit") {
+    return {
+      ...snapshot,
+      providerState: "ready",
+      providerReadinessLabel: "In-transit callback active",
+      nextOwnerLabel: "Customer tracking",
+      nextAction: `tracking ${shippingBinding.trackingNumber ?? shippingBinding.bookingReference ?? "الحالي"} هو المرجع التشغيلي الصحيح حتى التسليم.`,
+      blockerSummary:
+        "لا توجد blockers إضافية بعد وصول callback الخروج للتوصيل الحالية.",
+      blockers: [],
+    };
+  }
+
+  return snapshot;
+}
+
 export function getOrderFulfillmentPlan(order: StoredOrder): OrderFulfillmentPlan {
   const deliveryZone = getDeliveryZone(order.customer.city);
   const linePlans = buildFulfillmentLinePlans(order.lines.map(toStoredSnapshot));
   const splitShipment = new Set(linePlans.map((line) => line.supplierId)).size > 1;
   const hasDropshipOrPreOrder = linePlans.some(
-    (line) => line.fulfillmentModel === "dropship" || line.availability === "PreOrder",
+    (line) =>
+      line.fulfillmentModel === "dropship" ||
+      line.fulfillmentModel === "unmapped" ||
+      line.availability === "PreOrder",
   );
   const codEligible =
     deliveryZone.id !== "pending" &&
@@ -550,4 +798,64 @@ export function getOrderFulfillmentPlan(order: StoredOrder): OrderFulfillmentPla
     linePlans,
     notifications: buildNotifications(order),
   };
+}
+
+export function getOrderProviderHandoff(order: StoredOrder) {
+  const plan = getOrderFulfillmentPlan(order);
+
+  return applyPersistedProviderBindings(
+    order,
+    buildProviderHandoffSnapshot({
+      deliveryZoneLabel: plan.deliveryZoneLabel,
+      recommendedCarrier: plan.recommendedCarrier,
+      shippingMethodId: order.shippingMethodId,
+      paymentMethodId: order.paymentMethodId,
+      paymentLinkRequired: plan.paymentLinkRequired,
+      requiresManualReview: plan.requiresManualReview,
+      manualReviewReasons: plan.manualReviewReasons,
+      splitShipment: plan.splitShipment,
+      codEligible: plan.codEligible,
+      expressEligible: order.shippingMethodId === "express" && plan.expressEligible,
+      linePlans: plan.linePlans,
+    }),
+  );
+}
+
+export function getCheckoutProviderHandoff(
+  lines: ResolvedCartLine[],
+  city: string,
+  subtotal: number,
+  shippingMethodId: ShippingMethodId,
+  paymentMethodId: PaymentMethodId,
+) {
+  const checkoutRules = getCheckoutRules(lines, city, subtotal);
+  const linePlans = buildFulfillmentLinePlans(lines.map(toCheckoutSnapshot));
+  const hasDropshipOrPreOrder = linePlans.some(
+    (line) =>
+      line.fulfillmentModel === "dropship" ||
+      line.fulfillmentModel === "unmapped" ||
+      line.availability === "PreOrder",
+  );
+  const splitShipment = new Set(linePlans.map((line) => line.supplierId)).size > 1;
+
+  return buildProviderHandoffSnapshot({
+    deliveryZoneLabel: checkoutRules.deliveryZoneLabel,
+    recommendedCarrier: resolveCarrier(
+      checkoutRules.deliveryZoneId,
+      shippingMethodId === "express" && checkoutRules.expressEligible,
+      splitShipment,
+      hasDropshipOrPreOrder,
+    ),
+    shippingMethodId,
+    paymentMethodId,
+    paymentLinkRequired:
+      !checkoutRules.codEligible || paymentMethodId === "payment_link",
+    requiresManualReview: checkoutRules.manualReviewReasons.length > 0,
+    manualReviewReasons: checkoutRules.manualReviewReasons,
+    splitShipment,
+    codEligible: checkoutRules.codEligible,
+    expressEligible:
+      shippingMethodId === "express" && checkoutRules.expressEligible,
+    linePlans,
+  });
 }

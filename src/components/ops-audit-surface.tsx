@@ -16,6 +16,7 @@ const auditFilters: AuditFilter[] = [
   "ops_login_rate_limited",
   "ops_logout",
   "ops_order_status_update",
+  "ops_order_provider_update",
   "ops_notification_status_update",
   "ops_release_evidence_publish",
   "ops_release_package_publish",
@@ -46,6 +47,8 @@ function getAuditActionLabel(action: OpsAuditAction) {
       return "Ops logout";
     case "ops_order_status_update":
       return "Order status updated";
+    case "ops_order_provider_update":
+      return "Order provider updated";
     case "ops_notification_status_update":
       return "Notification status updated";
     case "ops_release_evidence_publish":
@@ -98,6 +101,9 @@ export function OpsAuditSurface() {
       statusUpdates: auditEntries.filter(
         (entry) => entry.action === "ops_order_status_update",
       ).length,
+      providerUpdates: auditEntries.filter(
+        (entry) => entry.action === "ops_order_provider_update",
+      ).length,
       notificationUpdates: auditEntries.filter(
         (entry) => entry.action === "ops_notification_status_update",
       ).length,
@@ -124,39 +130,36 @@ export function OpsAuditSurface() {
   );
 
   return (
-    <div className={styles.page}>
+    <div className={`${styles.page} ${styles.opsDashboard} ${styles.opsAudit}`}>
       <OpsNav activeHref="/ops/audit" />
 
       <section className={styles.hero}>
         <div>
-          <p className={styles.eyebrow}>Internal audit</p>
-          <h1>A durable review stream for protected ops sessions and sensitive internal actions.</h1>
+          <p className={styles.eyebrow}>سجل المراجعة</p>
+          <h1>اعرفي من غيّر ماذا، ومتى حدث ذلك.</h1>
           <p className={styles.summary}>
-            This surface does not claim a final SIEM or compliance archive. It keeps a clear,
-            searchable trace for ops logins, throttling, order changes, notification changes,
-            release-evidence publication, release-package publication, release-handoff
-            publication, and release-decision publication inside the current runtime.
+            سجل قابل للمراجعة لجلسات الدخول وتغييرات الطلبات والإشعارات وقرارات
+            الإطلاق، مع فلترة واضحة تساعد على تتبع الإجراءات الحساسة داخل النظام.
           </p>
         </div>
 
         <div className={styles.heroAside}>
           <div className={styles.metricCard}>
-            <p>Total entries</p>
+            <p>إجمالي الأحداث</p>
             <strong>{isLoading ? "..." : metrics.total}</strong>
             <span>
               {isLoading
-                ? "Loading audit coverage."
-                : `${metrics.loginEvents} session events, ${metrics.statusUpdates} order updates, ${metrics.notificationUpdates} notification updates, ${metrics.releaseEvidencePublishes} evidence publishes, ${metrics.releasePackagePublishes} release-package publishes, ${metrics.releaseHandoffPublishes} release-handoff publishes, and ${metrics.releaseDecisionPublishes} release-decision publishes.`}
+                ? "جارٍ تحميل تغطية السجل."
+                : `${metrics.loginEvents} session events, ${metrics.statusUpdates} order updates, ${metrics.providerUpdates} provider updates, ${metrics.notificationUpdates} notification updates, ${metrics.releaseEvidencePublishes} evidence publishes, ${metrics.releasePackagePublishes} release-package publishes, ${metrics.releaseHandoffPublishes} release-handoff publishes, and ${metrics.releaseDecisionPublishes} release-decision publishes.`}
             </span>
           </div>
 
           <div className={styles.noticeCard}>
-            <p className={styles.eyebrow}>Scope</p>
-            <h2>Protected runtime trace</h2>
+            <p className={styles.eyebrow}>نطاق السجل</p>
+            <h2>تتبّع محمي داخل بيئة التشغيل</h2>
             <p>
-              The current layer focuses on traceability inside this application runtime. It is
-              useful for launch rehearsal and protected operations, but it is not a substitute for
-              an external immutable audit platform.
+              يوفر هذا السجل رؤية داخل التطبيق للعمليات المحمية، لكنه لا يحل محل
+              منصة تدقيق خارجية غير قابلة للتعديل عند الإطلاق النهائي.
             </p>
           </div>
         </div>
@@ -165,7 +168,7 @@ export function OpsAuditSurface() {
       <section className={styles.layout}>
         <article className={styles.mainCard}>
           <p className={styles.sectionTitle}>Audit stream</p>
-          <h2>Current activity</h2>
+          <h2>النشاط الحالي</h2>
 
           <div className={styles.filterChipRow}>
             {auditFilters.map((candidate) => {
@@ -194,7 +197,7 @@ export function OpsAuditSurface() {
             {isLoading ? (
               <article className={styles.emptyCard}>
                 <p className={styles.eyebrow}>Audit</p>
-                <h1>Loading the audit stream</h1>
+                <h1>جارٍ تحميل سجل المراجعة</h1>
                 <p>Reading recent protected actions from the shared authority store.</p>
               </article>
             ) : filteredEntries.length ? (
@@ -228,17 +231,17 @@ export function OpsAuditSurface() {
               ))
             ) : (
               <article className={styles.emptyCard}>
-                <p className={styles.eyebrow}>No entries</p>
-                <h1>No audit entries match the current filter</h1>
-                <p>Run more protected ops actions or clear the filter to inspect the full stream.</p>
+                <p className={styles.eyebrow}>لا توجد نتائج</p>
+                <h1>لا توجد أحداث تطابق الفلتر الحالي</h1>
+                <p>أزيلي الفلتر لمراجعة السجل الكامل، أو نفّذي إجراءات تشغيلية محمية لإضافة أحداث جديدة.</p>
               </article>
             )}
           </div>
         </article>
 
         <aside className={styles.summaryCard}>
-          <p className={styles.sectionTitle}>Related ops paths</p>
-          <h2>Audit-adjacent surfaces</h2>
+          <p className={styles.sectionTitle}>مسارات مرتبطة</p>
+          <h2>المسارات المرتبطة بالمراجعة</h2>
           <div className={styles.linkList}>
             <TrackedLink
               href="/ops/orders"

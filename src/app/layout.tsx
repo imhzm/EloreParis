@@ -1,21 +1,22 @@
 import type { Metadata, Viewport } from "next";
-import { IBM_Plex_Sans_Arabic, Noto_Naskh_Arabic } from "next/font/google";
+import { Alexandria, Markazi_Text } from "next/font/google";
 import { AnalyticsProvider } from "@/components/analytics-provider";
 import { CartProvider } from "@/components/cart-provider";
+import { defaultMetadataRobots } from "@/lib/seo";
 import { defaultDescription, siteName, siteTagline, siteUrl } from "@/lib/site-content";
 import "./globals.css";
 
-const bodyFont = IBM_Plex_Sans_Arabic({
+const bodyFont = Alexandria({
   variable: "--font-body",
   subsets: ["arabic", "latin"],
   weight: ["300", "400", "500", "600", "700"],
   display: "swap",
 });
 
-const displayFont = Noto_Naskh_Arabic({
+const displayFont = Markazi_Text({
   variable: "--font-display",
   subsets: ["arabic", "latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["500", "600", "700"],
   display: "swap",
 });
 
@@ -76,11 +77,12 @@ export const metadata: Metadata = {
   },
   applicationName: siteName,
   category: "beauty ecommerce",
+  robots: defaultMetadataRobots,
 };
 
 export const viewport: Viewport = {
   colorScheme: "light",
-  themeColor: "#2b1c28",
+  themeColor: "#007f74",
 };
 
 export default function RootLayout({

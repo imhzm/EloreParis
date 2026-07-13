@@ -5,9 +5,14 @@ import type {
   ReleaseReadinessSnapshot,
   ReleaseReadinessStatus,
 } from "@/lib/release-readiness-types";
+import type { ReleaseRuntimeSecretAlignment } from "@/lib/release-packet-types";
 import type { OpsAuditActor } from "@/lib/ops-types";
 
-export type ReleasePackageIssueSource = "gate" | "runtime_preflight";
+export type ReleasePackageIssueSource =
+  | "gate"
+  | "runtime_preflight"
+  | "provider_contract"
+  | "runtime_secret";
 
 export type ReleasePackageIssue = {
   id: string;
@@ -34,6 +39,7 @@ export type ReleasePackageArtifact = {
   warningItems: ReleasePackageIssue[];
   nextActions: string[];
   releaseReadiness: ReleaseReadinessSnapshot;
+  runtimeSecretAlignment: ReleaseRuntimeSecretAlignment;
   releaseEvidence: ReleaseEvidenceReport | null;
 };
 
@@ -76,6 +82,7 @@ export type ReleasePackageComparison = {
     verificationMode: boolean;
     targetBaseUrl: boolean;
     runtimeEnvironment: boolean;
+    runtimeSecretAlignment: boolean;
     nextActions: boolean;
   };
   blockedItems: {

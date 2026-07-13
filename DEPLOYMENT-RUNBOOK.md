@@ -4,7 +4,7 @@
 
 - Phase: `release`
 - Hosting direction: `Render-first persistent runtime for the current Next.js storefront`
-- Current status: `deploy-ready inside the repo, but still blocked on the first live Render service, production domain/env values, and approved business inputs`
+- Current status: `deploy-ready inside the repo, with a preview-safe Vercel path for staging and a Render-first path for persistent live runtime, but still blocked on the first live service, production domain/env values, and approved business inputs`
 
 ## Why Render Is Now The Primary Direction
 
@@ -95,13 +95,25 @@ Without those secrets, the workflow exits cleanly in skip mode.
 
 ## Optional Secondary Vercel Path
 
-The workflow at [`deploy-vercel.yml`](D:/REDA/ksa%20cozmateks/.github/workflows/deploy-vercel.yml) is now manual-only and should be treated as a secondary experiment path, not the primary release target.
+The workflow at [`deploy-vercel.yml`](D:/REDA/ksa%20cozmateks/.github/workflows/deploy-vercel.yml) is manual-only and should be treated as a secondary preview/staging path, not the primary release target.
+
+It now defaults to `preview` deployments so staging URLs stay out of search through:
+
+- `APP_ENV=preview` during the Vercel build/deploy path
+- `X-Robots-Tag: noindex, nofollow, noarchive`
+- preview `robots.txt` returning `Disallow: /`
+- preview `sitemap.xml` returning an empty sitemap
 
 If you still want to use it for previews or one-off verification, it requires:
 
 - `VERCEL_TOKEN`
 - `VERCEL_ORG_ID`
 - `VERCEL_PROJECT_ID`
+
+Use the `deployment_target` workflow input only when you intentionally want:
+
+- `preview` for staging/test links
+- `production` for the rare case where Vercel is used as a one-off production experiment instead of the primary Render path
 
 ## First Deployment Steps
 

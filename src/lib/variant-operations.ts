@@ -1,5 +1,10 @@
 export type SupplierId = "atelier-core" | "desert-distribution";
 
+export type SupplierAuthorityRoute =
+  | "/ops/catalog"
+  | "/ops/orders"
+  | "/ops/fulfillment";
+
 export type SupplierRecord = {
   id: SupplierId;
   name: string;
@@ -7,6 +12,10 @@ export type SupplierRecord = {
   leadTime: string;
   defaultMarginTarget: number;
   note: string;
+  truthSourceLabel: string;
+  defaultAuthorityOwnerLabel: string;
+  defaultAuthorityRoute: SupplierAuthorityRoute;
+  continuityRule: string;
 };
 
 export type ShippingClass = "serum-light" | "foundation-standard";
@@ -36,6 +45,11 @@ const supplierDirectory: Record<SupplierId, SupplierRecord> = {
     defaultMarginTarget: 0.44,
     note:
       "المورد الأساسي للمنتجات المتاحة محليًا، ويغطي جزءًا من المخزون المباشر مع مرونة في إعادة التزويد.",
+    truthSourceLabel: "Local stock truth + supplier replenishment confirmation",
+    defaultAuthorityOwnerLabel: "Catalog + warehouse desk",
+    defaultAuthorityRoute: "/ops/catalog",
+    continuityRule:
+      "When live demand meets low stock, confirm replenishment before expanding storefront promises or COD coverage.",
   },
   "desert-distribution": {
     id: "desert-distribution",
@@ -45,6 +59,11 @@ const supplierDirectory: Record<SupplierId, SupplierRecord> = {
     defaultMarginTarget: 0.38,
     note:
       "مسار احتياطي لبعض الطلبات الممتدة والدرجات الأقل دورانًا، مع حساسية أعلى تجاه المخزون ووقت التجهيز.",
+    truthSourceLabel: "Supplier-confirmed availability + booking continuity",
+    defaultAuthorityOwnerLabel: "Supplier coordination desk",
+    defaultAuthorityRoute: "/ops/fulfillment",
+    continuityRule:
+      "Keep dropship and preorder variants tied to supplier confirmation before reopening COD, lead-time claims, or strong stock assumptions.",
   },
 };
 

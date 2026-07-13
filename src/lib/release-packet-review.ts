@@ -58,6 +58,7 @@ export function buildReleasePacketReviewToken(
           targetBaseUrl: comparison.currentArtifact.targetBaseUrl,
           runtimeEnvironment: comparison.currentArtifact.runtimeEnvironment,
           canonicalUrl: comparison.currentArtifact.canonicalUrl,
+          runtimeSecretAlignment: comparison.currentArtifact.runtimeSecretAlignment,
           blockedItemIds: comparison.currentArtifact.blockedItems.map((item) => item.id),
           warningItemIds: comparison.currentArtifact.warningItems.map((item) => item.id),
           nextActions: comparison.currentArtifact.nextActions,

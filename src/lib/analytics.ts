@@ -10,6 +10,8 @@ export type AnalyticsEventName =
   | "checkout_start"
   | "checkout_complete"
   | "filter_apply"
+  | "newsletter_signup"
+  | "back_in_stock_request"
   | "ops_notification_status_update"
   | "ops_order_status_update"
   | "ops_release_handoff_submit"

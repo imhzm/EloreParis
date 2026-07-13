@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { isSearchIndexingEnabled } from "@/lib/search-visibility";
 import {
   concerns,
   ingredients,
@@ -11,6 +12,10 @@ import {
 } from "@/lib/site-content";
 
 export default function sitemap(): MetadataRoute.Sitemap {
+  if (!isSearchIndexingEnabled()) {
+    return [];
+  }
+
   const staticPages = [
     "",
     "/about",
