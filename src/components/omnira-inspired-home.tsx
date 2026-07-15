@@ -1,162 +1,188 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef } from "react";
 import { NewsletterSignup } from "@/components/newsletter-signup";
 import { TrackedLink } from "@/components/tracked-link";
+import { useScrollSceneProgress } from "@/hooks/use-scroll-scene-progress";
+import { homeCopy, localizePath, type Locale } from "@/lib/i18n";
 import styles from "./omnira-inspired-home.module.css";
 
-const clamp = (value: number) => Math.min(Math.max(value, 0), 1);
+type Props = { locale: Locale };
 
-const productPicks = [
-  { image: "/brand-assets/product-01.jpg", name: "Bioderma Pigmentbio Night Renewer", note: "عناية ليلية موجهة للتصبغات" },
-  { image: "/brand-assets/product-02.jpg", name: "Eucerin Calming Urea Shampoo", note: "تنظيف لطيف لفروة الرأس" },
-  { image: "/brand-assets/product-03.jpg", name: "Eucerin pH5 Mild Shampoo", note: "توازن يومي للشعر والفروة" },
-  { image: "/brand-assets/product-04.jpg", name: "Bioderma Cicabio Arnica+", note: "عناية مهدئة ومركزة" },
-] as const;
-
-const departments = [
-  { label: "العناية بالبشرة", caption: "Skin ritual", href: "/shop/skincare", image: "/brand-assets/product-01.jpg" },
-  { label: "المكياج", caption: "Colour edit", href: "/shop/makeup", image: "/brand-assets/product-05.jpg" },
-  { label: "العناية بالشعر", caption: "Hair reset", href: "/shop/haircare", image: "/brand-assets/product-02.jpg" },
-  { label: "العطور", caption: "Scent wardrobe", href: "/shop/fragrances", image: "/brand-assets/product-06.jpg" },
-] as const;
-
-const trustPoints = [
-  ["01", "منتجات أصلية", "مختارة من علامات موثوقة"],
-  ["02", "توصيل داخل السعودية", "مسار طلب واضح وسهل"],
-  ["03", "دفع آمن", "خيارات دفع موثوقة"],
-  ["04", "اختيار بوعي", "معلومات تساعدك قبل الشراء"],
-] as const;
-
-export function OmniraInspiredHome() {
-  const pageRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const root = pageRef.current;
-    if (!root) return;
-
-    const scenes = Array.from(root.querySelectorAll<HTMLElement>("[data-cinematic-scene]"));
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduceMotion) return;
-
-    let requestId = 0;
-    const update = () => {
-      scenes.forEach((scene) => {
-        const bounds = scene.getBoundingClientRect();
-        const travel = Math.max(bounds.height - window.innerHeight, 1);
-        const progress = clamp(-bounds.top / travel);
-        const state = bounds.top > 0 ? "before" : bounds.bottom <= window.innerHeight ? "after" : "active";
-        scene.dataset.sceneState = state;
-        scene.style.setProperty("--scene-progress", `${progress}`);
-        scene.style.setProperty("--scene-enter", `${clamp(progress / 0.22)}`);
-        scene.style.setProperty("--scene-exit", `${clamp((progress - 0.76) / 0.24)}`);
-      });
-      requestId = 0;
-    };
-    const schedule = () => {
-      if (!requestId) requestId = window.requestAnimationFrame(update);
-    };
-
-    update();
-    window.addEventListener("scroll", schedule, { passive: true });
-    window.addEventListener("resize", schedule);
-    return () => {
-      window.removeEventListener("scroll", schedule);
-      window.removeEventListener("resize", schedule);
-      if (requestId) window.cancelAnimationFrame(requestId);
-    };
-  }, []);
+export function OmniraInspiredHome({ locale }: Props) {
+  const copy = homeCopy[locale];
+  const href = (path: string) => localizePath(locale, path);
+  const pageRef = useScrollSceneProgress<HTMLDivElement>({
+    selector: "[data-home-scene]",
+    enterEnd: 0.24,
+    exitStart: 0.84,
+  });
 
   return (
     <div ref={pageRef} className={styles.page}>
-      <section className={`${styles.scene} ${styles.openingScene}`} data-cinematic-scene aria-label="افتتاحية كوزماتكس">
-        <div className={styles.frame}>
-          <div className={styles.atmosphere} aria-hidden="true" />
-          <div className={styles.openingVisual} aria-hidden="true">
-            <div className={styles.orbit} />
-            <div className={styles.heroProduct}><Image src="/brand-assets/product-01.jpg" alt="" fill sizes="(max-width: 800px) 74vw, 35vw" priority /></div>
-            <div className={`${styles.floatingProduct} ${styles.floatingOne}`}><Image src="/brand-assets/product-04.jpg" alt="" fill sizes="140px" /></div>
-            <div className={`${styles.floatingProduct} ${styles.floatingTwo}`}><Image src="/brand-assets/product-03.jpg" alt="" fill sizes="120px" /></div>
+      <section className={`${styles.hero} ${styles.scene}`} data-home-scene aria-labelledby="home-title">
+        <div className={styles.heroViewport} data-home-cinematic-viewport>
+          <div className={styles.heroWorld} data-home-3d-world aria-hidden="true">
+            <div className={styles.heroMedia}>
+              <Image src="/elore-assets/hero-silk-champagne-concept-1672w.avif" alt="" fill priority sizes="100vw" />
+            </div>
+            <div className={`${styles.depthPlane} ${styles.depthPlaneOne}`} />
+            <div className={`${styles.depthPlane} ${styles.depthPlaneTwo}`} />
+            <Image className={styles.floatingMark} src="/elore-assets/logo-mark-burgundy.png" alt="" width={605} height={808} priority />
           </div>
-          <div className={styles.openingCopy}>
-            <p>COZMATEKS · BEAUTY & CARE</p>
-            <h1>اختيار أوضح.<br />عناية أقرب لك.</h1>
-            <span>منتجات أصلية من علامات موثوقة، مرتبة لتصلي لما تحتاجينه بدون حيرة.</span>
-            <TrackedLink href="/shop" className={styles.primaryAction} analyticsLabel="home_opening_shop" analyticsSurface="home_cinematic">تسوّقي الآن</TrackedLink>
+          <div className={styles.heroShade} aria-hidden="true" />
+          <div className={styles.heroContent}>
+            <Image className={styles.heroLogo} src="/elore-assets/logo-horizontal-ivory.png" alt="ÉLORÉ PARIS" width={650} height={205} priority />
+            <p className={styles.eyebrow} lang="en">{copy.hero.eyebrow}</p>
+            <h1 id="home-title">{copy.hero.title}</h1>
+            <p className={styles.lead}>{copy.hero.body}</p>
+            <div className={styles.actions}>
+              <TrackedLink href={href("/shop")} className={styles.primaryAction} analyticsLabel="home_hero_collection" analyticsSurface="elore_home">{copy.hero.primary}</TrackedLink>
+              <TrackedLink href={href("/routines")} className={styles.secondaryAction} analyticsLabel="home_hero_routine" analyticsSurface="elore_home">{copy.hero.secondary}</TrackedLink>
+            </div>
           </div>
-          <div className={styles.scrollCue} aria-hidden="true"><i /> مرّري لبدء الرحلة</div>
+          <p className={styles.scrollCue} aria-hidden="true"><span />SCROLL TO EXPLORE</p>
+          <p className={styles.assetStatus}>{copy.hero.assetStatus}</p>
         </div>
       </section>
 
-      <section className={`${styles.scene} ${styles.departmentScene}`} data-cinematic-scene id="departments" aria-label="أقسام المتجر">
-        <div className={styles.frame}>
-          <div className={styles.sceneNumber}>02 / 06</div>
-          <div className={styles.sceneCopy}>
-            <p>CHOOSE YOUR WORLD</p>
-            <h2>كل احتياج<br />له باب.</h2>
-            <span>ابدئي من القسم، واتركي التجربة تقرّب لك الاختيار.</span>
-            <TrackedLink href="/shop" className={styles.textAction} analyticsLabel="home_departments_all" analyticsSurface="home_cinematic">المتجر كاملًا ←</TrackedLink>
-          </div>
-          <div className={styles.departmentRail}>
-            {departments.map((department, index) => (
-              <TrackedLink key={department.href} href={department.href} className={styles.departmentPortal} analyticsLabel={`home_department_${index}`} analyticsSurface="home_cinematic" analyticsDestinationType="collection">
-                <Image src={department.image} alt="" fill sizes="(max-width: 700px) 50vw, 20vw" />
-                <span>0{index + 1}</span><small>{department.caption}</small><h3>{department.label}</h3>
-              </TrackedLink>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className={`${styles.scene} ${styles.productScene}`} data-cinematic-scene aria-label="مختارات المنتجات">
-        <div className={styles.frame}>
-          <div className={styles.sceneNumber}>03 / 06</div>
-          <div className={styles.productHeadline}><p>CURATED, NOT CROWDED</p><h2>أربع اختيارات.<br />تركيز واحد.</h2></div>
-          <div className={styles.productDeck}>
-            {productPicks.map((product, index) => (
-              <article className={styles.productSlide} key={product.name} style={{ "--card-index": index } as React.CSSProperties}>
-                <div className={styles.productImage}><Image src={product.image} alt={product.name} fill sizes="(max-width: 700px) 64vw, 25vw" /></div>
-                <div><span>0{index + 1}</span><small>{product.note}</small><h3>{product.name}</h3><TrackedLink href="/shop" analyticsLabel={`home_product_${index}`} analyticsSurface="home_cinematic">عرض المنتج</TrackedLink></div>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className={`${styles.scene} ${styles.ritualScene}`} data-cinematic-scene aria-label="اختيار الروتين">
-        <div className={styles.frame}>
-          <div className={styles.ritualBackdrop}><Image src="/brand-assets/hero-live.webp" alt="مجموعة من منتجات العناية المتاحة في كوزماتكس" fill sizes="100vw" /></div>
-          <div className={styles.ritualShade} aria-hidden="true" />
-          <div className={styles.ritualCopy}>
-            <p>THE SMARTER ROUTE</p>
-            <h2>لا تبحثي عن منتج فقط.<br />ابني قرارًا أفضل.</h2>
-            <span>ابدئي بالمشكلة أو المكوّن أو ترتيب الخطوات، لا بازدحام الرف.</span>
-            <div><TrackedLink href="/concerns" analyticsLabel="home_concerns" analyticsSurface="home_cinematic">حسب المشكلة</TrackedLink><TrackedLink href="/routines" analyticsLabel="home_routines" analyticsSurface="home_cinematic">الروتينات</TrackedLink></div>
+      <section className={`${styles.scene} ${styles.productTruth}`} data-home-scene aria-labelledby="product-truth-title">
+        <div className={styles.cinematicViewport} data-home-cinematic-viewport>
+          <div className={styles.sectionFrame}>
+            <div className={styles.sectionCopy}>
+              <p className={styles.eyebrow} lang="en">{copy.productTruth.eyebrow}</p>
+              <h2 id="product-truth-title">{copy.productTruth.title}</h2>
+              <p>{copy.productTruth.body}</p>
+              <p className={styles.dataGate}>{copy.productTruth.gate}</p>
+            </div>
+            <div className={styles.productStage} data-home-motion-layer="product-truth" aria-label={copy.productTruth.stageAria}>
+              <div className={styles.productHalo} aria-hidden="true" />
+              <div className={styles.productOrbit} aria-hidden="true"><i /><i /><i /></div>
+              <div className={styles.productObject} data-home-3d-object aria-hidden="true">
+                <div className={styles.productCap}><span /></div>
+                <div className={styles.productShoulder} />
+                <div className={styles.productGlass}>
+                  <div className={styles.productLiquid} />
+                  <div className={styles.productLabel}>
+                    <Image src="/elore-assets/logo-mark-burgundy.png" alt="" width={210} height={280} />
+                    <small>RITUEL NÂ° 01</small>
+                  </div>
+                  <span className={styles.glassHighlight} />
+                </div>
+              </div>
+              <div className={styles.productPedestal} aria-hidden="true"><span /></div>
+              <span lang="en">{copy.productTruth.pending}</span>
+            </div>
           </div>
         </div>
       </section>
 
-      <section className={`${styles.scene} ${styles.trustScene}`} data-cinematic-scene aria-label="الثقة والخدمة">
-        <div className={styles.frame}>
-          <div className={styles.trustHalo} aria-hidden="true"><span>COZMATEKS</span></div>
-          <div className={styles.trustIntro}><p>BEAUTY WITH CONFIDENCE</p><h2>من الاكتشاف<br />إلى بابك، بثقة.</h2></div>
-          <div className={styles.trustOrbit}>
-            {trustPoints.map(([number, title, body], index) => <article key={number} style={{ "--trust-index": index } as React.CSSProperties}><b>{number}</b><strong>{title}</strong><span>{body}</span></article>)}
+      <section className={`${styles.scene} ${styles.textureScene}`} data-home-scene aria-labelledby="texture-title">
+        <div className={styles.cinematicViewport} data-home-cinematic-viewport>
+          <div className={styles.textureMedia} data-home-motion-layer="texture" aria-hidden="true">
+            <Image src="/elore-assets/texture-skincare-serum-concept-1536w.avif" alt="" fill sizes="100vw" />
+          </div>
+          <div className={styles.textureReveal} aria-hidden="true" />
+          <div className={styles.textureCopy}>
+            <p className={styles.eyebrow} lang="en">{copy.texture.eyebrow}</p>
+            <h2 id="texture-title">{copy.texture.title}</h2>
+            <p>{copy.texture.body}</p>
+          </div>
+          <p className={styles.assetStatus}>{copy.texture.assetStatus}</p>
+        </div>
+      </section>
+
+      <section className={`${styles.scene} ${styles.intentions}`} data-home-scene aria-labelledby="intentions-title">
+        <header className={styles.sectionHeading}>
+          <p className={styles.eyebrow} lang="en">SHOP BY INTENTION</p>
+          <h2 id="intentions-title">{copy.intentionsTitle}</h2>
+        </header>
+        <div className={styles.intentionList}>
+          {copy.intentions.map(([label, caption, destination, image], index) => (
+            <TrackedLink key={destination} href={href(destination)} className={styles.intentionBand} analyticsLabel={`home_intention_${index + 1}`} analyticsSurface="elore_home" analyticsDestinationType="collection">
+              <Image src={image} alt="" fill sizes="100vw" />
+              <span className={styles.bandShade} aria-hidden="true" />
+              <small>0{index + 1}</small>
+              <div><h3>{label}</h3><p>{caption}</p></div>
+              <b aria-hidden="true">↙</b>
+            </TrackedLink>
+          ))}
+        </div>
+      </section>
+
+      <section className={`${styles.scene} ${styles.routine}`} data-home-scene aria-labelledby="routine-title">
+        <div className={styles.sectionHeading}>
+          <p className={styles.eyebrow} lang="en">ROUTINE, SIMPLIFIED</p>
+          <h2 id="routine-title">{copy.routine.title}</h2>
+          <p>{copy.routine.body}</p>
+        </div>
+        <div className={styles.routineSteps}>
+          {copy.routine.steps.map(([number, title, body]) => <article key={number}><span>{number}</span><h3>{title}</h3><p>{body}</p></article>)}
+        </div>
+        <TrackedLink href={href("/routines")} className={styles.darkAction} analyticsLabel="home_routine_essentials" analyticsSurface="elore_home">{copy.routine.cta}</TrackedLink>
+      </section>
+
+      <section className={`${styles.scene} ${styles.shades}`} data-home-scene aria-labelledby="shade-title">
+        <div className={styles.cinematicViewport} data-home-cinematic-viewport>
+          <div className={styles.shadeBackdrop} data-home-motion-layer="shade" aria-hidden="true">
+            <Image src="/elore-assets/texture-makeup-pigment-concept-1536w.avif" alt="" fill sizes="100vw" />
+          </div>
+          <div className={styles.shadePanel}>
+            <p className={styles.eyebrow} lang="en">SHADE &amp; SKIN REALITY</p>
+            <h2 id="shade-title">{copy.shades.title}</h2>
+            <p>{copy.shades.body}</p>
+            <span lang="en">{copy.shades.status}</span>
           </div>
         </div>
       </section>
 
-      <section className={`${styles.scene} ${styles.journalScene}`} data-cinematic-scene aria-label="مجلة كوزماتكس">
-        <div className={styles.frame}>
-          <div className={styles.journalWord} aria-hidden="true">JOURNAL</div>
-          <div className={styles.journalCopy}>
-            <p>COZMATEKS JOURNAL</p>
-            <h2>المعلومة جزء<br />من العناية.</h2>
-            <span>أدلة واضحة تساعدك تفهمي اختياراتك قبل إضافتها إلى روتينك.</span>
-            <TrackedLink href="/journal" className={styles.primaryAction} analyticsLabel="home_journal" analyticsSurface="home_cinematic">اقرئي المجلة</TrackedLink>
+      <section className={`${styles.scene} ${styles.story}`} data-home-scene aria-labelledby="story-title">
+        <div className={styles.storyMedia} data-home-motion-layer="story" aria-hidden="true"><Image src="/elore-assets/editorial-skin-light-concept-1122w.avif" alt="" fill sizes="(max-width: 760px) 100vw, 48vw" /></div>
+        <div className={styles.storyCopy}>
+          <p className={styles.eyebrow} lang="en">PARIS, REFRAMED</p>
+          <h2 id="story-title">{copy.story.title}</h2>
+          <p>{copy.story.body}</p>
+          <TrackedLink href={href("/about")} className={styles.textAction} analyticsLabel="home_story" analyticsSurface="elore_home">{copy.story.cta}</TrackedLink>
+        </div>
+      </section>
+
+      <section className={`${styles.scene} ${styles.proof}`} data-home-scene aria-labelledby="proof-title">
+        <div className={styles.sectionHeading}>
+          <p className={styles.eyebrow} lang="en">WHY THE EXPERIENCE FEELS DIFFERENT</p>
+          <h2 id="proof-title">{copy.proofTitle}</h2>
+        </div>
+        <div className={styles.proofGrid}>
+          {copy.proof.map(([number, title, body]) => <article key={number}><span>{number}</span><h3>{title}</h3><p>{body}</p></article>)}
+        </div>
+      </section>
+
+      <section className={`${styles.scene} ${styles.gifting}`} data-home-scene aria-labelledby="gifting-title">
+        <div className={styles.cinematicViewport} data-home-cinematic-viewport>
+          <div className={styles.giftingMedia} data-home-motion-layer="gifting" aria-hidden="true"><Image src="/elore-assets/gifting-ribbon-ritual-concept-1536w.avif" alt="" fill sizes="100vw" /></div>
+          <div className={styles.giftingCopy}>
+            <p className={styles.eyebrow} lang="en">THE ART OF GIFTING</p>
+            <h2 id="gifting-title">{copy.gifting.title}</h2>
+            <p>{copy.gifting.body}</p>
+            <TrackedLink href={href("/shop/beauty-sets")} className={styles.lightAction} analyticsLabel="home_gifting" analyticsSurface="elore_home">{copy.gifting.cta}</TrackedLink>
           </div>
-          <div className={styles.newsletterPanel}><NewsletterSignup /></div>
+        </div>
+      </section>
+
+      <section className={`${styles.scene} ${styles.edit}`} data-home-scene aria-labelledby="edit-title">
+        <div className={styles.cinematicViewport} data-home-cinematic-viewport>
+          <div className={styles.editTexture} data-home-motion-layer="edit" aria-hidden="true"><Image src="/elore-assets/transition-burgundy-satin-concept-1672w.avif" alt="" fill sizes="100vw" /></div>
+          <div className={styles.editContent}>
+            <Image src="/elore-assets/logo-horizontal-ivory.png" alt="ÉLORÉ PARIS" width={520} height={164} />
+            <div className={styles.editEditorial}>
+              <p className={styles.eyebrow} lang="en">THE BEAUTY EDIT</p>
+              <h2 id="edit-title">{copy.edit.title}</h2>
+              <p>{copy.edit.body}</p>
+              <TrackedLink href={href("/journal")} className={styles.lightAction} analyticsLabel="home_beauty_edit" analyticsSurface="elore_home">{copy.edit.cta}</TrackedLink>
+            </div>
+            <div className={styles.newsletterPanel}>
+              <NewsletterSignup locale={locale} />
+            </div>
+          </div>
         </div>
       </section>
     </div>

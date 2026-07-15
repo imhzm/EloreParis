@@ -1,0 +1,23 @@
+{
+  "skill_name": "aeo-audit",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Сделай полный AEO аудит для сайта icoda.io и создай PDF отчёт. Нужно проверить доступность для AI ботов, структурированные данные, контент и технические аспекты.",
+      "expected_output": "Full AI visibility audit of icoda.io with: (1) 4 HTTP fetches performed (robots.txt, homepage, sitemap.xml, llms.txt), (2) scores calculated for all 4 categories using correct weights, (3) overall score 0-100, (4) HTML report artifact generated with proper color-coded design, score gauge, bot table, technical checklist, recommendations. Response in Russian.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Check the AI visibility of stripe.com — I want to know if ChatGPT and Perplexity can find and index it. Give me a full AEO audit with a downloadable report.",
+      "expected_output": "Full AI visibility audit of stripe.com with: (1) 4 HTTP fetches performed, (2) scores for all 4 categories, (3) HTML report artifact with English language, correct bot access table showing Stripe's robots.txt configuration, structured data analysis (Stripe likely has good structured data), recommendations sorted by ROI. Response in English.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Проверь и сравни AI видимость двух сайтов: tinkoff.ru и sberbank.ru. Какой из них лучше оптимизирован для AI поиска? Сделай сравнительный анализ.",
+      "expected_output": "Comparative AI visibility audit of both tinkoff.ru and sberbank.ru: (1) Both sites analyzed with 4 fetches each, (2) scores calculated for both, (3) side-by-side comparison table in the report, (4) clear winner identified per category, (5) recommendations for the weaker site. Response in Russian.",
+      "files": []
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "SaaS Delivery"
+  short_description: "Ship SaaS features with release discipline"
+  default_prompt: "Use -delivery to plan and ship this SaaS feature safely."

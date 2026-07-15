@@ -1,0 +1,197 @@
+.catalogPage {
+  min-height: 100vh;
+}
+
+.mainColumn,
+.importForm,
+.importList {
+  display: grid;
+  gap: 18px;
+}
+
+.filePicker {
+  position: relative;
+  display: grid;
+  gap: 7px;
+  padding: 20px;
+  border: 1px dashed rgba(117, 226, 199, 0.36);
+  border-radius: 22px;
+  color: rgba(255, 250, 242, 0.76);
+  background: rgba(117, 226, 199, 0.06);
+  cursor: pointer;
+  transition: border-color 180ms ease, background 180ms ease;
+}
+
+.filePicker:hover,
+.filePicker:focus-within {
+  border-color: rgba(117, 226, 199, 0.72);
+  background: rgba(117, 226, 199, 0.1);
+}
+
+.filePicker input {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  opacity: 0;
+}
+
+.filePicker strong {
+  color: #fffaf2;
+}
+
+.filePicker small {
+  color: rgba(255, 250, 242, 0.52);
+}
+
+.jsonEditor {
+  min-height: 300px !important;
+  direction: ltr;
+  text-align: left;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace !important;
+  font-size: 0.86rem !important;
+  line-height: 1.65;
+}
+
+.sectionHeading,
+.importHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.sectionHeading h2,
+.importHeader h3 {
+  margin-block: 8px 0;
+}
+
+.importCard {
+  display: grid;
+  gap: 18px;
+  padding: clamp(18px, 3vw, 26px);
+  border: 1px solid rgba(117, 226, 199, 0.16);
+  border-radius: 24px;
+  background: rgba(255, 250, 242, 0.045);
+}
+
+.importCard h3 {
+  color: #fffaf2;
+}
+
+.importCard code {
+  color: rgba(255, 250, 242, 0.58);
+  overflow-wrap: anywhere;
+}
+
+.statusBadge {
+  display: inline-flex;
+  padding: 7px 11px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.validated {
+  border-color: rgba(248, 195, 93, 0.34);
+  color: #ffd98f;
+  background: rgba(248, 195, 93, 0.1);
+}
+
+.active {
+  border-color: rgba(117, 226, 199, 0.38);
+  color: #9ef0dc;
+  background: rgba(117, 226, 199, 0.1);
+}
+
+.retired {
+  border-color: rgba(255, 250, 242, 0.14);
+  color: rgba(255, 250, 242, 0.58);
+  background: rgba(255, 250, 242, 0.04);
+}
+
+.counts {
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  gap: 2px 12px;
+  text-align: center;
+}
+
+.counts strong {
+  color: #9ef0dc;
+  font-size: 1.45rem;
+}
+
+.counts span {
+  color: rgba(255, 250, 242, 0.52);
+  font-size: 0.78rem;
+}
+
+.metadata {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.metadata div {
+  padding: 13px 15px;
+  border-radius: 16px;
+  background: rgba(255, 250, 242, 0.045);
+}
+
+.metadata dt {
+  color: rgba(255, 250, 242, 0.46);
+  font-size: 0.76rem;
+}
+
+.metadata dd {
+  margin: 6px 0 0;
+  color: rgba(255, 250, 242, 0.82);
+}
+
+.blockers {
+  color: rgba(255, 250, 242, 0.72);
+}
+
+.blockers summary {
+  cursor: pointer;
+  color: #ffb4a8;
+  font-weight: 700;
+}
+
+.blockers ul,
+.requirements {
+  display: grid;
+  gap: 9px;
+  margin: 14px 0 0;
+  padding-inline-start: 22px;
+  color: rgba(255, 250, 242, 0.68);
+  line-height: 1.7;
+}
+
+.blockerItem {
+  padding: 12px 14px;
+  border-inline-start: 3px solid rgba(255, 135, 115, 0.72);
+  border-radius: 10px;
+  background: rgba(255, 135, 115, 0.07);
+  color: rgba(255, 224, 219, 0.86);
+  line-height: 1.7;
+}
+
+@media (max-width: 720px) {
+  .metadata {
+    grid-template-columns: 1fr;
+  }
+
+  .jsonEditor {
+    min-height: 240px !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .filePicker {
+    transition: none;
+  }
+}

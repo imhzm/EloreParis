@@ -1,0 +1,4 @@
+interface:
+  display_name: "Database Safety"
+  short_description: "Ship schema and data changes with safety"
+  default_prompt: "Use -safety to review this schema or data change for production safety."

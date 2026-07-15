@@ -5,7 +5,7 @@ import { StorefrontShell } from "@/components/storefront-shell";
 export const metadata: Metadata = {
   title: "إتمام الطلب",
   description:
-    "خطوة تثبيت الطلب بمرجع واضح ضمن النسخة التأسيسية الحالية لمتجر Cozmateks.",
+    "خطوة تثبيت الطلب بمرجع واضح ضمن النسخة التأسيسية الحالية لمتجر ÉLORÉ PARIS.",
   robots: {
     index: false,
     follow: false,

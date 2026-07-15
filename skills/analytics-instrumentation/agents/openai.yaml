@@ -1,0 +1,4 @@
+interface:
+  display_name: "Analytics Instrumentation"
+  short_description: "Instrument funnels and events without blind spots"
+  default_prompt: "Use -instrumentation to plan and verify analytics for this product flow."

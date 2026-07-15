@@ -1,101 +1,132 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, type CSSProperties } from "react";
+import { type CSSProperties, type FocusEvent } from "react";
 import { TrackedLink } from "@/components/tracked-link";
+import { useScrollSceneProgress } from "@/hooks/use-scroll-scene-progress";
+import { localizePath, type Locale } from "@/lib/i18n";
+import { shopCopy } from "@/lib/shop-content";
+import type { PublicCatalogProduct } from "@/lib/public-catalog-types";
 import styles from "./cinematic-shop-atlas-stage.module.css";
 
-const clamp = (value: number) => Math.min(Math.max(value, 0), 1);
+type Props = { locale: Locale; products: PublicCatalogProduct[] };
 
-const collections = [
-  { title: "العناية بالبشرة", label: "SKINCARE", href: "/shop/skincare", image: "/brand-assets/product-01.jpg" },
-  { title: "المكياج", label: "MAKEUP", href: "/shop/makeup", image: "/brand-assets/product-05.jpg" },
-  { title: "العناية بالشعر", label: "HAIRCARE", href: "/shop/haircare", image: "/brand-assets/product-02.jpg" },
-  { title: "العناية بالجسم", label: "BODYCARE", href: "/shop/bodycare", image: "/brand-assets/product-04.jpg" },
-  { title: "الأدوات", label: "TOOLS", href: "/shop/tools", image: "/brand-assets/product-06.jpg" },
-  { title: "مجموعات الجمال", label: "BEAUTY SETS", href: "/shop/beauty-sets", image: "/brand-assets/product-03.jpg" },
-] as const;
+function formatPrice(value: number, locale: Locale) {
+  return new Intl.NumberFormat(locale === "ar" ? "ar-SA" : "en-SA", {
+    style: "currency",
+    currency: "SAR",
+    maximumFractionDigits: 2,
+  }).format(value);
+}
 
-const products = [
-  { name: "Pigmentbio Night Renewer", brand: "BIODERMA", image: "/brand-assets/product-01.jpg" },
-  { name: "Calming Urea Shampoo", brand: "EUCERIN", image: "/brand-assets/product-02.jpg" },
-  { name: "pH5 Mild Shampoo", brand: "EUCERIN", image: "/brand-assets/product-03.jpg" },
-  { name: "Cicabio Arnica+", brand: "BIODERMA", image: "/brand-assets/product-04.jpg" },
-] as const;
+function keepFocusedLinkVisible(event: FocusEvent<HTMLAnchorElement>) {
+  const target = event.currentTarget;
+  requestAnimationFrame(() => {
+    const root = document.documentElement;
+    const previousScrollBehavior = root.style.scrollBehavior;
+    root.style.scrollBehavior = "auto";
+    target.scrollIntoView({ block: "center", inline: "nearest" });
+    root.style.scrollBehavior = previousScrollBehavior;
+  });
+}
 
-const routes = [
-  { number: "01", title: "حسب المشكلة", body: "ابدئي بالنتيجة التي تبحثين عنها.", href: "/concerns" },
-  { number: "02", title: "حسب الروتين", body: "رتّبي الخطوات قبل اختيار المنتجات.", href: "/routines" },
-  { number: "03", title: "حسب المكوّن", body: "افهمي التركيبة وما يناسب احتياجك.", href: "/ingredients" },
-  { number: "04", title: "بحث مباشر", body: "عندما تعرفين الاسم أو العلامة.", href: "/search" },
-] as const;
+function MultilineTitle({ value }: { value: string }) {
+  const [first, ...rest] = value.split("\n");
+  return <>{first}{rest.map((line) => <span key={line}><br />{line}</span>)}</>;
+}
 
-export function CinematicShopAtlasStage() {
-  const rootRef = useRef<HTMLDivElement>(null);
+export function CinematicShopAtlasStage({ locale, products }: Props) {
+  const rootRef = useScrollSceneProgress<HTMLDivElement>({ selector: "[data-shop-scene]" });
+  const copy = shopCopy[locale];
+  const publicProducts = products.slice(0, 4);
 
-  useEffect(() => {
-    const root = rootRef.current;
-    if (!root || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const scenes = Array.from(root.querySelectorAll<HTMLElement>("[data-shop-scene]"));
-    let requestId = 0;
-    const update = () => {
-      scenes.forEach((scene) => {
-        const bounds = scene.getBoundingClientRect();
-        const progress = clamp(-bounds.top / Math.max(bounds.height - innerHeight, 1));
-        scene.dataset.sceneState = bounds.top > 0 ? "before" : bounds.bottom <= innerHeight ? "after" : "active";
-        scene.style.setProperty("--progress", `${progress}`);
-        scene.style.setProperty("--enter", `${clamp(progress / 0.2)}`);
-        scene.style.setProperty("--exit", `${clamp((progress - 0.78) / 0.22)}`);
-      });
-      requestId = 0;
-    };
-    const schedule = () => { if (!requestId) requestId = requestAnimationFrame(update); };
-    update();
-    addEventListener("scroll", schedule, { passive: true });
-    addEventListener("resize", schedule);
-    return () => { removeEventListener("scroll", schedule); removeEventListener("resize", schedule); if (requestId) cancelAnimationFrame(requestId); };
-  }, []);
+  return (
+    <div ref={rootRef} className={styles.shop}>
+      <section className={`${styles.scene} ${styles.atlasScene}`} data-shop-scene aria-label={copy.hero.aria}>
+        <div className={styles.frame}>
+          <div className={styles.atlas} aria-hidden="true">
+            <span>01</span><span>02</span><span>03</span><b>ÉLORÉ<br />PARIS</b>
+          </div>
+          <div className={styles.heroCopy}>
+            <p>{copy.hero.eyebrow}</p>
+            <h1><MultilineTitle value={copy.hero.title} /></h1>
+            <span>{copy.hero.body}</span>
+            <TrackedLink href="#collections" className={styles.primaryAction} onFocus={keepFocusedLinkVisible} analyticsLabel="shop_atlas_collections" analyticsSurface="shop_cinematic">{copy.hero.cta}</TrackedLink>
+          </div>
+          <div className={styles.sceneCounter} aria-hidden="true">01 — 05</div>
+        </div>
+      </section>
 
-  return <div ref={rootRef} className={styles.shop}>
-    <section className={`${styles.scene} ${styles.atlasScene}`} data-shop-scene aria-label="بوابة المتجر">
-      <div className={styles.frame}>
-        <div className={styles.atlas} aria-hidden="true"><i /><i /><i /><b>COZMATEKS<br />ATLAS</b></div>
-        <div className={styles.heroCopy}><p>THE BEAUTY ATLAS</p><h1>اختاري طريقك.<br />مش مجرد منتج.</h1><span>فئة، مشكلة، روتين أو مكوّن. كل طريق يقربك من قرار أوضح.</span><TrackedLink href="#collections" className={styles.primaryAction} analyticsLabel="shop_atlas_collections" analyticsSurface="shop_cinematic">ابدئي الرحلة</TrackedLink></div>
-        <div className={styles.sceneCounter}>01 — 05</div>
-      </div>
-    </section>
+      <section className={`${styles.scene} ${styles.collectionScene}`} data-shop-scene id="collections" aria-label={copy.categories.aria}>
+        <div className={styles.frame}>
+          <div className={styles.heading}><p>{copy.categories.eyebrow}</p><h2><MultilineTitle value={copy.categories.title} /></h2></div>
+          <div className={styles.collectionTrack}>
+            {copy.collections.map(([title, label, href, image, analyticsLabel], index) => (
+              <TrackedLink key={href} href={localizePath(locale, href)} className={styles.collectionCard} onFocus={keepFocusedLinkVisible} style={{ "--index": index } as CSSProperties} analyticsLabel={analyticsLabel} analyticsSurface="shop_cinematic" analyticsDestinationType="collection">
+                <Image src={image} alt="" fill sizes="(max-width: 700px) 100vw, 19vw" />
+                <span>0{index + 1}</span><small>{label}</small><h3>{title}</h3>
+              </TrackedLink>
+            ))}
+          </div>
+          <div className={styles.sceneCounter} aria-hidden="true">02 — 05</div>
+        </div>
+      </section>
 
-    <section className={`${styles.scene} ${styles.collectionScene}`} data-shop-scene id="collections" aria-label="تصنيفات المتجر">
-      <div className={styles.frame}>
-        <div className={styles.heading}><p>SHOP BY CATEGORY</p><h2>ستة أبواب.<br />اختيار واحد.</h2></div>
-        <div className={styles.collectionTrack}>{collections.map((collection, index) => <TrackedLink key={collection.href} href={collection.href} className={styles.collectionCard} style={{ "--index": index } as CSSProperties} analyticsLabel={`shop_collection_${index}`} analyticsSurface="shop_cinematic" analyticsDestinationType="collection"><Image src={collection.image} alt="" fill sizes="(max-width: 700px) 58vw, 20vw" /><span>0{index + 1}</span><small>{collection.label}</small><h3>{collection.title}</h3></TrackedLink>)}</div>
-        <div className={styles.sceneCounter}>02 — 05</div>
-      </div>
-    </section>
+      <section className={`${styles.scene} ${styles.productsScene}`} data-shop-scene aria-label={copy.edit.aria}>
+        <div className={styles.frame}>
+          <div className={styles.productCopy}><p>{copy.edit.eyebrow}</p><h2><MultilineTitle value={copy.edit.title} /></h2><TrackedLink href={localizePath(locale, "/journal")} onFocus={keepFocusedLinkVisible} analyticsLabel="shop_products_journal" analyticsSurface="shop_cinematic">{copy.edit.cta}</TrackedLink></div>
+          <div className={styles.productStack}>
+            {publicProducts.length > 0
+              ? publicProducts.map((product, index) => (
+                  <article key={product.slug} className={styles.productCard} style={{ "--index": index } as CSSProperties}>
+                    <div><Image src={product.media[0].url} alt={product.media[0].alt} fill sizes="(max-width: 700px) 68vw, 26vw" /></div>
+                    <small>{product.brand}</small><h3>{product.name}</h3>
+                    <span>{formatPrice(Math.min(...product.variants.map((variant) => variant.price)), locale)}</span>
+                    <TrackedLink href={`/${locale}/product/${product.slug}`} onFocus={keepFocusedLinkVisible} aria-label={`${copy.edit.cardCta}: ${product.name}`} analyticsLabel={`shop_product_${product.slug}`} analyticsSurface="shop_cinematic" analyticsDestinationType="product">{copy.edit.cardCta}</TrackedLink>
+                  </article>
+                ))
+              : copy.studies.map(([name, label, image, href], index) => (
+                  <article key={name} className={styles.productCard} style={{ "--index": index } as CSSProperties}>
+                    <div><Image src={image} alt={name} fill sizes="(max-width: 700px) 68vw, 26vw" /></div>
+                    <small>{label}</small><h3>{name}</h3>
+                    <TrackedLink href={localizePath(locale, href)} onFocus={keepFocusedLinkVisible} aria-label={`${copy.edit.cardCta}: ${name}`} analyticsLabel={`shop_study_${index}`} analyticsSurface="shop_cinematic">{copy.edit.cardCta}</TrackedLink>
+                  </article>
+                ))}
+          </div>
+          <div className={styles.sceneCounter} aria-hidden="true">03 — 05</div>
+        </div>
+      </section>
 
-    <section className={`${styles.scene} ${styles.productsScene}`} data-shop-scene aria-label="منتجات مختارة">
-      <div className={styles.frame}>
-        <div className={styles.productCopy}><p>THE CURRENT EDIT</p><h2>منتجات حقيقية.<br />عرض أهدأ.</h2><TrackedLink href="/search" analyticsLabel="shop_products_search" analyticsSurface="shop_cinematic">البحث في المتجر ←</TrackedLink></div>
-        <div className={styles.productStack}>{products.map((product, index) => <article key={product.name} className={styles.productCard} style={{ "--index": index } as CSSProperties}><div><Image src={product.image} alt={product.name} fill sizes="(max-width: 700px) 70vw, 28vw" /></div><small>{product.brand}</small><h3>{product.name}</h3><TrackedLink href="/shop/skincare" analyticsLabel={`shop_product_${index}`} analyticsSurface="shop_cinematic">اكتشفي المنتج</TrackedLink></article>)}</div>
-        <div className={styles.sceneCounter}>03 — 05</div>
-      </div>
-    </section>
+      <section className={`${styles.scene} ${styles.routesScene}`} data-shop-scene aria-label={copy.routesIntro.aria}>
+        <div className={styles.frame}>
+          <div className={styles.routeCenter}><p>{copy.routesIntro.eyebrow}</p><h2><MultilineTitle value={copy.routesIntro.title} /></h2><span>{copy.routesIntro.body}</span></div>
+          <div className={styles.routeGrid}>
+            {copy.routes.map(([number, title, body, href, analyticsLabel], index) => (
+              <TrackedLink key={href} href={localizePath(locale, href)} className={styles.routeCard} onFocus={keepFocusedLinkVisible} style={{ "--index": index } as CSSProperties} analyticsLabel={analyticsLabel} analyticsSurface="shop_cinematic">
+                <b>{number}</b><h3>{title}</h3><span>{body}</span>
+              </TrackedLink>
+            ))}
+          </div>
+          <div className={styles.sceneCounter} aria-hidden="true">04 — 05</div>
+        </div>
+      </section>
 
-    <section className={`${styles.scene} ${styles.routesScene}`} data-shop-scene aria-label="طرق الاختيار">
-      <div className={styles.frame}>
-        <div className={styles.routeCenter}><p>CHOOSE WITH INTENT</p><h2>لو القسم<br />مش كفاية.</h2><span>ابدئي من السؤال الأقرب لك.</span></div>
-        <div className={styles.routeOrbit}>{routes.map((route, index) => <TrackedLink key={route.href} href={route.href} className={styles.routeCard} style={{ "--index": index } as CSSProperties} analyticsLabel={`shop_route_${index}`} analyticsSurface="shop_cinematic"><b>{route.number}</b><h3>{route.title}</h3><span>{route.body}</span></TrackedLink>)}</div>
-        <div className={styles.sceneCounter}>04 — 05</div>
-      </div>
-    </section>
-
-    <section className={`${styles.scene} ${styles.finalScene}`} data-shop-scene aria-label="نهاية تجربة المتجر">
-      <div className={styles.frame}>
-        <div className={styles.finalGlow} aria-hidden="true" />
-        <div className={styles.finalProducts} aria-hidden="true">{products.slice(0, 3).map((product, index) => <div key={product.image} style={{ "--index": index } as CSSProperties}><Image src={product.image} alt="" fill sizes="240px" /></div>)}</div>
-        <div className={styles.finalCopy}><p>READY WHEN YOU ARE</p><h2>اختيارك يبدأ<br />من هنا.</h2><span>منتجات أصلية، مسارات أوضح، وتجربة مصممة لتقلل الحيرة.</span><div><TrackedLink href="/search" className={styles.primaryAction} analyticsLabel="shop_final_search" analyticsSurface="shop_cinematic">ابحثي الآن</TrackedLink><TrackedLink href="/trust" className={styles.secondaryAction} analyticsLabel="shop_final_trust" analyticsSurface="shop_cinematic">الثقة والسياسات</TrackedLink></div></div>
-        <div className={styles.sceneCounter}>05 — 05</div>
-      </div>
-    </section>
-  </div>;
+      <section className={`${styles.scene} ${styles.finalScene}`} data-shop-scene aria-label={copy.finale.aria}>
+        <div className={styles.frame}>
+          <div className={styles.finalRule} aria-hidden="true" />
+          <div className={styles.finalProducts} aria-hidden="true">
+            {(publicProducts.length > 0
+              ? publicProducts.slice(0, 3).map((product) => product.media[0].url)
+              : copy.studies.slice(0, 3).map(([, , image]) => image)
+            ).map((image, index) => <div key={image} style={{ "--index": index } as CSSProperties}><Image src={image} alt="" fill sizes="240px" /></div>)}
+          </div>
+          <div className={styles.finalCopy}>
+            <p>{copy.finale.eyebrow}</p><h2><MultilineTitle value={copy.finale.title} /></h2><span>{copy.finale.body}</span>
+            <div><TrackedLink href={localizePath(locale, "/journal")} className={styles.primaryAction} onFocus={keepFocusedLinkVisible} analyticsLabel="shop_final_journal" analyticsSurface="shop_cinematic">{copy.finale.primary}</TrackedLink><TrackedLink href={localizePath(locale, "/trust")} className={styles.secondaryAction} onFocus={keepFocusedLinkVisible} analyticsLabel="shop_hub_to_trust" analyticsSurface="shop_cinematic">{copy.finale.secondary}</TrackedLink></div>
+          </div>
+          <div className={styles.sceneCounter} aria-hidden="true">05 — 05</div>
+        </div>
+      </section>
+    </div>
+  );
 }

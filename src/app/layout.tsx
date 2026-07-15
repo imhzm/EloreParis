@@ -1,21 +1,42 @@
 import type { Metadata, Viewport } from "next";
-import { Alexandria, Markazi_Text } from "next/font/google";
+import { headers } from "next/headers";
+import {
+  Cormorant_Garamond,
+  IBM_Plex_Sans_Arabic,
+  Manrope,
+  Noto_Naskh_Arabic,
+} from "next/font/google";
 import { AnalyticsProvider } from "@/components/analytics-provider";
 import { CartProvider } from "@/components/cart-provider";
 import { defaultMetadataRobots } from "@/lib/seo";
+import { defaultLocale, isLocale, localeConfig } from "@/lib/i18n";
 import { defaultDescription, siteName, siteTagline, siteUrl } from "@/lib/site-content";
 import "./globals.css";
 
-const bodyFont = Alexandria({
+const bodyFont = IBM_Plex_Sans_Arabic({
   variable: "--font-body",
   subsets: ["arabic", "latin"],
   weight: ["300", "400", "500", "600", "700"],
   display: "swap",
 });
 
-const displayFont = Markazi_Text({
+const displayFont = Noto_Naskh_Arabic({
   variable: "--font-display",
   subsets: ["arabic", "latin"],
+  weight: ["500", "600", "700"],
+  display: "swap",
+});
+
+const latinBodyFont = Manrope({
+  variable: "--font-body-latin",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+});
+
+const latinDisplayFont = Cormorant_Garamond({
+  variable: "--font-display-latin",
+  subsets: ["latin"],
   weight: ["500", "600", "700"],
   display: "swap",
 });
@@ -33,7 +54,7 @@ export const metadata: Metadata = {
   keywords: [
     "متجر مكياج في السعودية",
     "عناية بالبشرة السعودية",
-    "متجر كوزمتكس سعودي",
+    "إيلوري باريس السعودية",
     "premium beauty saudi",
     "skincare saudi arabia",
     "makeup store saudi arabia",
@@ -61,9 +82,9 @@ export const metadata: Metadata = {
     images: [socialImageUrl],
   },
   icons: {
-    icon: "/favicon.ico",
-    apple: "/favicon.ico",
-    shortcut: "/favicon.ico",
+    icon: "/elore-assets/favicon-192.png",
+    apple: "/elore-assets/favicon-192.png",
+    shortcut: "/elore-assets/favicon-192.png",
   },
   appleWebApp: {
     capable: true,
@@ -82,19 +103,23 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   colorScheme: "light",
-  themeColor: "#007f74",
+  themeColor: "#491723",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const localeHeader = (await headers()).get("x-elore-locale") ?? "";
+  const locale = isLocale(localeHeader) ? localeHeader : defaultLocale;
+  const language = localeConfig[locale];
+
   return (
     <html
-      lang="ar"
-      dir="rtl"
-      className={`${bodyFont.variable} ${displayFont.variable}`}
+      lang={language.htmlLang}
+      dir={language.dir}
+      className={`${bodyFont.variable} ${displayFont.variable} ${latinBodyFont.variable} ${latinDisplayFont.variable}`}
     >
       <body>
         <CartProvider>

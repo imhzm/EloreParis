@@ -84,7 +84,7 @@ export function CinematicDiscoveryHub({
   }, []);
 
   return (
-    <main ref={rootRef} className={styles.experience}>
+    <div ref={rootRef} className={styles.experience}>
       <section className={`${styles.scene} ${styles.opening}`} data-scene>
         <div className={styles.frame} data-frame>
           <div className={styles.glow} aria-hidden="true" />
@@ -95,7 +95,7 @@ export function CinematicDiscoveryHub({
             <a className={styles.scrollCue} href="#discovery-decision">مرّري لاكتشاف المسار <span aria-hidden="true">↓</span></a>
           </div>
           <div className={styles.productPortrait} aria-hidden="true">
-            <Image src={assetByKind[kind]} alt="" fill priority sizes="(max-width: 760px) 72vw, 34vw" />
+            <Image src={assetByKind[kind]} alt={`عنصر بصري يعبر عن قسم ${title}`} fill priority sizes="(max-width: 760px) 72vw, 34vw" />
           </div>
           <span className={styles.sceneNumber}>01</span>
         </div>
@@ -150,7 +150,7 @@ export function CinematicDiscoveryHub({
       <section className={`${styles.scene} ${styles.closing}`} data-scene>
         <div className={styles.frame} data-frame>
           <div className={styles.closingArt} aria-hidden="true">
-            <Image src="/brand-assets/product-01.jpg" alt="" fill sizes="(max-width: 760px) 80vw, 38vw" />
+            <Image src="/brand-assets/product-01.jpg" alt="صورة تجريبية غير معتمدة لواجهة اكتشاف المنتجات" fill sizes="(max-width: 760px) 80vw, 38vw" />
           </div>
           <div className={styles.closingCopy}>
             <p className={styles.eyebrow}>الخطوة التالية</p>
@@ -161,6 +161,6 @@ export function CinematicDiscoveryHub({
           <span className={styles.sceneNumber}>04</span>
         </div>
       </section>
-    </main>
+    </div>
   );
 }

@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { OpsNav } from "@/components/ops-nav";
+import { OpsLifecycleConsentSurface } from "@/components/ops-lifecycle-consent-surface";
+import { OpsLifecycleDeliveryOutboxSurface } from "@/components/ops-lifecycle-delivery-outbox-surface";
 import { TrackedLink } from "@/components/tracked-link";
 import { getPageType, trackAnalyticsEvent } from "@/lib/analytics";
 import {
@@ -254,6 +256,10 @@ export function OpsNotificationsSurface() {
           <span>رسائل لا ينبغي تشغيلها لأن التحديثات التشغيلية غير مفعّلة.</span>
         </article>
       </section>
+
+      <OpsLifecycleConsentSurface />
+
+      <OpsLifecycleDeliveryOutboxSurface />
 
       <section className={styles.layout}>
         <article className={styles.mainCard}>

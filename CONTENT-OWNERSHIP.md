@@ -4,16 +4,18 @@
 
 This document freezes ownership and launch gates for every public content surface in the current Cozmateks MVP.
 
-It does **not** claim that the content is final.
+It does **not** claim that all content is final.
 It makes the opposite explicit:
 
 - the structure is now frozen enough to build and review against
-- the public voice is still `provisional`
+- the home and brand voice are now `sample-based` from the 2026-07-14 ÉLORÉ PARIS handoff
+- product, legal, operational, and support facts remain provisional or blocked
 - launch readiness is blocked until style samples and business inputs are approved
 
 ## Current global status
 
-- Public content status: `provisional`
+- Brand/home content status: `sample-based`
+- Product, legal, and operating content status: `provisional / blocked`
 - Structure status: `frozen enough for implementation and QA`
 - Final launch gate: `blocked until ownership, samples, and business inputs are cleared`
 
@@ -21,19 +23,25 @@ It makes the opposite explicit:
 
 | Surface group | Owner | Approver | Primary blocker |
 | --- | --- | --- | --- |
-| Home and shop atlas | Founder / brand lead | Brand lead | Missing real homepage or campaign style samples |
+| Home and shop atlas | Founder / brand lead | Brand lead | Concept imagery and missing production product photography |
 | Collection and PDP commerce copy | Commerce owner | Commerce lead | Missing approved product voice and claims rules |
 | Concern, routine, and ingredient discovery | SEO and content owner | Growth lead | Missing sample-based Arabic discovery voice |
 | Journal and editorial | Editorial owner | Brand and content lead | Missing editorial samples and proof standard |
 | Trust and legal | Founder and legal owner | Legal reviewer | Missing approved business data and legal review |
 | Support and about | Support owner | Founder / operations lead | Missing final support channels and company narrative inputs |
 
-## Minimum sample pack before brand-polish claims
+## Brand sample pack received
 
-1. Two or three real homepage, campaign, or brand-story samples
-2. Two or three real PDP or product-description samples
-3. Two or three real editorial or educational samples
-4. One support or service-response sample for FAQ/contact tone
+The shared `Elore Paris - Motion Website` handoff dated 2026-07-14 supplies the
+brand foundation, bilingual homepage copy, navigation microcopy, design tokens,
+visual identity rules, storyboard, and motion system. These sources now govern
+home and brand-facing copy.
+
+## Remaining sample pack before wider brand-polish claims
+
+1. Approved PDP or product-description samples grounded in real SKU data
+2. Approved editorial examples with a named proof and review standard
+3. One support or service-response sample for FAQ/contact tone
 
 ## Minimum business input pack before launch claims
 

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Production Debugging"
+  short_description: "Debug incidents without guessing in production"
+  default_prompt: "Use -debugging to investigate this production issue methodically."

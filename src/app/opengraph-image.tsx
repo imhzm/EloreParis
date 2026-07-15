@@ -1,10 +1,7 @@
 import { ImageResponse } from "next/og";
 
-export const alt = "Cozmateks | Saudi premium beauty storefront";
-export const size = {
-  width: 1200,
-  height: 630,
-};
+export const alt = "ÉLORÉ PARIS | Beauty, considered.";
+export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
 export default function OpenGraphImage() {
@@ -12,164 +9,35 @@ export default function OpenGraphImage() {
     (
       <div
         style={{
-          height: "100%",
-          width: "100%",
-          display: "flex",
           position: "relative",
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-between",
+          padding: "64px 72px",
           overflow: "hidden",
-          background:
-            "linear-gradient(135deg, #fbf6f1 0%, #f7f1ea 45%, #efe4dd 100%)",
-          color: "#2b1c28",
-          fontFamily: "sans-serif",
+          color: "#FFFDFC",
+          background: "linear-gradient(132deg, #491723 0%, #611f2e 58%, #21151A 100%)",
+          fontFamily: "serif",
         }}
       >
-        <div
-          style={{
-            position: "absolute",
-            inset: "auto auto -90px -40px",
-            width: 340,
-            height: 340,
-            borderRadius: 999,
-            background: "rgba(216, 181, 174, 0.34)",
-          }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            inset: "-80px -40px auto auto",
-            width: 320,
-            height: 320,
-            borderRadius: 999,
-            background: "rgba(151, 160, 149, 0.24)",
-          }}
-        />
+        <div style={{ position: "absolute", inset: "0 auto 0 56%", width: 1, background: "rgba(201,166,127,.35)" }} />
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", fontFamily: "sans-serif", fontSize: 18, letterSpacing: 6, color: "#C9A67F" }}>ÉLORÉ PARIS</div>
+          <div style={{ display: "flex", fontFamily: "sans-serif", fontSize: 16, letterSpacing: 3, color: "rgba(255,253,252,.68)" }}>SAUDI ARABIA</div>
+        </div>
 
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "space-between",
-            width: "100%",
-            padding: "58px 64px",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "flex-start",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: 14,
-                maxWidth: 760,
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  fontSize: 24,
-                  textTransform: "uppercase",
-                  letterSpacing: 3,
-                  color: "#7a5f6c",
-                }}
-              >
-                <span>Saudi premium beauty storefront</span>
-              </div>
-              <div
-                style={{
-                  display: "flex",
-                  fontSize: 82,
-                  lineHeight: 0.94,
-                  fontWeight: 700,
-                  letterSpacing: -3,
-                }}
-              >
-                Cozmateks
-              </div>
-              <div
-                style={{
-                  display: "flex",
-                  fontSize: 34,
-                  lineHeight: 1.35,
-                  color: "#4c4047",
-                  maxWidth: 860,
-                }}
-              >
-                Curated skincare, makeup, routines, trust-first commerce, and
-                Arabic-first editorial discovery built for the Saudi market.
-              </div>
-            </div>
-
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: 12,
-                minWidth: 220,
-                padding: "24px 22px",
-                borderRadius: 28,
-                background: "rgba(43, 28, 40, 0.92)",
-                color: "#fff8f3",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  fontSize: 18,
-                  textTransform: "uppercase",
-                  letterSpacing: 2,
-                  color: "rgba(247, 241, 234, 0.72)",
-                }}
-              >
-                Live foundations
-              </div>
-              <div style={{ display: "flex", fontSize: 26, fontWeight: 700 }}>
-                Skincare
-              </div>
-              <div style={{ display: "flex", fontSize: 26, fontWeight: 700 }}>
-                Makeup
-              </div>
-              <div style={{ display: "flex", fontSize: 26, fontWeight: 700 }}>
-                Trust + Journal
-              </div>
-            </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 18, maxWidth: 900 }}>
+          <div style={{ display: "flex", fontSize: 96, lineHeight: 0.9, letterSpacing: -4 }}>Beauty, considered.</div>
+          <div style={{ display: "flex", maxWidth: 760, fontFamily: "sans-serif", fontSize: 28, lineHeight: 1.45, color: "rgba(255,253,252,.76)" }}>
+            Parisian ritual. Saudi relevance. Clearer texture, shade and routine guidance before you choose.
           </div>
+        </div>
 
-          <div
-            style={{
-              display: "flex",
-              gap: 14,
-              alignItems: "center",
-              flexWrap: "wrap",
-            }}
-          >
-            {["Concern-led", "Ingredient-led", "Routine-led", "SEO-ready"].map(
-              (tag) => (
-                <div
-                  key={tag}
-                  style={{
-                    display: "flex",
-                    minHeight: 52,
-                    alignItems: "center",
-                    padding: "0 20px",
-                    borderRadius: 999,
-                    border: "1px solid rgba(43, 28, 40, 0.1)",
-                    background: "rgba(255, 255, 255, 0.62)",
-                    fontSize: 24,
-                    color: "#2b1c28",
-                  }}
-                >
-                  {tag}
-                </div>
-              ),
-            )}
-          </div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontFamily: "sans-serif", fontSize: 17, letterSpacing: 2, color: "#DCC4B9" }}>
+          <span>SKINCARE · MAKEUP · GIFTING</span>
+          <span>elore-paris.com</span>
         </div>
       </div>
     ),

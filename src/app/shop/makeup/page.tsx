@@ -12,11 +12,34 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
   const collectionProducts = products.filter((product) => product.collection === "makeup");
   const state = getCollectionFilterState("/shop/makeup", collectionProducts, params);
   const summary = state.activeFilters.map((filter) => filter.value).join(" | ");
+  const title = summary ? `${makeupCategory.title} | ${summary}` : makeupCategory.title;
+  const imageUrl = absoluteUrl("/brand-assets/product-05.jpg");
+
   return {
-    title: summary ? `${makeupCategory.title} | ${summary}` : makeupCategory.title,
+    title,
     description: makeupCategory.description,
     alternates: { canonical: "/shop/makeup" },
     robots: hasActiveCollectionFilters(params) ? { index: false, follow: true } : publicRichPreviewRobots,
+    openGraph: {
+      title,
+      description: makeupCategory.description,
+      url: absoluteUrl("/shop/makeup"),
+      type: "website",
+      images: [
+        {
+          url: imageUrl,
+          width: 1200,
+          height: 630,
+          alt: makeupCategory.title,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description: makeupCategory.description,
+      images: [imageUrl],
+    },
   };
 }
 

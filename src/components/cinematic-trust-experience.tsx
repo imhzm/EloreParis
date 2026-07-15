@@ -22,7 +22,7 @@ const imageBySlug: Record<string, string> = {
 const clamp = (value: number) => Math.min(Math.max(value, 0), 1);
 
 export function CinematicTrustExperience(props: Props) {
-  const rootRef = useRef<HTMLElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -57,12 +57,12 @@ export function CinematicTrustExperience(props: Props) {
 
   if (props.mode === "hub") {
     return (
-      <main ref={rootRef} className={styles.experience}>
+      <div ref={rootRef} className={styles.experience}>
         <section className={`${styles.scene} ${styles.hero}`} data-trust-scene>
           <div className={styles.frame} data-trust-frame>
             <div className={styles.seal} aria-hidden="true">
               <i />
-              <b>COZMATEKS<br />TRUST</b>
+              <b>ÉLORÉ<br />TRUST</b>
             </div>
             <div className={styles.heroCopy}>
               <p className={styles.eyebrow}>Trust center</p>
@@ -137,7 +137,7 @@ export function CinematicTrustExperience(props: Props) {
             <em className={styles.counter}>04 / 04</em>
           </div>
         </section>
-      </main>
+      </div>
     );
   }
 
@@ -145,7 +145,7 @@ export function CinematicTrustExperience(props: Props) {
   const image = imageBySlug[policy.slug] ?? "/brand-assets/product-02.jpg";
 
   return (
-    <main ref={rootRef} className={styles.experience}>
+    <div ref={rootRef} className={styles.experience}>
       <section className={`${styles.scene} ${styles.policyHero}`} data-trust-scene>
         <div className={styles.frame} data-trust-frame>
           <div className={styles.policyImage} aria-hidden="true">
@@ -248,6 +248,6 @@ export function CinematicTrustExperience(props: Props) {
           <em className={styles.counter}>04 / 04</em>
         </div>
       </section>
-    </main>
+    </div>
   );
 }

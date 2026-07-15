@@ -17,6 +17,8 @@
   --ops-panel: rgba(2, 24, 23, 0.72);
   --ops-panel-strong: rgba(2, 18, 18, 0.88);
   --ops-border: rgba(117, 226, 199, 0.18);
+  --ops-accent: var(--commerce-mint);
+  --ops-accent-rgb: 117, 226, 199;
   --ops-text-soft: rgba(255, 250, 242, 0.72);
   isolation: isolate;
   min-height: 100svh;
@@ -24,6 +26,31 @@
     radial-gradient(circle at 12% 8%, rgba(117, 226, 199, 0.18), transparent 28rem),
     radial-gradient(circle at 84% 18%, rgba(222, 177, 132, 0.12), transparent 32rem),
     linear-gradient(180deg, #021514 0%, #052f2d 44%, #031d1c 100%);
+}
+
+.opsOrders {
+  --ops-accent: #75e2c7;
+  --ops-accent-rgb: 117, 226, 199;
+}
+
+.opsCatalog {
+  --ops-accent: #d9b58c;
+  --ops-accent-rgb: 217, 181, 140;
+}
+
+.opsFulfillment {
+  --ops-accent: #8fc7ff;
+  --ops-accent-rgb: 143, 199, 255;
+}
+
+.opsRelease {
+  --ops-accent: #ffb199;
+  --ops-accent-rgb: 255, 177, 153;
+}
+
+.opsAdmin {
+  --ops-accent: #75e2c7;
+  --ops-accent-rgb: 117, 226, 199;
 }
 
 .opsDashboard::before {
@@ -45,13 +72,24 @@
 }
 
 .opsDashboard .statusSummaryCard {
+  position: relative;
+  overflow: hidden;
   min-height: 156px;
   align-content: space-between;
   border-color: var(--ops-border);
   background:
-    radial-gradient(circle at 88% 10%, rgba(117, 226, 199, 0.18), transparent 52%),
+    radial-gradient(circle at 88% 10%, rgba(var(--ops-accent-rgb), 0.18), transparent 52%),
     var(--ops-panel);
   box-shadow: 0 26px 68px rgba(0, 12, 12, 0.28);
+}
+
+.opsDashboard .statusSummaryCard::after {
+  content: "";
+  position: absolute;
+  inset: auto 18px 0;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, rgba(var(--ops-accent-rgb), 0.78), transparent);
 }
 
 .opsDashboard .statusSummaryCard strong,
@@ -60,7 +98,7 @@
 }
 
 .opsDashboard .statusSummaryCard .sectionTitle {
-  color: var(--commerce-mint);
+  color: var(--ops-accent);
 }
 
 .opsDashboard .layout {
@@ -86,8 +124,8 @@
 }
 
 .opsDashboard .opsNavLinkActive {
-  border-color: rgba(117, 226, 199, 0.38);
-  background: rgba(117, 226, 199, 0.16);
+  border-color: rgba(var(--ops-accent-rgb), 0.42);
+  background: rgba(var(--ops-accent-rgb), 0.16);
 }
 
 .opsDashboard .opsSessionSummary,
@@ -103,9 +141,11 @@
   top: 96px;
   z-index: 3;
   padding: 18px;
-  border: 1px solid var(--ops-border);
+  border: 1px solid rgba(var(--ops-accent-rgb), 0.22);
   border-radius: 24px;
-  background: rgba(2, 24, 23, 0.82);
+  background:
+    radial-gradient(circle at 92% 0%, rgba(var(--ops-accent-rgb), 0.12), transparent 42%),
+    rgba(2, 24, 23, 0.84);
   box-shadow: 0 22px 60px rgba(0, 12, 12, 0.24);
   backdrop-filter: blur(22px);
 }
@@ -115,7 +155,7 @@
 :is(.opsOrders, .opsCatalog, .opsFulfillment, .opsNotifications, .opsRelease, .opsAudit) .emptyCard {
   min-height: 0;
   padding: 28px;
-  border: 1px dashed rgba(117, 226, 199, 0.28);
+  border: 1px dashed rgba(var(--ops-accent-rgb), 0.28);
   border-radius: 24px;
   background: rgba(2, 24, 23, 0.6);
   box-shadow: none;
@@ -136,7 +176,7 @@
 :is(.opsOrders, .opsCatalog, .opsFulfillment, .opsNotifications, .opsContent, .opsRelease, .opsAudit) .lineItem {
   border-color: var(--ops-border);
   background:
-    radial-gradient(circle at 96% 0%, rgba(117, 226, 199, 0.1), transparent 44%),
+    radial-gradient(circle at 96% 0%, rgba(var(--ops-accent-rgb), 0.1), transparent 44%),
     rgba(3, 29, 28, 0.72);
   box-shadow: 0 22px 60px rgba(0, 12, 12, 0.22);
 }
@@ -172,6 +212,416 @@
   backdrop-filter: blur(22px);
 }
 
+.opsDashboard .hero {
+  position: relative;
+  overflow: hidden;
+}
+
+.opsDashboard .hero::before,
+.opsDashboard .hero::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  border-radius: 999px;
+}
+
+.opsDashboard .hero::before {
+  width: clamp(260px, 34vw, 540px);
+  aspect-ratio: 1;
+  right: max(18px, calc((100vw - 1180px) / 2));
+  top: 16%;
+  border: 1px solid rgba(var(--ops-accent-rgb), 0.16);
+  background:
+    radial-gradient(circle at 50% 50%, rgba(var(--ops-accent-rgb), 0.14), transparent 58%),
+    conic-gradient(from 180deg, transparent, rgba(var(--ops-accent-rgb), 0.18), transparent 34%);
+  filter: blur(0.2px);
+  opacity: 0.72;
+}
+
+.opsDashboard .hero::after {
+  width: clamp(120px, 16vw, 240px);
+  aspect-ratio: 1;
+  right: max(110px, calc((100vw - 940px) / 2));
+  bottom: 16%;
+  background: rgba(var(--ops-accent-rgb), 0.12);
+  box-shadow:
+    0 0 90px rgba(var(--ops-accent-rgb), 0.24),
+    inset 0 0 42px rgba(255, 250, 242, 0.08);
+}
+
+.opsDashboard .hero > * {
+  position: relative;
+  z-index: 1;
+}
+
+.opsDashboard .hero h1 {
+  max-width: 12ch;
+  text-wrap: balance;
+}
+
+.opsDashboard .metricCard {
+  transform-style: preserve-3d;
+}
+
+.adminCommandGrid,
+.adminRouteGrid {
+  display: grid;
+  gap: 16px;
+}
+
+.adminCommandGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 22px;
+}
+
+.adminCommandCard,
+.adminRouteCard {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(var(--ops-accent-rgb), 0.16);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(var(--ops-accent-rgb), 0.13), transparent 42%),
+    rgba(255, 250, 242, 0.06);
+  box-shadow: 0 22px 64px rgba(0, 12, 12, 0.2);
+}
+
+.adminCommandCard {
+  display: grid;
+  gap: 16px;
+  padding: clamp(20px, 2.4vw, 28px);
+  border-radius: 28px;
+}
+
+.adminCommandCard::after {
+  content: "";
+  position: absolute;
+  inset: auto 22px 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(var(--ops-accent-rgb), 0.86), transparent);
+}
+
+.adminCommandCard h3 {
+  margin: 8px 0 0;
+  color: var(--commerce-cream);
+  font-size: clamp(1.1rem, 1.8vw, 1.45rem);
+}
+
+.adminRouteGrid {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  margin-top: 22px;
+}
+
+.adminRouteCard {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+  border-radius: 22px;
+  color: var(--commerce-cream);
+  text-decoration: none;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease;
+}
+
+.adminRouteCard:hover {
+  transform: translateY(-3px);
+  border-color: rgba(var(--ops-accent-rgb), 0.36);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(var(--ops-accent-rgb), 0.18), transparent 44%),
+    rgba(7, 59, 55, 0.86);
+}
+
+.adminRouteCard strong {
+  color: var(--ops-accent);
+  font-size: 0.85rem;
+  direction: ltr;
+  text-align: left;
+}
+
+.opsDashboard :is(.mainCard, .summaryCard) {
+  position: relative;
+  overflow: hidden;
+}
+
+.opsDashboard :is(.mainCard, .summaryCard)::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    linear-gradient(135deg, rgba(var(--ops-accent-rgb), 0.16), transparent 24%),
+    radial-gradient(circle at 100% 0%, rgba(var(--ops-accent-rgb), 0.12), transparent 38%);
+  opacity: 0.78;
+}
+
+.opsDashboard :is(.mainCard, .summaryCard) > * {
+  position: relative;
+  z-index: 1;
+}
+
+.opsDashboard .ordersGrid {
+  gap: clamp(16px, 2.2vw, 28px);
+}
+
+.opsDashboard .lineItem {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(20px, 2.4vw, 30px);
+}
+
+.opsDashboard .lineItem::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: linear-gradient(180deg, transparent, rgba(var(--ops-accent-rgb), 0.74), transparent);
+}
+
+.opsDashboard .lineHead h3 {
+  font-size: clamp(1.05rem, 1.7vw, 1.35rem);
+  letter-spacing: -0.02em;
+}
+
+.opsDashboard .linePrice,
+.opsDashboard .referenceValue,
+.opsDashboard .summaryValue {
+  color: var(--ops-accent);
+}
+
+.opsDashboard .referenceCard {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(var(--ops-accent-rgb), 0.16);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(var(--ops-accent-rgb), 0.08), transparent 42%),
+    rgba(255, 250, 242, 0.055);
+}
+
+.opsDashboard .referenceCard .referenceCard {
+  background: rgba(255, 250, 242, 0.045);
+  box-shadow: none;
+}
+
+.opsDashboard .filterChip {
+  cursor: pointer;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease;
+}
+
+.opsDashboard .filterChip:hover {
+  transform: translateY(-1px);
+  border-color: rgba(var(--ops-accent-rgb), 0.36);
+}
+
+.opsDashboard .filterChipActive {
+  box-shadow: inset 0 0 0 1px rgba(var(--ops-accent-rgb), 0.18);
+}
+
+.opsDashboard .textInput:focus,
+.opsDashboard .textArea:focus {
+  border-color: rgba(var(--ops-accent-rgb), 0.48);
+  box-shadow: 0 0 0 4px rgba(var(--ops-accent-rgb), 0.12);
+}
+
+.opsDashboard .cardActions {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.opsDashboard .inlineNotice {
+  border-color: rgba(var(--ops-accent-rgb), 0.2);
+  background: rgba(var(--ops-accent-rgb), 0.08);
+}
+
+.opsDashboard .inlineError {
+  border-color: rgba(255, 177, 153, 0.3);
+  background: rgba(255, 177, 153, 0.1);
+  color: #ffd5c9;
+}
+
+.opsRelease .statusSummaryCard::after {
+  background: linear-gradient(90deg, transparent, rgba(255, 177, 153, 0.86), transparent);
+}
+
+.opsRelease > .mainCard {
+  background:
+    radial-gradient(circle at 100% 0%, rgba(var(--ops-accent-rgb), 0.12), transparent 38%),
+    rgba(2, 24, 23, 0.78);
+}
+
+.opsDashboard .hero {
+  min-height: 62svh;
+}
+
+.opsOrders .statusSummaryGrid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.opsOrders .layout {
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 0.34fr);
+  align-items: start;
+}
+
+.queueToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.queueToolbarSummary {
+  display: grid;
+  gap: 4px;
+}
+
+.queueToolbarSummary strong {
+  color: var(--commerce-cream);
+  font-size: 1rem;
+}
+
+.queueToolbarSummary span {
+  color: var(--ops-text-soft);
+  font-size: 0.82rem;
+}
+
+.inlineError {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.inlineActionButton {
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 177, 153, 0.34);
+  border-radius: 999px;
+  color: #fffaf2;
+  background: rgba(255, 177, 153, 0.12);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.inlineActionButton:disabled {
+  cursor: wait;
+  opacity: 0.58;
+}
+
+.orderAdminGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.opsOrders .referenceValue {
+  max-width: min(100%, 32rem);
+  color: var(--commerce-cream);
+  font-size: 0.94rem;
+  letter-spacing: 0;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+  text-align: end;
+}
+
+.orderDisclosure {
+  overflow: hidden;
+  border: 1px solid rgba(var(--ops-accent-rgb), 0.18);
+  border-radius: 20px;
+  background: rgba(0, 11, 12, 0.34);
+}
+
+.orderDisclosureSummary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 16px 18px;
+  color: var(--commerce-cream);
+  cursor: pointer;
+  list-style: none;
+}
+
+.orderDisclosureSummary::-webkit-details-marker {
+  display: none;
+}
+
+.orderDisclosureSummary > span:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.orderDisclosureSummary small {
+  color: var(--ops-text-soft);
+}
+
+.orderDisclosureSummary:focus-visible {
+  outline: 2px solid var(--ops-accent);
+  outline-offset: -4px;
+}
+
+.orderDisclosureHint {
+  color: var(--ops-accent);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.orderDisclosure[open] .orderDisclosureHint {
+  font-size: 0;
+}
+
+.orderDisclosure[open] .orderDisclosureHint::before {
+  content: "إخفاء التفاصيل";
+  font-size: 0.82rem;
+}
+
+.orderTableWrap {
+  overflow-x: auto;
+  border-top: 1px solid rgba(var(--ops-accent-rgb), 0.14);
+}
+
+.orderTable {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+  color: var(--commerce-cream);
+  text-align: start;
+}
+
+.orderTable th,
+.orderTable td {
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(var(--ops-accent-rgb), 0.1);
+  text-align: start;
+  vertical-align: top;
+}
+
+.orderTable th {
+  color: var(--ops-accent);
+  background: rgba(var(--ops-accent-rgb), 0.06);
+  font-size: 0.78rem;
+}
+
+.orderTable td {
+  font-size: 0.88rem;
+}
+
+.orderTable td strong,
+.orderTable td span {
+  display: block;
+}
+
+.orderTable td span {
+  margin-top: 4px;
+  color: var(--ops-text-soft);
+  font-size: 0.78rem;
+}
+
 .opsNavWrap {
   display: flex;
   align-items: center;
@@ -184,6 +634,30 @@
   display: grid;
   gap: 10px;
 }
+
+.opsBrand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: max-content;
+  padding-inline-end: 14px;
+  border-inline-end: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.opsBrandMark {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border-radius: 12px;
+  color: #071412;
+  background: linear-gradient(135deg, #7de4c4, #d9b879);
+  font-weight: 950;
+}
+
+.opsBrand div { display: grid; gap: 1px; }
+.opsBrand strong { color: #fff; font-size: 0.88rem; }
+.opsBrand small { color: rgba(226, 244, 238, 0.58); font-size: 0.68rem; }
 
 .opsNav {
   display: flex;
@@ -654,13 +1128,17 @@
 .opsDashboard :is(.mainCard, .summaryCard) {
   border-color: var(--ops-border);
   background:
-    radial-gradient(circle at 100% 0%, rgba(117, 226, 199, 0.1), transparent 36%),
+    radial-gradient(circle at 100% 0%, rgba(var(--ops-accent-rgb), 0.1), transparent 36%),
     rgba(2, 24, 23, 0.76);
   box-shadow: 0 30px 100px rgba(0, 12, 12, 0.32);
 }
 
-.opsDashboard :is(.mainCard h2, .summaryCard h2, .lineHead h3, .linePrice, .summaryValue, .referenceValue, .timelineItem strong, .authMethodHeader h3) {
+.opsDashboard :is(.mainCard h2, .summaryCard h2, .lineHead h3, .timelineItem strong, .authMethodHeader h3) {
   color: var(--commerce-cream);
+}
+
+.opsDashboard :is(.linePrice, .summaryValue, .referenceValue) {
+  color: var(--ops-accent);
 }
 
 .opsDashboard :is(.summary, .mainCard p, .summaryCard p, .lineMeta, .helperText, .optionNote, .timelineItem p, .opsSessionSummary span) {
@@ -668,31 +1146,31 @@
 }
 
 .opsDashboard :is(.eyebrow, .sectionTitle, .fieldLabel) {
-  color: var(--commerce-mint);
+  color: var(--ops-accent);
 }
 
 .opsDashboard :is(.authMethodCard, .optionCard, .referenceCard, .timelineItem, .infoBullet, .linkList a) {
-  border-color: rgba(117, 226, 199, 0.14);
+  border-color: rgba(var(--ops-accent-rgb), 0.14);
   background:
-    radial-gradient(circle at 92% 8%, rgba(117, 226, 199, 0.08), transparent 42%),
+    radial-gradient(circle at 92% 8%, rgba(var(--ops-accent-rgb), 0.08), transparent 42%),
     rgba(255, 250, 242, 0.06);
   color: var(--commerce-cream);
 }
 
 .opsDashboard :is(.badgeRow span, .timelineBadge, .timelineCompactItem, .filterChip) {
-  border-color: rgba(117, 226, 199, 0.2);
-  background: rgba(117, 226, 199, 0.08);
+  border-color: rgba(var(--ops-accent-rgb), 0.2);
+  background: rgba(var(--ops-accent-rgb), 0.08);
   color: rgba(255, 250, 242, 0.84);
 }
 
 .opsDashboard :is(.filterChipActive, .optionCardActive, .timelineCurrent, .timelineCompactCurrent) {
-  border-color: rgba(117, 226, 199, 0.42);
-  background: rgba(117, 226, 199, 0.16);
+  border-color: rgba(var(--ops-accent-rgb), 0.42);
+  background: rgba(var(--ops-accent-rgb), 0.16);
   color: var(--commerce-cream);
 }
 
 .opsDashboard :is(.textInput, .textArea) {
-  border-color: rgba(117, 226, 199, 0.18);
+  border-color: rgba(var(--ops-accent-rgb), 0.18);
   background: rgba(255, 250, 242, 0.08);
   color: var(--commerce-cream);
 }
@@ -702,15 +1180,15 @@
 }
 
 .opsDashboard .summaryRow {
-  border-top-color: rgba(117, 226, 199, 0.14);
+  border-top-color: rgba(var(--ops-accent-rgb), 0.14);
 }
 
 .opsDashboard .linkList a span:last-child {
-  color: var(--commerce-mint);
+  color: var(--ops-accent);
 }
 
 .opsDashboard :is(.primaryButton, .primaryLink) {
-  border: 1px solid rgba(117, 226, 199, 0.26);
+  border: 1px solid rgba(var(--ops-accent-rgb), 0.26);
   background:
     radial-gradient(circle at 80% 12%, rgba(255, 250, 242, 0.18), transparent 44%),
     linear-gradient(135deg, #0fb79d, #052f2d);
@@ -724,7 +1202,7 @@
 }
 
 .opsDashboard :is(.inlineNotice, .inlineError) {
-  border-color: rgba(117, 226, 199, 0.2);
+  border-color: rgba(var(--ops-accent-rgb), 0.2);
   background: rgba(255, 250, 242, 0.08);
   color: var(--commerce-cream);
 }
@@ -755,7 +1233,7 @@
 }
 
 .noticeCard {
-  border-color: rgba(117, 226, 199, 0.2);
+  border-color: rgba(var(--ops-accent-rgb), 0.2);
   background: rgba(3, 29, 28, 0.72);
   box-shadow: 0 24px 70px rgba(0, 12, 12, 0.3);
 }
@@ -763,9 +1241,9 @@
 .noticeCard h2 { color: var(--commerce-cream); }
 
 .metricCard {
-  border: 1px solid rgba(117, 226, 199, 0.25);
+  border: 1px solid rgba(var(--ops-accent-rgb), 0.25);
   background:
-    radial-gradient(circle at 85% 15%, rgba(117, 226, 199, 0.25), transparent 45%),
+    radial-gradient(circle at 85% 15%, rgba(var(--ops-accent-rgb), 0.25), transparent 45%),
     rgba(2, 23, 22, 0.9);
 }
 
@@ -787,9 +1265,9 @@
 }
 
 .opsDashboard :is(.lineItem:hover, .referenceCard:hover, .statusSummaryCard:hover, .linkList a:hover) {
-  border-color: rgba(117, 226, 199, 0.34);
+  border-color: rgba(var(--ops-accent-rgb), 0.34);
   background:
-    radial-gradient(circle at 90% 0%, rgba(117, 226, 199, 0.16), transparent 44%),
+    radial-gradient(circle at 90% 0%, rgba(var(--ops-accent-rgb), 0.16), transparent 44%),
     rgba(7, 59, 55, 0.86);
 }
 
@@ -810,11 +1288,16 @@
 @supports (animation-timeline: view()) {
   .mainCard,
   .summaryCard,
+  .lineItem,
   .timelineItem,
   .referenceCard {
     animation: commerceReveal both linear;
     animation-timeline: view();
     animation-range: entry 8% cover 32%;
+  }
+
+  .opsDashboard :is(.mainCard, .summaryCard, .lineItem, .timelineItem, .referenceCard) {
+    animation: none;
   }
 }
 
@@ -965,10 +1448,25 @@
 @media (max-width: 1080px) {
   .hero,
   .layout,
-  .statusSummaryGrid,
   .catalogPanelGrid,
   .authMethodsGrid {
     grid-template-columns: 1fr;
+  }
+
+  .opsOrders .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .opsDashboard .statusSummaryGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .orderAdminGrid {
+    grid-template-columns: 1fr;
+  }
+
+  :is(.opsOrders, .opsCatalog, .opsFulfillment, .opsNotifications) .filterBar {
+    position: static;
   }
 
   .summaryCard { position: static; }
@@ -1017,11 +1515,31 @@
   .referenceRow {
     align-items: flex-start;
   }
+
+  .queueToolbar,
+  .orderDisclosureSummary {
+    align-items: stretch;
+  }
+
+  .queueToolbar .cardActions {
+    width: 100%;
+  }
+
+  .queueToolbar .cardActions > * {
+    flex: 1 1 160px;
+  }
+}
+
+@media (max-width: 520px) {
+  .opsDashboard .statusSummaryGrid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .mainCard,
   .summaryCard,
+  .lineItem,
   .timelineItem,
   .referenceCard { animation: none !important; }
 

@@ -27,8 +27,8 @@ export async function generateMetadata({
   return {
     title: query ? `البحث: ${query}` : "البحث الداخلي",
     description: query
-      ? "نتائج البحث الداخلية داخل Cozmateks حسب المنتج أو المكوّن أو المشكلة أو الروتين."
-      : "صفحة البحث الداخلية لاكتشاف المنتجات والمشاكل والروتينات والمحتوى داخل Cozmateks.",
+      ? "نتائج البحث داخل ÉLORÉ PARIS حسب المنتج أو المكوّن أو المشكلة أو الروتين."
+      : "صفحة البحث لاكتشاف المنتجات والمشاكل والروتينات والمحتوى داخل ÉLORÉ PARIS.",
     alternates: {
       canonical: "/search",
     },
@@ -96,7 +96,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         "@type": "WebPage",
         name: query ? `نتائج البحث عن ${query}` : "البحث الداخلي",
         description:
-          "صفحة بحث داخلية لاكتشاف المنتجات والروتينات والمشاكل والمحتوى داخل Cozmateks.",
+          "صفحة بحث لاكتشاف المنتجات والروتينات والمشاكل والمحتوى داخل ÉLORÉ PARIS.",
         url: absoluteUrl(query ? `/search?q=${encodeURIComponent(query)}` : "/search"),
         inLanguage: "ar-SA",
       },
@@ -107,7 +107,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replaceAll("<", "\\u003c") }}
       />
       <StorefrontShell activeHref="/search">
         <div className={styles.page}>

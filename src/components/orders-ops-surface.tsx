@@ -36,6 +36,8 @@ const statusFilters: OrderStatusFilter[] = [
   "confirmed",
   "processing",
   "out_for_delivery",
+  "payment_expired",
+  "cancelled",
 ];
 
 function formatOrderDate(value: string) {
@@ -241,6 +243,8 @@ export function OrdersOpsSurface() {
           confirmed: 0,
           processing: 0,
           out_for_delivery: 0,
+          payment_expired: 0,
+          cancelled: 0,
         },
       ),
     [orders],

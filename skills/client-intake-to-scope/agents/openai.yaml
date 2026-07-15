@@ -1,0 +1,4 @@
+interface:
+  display_name: "Client Intake to Scope"
+  short_description: "Turn messy client requests into clean scope"
+  default_prompt: "Use -intake-to-scope to turn this brief into a scoped execution plan."

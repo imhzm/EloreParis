@@ -1,8 +1,7 @@
-import {
-  getProductBySlug,
-  type ProductRecord,
-  type ProductVariant,
-} from "@/lib/site-content";
+import type {
+  PublicCatalogProduct,
+  PublicCatalogVariant,
+} from "@/lib/public-catalog-types";
 
 export const CART_STORAGE_KEY = "cozmateks-cart";
 export const MAX_CART_ITEM_QUANTITY = 10;
@@ -15,8 +14,8 @@ export type StoredCartItem = {
 
 export type ResolvedCartLine = {
   key: string;
-  product: ProductRecord;
-  variant: ProductVariant;
+  product: PublicCatalogProduct;
+  variant: PublicCatalogVariant;
   quantity: number;
   lineTotal: number;
 };
@@ -44,21 +43,15 @@ function normalizeCartItem(value: unknown) {
     return null;
   }
 
-  const product = getProductBySlug(candidate.productSlug);
-
-  if (!product) {
-    return null;
-  }
-
-  const variant = product.variants.find((item) => item.sku === candidate.sku);
-
-  if (!variant) {
+  const productSlug = candidate.productSlug.trim();
+  const sku = candidate.sku.trim();
+  if (!productSlug || productSlug.length > 180 || !sku || sku.length > 180) {
     return null;
   }
 
   return {
-    productSlug: candidate.productSlug,
-    sku: candidate.sku,
+    productSlug,
+    sku,
     quantity: clampQuantity(candidate.quantity),
   } satisfies StoredCartItem;
 }
@@ -91,9 +84,13 @@ export function sanitizeCartItems(value: unknown) {
   return Array.from(merged.values());
 }
 
-export function resolveCartLines(items: StoredCartItem[]) {
+export function resolveCartLines(
+  items: StoredCartItem[],
+  products: PublicCatalogProduct[] = [],
+) {
+  const productMap = new Map(products.map((product) => [product.slug, product]));
   return items.reduce<ResolvedCartLine[]>((lines, item) => {
-    const product = getProductBySlug(item.productSlug);
+    const product = productMap.get(item.productSlug);
 
     if (!product) {
       return lines;

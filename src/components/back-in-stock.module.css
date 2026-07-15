@@ -15,6 +15,15 @@
   color: var(--mauve-stone);
 }
 
+.disclosure,
+.error {
+  font-size: 0.76rem;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.error { color: #8f2638; }
+
 .form {
   display: flex;
   gap: 8px;

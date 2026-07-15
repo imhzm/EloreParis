@@ -22,7 +22,7 @@ type OpsAccessPageProps = {
 export const metadata: Metadata = {
   title: "الدخول الداخلي إلى ops",
   description:
-    "بوابة داخلية تضبط الوصول إلى أسطح التشغيل والكتالوج والطلبات داخل مشروع Cozmateks.",
+    "بوابة داخلية تضبط الوصول إلى أسطح التشغيل والكتالوج والطلبات داخل مشروع ÉLORÉ PARIS.",
   robots: {
     index: false,
     follow: false,
@@ -53,7 +53,7 @@ export default async function OpsAccessPage({
   }
 
   return (
-    <StorefrontShell activeHref="">
+    <StorefrontShell activeHref="/ops-access">
       <OpsAccessSurface
         accessMode={accessConfig.mode}
         primaryAuthMethod={accessConfig.primaryAuthMethod}

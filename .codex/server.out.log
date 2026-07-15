@@ -1,0 +1,8 @@
+
+> ksa-cozmateks@0.1.0 start
+> node scripts/start-standalone.mjs
+
+▲ Next.js 16.2.10
+- Local:         http://localhost:3056
+- Network:       http://0.0.0.0:3056
+✓ Ready in 0ms

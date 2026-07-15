@@ -10,7 +10,7 @@ export const supportRouteLinks: SupportRouteLink[] = [
     href: "/about",
     label: "من نحن",
     description:
-      "تعرف على منهج Cozmateks في الاختيار والشرح وبناء الثقة قبل أن تتحول الزيارة إلى طلب.",
+      "تعرّفي على منهج ÉLORÉ PARIS في الاختيار والشرح وبناء الثقة قبل أن تتحول الزيارة إلى طلب.",
     destinationType: "about",
   },
   {

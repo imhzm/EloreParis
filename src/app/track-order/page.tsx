@@ -1,26 +1,15 @@
-import type { Metadata } from "next";
-import { StorefrontShell } from "@/components/storefront-shell";
-import { TrackOrderSurface } from "@/components/track-order-surface";
+import { permanentRedirect } from "next/navigation";
 
 type TrackOrderPageProps = {
-  searchParams: Promise<{ order?: string }>;
-};
-
-export const metadata: Metadata = {
-  title: "تتبع الطلب",
-  description: "تتبع مرجع الطلب داخل النسخة الحالية عبر رقم الطلب وآخر 4 أرقام من الجوال.",
-  robots: {
-    index: false,
-    follow: false,
-  },
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
 export default async function TrackOrderPage({ searchParams }: TrackOrderPageProps) {
-  const { order } = await searchParams;
-
-  return (
-    <StorefrontShell activeHref="/track-order">
-      <TrackOrderSurface initialOrderNumber={order ?? ""} />
-    </StorefrontShell>
-  );
+  const query = new URLSearchParams();
+  for (const [key, value] of Object.entries(await searchParams)) {
+    if (Array.isArray(value)) value.forEach((item) => query.append(key, item));
+    else if (value !== undefined) query.set(key, value);
+  }
+  const serializedQuery = query.toString();
+  permanentRedirect(`/ar/track-order${serializedQuery ? `?${serializedQuery}` : ""}`);
 }

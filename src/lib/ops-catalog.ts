@@ -154,7 +154,7 @@ const catalogOverrides: Record<
       "سيروم صباحي خفيف يربط الإشراقة بالحماية اليومية داخل الروتين.",
     fullDescription:
       "صفحة تشغيلية للكتالوج تجمع بين بيانات البيع والـ SEO والتوريد لسيروم الإشراقة الصباحي، مع حقول واضحة لربط المورد والتكلفة والمخزون.",
-    brand: "Cozmateks Atelier",
+    brand: "ÉLORÉ PARIS — CONCEPT",
     productType: "Brightening Serum",
     concern: "التصبغات",
     ingredient: "فيتامين C",
@@ -179,7 +179,7 @@ const catalogOverrides: Record<
       "فاونديشن مخملي متوازن بثبات عملي للمناسبات والدوام.",
     fullDescription:
       "طبقة إدارة كتالوج توضح بيانات الفاونديشن الأساسية والدرجات والمخزون وربط المورد والـ SEO لهذه الفئة الحساسة.",
-    brand: "Cozmateks Atelier",
+    brand: "ÉLORÉ PARIS — CONCEPT",
     productType: "Foundation",
     concern: "ثبات المكياج",
     ingredient: "هيالورونيك أسيد",

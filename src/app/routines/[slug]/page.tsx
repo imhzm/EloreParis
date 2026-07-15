@@ -6,7 +6,37 @@ import { absoluteUrl, collectionDirectory, getProductByHref, getRoutineBySlug, j
 
 type Props = { params: Promise<{ slug: string }> };
 export async function generateStaticParams() { return routines.map(({ slug }) => ({ slug })); }
-export async function generateMetadata({ params }: Props): Promise<Metadata> { const item = getRoutineBySlug((await params).slug); return item ? { title: `${item.title} | الروتينات`, description: item.summary, alternates: { canonical: `/routines/${item.slug}` } } : {}; }
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const item = getRoutineBySlug((await params).slug);
+  if (!item) return {};
+  const title = `${item.title} | الروتينات`;
+  const imageUrl = absoluteUrl("/brand-assets/product-04.jpg");
+  return {
+    title,
+    description: item.summary,
+    alternates: { canonical: `/routines/${item.slug}` },
+    openGraph: {
+      title,
+      description: item.summary,
+      url: absoluteUrl(`/routines/${item.slug}`),
+      type: "website",
+      images: [
+        {
+          url: imageUrl,
+          width: 1200,
+          height: 630,
+          alt: title,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description: item.summary,
+      images: [imageUrl],
+    },
+  };
+}
 
 export default async function Page({ params }: Props) {
   const routine = getRoutineBySlug((await params).slug); if (!routine) notFound();

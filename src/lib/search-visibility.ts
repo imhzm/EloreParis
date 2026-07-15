@@ -1,3 +1,5 @@
+import { isPublicCatalogApproved, isPublicDiscoveryContentApproved, isPublicEditorialContentApproved, isPublicLegalContentApproved } from "./release-controls";
+
 function normalizeOptionalUrl(candidate?: string | null) {
   if (!candidate) {
     return null;
@@ -78,7 +80,20 @@ export function getSearchRuntimeStage(
 export function isSearchIndexingEnabled(
   env: NodeJS.ProcessEnv = process.env,
 ) {
-  return getSearchRuntimeStage(env) === "production";
+  return (
+    getSearchRuntimeStage(env) === "production" &&
+    isPublicReleaseApproved(env) &&
+    isPublicCatalogApproved(env) &&
+    isPublicDiscoveryContentApproved(env) &&
+    isPublicEditorialContentApproved(env) &&
+    isPublicLegalContentApproved(env)
+  );
+}
+
+export function isPublicReleaseApproved(
+  env: NodeJS.ProcessEnv = process.env,
+) {
+  return env.PUBLIC_RELEASE_APPROVED?.trim().toLowerCase() === "true";
 }
 
 export function getSearchCrawlerDirectiveHeader(

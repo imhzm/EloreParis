@@ -39,7 +39,7 @@ const imagery = {
 const clamp = (value: number) => Math.min(Math.max(value, 0), 1);
 
 export function CinematicKnowledgeStory(props: CinematicKnowledgeStoryProps) {
-  const rootRef = useRef<HTMLElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -70,7 +70,7 @@ export function CinematicKnowledgeStory(props: CinematicKnowledgeStoryProps) {
 
   const [heroImage, secondaryImage] = imagery[props.kind];
   return (
-    <main ref={rootRef} className={styles.story}>
+    <div ref={rootRef} className={styles.story}>
       <section className={`${styles.scene} ${styles.hero}`} data-story-scene>
         <div className={styles.frame} data-story-frame>
           <div className={styles.heroImage} aria-hidden="true"><Image src={heroImage} alt="" fill priority sizes="(max-width: 760px) 78vw, 38vw" /></div>
@@ -121,6 +121,6 @@ export function CinematicKnowledgeStory(props: CinematicKnowledgeStoryProps) {
           <span className={styles.counter}>05 / 05</span>
         </div>
       </section>
-    </main>
+    </div>
   );
 }

@@ -5,7 +5,7 @@ import { StorefrontShell } from "@/components/storefront-shell";
 export const metadata: Metadata = {
   title: "إدارة الكتالوج التشغيلية",
   description:
-    "صفحة داخلية محلية لمراجعة المنتجات والـ variants والموردين والمخزون داخل النموذج التشغيلي الحالي لمتجر Cozmateks.",
+    "صفحة داخلية محلية لمراجعة المنتجات والمتغيرات والموردين والمخزون داخل النموذج التشغيلي الحالي لمتجر ÉLORÉ PARIS.",
   robots: {
     index: false,
     follow: false,

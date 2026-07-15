@@ -1,0 +1,4 @@
+interface:
+  display_name: "API Hardening"
+  short_description: "Harden APIs for security and reliability"
+  default_prompt: "Use -hardening to review and harden this API surface."

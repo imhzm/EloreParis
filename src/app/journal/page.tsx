@@ -8,7 +8,7 @@ import styles from "./journal.module.css";
 export const metadata: Metadata = {
   title: "المجلة",
   description:
-    "مجلة الجمال الخاصة بـ Cozmateks: أدلة، مقارنات، روتينات، ومحتوى عربي مصمم ليدعم الثقة والتحويل معًا.",
+    "مجلة جمال ÉLORÉ PARIS: أدلة درجات وروتينات ومحتوى عربي واضح يساعدك على الاختيار من دون ضجيج.",
   alternates: {
     canonical: "/journal",
   },

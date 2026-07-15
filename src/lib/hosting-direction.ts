@@ -1,21 +1,23 @@
 import "server-only";
 
 export type HostingDirection = {
-  primaryProvider: "render";
-  primaryServiceType: "web";
+  primaryProvider: "hostinger_vps";
+  primaryServiceType: "systemd_node_service";
   runtimeArtifact: "next_standalone";
   persistenceStrategy: "persistent_disk";
   persistencePath: string;
-  optionalSecondaryPath: "manual_vercel_workflow";
+  reverseProxy: "nginx";
+  optionalSecondaryPath: "manual_preview_workflow";
 };
 
 const hostingDirection: HostingDirection = {
-  primaryProvider: "render",
-  primaryServiceType: "web",
+  primaryProvider: "hostinger_vps",
+  primaryServiceType: "systemd_node_service",
   runtimeArtifact: "next_standalone",
   persistenceStrategy: "persistent_disk",
-  persistencePath: "/var/data",
-  optionalSecondaryPath: "manual_vercel_workflow",
+  persistencePath: "/var/lib/elore-paris",
+  reverseProxy: "nginx",
+  optionalSecondaryPath: "manual_preview_workflow",
 };
 
 export function getHostingDirection() {

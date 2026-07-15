@@ -38,6 +38,7 @@ test-results/
 .artifacts-*.png
 cozmateks-*-preview.png
 .claude/
+.deployment-commit
 
 # env files (can opt-in for committing if needed)
 .env*

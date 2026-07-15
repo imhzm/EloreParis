@@ -36,6 +36,9 @@ jobs:
       - name: Run smoke checks
         run: npm run test:smoke
 
+      - name: Verify production catalog and commerce fences
+        run: npm run test:production-fence
+
       - name: Upload release evidence artifact
         if: always()
         uses: actions/upload-artifact@v4

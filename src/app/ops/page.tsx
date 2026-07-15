@@ -13,9 +13,9 @@ import { readAuthorityOrders } from "@/lib/order-authority";
 import { getOrderStatusMeta, type StoredOrder } from "@/lib/orders";
 
 export const metadata: Metadata = {
-  title: "لوحة التحكم التشغيلية | Cozmateks",
+  title: "لوحة التحكم التشغيلية | ÉLORÉ PARIS",
   description:
-    "لوحة داخلية غير مفهرسة لإدارة الطلبات، العملاء، الكتالوج، الموردين، والتنفيذ التشغيلي داخل Cozmateks.",
+    "لوحة داخلية غير مفهرسة لإدارة الطلبات والكتالوج والتنفيذ التشغيلي داخل ÉLORÉ PARIS.",
   robots: {
     index: false,
     follow: false,

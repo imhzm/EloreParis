@@ -1,4 +1,3 @@
-import type { CheckoutRules } from "@/lib/fulfillment";
 import type {
   CheckoutCustomerDetails,
   PaymentMethodId,
@@ -12,18 +11,31 @@ export type CheckoutSubmissionInput = CheckoutCustomerDetails & {
   acceptUpdates: boolean;
 };
 
+export type CheckoutAvailability = {
+  shippingMethodIds: ShippingMethodId[];
+  paymentMethodIds: PaymentMethodId[];
+};
+
+export function normalizeSaudiMobile(value: string) {
+  const digits = value.replace(/\D/g, "");
+  if (/^05\d{8}$/.test(digits)) return `966${digits.slice(1)}`;
+  if (/^5\d{8}$/.test(digits)) return `966${digits}`;
+  if (/^9665\d{8}$/.test(digits)) return digits;
+  return null;
+}
+
 export function validateCheckoutSubmission(
   formState: CheckoutSubmissionInput,
-  checkoutRules: CheckoutRules,
+  availability: CheckoutAvailability,
 ) {
-  const normalizedPhone = formState.phone.replace(/\D/g, "");
+  const normalizedPhone = normalizeSaudiMobile(formState.phone);
 
   if (formState.fullName.trim().length < 4) {
     return "يرجى إدخال اسم واضح حتى يمكن ربط الطلب بمرجع قابل للمتابعة.";
   }
 
-  if (normalizedPhone.length < 9) {
-    return "رقم الجوال مطلوب بصيغة قابلة للتواصل وتتبع الحالة.";
+  if (!normalizedPhone) {
+    return "أدخلي رقم جوال سعودي صحيحًا، مثل 05XXXXXXXX أو +9665XXXXXXXX.";
   }
 
   if (formState.city.trim().length < 2 || formState.district.trim().length < 2) {
@@ -45,24 +57,12 @@ export function validateCheckoutSubmission(
     return "يلزم تأكيد مراجعة سياسات الشحن والخصوصية والاسترجاع قبل تثبيت الطلب.";
   }
 
-  const selectedShipping = checkoutRules.shippingOptions.find(
-    (option) => option.id === formState.shippingMethodId,
-  );
-  if (!selectedShipping?.enabled) {
-    return (
-      selectedShipping?.reason ??
-      "خيار الشحن المختار غير متاح للمدينة أو لطبيعة عناصر السلة الحالية."
-    );
+  if (!availability.shippingMethodIds.includes(formState.shippingMethodId)) {
+    return "خيار الشحن المختار غير متاح للكتالوج الحالي.";
   }
 
-  const selectedPayment = checkoutRules.paymentOptions.find(
-    (option) => option.id === formState.paymentMethodId,
-  );
-  if (!selectedPayment?.enabled) {
-    return (
-      selectedPayment?.reason ??
-      "طريقة الدفع المختارة غير متاحة وفق قواعد التشغيل الحالية للطلب."
-    );
+  if (!availability.paymentMethodIds.includes(formState.paymentMethodId)) {
+    return "طريقة الدفع المختارة غير متاحة لهذا الطلب.";
   }
 
   return null;

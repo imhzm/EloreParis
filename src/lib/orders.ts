@@ -1,4 +1,5 @@
 import type { ResolvedCartLine } from "@/lib/cart";
+import type { Locale } from "@/lib/i18n";
 import { getProductBySlug } from "@/lib/site-content";
 import {
   getSupplierRecord,
@@ -16,7 +17,9 @@ export type OrderStatus =
   | "payment_pending"
   | "confirmed"
   | "processing"
-  | "out_for_delivery";
+  | "out_for_delivery"
+  | "payment_expired"
+  | "cancelled";
 
 export type OrderPaymentBindingState =
   | "pending"
@@ -59,7 +62,7 @@ export type CheckoutCustomerDetails = {
 };
 
 export type StoredOrderLineCatalogTruth = {
-  availability: "InStock" | "PreOrder";
+  availability: "InStock" | "PreOrder" | "OutOfStock";
   mappingStatus: "mapped" | "pending";
   supplierId: SupplierId | null;
   supplierName: string;
@@ -118,6 +121,33 @@ export type StoredOrderProviderBindings = {
   shipping: StoredOrderShippingBinding;
 };
 
+export type OrderPricingSnapshot = {
+  quoteId: string;
+  locale: Locale;
+  catalogVersion: string;
+  catalogHash: string;
+  currency: "SAR";
+  taxInclusive: true;
+  vatRateBps: number;
+  roundingPolicy: "line_nearest_halalah";
+  subtotalGrossHalalas: number;
+  subtotalVatHalalas: number;
+  shippingGrossHalalas: number;
+  shippingVatHalalas: number;
+  totalGrossHalalas: number;
+  totalVatHalalas: number;
+  termsVersion: string;
+  privacyNoticeVersion: string;
+  lines: Array<{
+    sku: string;
+    quantity: number;
+    unitGrossHalalas: number;
+    unitVatHalalas: number;
+    lineGrossHalalas: number;
+    lineVatHalalas: number;
+  }>;
+};
+
 export type StoredOrder = {
   orderNumber: string;
   createdAt: string;
@@ -131,6 +161,7 @@ export type StoredOrder = {
   customer: CheckoutCustomerDetails;
   lines: StoredOrderLine[];
   providerBindings: StoredOrderProviderBindings;
+  pricingSnapshot?: OrderPricingSnapshot;
 };
 
 export type OrderTimelineStep = {
@@ -198,6 +229,14 @@ const statusDirectory: Record<
     label: "خرج للتوصيل",
     description: "انتقل الطلب إلى مرحلة التوصيل النهائية داخل نافذة الخدمة المتوقعة.",
   },
+  payment_expired: {
+    label: "انتهت مهلة الدفع",
+    description: "انتهت صلاحية حجز المخزون قبل تأكيد الدفع، ويمكن إنشاء طلب جديد بسعر وتوفر محدثين.",
+  },
+  cancelled: {
+    label: "تم إلغاء الطلب",
+    description: "أُلغي الطلب وتوقفت خطوات التجهيز المرتبطة به.",
+  },
 };
 
 function getOrderStatusSequence(paymentMethodId: PaymentMethodId) {
@@ -232,7 +271,7 @@ function normalizePhone(value: unknown) {
 function isCatalogAvailability(
   value: unknown,
 ): value is StoredOrderLineCatalogTruth["availability"] {
-  return value === "InStock" || value === "PreOrder";
+  return value === "InStock" || value === "PreOrder" || value === "OutOfStock";
 }
 
 function isCatalogMappingStatus(
@@ -565,17 +604,8 @@ export function getPaymentMethodById(id: string | null | undefined) {
   return paymentMethods.find((method) => method.id === id);
 }
 
-function buildOrderNumber() {
-  const now = new Date();
-  const year = now.getFullYear().toString().slice(-2);
-  const month = `${now.getMonth() + 1}`.padStart(2, "0");
-  const day = `${now.getDate()}`.padStart(2, "0");
-  const randomSuffix = Math.random().toString(36).slice(2, 6).toUpperCase();
-
-  return `CZM-${year}${month}${day}-${randomSuffix}`;
-}
-
 export function createStoredOrder(input: {
+  orderNumber: string;
   lines: ResolvedCartLine[];
   customer: CheckoutCustomerDetails;
   shippingMethodId: ShippingMethodId;
@@ -593,7 +623,7 @@ export function createStoredOrder(input: {
   const createdAt = new Date().toISOString();
 
   return {
-    orderNumber: buildOrderNumber(),
+    orderNumber: input.orderNumber,
     createdAt,
     status:
       paymentMethod.id === "payment_link" ? "payment_pending" : "received",
@@ -636,6 +666,89 @@ export function createStoredOrder(input: {
       input.providerLabels,
     ),
   } satisfies StoredOrder;
+}
+
+function normalizeOrderPricingSnapshot(value: unknown): OrderPricingSnapshot | undefined {
+  if (!isRecord(value) || !Array.isArray(value.lines)) return undefined;
+  const stringFields = [
+    "quoteId",
+    "catalogVersion",
+    "catalogHash",
+    "termsVersion",
+    "privacyNoticeVersion",
+  ] as const;
+  const moneyFields = [
+    "subtotalGrossHalalas",
+    "subtotalVatHalalas",
+    "shippingGrossHalalas",
+    "shippingVatHalalas",
+    "totalGrossHalalas",
+    "totalVatHalalas",
+  ] as const;
+  if (
+    stringFields.some((field) => typeof value[field] !== "string" || !value[field]) ||
+    moneyFields.some(
+      (field) => !Number.isSafeInteger(value[field]) || Number(value[field]) < 0,
+    ) ||
+    value.currency !== "SAR" ||
+    value.taxInclusive !== true ||
+    (value.locale !== undefined && value.locale !== "ar" && value.locale !== "en") ||
+    value.roundingPolicy !== "line_nearest_halalah" ||
+    !Number.isSafeInteger(value.vatRateBps) ||
+    Number(value.vatRateBps) < 0 ||
+    Number(value.vatRateBps) > 10_000
+  ) {
+    return undefined;
+  }
+
+  const lines = value.lines.map((line) => {
+    if (!isRecord(line)) return null;
+    const numericFields = [
+      "quantity",
+      "unitGrossHalalas",
+      "unitVatHalalas",
+      "lineGrossHalalas",
+      "lineVatHalalas",
+    ] as const;
+    if (
+      typeof line.sku !== "string" || !line.sku ||
+      numericFields.some(
+        (field) => !Number.isSafeInteger(line[field]) || Number(line[field]) < 0,
+      ) ||
+      Number(line.quantity) < 1
+    ) {
+      return null;
+    }
+    return {
+      sku: line.sku,
+      quantity: Number(line.quantity),
+      unitGrossHalalas: Number(line.unitGrossHalalas),
+      unitVatHalalas: Number(line.unitVatHalalas),
+      lineGrossHalalas: Number(line.lineGrossHalalas),
+      lineVatHalalas: Number(line.lineVatHalalas),
+    };
+  });
+  if (lines.some((line) => line === null)) return undefined;
+
+  return {
+    quoteId: value.quoteId as string,
+    locale: value.locale === "en" ? "en" : "ar",
+    catalogVersion: value.catalogVersion as string,
+    catalogHash: value.catalogHash as string,
+    currency: "SAR",
+    taxInclusive: true,
+    vatRateBps: Number(value.vatRateBps),
+    roundingPolicy: "line_nearest_halalah",
+    subtotalGrossHalalas: Number(value.subtotalGrossHalalas),
+    subtotalVatHalalas: Number(value.subtotalVatHalalas),
+    shippingGrossHalalas: Number(value.shippingGrossHalalas),
+    shippingVatHalalas: Number(value.shippingVatHalalas),
+    totalGrossHalalas: Number(value.totalGrossHalalas),
+    totalVatHalalas: Number(value.totalVatHalalas),
+    termsVersion: value.termsVersion as string,
+    privacyNoticeVersion: value.privacyNoticeVersion as string,
+    lines: lines.filter((line): line is NonNullable<typeof line> => line !== null),
+  };
 }
 
 function normalizeStoredOrder(value: unknown): StoredOrder | null {
@@ -719,6 +832,11 @@ function normalizeStoredOrder(value: unknown): StoredOrder | null {
     return null;
   }
 
+  const pricingSnapshot = normalizeOrderPricingSnapshot(value.pricingSnapshot);
+  if (value.pricingSnapshot !== undefined && !pricingSnapshot) {
+    return null;
+  }
+
   return {
     orderNumber: value.orderNumber.trim().toUpperCase(),
     createdAt: value.createdAt,
@@ -747,6 +865,7 @@ function normalizeStoredOrder(value: unknown): StoredOrder | null {
       paymentMethod.id,
       value.createdAt,
     ),
+    ...(pricingSnapshot ? { pricingSnapshot } : {}),
   };
 }
 
@@ -791,6 +910,14 @@ export function findStoredOrder(
 }
 
 export function getOrderTimeline(order: StoredOrder): OrderTimelineStep[] {
+  if (order.status === "payment_expired" || order.status === "cancelled") {
+    return [{
+      key: order.status,
+      label: statusDirectory[order.status].label,
+      description: statusDirectory[order.status].description,
+      state: "current",
+    }];
+  }
   const sequence = getOrderStatusSequence(order.paymentMethodId);
   const currentIndex = Math.max(sequence.indexOf(order.status), 0);
 
@@ -808,6 +935,9 @@ export function getOrderTimeline(order: StoredOrder): OrderTimelineStep[] {
 }
 
 export function getNextOrderStatus(order: StoredOrder) {
+  if (order.status === "payment_expired" || order.status === "cancelled") {
+    return null;
+  }
   const sequence = getOrderStatusSequence(order.paymentMethodId);
   const currentIndex = sequence.indexOf(order.status);
 

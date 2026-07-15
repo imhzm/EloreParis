@@ -1,0 +1,4 @@
+interface:
+  display_name: "Public Site Launch"
+  short_description: "Launch public websites with quality gates"
+  default_prompt: "Use -site-launch to prepare this public site for launch."

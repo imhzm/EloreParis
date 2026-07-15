@@ -1,97 +1,123 @@
 import type { MetadataRoute } from "next";
+import { categorySlugs } from "@/lib/category-content";
+import { discoveryPaths, discoveryRecords, type DiscoveryKind } from "@/lib/discovery-content";
 import { isSearchIndexingEnabled } from "@/lib/search-visibility";
-import {
-  concerns,
-  ingredients,
-  journalArticles,
-  products,
-  routines,
-  shopCollections,
-  siteUrl,
-  trustPolicies,
-} from "@/lib/site-content";
+import { getPublicCatalogSnapshot } from "@/lib/public-catalog";
+import { siteUrl } from "@/lib/site-content";
+import { supportSlugs, trustSlugs } from "@/lib/trust-support-content";
+import { journalSlugs } from "@/lib/journal-routing";
+
+export const dynamic = "force-dynamic";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   if (!isSearchIndexingEnabled()) {
     return [];
   }
 
-  const staticPages = [
-    "",
-    "/about",
-    "/contact",
-    "/concerns",
-    "/faq",
-    "/ingredients",
-    "/routines",
-    "/shop",
-    "/journal",
-    "/terms",
-    "/trust",
-  ].map((path) => ({
-    url: `${siteUrl}${path || "/"}`,
-    lastModified: "2026-04-01",
+  const localizedCorePages = ["/ar", "/en", "/ar/shop", "/en/shop"].map((path) => ({
+    url: `${siteUrl}${path}`,
+    lastModified: "2026-07-15",
     changeFrequency: "weekly" as const,
-    priority: path === "" ? 1 : 0.8,
+    priority: path === "/ar" || path === "/en" ? 1 : 0.86,
+    alternates: {
+      languages: path.endsWith("/shop")
+        ? { "ar-SA": `${siteUrl}/ar/shop`, "en-SA": `${siteUrl}/en/shop`, "x-default": `${siteUrl}/ar/shop` }
+        : { "ar-SA": `${siteUrl}/ar`, "en-SA": `${siteUrl}/en`, "x-default": `${siteUrl}/ar` },
+    },
   }));
 
-  const collectionPages = shopCollections.map((collection) => ({
-    url: `${siteUrl}${collection.href}`,
-    lastModified: "2026-04-01",
+  const collectionPages = categorySlugs.flatMap((slug) => ["ar", "en"].map((locale) => ({
+    url: `${siteUrl}/${locale}/shop/${slug}`,
+    lastModified: "2026-07-15",
     changeFrequency: "weekly" as const,
-    priority: collection.mode === "filtered" ? 0.84 : 0.74,
-  }));
+    priority: 0.82,
+    alternates: {
+      languages: {
+        "ar-SA": `${siteUrl}/ar/shop/${slug}`,
+        "en-SA": `${siteUrl}/en/shop/${slug}`,
+        "x-default": `${siteUrl}/ar/shop/${slug}`,
+      },
+    },
+  })));
 
-  const articlePages = journalArticles.map((article) => ({
-    url: `${siteUrl}/journal/${article.slug}`,
-    lastModified: article.updatedAt,
-    changeFrequency: "monthly" as const,
-    priority: 0.72,
-  }));
+  const discoveryPages = (Object.keys(discoveryPaths) as DiscoveryKind[]).flatMap((kind) => {
+    const pathSegment = discoveryPaths[kind];
+    return (["ar", "en"] as const).flatMap((locale) => {
+      const paths = [
+        `/${locale}/${pathSegment}`,
+        ...discoveryRecords[locale][kind].map((record) => `/${locale}/${pathSegment}/${record.slug}`),
+      ];
+      return paths.map((path) => {
+        const alternateSuffix = path.replace(`/${locale}`, "");
+        return {
+          url: `${siteUrl}${path}`,
+          lastModified: "2026-07-15",
+          changeFrequency: "monthly" as const,
+          priority: path === `/${locale}/${pathSegment}` ? 0.8 : 0.74,
+          alternates: {
+            languages: {
+              "ar-SA": `${siteUrl}/ar${alternateSuffix}`,
+              "en-SA": `${siteUrl}/en${alternateSuffix}`,
+              "x-default": `${siteUrl}/ar${alternateSuffix}`,
+            },
+          },
+        };
+      });
+    });
+  });
 
-  const concernPages = concerns.map((concern) => ({
-    url: `${siteUrl}/concerns/${concern.slug}`,
-    lastModified: "2026-04-01",
-    changeFrequency: "weekly" as const,
-    priority: 0.78,
-  }));
+  const productSlugs = new Set(
+    (["ar", "en"] as const).flatMap((locale) =>
+      getPublicCatalogSnapshot(locale).products.map((product) => product.slug),
+    ),
+  );
+  const productPages = [...productSlugs].flatMap((slug) =>
+    (["ar", "en"] as const).map((locale) => ({
+      url: `${siteUrl}/${locale}/product/${slug}`,
+      lastModified: "2026-07-15",
+      changeFrequency: "weekly" as const,
+      priority: 0.84,
+      alternates: {
+        languages: {
+          "ar-SA": `${siteUrl}/ar/product/${slug}`,
+          "en-SA": `${siteUrl}/en/product/${slug}`,
+          "x-default": `${siteUrl}/ar/product/${slug}`,
+        },
+      },
+    })),
+  );
 
-  const routinePages = routines.map((routine) => ({
-    url: `${siteUrl}/routines/${routine.slug}`,
-    lastModified: "2026-04-01",
-    changeFrequency: "weekly" as const,
-    priority: 0.78,
-  }));
+  const trustSupportPages = (["ar", "en"] as const).flatMap((locale) => {
+    const paths = [
+      "/trust",
+      ...trustSlugs.map((slug) => `/trust/${slug}`),
+      ...supportSlugs.map((slug) => `/${slug}`),
+    ];
+    return paths.map((path) => ({
+      url: `${siteUrl}/${locale}${path}`,
+      lastModified: "2026-07-15",
+      changeFrequency: "monthly" as const,
+      priority: path === "/trust" ? 0.76 : 0.66,
+      alternates: { languages: { "ar-SA": `${siteUrl}/ar${path}`, "en-SA": `${siteUrl}/en${path}`, "x-default": `${siteUrl}/ar${path}` } },
+    }));
+  });
 
-  const ingredientPages = ingredients.map((ingredient) => ({
-    url: `${siteUrl}/ingredients/${ingredient.slug}`,
-    lastModified: "2026-04-01",
-    changeFrequency: "weekly" as const,
-    priority: 0.76,
-  }));
-
-  const productPages = products.map((product) => ({
-    url: `${siteUrl}/products/${product.slug}`,
-    lastModified: "2026-04-01",
-    changeFrequency: "weekly" as const,
-    priority: 0.84,
-  }));
-
-  const trustPolicyPages = trustPolicies.map((policy) => ({
-    url: `${siteUrl}/trust/${policy.slug}`,
-    lastModified: "2026-04-01",
-    changeFrequency: "monthly" as const,
-    priority: 0.68,
-  }));
+  const journalPages = (["ar", "en"] as const).flatMap((locale) =>
+    ["/journal", ...journalSlugs.map((slug) => `/journal/${slug}`)].map((path) => ({
+      url: `${siteUrl}/${locale}${path}`,
+      lastModified: "2026-07-15",
+      changeFrequency: "monthly" as const,
+      priority: path === "/journal" ? 0.78 : 0.7,
+      alternates: { languages: { "ar-SA": `${siteUrl}/ar${path}`, "en-SA": `${siteUrl}/en${path}`, "x-default": `${siteUrl}/ar${path}` } },
+    })),
+  );
 
   return [
-    ...staticPages,
+    ...localizedCorePages,
     ...collectionPages,
-    ...articlePages,
-    ...concernPages,
-    ...ingredientPages,
-    ...routinePages,
+    ...discoveryPages,
     ...productPages,
-    ...trustPolicyPages,
+    ...trustSupportPages,
+    ...journalPages,
   ];
 }

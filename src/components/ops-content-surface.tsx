@@ -35,7 +35,7 @@ export function OpsContentSurface() {
             <strong>{summary.totalSurfaces}</strong>
             <span>
               {summary.ownersMapped} named owners across {summary.totalRoutes} mapped public
-              routes, with {summary.awaitingStyleSamples} sample-blocked groups and{" "}
+              routes, with {summary.sampleBased} sample-based group, {summary.awaitingStyleSamples} sample-blocked groups and{" "}
               {summary.awaitingBusinessInputs} business-data-blocked groups.
             </span>
           </div>
@@ -52,6 +52,11 @@ export function OpsContentSurface() {
       </section>
 
       <section className={styles.statusSummaryGrid}>
+        <article className={styles.statusSummaryCard}>
+          <p className={styles.sectionTitle}>Brand samples received</p>
+          <strong>{summary.sampleBased}</strong>
+          <span>Surface groups grounded in the dated ÉLORÉ PARIS brand handoff.</span>
+        </article>
         <article className={styles.statusSummaryCard}>
           <p className={styles.sectionTitle}>مجموعات الصفحات</p>
           <strong>{summary.totalSurfaces}</strong>

@@ -15,7 +15,7 @@ export default function TrustPage() {
     "@context": "https://schema.org",
     "@graph": [
       { "@type": "WebPage", name: "مركز الثقة والسياسات", url: absoluteUrl("/trust"), inLanguage: "ar-SA" },
-      { "@type": "Organization", name: "Cozmateks", url: absoluteUrl("/") },
+      { "@type": "Organization", name: "ÉLORÉ PARIS", url: absoluteUrl("/") },
       {
         "@type": "ItemList",
         itemListElement: trustPolicies.map((policy, index) => ({

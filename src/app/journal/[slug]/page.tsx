@@ -96,7 +96,15 @@ export async function generateMetadata({
   const title = article.title;
   const description = article.excerpt;
   const pageUrl = absoluteUrl(`/journal/${article.slug}`);
-  const imageUrl = absoluteUrl("/og-journal.svg");
+  const collectionImages: Record<string, string> = {
+    skincare: "/brand-assets/product-01.jpg",
+    makeup: "/brand-assets/product-05.jpg",
+    haircare: "/brand-assets/product-02.jpg",
+    bodycare: "/brand-assets/product-04.jpg",
+    tools: "/brand-assets/product-06.jpg",
+  };
+  const relativeImageUrl = collectionImages[article.collection] ?? "/brand-assets/product-03.jpg";
+  const imageUrl = absoluteUrl(relativeImageUrl);
 
   return {
     title,
@@ -168,6 +176,16 @@ export default async function JournalArticlePage({
     })
     .slice(0, 3);
 
+  const collectionImages: Record<string, string> = {
+    skincare: "/brand-assets/product-01.jpg",
+    makeup: "/brand-assets/product-05.jpg",
+    haircare: "/brand-assets/product-02.jpg",
+    bodycare: "/brand-assets/product-04.jpg",
+    tools: "/brand-assets/product-06.jpg",
+  };
+  const relativeImageUrl = collectionImages[article.collection] ?? "/brand-assets/product-03.jpg";
+  const imageUrl = absoluteUrl(relativeImageUrl);
+
   const structuredData = {
     "@context": "https://schema.org",
     "@graph": [
@@ -175,6 +193,7 @@ export default async function JournalArticlePage({
         "@type": "Article",
         headline: article.title,
         description: article.excerpt,
+        image: [imageUrl],
         datePublished: article.publishedAt,
         dateModified: article.updatedAt,
         inLanguage: "ar-SA",

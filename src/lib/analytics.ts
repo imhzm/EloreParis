@@ -36,83 +36,88 @@ declare global {
 }
 
 export function getPageType(pathname: string) {
-  if (pathname === "/") {
+  const normalizedPathname = pathname.replace(/^\/(?:ar|en)(?=\/|$)/, "") || "/";
+
+  if (normalizedPathname === "/") {
     return "home";
   }
 
-  if (pathname === "/concerns") {
+  if (normalizedPathname === "/concerns") {
     return "concern_index";
   }
 
-  if (pathname === "/ingredients") {
+  if (normalizedPathname === "/ingredients") {
     return "ingredient_index";
   }
 
-  if (pathname === "/routines") {
+  if (normalizedPathname === "/routines") {
     return "routine_index";
   }
 
-  if (pathname === "/journal") {
+  if (normalizedPathname === "/journal") {
     return "journal_index";
   }
 
-  if (pathname === "/shop") {
+  if (normalizedPathname === "/shop") {
     return "shop_index";
   }
 
-  if (pathname.startsWith("/journal/")) {
+  if (normalizedPathname.startsWith("/journal/")) {
     return "article";
   }
 
-  if (pathname.startsWith("/products/")) {
+  if (
+    normalizedPathname.startsWith("/product/") ||
+    normalizedPathname.startsWith("/products/")
+  ) {
     return "product";
   }
 
-  if (pathname.startsWith("/concerns/")) {
+  if (normalizedPathname.startsWith("/concerns/")) {
     return "concern";
   }
 
-  if (pathname.startsWith("/ingredients/")) {
+  if (normalizedPathname.startsWith("/ingredients/")) {
     return "ingredient";
   }
 
-  if (pathname.startsWith("/routines/")) {
+  if (normalizedPathname.startsWith("/routines/")) {
     return "routine";
   }
 
-  if (pathname.startsWith("/shop/")) {
+  if (normalizedPathname.startsWith("/shop/")) {
     return "collection";
   }
 
-  if (pathname === "/cart") {
+  if (normalizedPathname === "/cart") {
     return "cart";
   }
 
-  if (pathname === "/checkout") {
+  if (normalizedPathname === "/checkout") {
     return "checkout";
   }
 
-  if (pathname.startsWith("/checkout/")) {
+  if (normalizedPathname.startsWith("/checkout/")) {
     return "checkout_success";
   }
 
-  if (pathname === "/search") {
+  if (normalizedPathname === "/search") {
     return "search";
   }
 
-  if (pathname === "/faq") {
+  if (normalizedPathname === "/faq") {
     return "faq";
   }
 
-  if (pathname === "/contact") {
+  if (normalizedPathname === "/contact") {
     return "contact";
   }
 
-  if (pathname === "/about") {
+  if (normalizedPathname === "/about") {
     return "about";
   }
 
-  if (pathname === "/terms") {
+  if (normalizedPathname === "/terms") {
     return "terms";
   }
 
@@ -120,47 +125,21 @@ export function getPageType(pathname: string) {
     return "order_tracking";
   }
 
-  if (pathname === "/ops-access") {
-    return "ops_access";
-  }
+  if (pathname === "/ops-access") return "ops_access";
+  if (pathname === "/ops") return "ops_dashboard";
+  if (pathname === "/ops/catalog") return "ops_catalog";
+  if (pathname === "/ops/content") return "ops_content";
+  if (pathname === "/ops/release") return "ops_release";
+  if (pathname === "/ops/fulfillment") return "ops_fulfillment";
+  if (pathname === "/ops/orders") return "ops_orders";
+  if (pathname === "/ops/audit") return "ops_audit";
+  if (pathname === "/ops/notifications") return "ops_notifications";
 
-  if (pathname === "/ops") {
-    return "ops_dashboard";
-  }
-
-  if (pathname === "/ops/catalog") {
-    return "ops_catalog";
-  }
-
-  if (pathname === "/ops/content") {
-    return "ops_content";
-  }
-
-  if (pathname === "/ops/release") {
-    return "ops_release";
-  }
-
-  if (pathname === "/ops/fulfillment") {
-    return "ops_fulfillment";
-  }
-
-  if (pathname === "/ops/orders") {
-    return "ops_orders";
-  }
-
-  if (pathname === "/ops/audit") {
-    return "ops_audit";
-  }
-
-  if (pathname === "/ops/notifications") {
-    return "ops_notifications";
-  }
-
-  if (pathname.startsWith("/trust/")) {
+  if (normalizedPathname.startsWith("/trust/")) {
     return "trust_policy";
   }
 
-  if (pathname === "/trust") {
+  if (normalizedPathname === "/trust") {
     return "trust";
   }
 

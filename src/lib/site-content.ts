@@ -56,20 +56,20 @@ export function getSiteUrl() {
 
 export const siteUrl = getSiteUrl();
 
-export const siteName = "Cozmateks";
-export const siteTagline = "اختيارات جمال مدروسة للسوق السعودي";
+export const siteName = "ÉLORÉ PARIS";
+export const siteTagline = "جمال باختيار مدروس";
 export const defaultDescription =
-  "بيت جمال سعودي يربط بين الاكتشاف الهادئ، الشرح الواضح، وصفحات شراء تساعدك على اتخاذ قرار أجمل وأكثر وعيًا.";
+  "تجربة جمال فاخرة وهادئة للسوق السعودي، تجمع الإحساس الباريسي مع معلومات أوضح عن القوام والدرجة والروتين قبل الاختيار.";
 
 export function absoluteUrl(path = "/") {
   return new URL(path, getSiteUrl()).toString();
 }
 
 export const trustPoints = [
-  "اختيارات مدروسة بعناية",
-  "شحن داخل السعودية",
-  "سياسات واضحة قبل الدفع",
-  "تتبع سهل للطلب",
+  "جمال باختيار مدروس",
+  "تجربة عربية للسوق السعودي",
+  "معلومات واضحة قبل الاختيار",
+  "التجارة العامة قيد الاعتماد",
 ];
 
 export const primaryNavigation = [
@@ -336,14 +336,16 @@ export type JournalArticle = {
   faq: Array<{ question: string; answer: string }>;
 };
 
-export const products: ProductRecord[] = [
+// Design-only fixtures retained temporarily for layout migration. They are not
+// an approved catalog authority and must never be exposed by public selectors.
+export const quarantinedProductDesignFixtures: ProductRecord[] = [
   {
     collection: "skincare",
     slug: "radiant-dew-serum",
     name: "Radiant Dew Serum",
     subtitle:
       "سيروم صباحي بإحساس خفيف ولمسة مرتبة، مصمم لمسار إشراقة واضح داخل الروتين اليومي.",
-    brand: "Cozmateks Atelier",
+    brand: "ÉLORÉ PARIS — CONCEPT",
     category: "سيروم عناية بالبشرة",
     concern: "التصبغات",
     ingredient: "فيتامين C",
@@ -433,7 +435,7 @@ export const products: ProductRecord[] = [
     name: "Velvet Base Foundation",
     subtitle:
       "فاونديشن بلمسة مخملية متوازنة، مصمم لإطلالة مرتبة وثبات عملي يناسب الدوام والمناسبات.",
-    brand: "Cozmateks Atelier",
+    brand: "ÉLORÉ PARIS — CONCEPT",
     category: "فاونديشن ومكياج قاعدة",
     concern: "ثبات المكياج",
     ingredient: "هيالورونيك أسيد",
@@ -519,6 +521,10 @@ export const products: ProductRecord[] = [
     ],
   },
 ];
+
+// The public catalog stays empty until the authoritative import workflow has
+// validated and approved real SKUs, prices, inventory, media, and claims.
+export const products: ProductRecord[] = [];
 
 export const concerns: ConcernRecord[] = [
   {

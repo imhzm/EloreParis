@@ -384,6 +384,14 @@ function normalizeOpsAccessPath(pathname: string) {
     return "/ops/notifications";
   }
 
+  if (pathname.startsWith("/api/ops/lifecycle")) {
+    return "/ops/notifications";
+  }
+
+  if (pathname.startsWith("/api/ops/catalog")) {
+    return "/ops/catalog";
+  }
+
   if (pathname.startsWith("/api/ops/session")) {
     return "/ops-session";
   }

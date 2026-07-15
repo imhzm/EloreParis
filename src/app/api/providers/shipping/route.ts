@@ -1,68 +1,63 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { logOpsAuditEvent } from "@/lib/ops-audit";
+import { InventoryReservationError } from "@/lib/inventory-reservation-authority";
 import {
   OrderAuthorityError,
   updateAuthorityOrderProviderBinding,
 } from "@/lib/order-authority";
+import {
+  inspectAuthorityProviderEvent,
+  ProviderEventAuthorityError,
+  readAuthenticatedProviderCallback,
+  recordAuthorityProviderEvent,
+} from "@/lib/provider-event-authority";
 import { getShippingProviderRuntimeConfig } from "@/lib/provider-runtime-config";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function isAuthorizedProviderCallback(
-  request: NextRequest,
-  expectedSecret: string,
-) {
-  const authorizationHeader = request.headers.get("authorization")?.trim() ?? "";
-  return authorizationHeader === `Bearer ${expectedSecret}`;
+const callbackKeys = [
+  "orderNumber",
+  "bookingReference",
+  "trackingNumber",
+  "eventId",
+  "occurredAt",
+] as const;
+
+function requiredString(body: Record<string, unknown>, key: string, maxLength = 200) {
+  const value = typeof body[key] === "string" ? body[key].trim() : "";
+  if (!value || value.length > maxLength) {
+    throw new ProviderEventAuthorityError(`${key} is required for the shipping callback.`);
+  }
+  return value;
 }
 
 export async function POST(request: NextRequest) {
   const shippingProvider = getShippingProviderRuntimeConfig();
-
   if (!shippingProvider.callbackConfigured) {
     return NextResponse.json(
       { error: "Shipping provider callback is not configured for this runtime." },
       { status: 503 },
     );
   }
-
-  if (!isAuthorizedProviderCallback(request, shippingProvider.callbackSecret)) {
-    return NextResponse.json(
-      { error: "Shipping provider callback authorization failed." },
-      { status: 401 },
-    );
-  }
-
   try {
-    const body = (await request.json()) as {
-      orderNumber?: unknown;
-      bookingReference?: unknown;
-      trackingNumber?: unknown;
-      eventId?: unknown;
-      occurredAt?: unknown;
-    };
-    const orderNumber =
-      typeof body.orderNumber === "string" ? body.orderNumber.trim() : "";
-    const bookingReference =
-      typeof body.bookingReference === "string"
-        ? body.bookingReference.trim()
-        : undefined;
-    const trackingNumber =
-      typeof body.trackingNumber === "string"
-        ? body.trackingNumber.trim()
-        : undefined;
-    const shippingEventId =
-      typeof body.eventId === "string" ? body.eventId.trim() : undefined;
-    const occurredAt =
-      typeof body.occurredAt === "string" ? body.occurredAt.trim() : undefined;
+    const { body, payloadHash } = await readAuthenticatedProviderCallback(
+      request,
+      callbackKeys,
+      shippingProvider.callbackSecret,
+    );
+    const orderNumber = requiredString(body, "orderNumber", 160).toUpperCase();
+    const bookingReference = requiredString(body, "bookingReference");
+    const trackingNumber = requiredString(body, "trackingNumber");
+    const eventId = requiredString(body, "eventId");
+    const occurredAt = requiredString(body, "occurredAt", 80);
+    if (Number.isNaN(Date.parse(occurredAt))) {
+      throw new ProviderEventAuthorityError("occurredAt must be a valid timestamp.");
+    }
 
-    if (!orderNumber) {
-      return NextResponse.json(
-        { error: "orderNumber is required for the shipping callback." },
-        { status: 400 },
-      );
+    if (inspectAuthorityProviderEvent("shipping", eventId, orderNumber, payloadHash).replayed) {
+      return NextResponse.json({ ok: true, replayed: true, orderNumber, state: "in_transit" });
     }
 
     const { order } = await updateAuthorityOrderProviderBinding(
@@ -71,49 +66,50 @@ export async function POST(request: NextRequest) {
       {
         shippingBookingReference: bookingReference,
         shippingTrackingNumber: trackingNumber,
-        shippingEventId,
-        occurredAt,
+        shippingEventId: eventId,
+        occurredAt: new Date(occurredAt).toISOString(),
       },
     );
+    const eventRecord = recordAuthorityProviderEvent(
+      "shipping",
+      eventId,
+      order.orderNumber,
+      payloadHash,
+    );
 
-    await logOpsAuditEvent({
-      action: "ops_order_provider_update",
-      actor: {
-        userId: "shipping-provider",
-        name: shippingProvider.label,
-        role: "system",
-      },
-      entityType: "order",
-      entityId: order.orderNumber,
-      summary: `${shippingProvider.label} pushed ${order.orderNumber} into in-transit delivery state.`,
-      metadata: {
-        provider_action: "shipping_in_transit",
-        shipping_state: order.providerBindings.shipping.state,
-        shipping_reference:
-          order.providerBindings.shipping.bookingReference ?? "missing",
-        tracking_number:
-          order.providerBindings.shipping.trackingNumber ?? "missing",
-        shipping_event_id:
-          order.providerBindings.shipping.carrierEventId ?? "missing",
-        order_status: order.status,
-      },
+    if (!eventRecord.replayed) {
+      await logOpsAuditEvent({
+        action: "ops_order_provider_update",
+        actor: { userId: "shipping-provider", name: shippingProvider.label, role: "system" },
+        entityType: "order",
+        entityId: order.orderNumber,
+        summary: `${shippingProvider.label} marked ${order.orderNumber} in transit.`,
+        metadata: {
+          provider_action: "shipping_in_transit",
+          shipping_state: order.providerBindings.shipping.state,
+          shipping_event_id: eventId,
+          order_status: order.status,
+        },
+      });
+    }
+
+    return NextResponse.json({
+      ok: true,
+      replayed: eventRecord.replayed,
+      orderNumber: order.orderNumber,
+      state: order.providerBindings.shipping.state,
     });
-
-    return NextResponse.json(
-      {
-        ok: true,
-        order,
-      },
-      { status: 200 },
-    );
   } catch (error) {
-    if (error instanceof OrderAuthorityError) {
+    if (
+      error instanceof ProviderEventAuthorityError ||
+      error instanceof OrderAuthorityError ||
+      error instanceof InventoryReservationError
+    ) {
       return NextResponse.json(
-        { error: error.message },
+        { error: error.message, code: "code" in error ? error.code : "order_rejected" },
         { status: error.statusCode },
       );
     }
-
     return NextResponse.json(
       { error: "تعذر معالجة callback الشحن داخل authority الحالية." },
       { status: 500 },

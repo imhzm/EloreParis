@@ -17,11 +17,141 @@ import {
   type StoredOrder,
 } from "@/lib/orders";
 import { collectionDirectory, footerPolicyLinks, products } from "@/lib/site-content";
+import { localizePath, type Locale } from "@/lib/i18n";
 import styles from "./order-flow.module.css";
 
 type TrackOrderSurfaceProps = {
   initialOrderNumber?: string;
+  locale: Locale;
 };
+
+const copy = {
+  ar: {
+    heroTitle: "تتبّعي الحالة الحالية بمرجع واضح بدل الرسائل المبهمة.",
+    heroBody: "استخدمي مرجع الطلب وآخر أربعة أرقام من الجوال لعرض آخر حالة متاحة بأمان.",
+    needTitle: "ما الذي تحتاجينه؟",
+    needValue: "مرجع الطلب أو جلسة التتبع الحالية",
+    needBody: "يقلل ذلك الاعتماد على المعلومات الشخصية الكاملة ويحافظ على وضوح التتبع.",
+    scopeTitle: "متابعة واضحة وآمنة للطلب",
+    scopeBody: "نعرض المعلومات المتاحة للعميل فقط، ونفصل بوضوح بين الحالة المؤكدة وما زال قيد المراجعة.",
+    lookupTitle: "البحث عن الطلب",
+    lookupBody: "يمكنك العودة إلى الحالة الحالية متى كان مرجع الطلب متاحًا لديك.",
+    orderReference: "مرجع الطلب",
+    phoneLastFour: "آخر 4 أرقام من الجوال (اختياري على نفس الجهاز)",
+    searching: "جاري البحث...",
+    showStatus: "عرض الحالة الحالية",
+    shippingPolicy: "مراجعة سياسة الشحن",
+    supportTitle: "قبل التتبع أو بعده",
+    supportingReference: "مرجع مساند",
+    currentStatus: "الحالة الحالية",
+    currentStatusFor: "الحالة الحالية للطلب",
+    complete: "مكتمل",
+    upcoming: "قادم",
+    guardrailsTitle: "حافظي على متابعة الطلب الحالي",
+    continuationTitle: "إذا احتجتِ مزيدًا من السياق، اختاري مسارًا واحدًا فقط",
+    noRoutes: "لا توجد روابط إضافية مطلوبة الآن. ابقي على مسار التتبع حتى تتضح الخطوة التالية.",
+    orderSummary: "ملخص الطلب",
+    trackingSummary: "الملخص المرتبط بالتتبع",
+    labels: ["منطقة الخدمة", "الشحن", "الدفع", "الناقل المقترح", "حالة المزوّد", "مرجع الدفع", "مرجع التسوية", "مرجع الشحن", "رقم التتبع", "الإجمالي التقديري", "طريقة المتابعة"],
+    pending: "قيد الانتظار",
+    noManualReview: "لا توجد مراجعة يدوية إضافية مطلوبة لهذا الطلب حاليًا.",
+    noNotifications: "لا توجد رسالة تشغيلية جديدة لهذا الطلب الآن.",
+    completePayment: "إكمال الدفع",
+    myOrders: "عرض طلباتي",
+    anotherDevice: "فتح طلباتي على جهاز آخر",
+    missingReference: "أدخلي مرجع الطلب لإظهار الحالة الحالية.",
+    notFound: "لم يتم العثور على طلب مطابق لهذه البيانات.",
+    oneDecision: "تتبّع قرار واحد",
+    oneRoute: "تتبّع مسار واحد",
+    multipleRoutes: "تتبّع متعدد المسارات",
+    oneDecisionBody: "راجعي حالة التنفيذ أولًا، ثم استخدمي رابط دعم واحدًا فقط عند الحاجة.",
+    oneRouteBody: "تابعي الطلب من الرابط الأقرب إلى نفس مسار الشراء.",
+    multipleRoutesBody: "ركزي على الحالة التشغيلية الحالية قبل فتح أي مسار تسوق جديد.",
+    statusLabel: "الحالة الحالية",
+    fulfillmentLabel: "مسار التنفيذ",
+    followupLabel: "طريقة المتابعة",
+    clearFulfillment: "مسار التنفيذ الحالي واضح للمتابعة.",
+    codYes: "الدفع عند الاستلام متاح",
+    codNo: "الدفع عند الاستلام غير متاح",
+  },
+  en: {
+    heroTitle: "Follow the current status with a clear reference.",
+    heroBody: "Use the order reference and the last four mobile digits to securely view the latest available status.",
+    needTitle: "What do you need?",
+    needValue: "Your order reference or current tracking session",
+    needBody: "This limits reliance on full personal information and keeps tracking clear.",
+    scopeTitle: "Clear, secure order tracking",
+    scopeBody: "We display customer-safe information only and distinguish confirmed updates from items still under review.",
+    lookupTitle: "Find your order",
+    lookupBody: "You can return to the current status whenever your order reference is available.",
+    orderReference: "Order reference",
+    phoneLastFour: "Last 4 mobile digits (optional on the same device)",
+    searching: "Searching...",
+    showStatus: "Show current status",
+    shippingPolicy: "Review shipping policy",
+    supportTitle: "Before or after tracking",
+    supportingReference: "Supporting reference",
+    currentStatus: "Current status",
+    currentStatusFor: "Current status for order",
+    complete: "Complete",
+    upcoming: "Upcoming",
+    guardrailsTitle: "Keep the current order in focus",
+    continuationTitle: "If you need more context, choose one route only",
+    noRoutes: "No additional route is needed now. Stay with tracking until the next step is clear.",
+    orderSummary: "Order summary",
+    trackingSummary: "Tracking-linked summary",
+    labels: ["Service zone", "Shipping", "Payment", "Suggested carrier", "Provider status", "Payment reference", "Settlement reference", "Shipping reference", "Tracking number", "Estimated total", "Follow-up method"],
+    pending: "Pending",
+    noManualReview: "No additional manual review is currently required for this order.",
+    noNotifications: "There is no new operational message for this order.",
+    completePayment: "Complete payment",
+    myOrders: "View my orders",
+    anotherDevice: "Open my orders on another device",
+    missingReference: "Enter the order reference to show its current status.",
+    notFound: "No order matched these details.",
+    oneDecision: "Track one decision",
+    oneRoute: "Track one route",
+    multipleRoutes: "Track multiple routes",
+    oneDecisionBody: "Review fulfilment first, then use one support link only if needed.",
+    oneRouteBody: "Continue through the link closest to the original purchase route.",
+    multipleRoutesBody: "Focus on the current operational status before starting a new shopping route.",
+    statusLabel: "Current status",
+    fulfillmentLabel: "Fulfilment route",
+    followupLabel: "Follow-up method",
+    clearFulfillment: "The current fulfilment route is clear for follow-up.",
+    codYes: "COD available",
+    codNo: "COD unavailable",
+  },
+} as const;
+
+const englishOrderStatus = {
+  received: ["Order received", "Your order has been recorded with a clear reference."],
+  payment_pending: ["Payment pending", "Complete payment through the active secure payment route."],
+  confirmed: ["Order confirmed", "The order is confirmed and ready for fulfilment."],
+  processing: ["Being prepared", "Your items are being prepared for the next step."],
+  out_for_delivery: ["Out for delivery", "Your order is in the final delivery stage."],
+  payment_expired: ["Payment window expired", "The payment window ended before confirmation."],
+  cancelled: ["Order cancelled", "The order and its fulfilment steps have been cancelled."],
+} as const;
+
+const englishPolicyLabels: Record<string, string> = {
+  "/terms": "Terms and conditions",
+  "/trust/verification": "Business information",
+  "/trust/privacy": "Privacy",
+  "/trust/shipping": "Shipping and delivery",
+  "/trust/returns": "Returns and refunds",
+  "/trust/authenticity": "Authenticity and quality",
+};
+
+const englishShippingLabels = {
+  standard: "Standard shipping within Saudi Arabia",
+  express: "Express shipping in covered cities",
+} as const;
+
+const englishPaymentLabels = {
+  payment_link: "Secure payment link",
+  cash_on_delivery: "Cash on delivery",
+} as const;
 
 function dedupeBy<T>(items: T[], getKey: (item: T) => string) {
   const seen = new Set<string>();
@@ -33,7 +163,9 @@ function dedupeBy<T>(items: T[], getKey: (item: T) => string) {
   });
 }
 
-export function TrackOrderSurface({ initialOrderNumber = "" }: TrackOrderSurfaceProps) {
+export function TrackOrderSurface({ initialOrderNumber = "", locale }: TrackOrderSurfaceProps) {
+  const text = copy[locale];
+  const pagePath = localizePath(locale, "/track-order");
   const [orderNumber, setOrderNumber] = useState(initialOrderNumber);
   const [phoneLastFour, setPhoneLastFour] = useState("");
   const [match, setMatch] = useState<StoredOrder | null>(null);
@@ -64,8 +196,8 @@ export function TrackOrderSurface({ initialOrderNumber = "" }: TrackOrderSurface
         setOrderNumber(order.orderNumber);
 
         trackAnalyticsEvent("track_order_lookup", {
-          source_path: "/track-order",
-          source_page_type: getPageType("/track-order"),
+          source_path: pagePath,
+          source_page_type: getPageType(pagePath),
           has_reference: true,
           has_phone_last4: false,
           lookup_found: true,
@@ -87,7 +219,7 @@ export function TrackOrderSurface({ initialOrderNumber = "" }: TrackOrderSurface
     return () => {
       isActive = false;
     };
-  }, [normalizedInitialOrder]);
+  }, [normalizedInitialOrder, pagePath]);
 
   const handleLookup = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -97,7 +229,7 @@ export function TrackOrderSurface({ initialOrderNumber = "" }: TrackOrderSurface
 
     if (!normalizedOrder) {
       setMatch(null);
-      setError("أدخلي مرجع الطلب لإظهار الحالة الحالية.");
+      setError(text.missingReference);
       return;
     }
 
@@ -116,8 +248,8 @@ export function TrackOrderSurface({ initialOrderNumber = "" }: TrackOrderSurface
         setCustomerAccessHandoffPath(nextCustomerAccessHandoffPath ?? null);
 
         trackAnalyticsEvent("track_order_lookup", {
-          source_path: "/track-order",
-          source_page_type: getPageType("/track-order"),
+          source_path: pagePath,
+          source_page_type: getPageType(pagePath),
           has_reference: true,
           has_phone_last4: normalizedLastFour.length === 4,
           lookup_found: true,
@@ -130,14 +262,14 @@ export function TrackOrderSurface({ initialOrderNumber = "" }: TrackOrderSurface
         setNotifications([]);
         setCustomerAccessHandoffPath(null);
         setError(
-          lookupError instanceof Error
+          locale === "ar" && lookupError instanceof Error
             ? lookupError.message
-            : "لم يتم العثور على طلب مطابق لهذه البيانات داخل نظام التتبع الحالي.",
+            : text.notFound,
         );
 
         trackAnalyticsEvent("track_order_lookup", {
-          source_path: "/track-order",
-          source_page_type: getPageType("/track-order"),
+          source_path: pagePath,
+          source_page_type: getPageType(pagePath),
           has_reference: true,
           has_phone_last4: normalizedLastFour.length === 4,
           lookup_found: false,
@@ -172,48 +304,61 @@ export function TrackOrderSurface({ initialOrderNumber = "" }: TrackOrderSurface
     (route) => route.href,
   ).slice(0, 3);
   const statusMeta = match ? getOrderStatusMeta(match.status) : null;
+  const localizedStatusMeta = match && statusMeta
+    ? locale === "en"
+      ? { label: englishOrderStatus[match.status][0], description: englishOrderStatus[match.status][1] }
+      : statusMeta
+    : null;
   const trackingModeTitle =
     matchedProducts.length === 1
-      ? "تتبع قرار واحد"
+      ? text.oneDecision
       : matchedCollections.length === 1
-        ? `تتبع مسار ${matchedCollections[0]?.title ?? "واحد"}`
-        : "تتبع متعدد المسارات";
+        ? text.oneRoute
+        : text.multipleRoutes;
   const trackingModeBody =
     matchedProducts.length === 1
-      ? "استخدمي نتيجة التتبع لتأكيد التنفيذ أولًا، ثم عودي إلى مسار داعم واحد فقط إذا احتجتِ مزيدًا من السياق."
+      ? text.oneDecisionBody
       : matchedCollections.length === 1
-        ? "المسار ما زال متماسكًا، لذلك المتابعة الجيدة هي رابط واحد يخدم نفس الروتين بدل تصفح عام جديد."
-        : "الطلب الحالي يحتاج وضوحًا تشغيليًا أكثر من حاجته إلى توسعة جديدة داخل المتجر.";
+        ? text.oneRouteBody
+        : text.multipleRoutesBody;
   const trackingSignals =
-    match && fulfillmentPlan && statusMeta
+    match && fulfillmentPlan && localizedStatusMeta
       ? [
-          { label: "الحالة الحالية", title: statusMeta.label, body: statusMeta.description },
+          { label: text.statusLabel, title: localizedStatusMeta.label, body: localizedStatusMeta.description },
           {
-            label: "مسار التنفيذ",
+            label: text.fulfillmentLabel,
             title: fulfillmentPlan.recommendedCarrier,
             body: fulfillmentPlan.requiresManualReview
               ? fulfillmentPlan.manualReviewReasons[0]
-              : "المسار الحالي واضح بما يكفي للمتابعة دون فتح تصعيد إضافي.",
+              : text.clearFulfillment,
           },
-          { label: "طريقة المتابعة", title: trackingModeTitle, body: trackingModeBody },
+          { label: text.followupLabel, title: trackingModeTitle, body: trackingModeBody },
         ]
       : [];
   const trackingGuardrails =
     match && fulfillmentPlan
-      ? [
-          "ابدئي دائمًا بمرجع الطلب وآخر 4 أرقام من الجوال قبل الانتقال إلى أي قناة دعم أخرى.",
-          fulfillmentPlan.requiresManualReview
-            ? "بما أن الطلب يحتاج مراجعة، تابعي الحالة الحالية أولًا بدل إضافة عناصر جديدة أو إعادة فتح checkout."
-            : "طالما لا توجد مراجعة يدوية، فالأولوية هي مراقبة التقدم التشغيلي بدل تعديل قرار الشراء.",
-          `الإجمالي الحالي ${match.totalEstimate} ر.س، لذلك أي خطوة لاحقة يجب أن تدعم نفس الطلب لا أن تفتح حلقة تصفح جديدة.`,
-        ]
+      ? locale === "ar"
+        ? [
+            "ابدئي دائمًا بمرجع الطلب وآخر 4 أرقام من الجوال قبل الانتقال إلى أي قناة دعم أخرى.",
+            fulfillmentPlan.requiresManualReview
+              ? "بما أن الطلب يحتاج مراجعة، تابعي الحالة الحالية أولًا بدل إضافة عناصر جديدة أو إعادة فتح الدفع."
+              : "طالما لا توجد مراجعة يدوية، فالأولوية هي مراقبة التقدم التشغيلي بدل تعديل قرار الشراء.",
+            `الإجمالي الحالي ${match.totalEstimate} ر.س، لذلك يجب أن تدعم أي خطوة لاحقة نفس الطلب.`,
+          ]
+        : [
+            "Start with the order reference and last four mobile digits before using another support channel.",
+            fulfillmentPlan.requiresManualReview
+              ? "This order needs review. Follow its current status before starting another purchase."
+              : "No manual review is pending; monitor fulfilment progress before changing the purchase decision.",
+            `The current total is SAR ${match.totalEstimate}; any next step should support this order.`,
+          ]
       : [];
   const fallbackCollectionRoute =
     matchedCollections[0] === undefined
       ? null
       : {
           href: matchedCollections[0].href,
-          label: `العودة إلى ${matchedCollections[0].title}`,
+          label: locale === "ar" ? `العودة إلى ${matchedCollections[0].title}` : "Return to the collection",
           productName: matchedCollections[0].title,
         };
   const resultRoute = trackingRoutes[0] ?? fallbackCollectionRoute;
@@ -229,27 +374,21 @@ export function TrackOrderSurface({ initialOrderNumber = "" }: TrackOrderSurface
       <section className={styles.hero}>
         <div>
           <p className={styles.eyebrow}>Order tracking</p>
-          <h1>تتبعي الحالة الحالية بمرجع واضح بدل الرسائل المبهمة.</h1>
-          <p className={styles.summary}>
-            صفحة تتبع الطلب تربط بين مرجع الطلب وآخر 4 أرقام من الجوال حتى تعرض حالة واضحة داخل نظام
-            التتبع الحالي، مع مسار تنفيذ مفهوم وليس مجرد تسمية عامة للحالة.
-          </p>
+          <h1>{text.heroTitle}</h1>
+          <p className={styles.summary}>{text.heroBody}</p>
         </div>
 
         <div className={styles.heroAside}>
           <div className={styles.metricCard}>
-            <p>ما الذي تحتاجينه؟</p>
-            <strong>مرجع الطلب أو جلسة التتبع الحالية</strong>
-            <span>هذا يقلل الاعتماد على معلومات شخصية كاملة ويجعل التتبع أوضح في المرحلة الحالية.</span>
+            <p>{text.needTitle}</p>
+            <strong>{text.needValue}</strong>
+            <span>{text.needBody}</span>
           </div>
 
           <div className={styles.noticeCard}>
             <p className={styles.eyebrow}>Scope</p>
-            <h2>نظام تتبع داخل التطبيق وليس OMS نهائيًا</h2>
-            <p>
-              التتبع يعمل فوق authority داخل التطبيق، ولم ينتقل بعد إلى نظام طلبات خارجي كامل.
-              لذلك نعرض ما نعرفه الآن بوضوح ونفصل بين المؤكد وما يحتاج مراجعة.
-            </p>
+            <h2>{text.scopeTitle}</h2>
+            <p>{text.scopeBody}</p>
           </div>
         </div>
       </section>
@@ -257,12 +396,12 @@ export function TrackOrderSurface({ initialOrderNumber = "" }: TrackOrderSurface
       <section className={styles.layout}>
         <form className={styles.mainCard} onSubmit={handleLookup}>
           <p className={styles.sectionTitle}>Lookup</p>
-          <h2>البحث عن الطلب</h2>
-          <p>إذا خرجتِ من صفحة التأكيد، يمكنك العودة إلى الحالة الحالية من هنا متى كان المرجع متاحًا لديك.</p>
+          <h2>{text.lookupTitle}</h2>
+          <p>{text.lookupBody}</p>
 
           <div className={styles.formGrid}>
             <label className={styles.field}>
-              <span className={styles.fieldLabel}>مرجع الطلب</span>
+              <span className={styles.fieldLabel}>{text.orderReference}</span>
               <input
                 className={styles.textInput}
                 value={orderNumber}
@@ -273,7 +412,7 @@ export function TrackOrderSurface({ initialOrderNumber = "" }: TrackOrderSurface
             </label>
 
             <label className={styles.field}>
-              <span className={styles.fieldLabel}>آخر 4 أرقام من الجوال (اختياري على نفس الجهاز)</span>
+              <span className={styles.fieldLabel}>{text.phoneLastFour}</span>
               <input
                 className={styles.textInput}
                 value={phoneLastFour}
@@ -288,34 +427,34 @@ export function TrackOrderSurface({ initialOrderNumber = "" }: TrackOrderSurface
 
           <div className={styles.actionColumn}>
             <button className={styles.primaryButton} type="submit" disabled={isSearching}>
-              {isSearching ? "جاري البحث..." : "عرض الحالة الحالية"}
+              {isSearching ? text.searching : text.showStatus}
             </button>
             <TrackedLink
-              href="/trust/shipping"
+              href={localizePath(locale, "/trust/shipping")}
               className={styles.secondaryLink}
               analyticsLabel="track_order_to_shipping_policy"
               analyticsSurface="track_order_lookup"
               analyticsDestinationType="trust_policy"
             >
-              مراجعة سياسة الشحن
+              {text.shippingPolicy}
             </TrackedLink>
           </div>
         </form>
 
         <aside className={styles.summaryCard}>
           <p className={styles.sectionTitle}>Support</p>
-          <h2>قبل التتبع أو بعده</h2>
+          <h2>{text.supportTitle}</h2>
           <div className={styles.linkList}>
             {footerPolicyLinks.map((policy) => (
               <TrackedLink
                 key={policy.href}
-                href={policy.href}
+                href={localizePath(locale, policy.href)}
                 analyticsLabel={`track_order_policy_${policy.href.split("/").at(-1) ?? "route"}`}
                 analyticsSurface="track_order_policies"
                 analyticsDestinationType="trust_policy"
               >
-                <span>{policy.label}</span>
-                <span>مرجع مساند</span>
+                <span>{locale === "en" ? englishPolicyLabels[policy.href] ?? policy.label : policy.label}</span>
+                <span>{text.supportingReference}</span>
               </TrackedLink>
             ))}
           </div>
@@ -325,8 +464,8 @@ export function TrackOrderSurface({ initialOrderNumber = "" }: TrackOrderSurface
       {match && fulfillmentPlan ? (
         <section className={styles.layout}>
           <article className={styles.mainCard}>
-            <p className={styles.sectionTitle}>Current status</p>
-            <h2>الحالة الحالية للطلب {match.orderNumber}</h2>
+            <p className={styles.sectionTitle}>{text.currentStatus}</p>
+            <h2>{text.currentStatusFor} {match.orderNumber}</h2>
 
             <div className={styles.statusSummaryGrid}>
               {trackingSignals.map((signal) => (
@@ -351,12 +490,12 @@ export function TrackOrderSurface({ initialOrderNumber = "" }: TrackOrderSurface
                   }`}
                 >
                   <div className={styles.optionHead}>
-                    <strong>{step.label}</strong>
+                    <strong>{locale === "en" ? englishOrderStatus[step.key][0] : step.label}</strong>
                     <span className={styles.timelineBadge}>
-                      {step.state === "current" ? "الحالة الحالية" : step.state === "complete" ? "مكتمل" : "قادم"}
+                      {step.state === "current" ? text.currentStatus : step.state === "complete" ? text.complete : text.upcoming}
                     </span>
                   </div>
-                  <p>{step.description}</p>
+                  <p>{locale === "en" ? englishOrderStatus[step.key][1] : step.description}</p>
                 </article>
               ))}
             </div>
@@ -364,7 +503,7 @@ export function TrackOrderSurface({ initialOrderNumber = "" }: TrackOrderSurface
             <div className={styles.catalogPanelGrid}>
               <article className={styles.referenceCard}>
                 <p className={styles.eyebrow}>Tracking guardrails</p>
-                <h3>لا تحولي التتبع إلى رحلة شراء جديدة</h3>
+                <h3>{text.guardrailsTitle}</h3>
                 <div className={styles.cardActions}>
                   {trackingGuardrails.map((item) => (
                     <div key={item} className={styles.infoBullet}>{item}</div>
@@ -374,13 +513,13 @@ export function TrackOrderSurface({ initialOrderNumber = "" }: TrackOrderSurface
 
               <article className={styles.referenceCard}>
                 <p className={styles.eyebrow}>Continuation routes</p>
-                <h3>إذا احتجتِ مزيدًا من السياق فخذي مسارًا واحدًا فقط</h3>
+                <h3>{text.continuationTitle}</h3>
                 {trackingRoutes.length ? (
                   <div className={styles.linkList}>
                     {trackingRoutes.map((route) => (
                       <TrackedLink
                         key={route.href}
-                        href={route.href}
+                        href={localizePath(locale, route.href)}
                         analyticsLabel={`track_order_route_${route.href.split("/").filter(Boolean).at(-1) ?? "route"}`}
                         analyticsSurface="track_order_result_routes"
                         analyticsDestinationType="support_route"
@@ -391,9 +530,7 @@ export function TrackOrderSurface({ initialOrderNumber = "" }: TrackOrderSurface
                     ))}
                   </div>
                 ) : (
-                  <div className={styles.infoBullet}>
-                    إذا لم تظهر روابط داعمة إضافية، ابقي على مسار التتبع الحالي حتى تتضح الخطوة التالية.
-                  </div>
+                  <div className={styles.infoBullet}>{text.noRoutes}</div>
                 )}
               </article>
             </div>
@@ -413,7 +550,7 @@ export function TrackOrderSurface({ initialOrderNumber = "" }: TrackOrderSurface
                     <span>{line.supplierName}</span>
                     <span>{line.availability}</span>
                     <span>{line.shippingClass}</span>
-                    <span>{line.codEligible ? "COD yes" : "COD no"}</span>
+                    <span>{line.codEligible ? text.codYes : text.codNo}</span>
                   </div>
                 </article>
               ))}
@@ -421,27 +558,27 @@ export function TrackOrderSurface({ initialOrderNumber = "" }: TrackOrderSurface
           </article>
 
           <aside className={styles.summaryCard}>
-            <p className={styles.sectionTitle}>Order summary</p>
-            <h2>الملخص المرتبط بالتتبع</h2>
+            <p className={styles.sectionTitle}>{text.orderSummary}</p>
+            <h2>{text.trackingSummary}</h2>
 
             <div className={styles.referenceCard}>
-              <div className={styles.referenceRow}><span>منطقة الخدمة</span><strong className={styles.referenceValue}>{fulfillmentPlan.deliveryZoneLabel}</strong></div>
-              <div className={styles.referenceRow}><span>الشحن</span><strong className={styles.referenceValue}>{getShippingMethodById(match.shippingMethodId)?.label}</strong></div>
-              <div className={styles.referenceRow}><span>الدفع</span><strong className={styles.referenceValue}>{getPaymentMethodById(match.paymentMethodId)?.label}</strong></div>
-              <div className={styles.referenceRow}><span>الناقل المقترح</span><strong className={styles.referenceValue}>{fulfillmentPlan.recommendedCarrier}</strong></div>
-              <div className={styles.referenceRow}><span>حالة المزوّد</span><strong className={styles.referenceValue}>{providerHandoff?.providerReadinessLabel ?? "pending"}</strong></div>
-              <div className={styles.referenceRow}><span>مرجع الدفع</span><strong className={styles.referenceValue}>{match.providerBindings.payment.referenceId ?? "pending"}</strong></div>
-              <div className={styles.referenceRow}><span>مرجع التسوية</span><strong className={styles.referenceValue}>{match.providerBindings.payment.settlementReference ?? "pending"}</strong></div>
-              <div className={styles.referenceRow}><span>مرجع الشحن</span><strong className={styles.referenceValue}>{match.providerBindings.shipping.bookingReference ?? "pending"}</strong></div>
-              <div className={styles.referenceRow}><span>رقم التتبع</span><strong className={styles.referenceValue}>{match.providerBindings.shipping.trackingNumber ?? "pending"}</strong></div>
-              <div className={styles.referenceRow}><span>الإجمالي التقديري</span><strong className={styles.referenceValue}>{match.totalEstimate} ر.س</strong></div>
-              <div className={styles.referenceRow}><span>طريقة المتابعة</span><strong className={styles.referenceValue}>{trackingModeTitle}</strong></div>
+              <div className={styles.referenceRow}><span>{text.labels[0]}</span><strong className={styles.referenceValue}>{fulfillmentPlan.deliveryZoneLabel}</strong></div>
+              <div className={styles.referenceRow}><span>{text.labels[1]}</span><strong className={styles.referenceValue}>{locale === "en" ? englishShippingLabels[match.shippingMethodId] : getShippingMethodById(match.shippingMethodId)?.label}</strong></div>
+              <div className={styles.referenceRow}><span>{text.labels[2]}</span><strong className={styles.referenceValue}>{locale === "en" ? englishPaymentLabels[match.paymentMethodId] : getPaymentMethodById(match.paymentMethodId)?.label}</strong></div>
+              <div className={styles.referenceRow}><span>{text.labels[3]}</span><strong className={styles.referenceValue}>{fulfillmentPlan.recommendedCarrier}</strong></div>
+              <div className={styles.referenceRow}><span>{text.labels[4]}</span><strong className={styles.referenceValue}>{providerHandoff?.providerReadinessLabel ?? text.pending}</strong></div>
+              <div className={styles.referenceRow}><span>{text.labels[5]}</span><strong className={styles.referenceValue}>{match.providerBindings.payment.referenceId ?? text.pending}</strong></div>
+              <div className={styles.referenceRow}><span>{text.labels[6]}</span><strong className={styles.referenceValue}>{match.providerBindings.payment.settlementReference ?? text.pending}</strong></div>
+              <div className={styles.referenceRow}><span>{text.labels[7]}</span><strong className={styles.referenceValue}>{match.providerBindings.shipping.bookingReference ?? text.pending}</strong></div>
+              <div className={styles.referenceRow}><span>{text.labels[8]}</span><strong className={styles.referenceValue}>{match.providerBindings.shipping.trackingNumber ?? text.pending}</strong></div>
+              <div className={styles.referenceRow}><span>{text.labels[9]}</span><strong className={styles.referenceValue}>{locale === "ar" ? `${match.totalEstimate} ر.س` : `SAR ${match.totalEstimate}`}</strong></div>
+              <div className={styles.referenceRow}><span>{text.labels[10]}</span><strong className={styles.referenceValue}>{trackingModeTitle}</strong></div>
             </div>
 
             {fulfillmentPlan.requiresManualReview ? (
               <div className={styles.inlineError}>{fulfillmentPlan.manualReviewReasons.join(" ")}</div>
             ) : (
-              <div className={styles.inlineNotice}>لا توجد مراجعة يدوية إضافية مطلوبة لهذا الطلب داخل النموذج الحالي.</div>
+              <div className={styles.inlineNotice}>{text.noManualReview}</div>
             )}
 
             <div className={styles.summaryList}>
@@ -456,7 +593,7 @@ export function TrackOrderSurface({ initialOrderNumber = "" }: TrackOrderSurface
                   </div>
                 ))
               ) : (
-                <div className={styles.inlineNotice}>لا توجد رسالة تشغيلية جديدة في queue هذا الطلب الآن.</div>
+                <div className={styles.inlineNotice}>{text.noNotifications}</div>
               )}
             </div>
 
@@ -471,32 +608,32 @@ export function TrackOrderSurface({ initialOrderNumber = "" }: TrackOrderSurface
                   target="_blank"
                   rel="noreferrer"
                 >
-                  إكمال الدفع
+                  {text.completePayment}
                 </TrackedLink>
               ) : null}
               <TrackedLink
-                href="/account/orders"
+                href={localizePath(locale, "/account/orders")}
                 className={styles.secondaryLink}
                 analyticsLabel="track_order_to_customer_orders"
                 analyticsSurface="track_order_result"
                 analyticsDestinationType="account_orders"
               >
-                عرض طلباتي
+                {text.myOrders}
               </TrackedLink>
               {customerAccessHandoffPath ? (
                 <TrackedLink
-                  href={customerAccessHandoffPath}
+                  href={`${customerAccessHandoffPath}${customerAccessHandoffPath.includes("?") ? "&" : "?"}locale=${locale}`}
                   className={styles.secondaryLink}
                   analyticsLabel="track_order_to_customer_access_handoff"
                   analyticsSurface="track_order_result"
                   analyticsDestinationType="account_access"
                 >
-                  فتح طلباتي على جهاز آخر
+                  {text.anotherDevice}
                 </TrackedLink>
               ) : null}
               {resultRoute ? (
                 <TrackedLink
-                  href={resultRoute.href}
+                  href={localizePath(locale, resultRoute.href)}
                   className={styles.secondaryLink}
                   analyticsLabel={`track_order_to_${resultRoute.href.split("/").filter(Boolean).at(-1) ?? "route"}`}
                   analyticsSurface="track_order_result"
@@ -511,7 +648,7 @@ export function TrackOrderSurface({ initialOrderNumber = "" }: TrackOrderSurface
               {trackingRoutes.map((route) => (
                 <TrackedLink
                   key={route.href}
-                  href={route.href}
+                  href={localizePath(locale, route.href)}
                   analyticsLabel={`track_order_sidebar_${route.href.split("/").filter(Boolean).at(-1) ?? "route"}`}
                   analyticsSurface="track_order_result"
                   analyticsDestinationType="support_route"
@@ -523,13 +660,13 @@ export function TrackOrderSurface({ initialOrderNumber = "" }: TrackOrderSurface
               {footerPolicyLinks.map((policy) => (
                 <TrackedLink
                   key={policy.href}
-                  href={policy.href}
+                  href={localizePath(locale, policy.href)}
                   analyticsLabel={`track_order_result_policy_${policy.href.split("/").at(-1) ?? "route"}`}
                   analyticsSurface="track_order_result"
                   analyticsDestinationType="trust_policy"
                 >
-                  <span>{policy.label}</span>
-                  <span>مرجع مساند</span>
+                  <span>{locale === "en" ? englishPolicyLabels[policy.href] ?? policy.label : policy.label}</span>
+                  <span>{text.supportingReference}</span>
                 </TrackedLink>
               ))}
             </div>

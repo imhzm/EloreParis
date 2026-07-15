@@ -1,0 +1,215 @@
+- generic [ref=e2]:
+  - link "تخطي إلى المحتوى" [ref=e3] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e4]:
+    - generic [ref=e5]: تجربة عربية للسوق السعودي
+    - generic [ref=e6]: جمال باختيار مدروس
+    - link "تتبّع طلبك ←" [ref=e7] [cursor=pointer]:
+      - /url: /ar/track-order
+  - banner [ref=e8]:
+    - link [ref=e9] [cursor=pointer]:
+      - /url: /ar
+      - img "ÉLORÉ PARIS" [ref=e10]
+    - navigation "التنقل الرئيسي" [ref=e11]:
+      - link "الرئيسية" [ref=e12] [cursor=pointer]:
+        - /url: /ar
+      - link "المتجر" [ref=e13] [cursor=pointer]:
+        - /url: /ar/shop
+      - link "حسب المشكلة" [ref=e14] [cursor=pointer]:
+        - /url: /ar/concerns
+      - link "الروتينات" [ref=e15] [cursor=pointer]:
+        - /url: /ar/routines
+      - link "البحث" [ref=e16] [cursor=pointer]:
+        - /url: /ar/search
+      - link "المجلة" [ref=e17] [cursor=pointer]:
+        - /url: /ar/journal
+      - link "الثقة" [ref=e18] [cursor=pointer]:
+        - /url: /ar/trust
+    - generic [ref=e19]:
+      - link "البحث داخل المتجر" [ref=e20] [cursor=pointer]:
+        - /url: /ar/search
+      - link "السلة" [ref=e24] [cursor=pointer]:
+        - /url: /ar/cart
+      - link "English" [ref=e26] [cursor=pointer]:
+        - /url: /en
+        - text: EN
+  - main [ref=e27]:
+    - generic [ref=e28]:
+      - region [ref=e29]:
+        - generic [ref=e30]:
+          - generic [ref=e36]:
+            - img "ÉLORÉ PARIS" [ref=e37]
+            - paragraph [ref=e38]: PARISIAN RITUAL · SAUDI RELEVANCE
+            - heading "جمال باختيار مدروس." [level=1] [ref=e39]
+            - paragraph [ref=e40]: تجربة جمال هادئة تجمع الإحساس الباريسي مع وضوح يناسب روتينك اليومي. اكتشفي القوام والدرجة والتفاصيل قبل أن تختاري.
+            - generic [ref=e41]:
+              - link "اكتشفي المجموعة" [ref=e42] [cursor=pointer]:
+                - /url: /ar/shop
+              - link "ابني روتينك" [ref=e43] [cursor=pointer]:
+                - /url: /ar/routines
+          - paragraph [ref=e44]: SCROLL TO EXPLORE
+          - paragraph [ref=e46]: صورة مفاهيمية معتمدة للنموذج الأولي وليست صورة منتج.
+      - region [ref=e47]:
+        - generic [ref=e49]:
+          - generic [ref=e50]:
+            - paragraph [ref=e51]: PRODUCT TRUTH
+            - heading "المنتج أمامك كما هو." [level=2] [ref=e52]
+            - paragraph [ref=e53]: قوام واضح، درجة حقيقية، وطريقة استخدام مفهومة. لأن الاختيار الأفضل يبدأ بمعلومة وصورة يمكنك الوثوق بهما.
+            - paragraph [ref=e54]: تُضاف منتجات ÉLORÉ PARIS هنا فقط بعد اعتماد صور العبوة والملصق والبيانات التشغيلية لكل SKU.
+          - generic "مكان مخصص لصورة المنتج المعتمدة" [ref=e55]:
+            - generic [ref=e61]: RITUEL NÂ° 01
+            - generic [ref=e72]: REAL PRODUCT PHOTOGRAPHY · PENDING
+      - region [ref=e73]:
+        - generic [ref=e74]:
+          - generic [ref=e77]:
+            - paragraph [ref=e78]: TEXTURE THEATRE
+            - heading "اختاري بالقوام، لا بالضجيج." [level=2] [ref=e79]
+            - paragraph [ref=e80]: جل خفيف، كريم غني، أو لمسة مخملية. نعرض الإحساس بوضوح لتعرفي ما ينسجم معك قبل الشراء.
+          - paragraph [ref=e81]: تصوير مفاهيمي للقوام؛ يستبدل بقوام المنتج الفعلي قبل الإطلاق التجاري.
+      - region [ref=e82]:
+        - generic [ref=e83]:
+          - paragraph [ref=e84]: SHOP BY INTENTION
+          - heading "ابدئي من نيتك." [level=2] [ref=e85]
+        - generic [ref=e86]:
+          - link "01 العناية بالبشرة روتين أبسط، مبني حول ما تحتاجه بشرتك فعلًا." [ref=e87] [cursor=pointer]:
+            - /url: /ar/shop/skincare
+            - generic [ref=e89]: "01"
+            - generic [ref=e90]:
+              - heading "العناية بالبشرة" [level=3] [ref=e91]
+              - paragraph [ref=e92]: روتين أبسط، مبني حول ما تحتاجه بشرتك فعلًا.
+            - generic [ref=e93]: ↙
+          - link "02 المكياج لون وقوام يكملان حضورك، لا يخفيانه." [ref=e94] [cursor=pointer]:
+            - /url: /ar/shop/makeup
+            - generic [ref=e96]: "02"
+            - generic [ref=e97]:
+              - heading "المكياج" [level=3] [ref=e98]
+              - paragraph [ref=e99]: لون وقوام يكملان حضورك، لا يخفيانه.
+            - generic [ref=e100]: ↙
+          - link "03 الأطقم والهدايا اختيارات مدروسة، جاهزة لتُهدى وتُتذكر." [ref=e101] [cursor=pointer]:
+            - /url: /ar/shop/beauty-sets
+            - generic [ref=e103]: "03"
+            - generic [ref=e104]:
+              - heading "الأطقم والهدايا" [level=3] [ref=e105]
+              - paragraph [ref=e106]: اختيارات مدروسة، جاهزة لتُهدى وتُتذكر.
+            - generic [ref=e107]: ↙
+      - region [ref=e108]:
+        - generic [ref=e109]:
+          - paragraph [ref=e110]: ROUTINE, SIMPLIFIED
+          - heading "روتينك لا يحتاج إلى رف كامل." [level=2] [ref=e111]
+          - paragraph [ref=e112]: ابدئي بالأساس. ثم أضيفي ما يخدم هدفًا واضحًا، خطوة واحدة في كل مرة.
+        - generic [ref=e113]:
+          - article [ref=e114]:
+            - generic [ref=e115]: "01"
+            - heading "تنظيف" [level=3] [ref=e116]
+            - paragraph [ref=e117]: بداية هادئة تحافظ على توازن البشرة.
+          - article [ref=e118]:
+            - generic [ref=e119]: "02"
+            - heading "ترطيب" [level=3] [ref=e120]
+            - paragraph [ref=e121]: قوام يناسب إحساس بشرتك ووقت استخدامك.
+          - article [ref=e122]:
+            - generic [ref=e123]: "03"
+            - heading "حماية" [level=3] [ref=e124]
+            - paragraph [ref=e125]: الخطوة اليومية التي تكمّل أساس الروتين.
+        - link "ابدئي من الأساس" [ref=e126] [cursor=pointer]:
+          - /url: /ar/routines
+      - region [ref=e127]:
+        - generic [ref=e130]:
+          - paragraph [ref=e131]: SHADE & SKIN REALITY
+          - heading "الدرجة تُرى على بشرة حقيقية." [level=2] [ref=e132]
+          - paragraph [ref=e133]: نعمل على تصوير السواتشات بلا فلاتر لونية وعلى درجات بشرة عربية وخليجية. لن ننشر أسماء الدرجات أو نتائجها قبل اكتمال التصوير والبيانات.
+          - generic [ref=e134]: TRUE SWATCH LIBRARY · IN PRODUCTION
+      - region [ref=e135]:
+        - generic [ref=e137]:
+          - paragraph [ref=e138]: PARIS, REFRAMED
+          - heading "من باريس إلى تفاصيل يومك." [level=2] [ref=e139]
+          - paragraph [ref=e140]: تستلهم ÉLORÉ PARIS دقتها من طقوس الجمال الباريسية، وتعيد صياغتها لتناسب إيقاع الحياة واحتياجات الجمال في السعودية. فخامة هادئة، ومعلومات أوضح، واختيار أقرب إليك.
+          - link "اقرئي قصتنا" [ref=e141] [cursor=pointer]:
+            - /url: /ar/about
+      - region [ref=e142]:
+        - generic [ref=e143]:
+          - paragraph [ref=e144]: WHY THE EXPERIENCE FEELS DIFFERENT
+          - heading "ثقة تبدأ مما يمكن إثباته." [level=2] [ref=e145]
+        - generic [ref=e146]:
+          - article [ref=e147]:
+            - generic [ref=e148]: "01"
+            - heading "صور أوضح" [level=3] [ref=e149]
+            - paragraph [ref=e150]: نعرض القوام والدرجة من دون مؤثرات تغيّر الحقيقة.
+          - article [ref=e151]:
+            - generic [ref=e152]: "02"
+            - heading "معلومة عملية" [level=3] [ref=e153]
+            - paragraph [ref=e154]: طريقة استخدام مختصرة ومفهومة قبل اتخاذ القرار.
+          - article [ref=e155]:
+            - generic [ref=e156]: "03"
+            - heading "اختيار أقل ضجيجًا" [level=3] [ref=e157]
+            - paragraph [ref=e158]: تصنيف مدروس بدل رف رقمي مزدحم بلا توجيه.
+          - article [ref=e159]:
+            - generic [ref=e160]: "04"
+            - heading "ادعاءات منضبطة" [level=3] [ref=e161]
+            - paragraph [ref=e162]: لا أرقام أو نتائج أو وعود بلا مصدر يمكن مراجعته.
+      - region [ref=e163]:
+        - generic [ref=e166]:
+          - paragraph [ref=e167]: THE ART OF GIFTING
+          - heading "هدية جميلة في كل تفصيلة." [level=2] [ref=e168]
+          - paragraph [ref=e169]: اختيارات مدروسة للمناسبة والميزانية، مع تجربة تغليف تُعرض هنا بعد اعتمادها وتصويرها فعليًا.
+          - link "اكتشفي عالم الهدايا" [ref=e170] [cursor=pointer]:
+            - /url: /ar/shop/beauty-sets
+      - region [ref=e171]:
+        - generic [ref=e174]:
+          - img "ÉLORÉ PARIS" [ref=e175]
+          - paragraph [ref=e176]: THE BEAUTY EDIT
+          - heading "رسائل جمال تستحق وقتك." [level=2] [ref=e177]
+          - paragraph [ref=e178]: أدلة درجات، روتينات قصيرة، وملاحظات تساعدك على الاختيار من دون ضجيج.
+          - link "اقرئي مجلة الجمال" [ref=e179] [cursor=pointer]:
+            - /url: /ar/journal
+          - region [ref=e181]:
+            - generic [ref=e182]:
+              - generic [ref=e183]:
+                - paragraph [ref=e184]: VIP EARLY ACCESS
+                - heading "كوني أول من يعرف." [level=2] [ref=e185]
+                - paragraph [ref=e186]: أدلة درجات وروتينات قصيرة وجديد ÉLORÉ PARIS، تُرسل باختيارك.
+              - generic [ref=e188]:
+                - generic [ref=e189]:
+                  - textbox "بريدك الإلكتروني" [ref=e190]
+                  - button "انضمي الآن" [disabled] [ref=e191]
+                - generic [ref=e192]:
+                  - checkbox "أوافق على استلام رسائل ÉLORÉ PARIS التسويقية عبر البريد الإلكتروني، ويمكنني إلغاء الاشتراك مجانًا في أي وقت. سياسة الخصوصية." [ref=e193]
+                  - generic [ref=e194]:
+                    - text: أوافق على استلام رسائل ÉLORÉ PARIS التسويقية عبر البريد الإلكتروني، ويمكنني إلغاء الاشتراك مجانًا في أي وقت.
+                    - link "سياسة الخصوصية" [ref=e195] [cursor=pointer]:
+                      - /url: /ar/trust/privacy
+                    - text: .
+            - button "إخفاء نموذج الاشتراك" [ref=e196] [cursor=pointer]: ×
+  - contentinfo [ref=e197]:
+    - generic [ref=e198]:
+      - img "ÉLORÉ PARIS" [ref=e199]
+      - paragraph [ref=e200]: بيت جمال رقمي فاخر يجمع الحس الباريسي مع وضوح يناسب روتينك في السعودية.
+      - generic [ref=e201]: بيانات المنتجات والتجارة والسياسات النهائية قيد الاعتماد قبل الإطلاق العام.
+    - generic [ref=e202]:
+      - heading "الثقة والسياسات" [level=2] [ref=e203]
+      - generic [ref=e204]:
+        - link "الشروط والأحكام" [ref=e205] [cursor=pointer]:
+          - /url: /ar/terms
+        - link "بيانات المنشأة" [ref=e206] [cursor=pointer]:
+          - /url: /ar/trust/verification
+        - link "الخصوصية" [ref=e207] [cursor=pointer]:
+          - /url: /ar/trust/privacy
+        - link "الشحن والتوصيل" [ref=e208] [cursor=pointer]:
+          - /url: /ar/trust/shipping
+        - link "الاستبدال والاسترجاع" [ref=e209] [cursor=pointer]:
+          - /url: /ar/trust/returns
+    - generic [ref=e210]:
+      - heading "خدمة الطلب" [level=2] [ref=e211]
+      - generic [ref=e212]:
+        - link "تواصلي معنا" [ref=e213] [cursor=pointer]:
+          - /url: /ar/contact
+        - link "الأسئلة الشائعة" [ref=e214] [cursor=pointer]:
+          - /url: /ar/faq
+        - link "تتبع الطلب" [ref=e215] [cursor=pointer]:
+          - /url: /ar/track-order
+        - link "السلة" [ref=e216] [cursor=pointer]:
+          - /url: /ar/cart
+        - link "البحث داخل المتجر" [ref=e217] [cursor=pointer]:
+          - /url: /ar/search
+    - generic [ref=e218]:
+      - generic [ref=e219]: © ÉLORÉ PARIS
+      - generic [ref=e220]: جمال باختيار مدروس.

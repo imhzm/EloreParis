@@ -1,7 +1,4 @@
 import type { NextConfig } from "next";
-import { getSearchCrawlerDirectiveHeader } from "./src/lib/search-visibility";
-
-const searchCrawlerDirectiveHeader = getSearchCrawlerDirectiveHeader();
 
 const nextConfig: NextConfig = {
   output: "standalone",
@@ -32,14 +29,6 @@ const nextConfig: NextConfig = {
             key: "Strict-Transport-Security",
             value: "max-age=31536000; includeSubDomains",
           },
-          ...(searchCrawlerDirectiveHeader
-            ? [
-                {
-                  key: "X-Robots-Tag",
-                  value: searchCrawlerDirectiveHeader,
-                },
-              ]
-            : []),
         ],
       },
     ];

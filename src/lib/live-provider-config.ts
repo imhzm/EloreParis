@@ -68,6 +68,7 @@ export type RuntimeNotificationProviderConfig = {
 };
 
 export type RuntimeExternalAuthProviderConfig = RuntimeAuthProviderConfig & {
+  issuer: string;
   authorizeUrl: string;
   tokenUrl: string;
   profileUrl: string;
@@ -157,12 +158,20 @@ export function getExternalAuthProviderConfig(): RuntimeExternalAuthProviderConf
   const profileUrl = normalizeValue(process.env.AUTH_PROVIDER_PROFILE_URL);
   const clientId = normalizeValue(process.env.AUTH_PROVIDER_CLIENT_ID);
   const clientSecret = normalizeValue(process.env.AUTH_PROVIDER_CLIENT_SECRET);
+  const configuredIssuer = normalizeValue(process.env.AUTH_PROVIDER_ISSUER);
+  let inferredIssuer = "";
+  try {
+    inferredIssuer = authorizeUrl ? new URL(authorizeUrl).origin : "";
+  } catch {
+    inferredIssuer = "";
+  }
   const externalAuthConfigured =
     Boolean(authorizeUrl && tokenUrl && clientId) &&
     isConfiguredToken(clientSecret);
 
   return {
     ...baseConfig,
+    issuer: (configuredIssuer || inferredIssuer).replace(/\/$/, ""),
     authorizeUrl,
     tokenUrl,
     profileUrl,

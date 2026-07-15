@@ -1,0 +1,225 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans);color:var(--color-text-primary)}
+.wrap{padding:24px 0;max-width:720px}
+.hdr{background:#3C50E0;border-radius:var(--border-radius-lg);padding:28px 32px;color:#fff;display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.hdr-left h1{font-size:22px;font-weight:500;color:#fff}
+.hdr-left p{font-size:13px;opacity:.8;margin-top:4px}
+.score-badge{width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,.15);border:3px solid rgba(255,255,255,.6);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0}
+.score-badge .num{font-size:28px;font-weight:500;color:#fff;line-height:1}
+.score-badge .den{font-size:11px;color:rgba(255,255,255,.7)}
+.section{background:var(--color-background-secondary);border-radius:var(--border-radius-lg);padding:20px 24px;margin-bottom:16px;border:1px solid var(--color-border-tertiary)}
+.section h2{font-size:15px;font-weight:500;margin-bottom:16px;color:var(--color-text-primary)}
+.cat-row{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.cat-label{font-size:13px;width:180px;flex-shrink:0;color:var(--color-text-secondary)}
+.cat-bar-bg{flex:1;height:8px;background:var(--color-border-tertiary);border-radius:4px;overflow:hidden}
+.cat-bar-fill{height:100%;border-radius:4px;transition:width 1s ease}
+.cat-score{font-size:13px;font-weight:500;min-width:38px;text-align:right}
+.cat-weight{font-size:11px;color:var(--color-text-tertiary);min-width:40px}
+.cat-row-excluded .cat-label,.cat-row-excluded .cat-score,.cat-row-excluded .cat-weight{color:var(--color-text-tertiary);opacity:.5}
+.green{background:#22c55e}.yellow{background:#eab308}.orange{background:#f97316}.red-fill{background:#ef4444}
+.table{width:100%;border-collapse:collapse;font-size:13px}
+.table th{text-align:left;font-weight:500;font-size:12px;color:var(--color-text-secondary);padding:0 0 8px;border-bottom:1px solid var(--color-border-tertiary)}
+.table td{padding:8px 0;border-bottom:1px solid var(--color-border-tertiary);vertical-align:top}
+.table tr:last-child td{border-bottom:none}
+.pill{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:500}
+.p-green{background:#dcfce7;color:#15803d}.p-red{background:#fee2e2;color:#991b1b}.p-yellow{background:#fef9c3;color:#854d0e}.p-gray{background:var(--color-background-primary);color:var(--color-text-secondary);border:1px solid var(--color-border-secondary)}
+.check-row{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;font-size:13px}
+.icon{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;margin-top:1px}
+.i-ok{background:#dcfce7;color:#15803d}.i-warn{background:#fef9c3;color:#854d0e}.i-err{background:#fee2e2;color:#991b1b}
+.check-text{color:var(--color-text-secondary);flex:1}
+.check-text strong{color:var(--color-text-primary);font-weight:500}
+.reco-card{border:1px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:16px;margin-bottom:12px;background:var(--color-background-primary)}
+.reco-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.reco-title{font-size:14px;font-weight:500;flex:1}
+.reco-body{font-size:13px;color:var(--color-text-secondary);margin-bottom:10px;line-height:1.6}
+.code-block{background:var(--color-background-tertiary);border:1px solid var(--color-border-tertiary);border-radius:6px;padding:10px 12px;font-family:var(--font-mono);font-size:11px;white-space:pre;overflow-x:auto;color:var(--color-text-secondary)}
+.reco-meta{font-size:11px;color:var(--color-text-tertiary);margin-top:8px}
+.ph-high{background:#fee2e2;color:#991b1b}.ph-med{background:#fef9c3;color:#854d0e}.ph-low{background:#dcfce7;color:#15803d}
+.footer{text-align:center;font-size:11px;color:var(--color-text-tertiary);margin-top:16px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.excluded-banner{background:var(--color-background-tertiary);border:1px solid var(--color-border-secondary);border-radius:8px;padding:14px 16px;font-size:13px;color:var(--color-text-secondary);line-height:1.6}
+.limitations-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
+.limitations-table th{text-align:left;font-weight:500;color:var(--color-text-secondary);padding:0 8px 6px 0;border-bottom:1px solid var(--color-border-tertiary)}
+.limitations-table td{padding:7px 8px 7px 0;border-bottom:1px solid var(--color-border-tertiary);vertical-align:top;color:var(--color-text-secondary)}
+.limitations-table tr:last-child td{border-bottom:none}
+@media(max-width:520px){.two-col{grid-template-columns:1fr}.hdr{flex-direction:column;gap:16px;text-align:center}.cat-label{width:140px}}
+</style>
+<div class="wrap">
+
+<!-- ═══ HEADER ═══════════════════════════════════════════════════
+  {{DOMAIN}}       — the audited domain, e.g. "example.com"
+  {{AUDIT_DATE}}   — formatted date, e.g. "March 16, 2026"
+  {{OVERALL_SCORE}} — numeric score 0-100 (or "–" if unavailable)
+-->
+<div class="hdr">
+  <div class="hdr-left">
+    <h1>{{DOMAIN}} — AI Visibility Audit</h1>
+    <p>AEO / Answer Engine Optimization Report &nbsp;·&nbsp; {{AUDIT_DATE}}</p>
+  </div>
+  <div class="score-badge">
+    <span class="num">{{OVERALL_SCORE}}</span>
+    <span class="den">/100</span>
+  </div>
+</div>
+
+<!-- ═══ DATA LIMITATIONS (omit this block entirely if all data OK) ══
+  Render only when ≥1 source was BLOCKED (403, timeout, etc.).
+  {{DATA_LIMITATIONS_ROWS}} — one <tr> per blocked source:
+    <tr>
+      <td>Source name</td>
+      <td>Reason (access denied / unreachable / unexpected response)</td>
+      <td>Affected categories</td>
+      <td>Workaround hint</td>
+    </tr>
+-->
+{{DATA_LIMITATIONS_SECTION}}
+<!-- Example of what DATA_LIMITATIONS_SECTION looks like when populated:
+<div class="section" style="border-color:#f97316">
+  <h2 style="color:#f97316">⚠ Data collection limitations</h2>
+  <p style="font-size:13px;color:var(--color-text-secondary);margin-bottom:12px">
+    Some sources could not be fetched. Affected categories are excluded from scoring and shown as "Data unavailable" below.
+  </p>
+  <table class="limitations-table">
+    <tr><th>Source</th><th>Reason</th><th>Affected categories</th><th>Workaround</th></tr>
+    {{DATA_LIMITATIONS_ROWS}}
+  </table>
+</div>
+-->
+
+<!-- ═══ SCORE OVERVIEW ════════════════════════════════════════════
+  {{SCORE_OVERVIEW_ROWS}} — four .cat-row divs, one per category.
+  For active category:
+    <div class="cat-row">
+      <span class="cat-label">AI bot access</span>
+      <div class="cat-bar-bg"><div class="cat-bar-fill green" style="width:95%"></div></div>
+      <span class="cat-score" style="color:#16a34a">95</span>
+      <span class="cat-weight">weight 20%</span>
+    </div>
+  For excluded category:
+    <div class="cat-row cat-row-excluded">
+      <span class="cat-label">Structured data</span>
+      <div class="cat-bar-bg"><div class="cat-bar-fill" style="width:0%;background:var(--color-border-secondary)"></div></div>
+      <span class="cat-score">–</span>
+      <span class="cat-weight">excluded</span>
+    </div>
+  Bar fill color classes: green (#22c55e), yellow (#eab308), orange (#f97316), red-fill (#ef4444)
+  Score text colors: #16a34a (green), #ca8a04 (yellow), #ea580c (orange), #dc2626 (red)
+
+  {{SCORE_SUMMARY_TEXT}} — one sentence with overall score + interpretation:
+    e.g. <strong style="color:#f97316">62/100 — Needs significant work.</strong> Bot access is solid but...
+-->
+<div class="section">
+  <h2>Score overview</h2>
+  {{SCORE_OVERVIEW_ROWS}}
+  <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--color-border-tertiary);font-size:13px;color:var(--color-text-secondary)">
+    {{SCORE_SUMMARY_TEXT}}
+  </div>
+</div>
+
+<!-- ═══ AI BOT ACCESS ═════════════════════════════════════════════
+  If EXCLUDED (robots.txt was BLOCKED): replace table with .excluded-banner showing reason + workaround.
+  If data available:
+  {{BOT_TABLE_ROWS}} — one <tr> per bot (8 bots total):
+    GPTBot, ClaudeBot, PerplexityBot, Google-Extended, CCBot, anthropic-ai, Bytespider, cohere-ai
+    Status pills: p-green "✓ Allowed", p-red "✗ Blocked", p-yellow "~ Partial", p-gray "? Inherited"
+  {{BOT_TABLE_FOOTER}} — small note on blocked paths / crawl-delay, e.g.:
+    "Blocked paths: /admin, /wp-admin — non-critical. No crawl-delay set."
+    or "robots.txt not found — all bots allowed by default (score: 100)"
+-->
+<div class="section">
+  <h2>AI bot access</h2>
+  {{BOT_SECTION_CONTENT}}
+</div>
+<!-- Example of BOT_SECTION_CONTENT when data available:
+  <table class="table">
+    <tr><th style="width:180px">Bot</th><th style="width:100px">Importance</th><th style="width:90px">Status</th><th>Note</th></tr>
+    {{BOT_TABLE_ROWS}}
+  </table>
+  <div style="margin-top:12px;font-size:12px;color:var(--color-text-tertiary)">{{BOT_TABLE_FOOTER}}</div>
+
+Example of BOT_SECTION_CONTENT when EXCLUDED:
+  <div class="excluded-banner">
+    <strong>Data unavailable</strong> — robots.txt could not be fetched (access denied).
+    To check manually: open <code>{{DOMAIN}}/robots.txt</code> in your browser and paste the content here.
+  </div>
+-->
+
+<!-- ═══ TECHNICAL CHECKLIST ═══════════════════════════════════════
+  Two-column grid of .check-row items.
+  Left col typically: HTTPS, HTTP status, response time, redirects
+  Right col typically: Sitemap, llms.txt
+  Icon classes: i-ok (✓), i-warn (!), i-err (✗)
+  {{TECH_LEFT_COL}} / {{TECH_RIGHT_COL}} — check-row divs, e.g.:
+    <div class="check-row">
+      <div class="icon i-ok">✓</div>
+      <div class="check-text"><strong>HTTPS</strong> — Secure connection confirmed</div>
+    </div>
+-->
+<div class="section">
+  <h2>Technical checklist</h2>
+  <div class="two-col">
+    <div>{{TECH_LEFT_COL}}</div>
+    <div>{{TECH_RIGHT_COL}}</div>
+  </div>
+</div>
+
+<!-- ═══ STRUCTURED DATA ════════════════════════════════════════════
+  If EXCLUDED (homepage BLOCKED): replace with .excluded-banner.
+  If no JSON-LD found: show red alert box + missing schema table.
+  If JSON-LD found: show found schemas + missing recommendations table.
+  {{SCHEMA_SECTION_CONTENT}} — full section content, e.g.:
+
+  When schemas missing (critical alert):
+    <div style="background:#fee2e2;border-radius:8px;padding:14px 16px;margin-bottom:14px">
+      <div style="font-size:14px;font-weight:500;color:#991b1b;margin-bottom:4px">⚠ Critical: No structured data detected</div>
+      <div style="font-size:13px;color:#7f1d1d;line-height:1.6">No JSON-LD found on homepage...</div>
+    </div>
+    <table class="table">...</table>
+
+  Schema table rows use pills: p-red "Missing", p-green "✓ Found", p-yellow "Partial", p-gray "Unknown"
+  High-priority types: Organization, WebSite, Article, FAQPage
+  Medium-priority types: HowTo, Product, Service, LocalBusiness
+-->
+<div class="section">
+  <h2>Structured data</h2>
+  {{SCHEMA_SECTION_CONTENT}}
+</div>
+
+<!-- ═══ CONTENT STRUCTURE ═════════════════════════════════════════
+  If EXCLUDED (homepage BLOCKED): replace both cols with .excluded-banner.
+  Left col typically: H1, heading hierarchy, title tag, meta description
+  Right col typically: image alt coverage, semantic HTML, internal links, OG/Twitter tags
+  {{CONTENT_LEFT_COL}} / {{CONTENT_RIGHT_COL}} — check-row divs (same format as Technical)
+-->
+<div class="section">
+  <h2>Content structure</h2>
+  <div class="two-col">
+    <div>{{CONTENT_LEFT_COL}}</div>
+    <div>{{CONTENT_RIGHT_COL}}</div>
+  </div>
+</div>
+
+<!-- ═══ RECOMMENDATIONS ════════════════════════════════════════════
+  {{RECOMMENDATION_CARDS}} — up to 8 .reco-card divs, sorted by ROI (high impact ÷ low effort first).
+  Priority pill classes: ph-high, ph-med, ph-low
+  Each card:
+    <div class="reco-card">
+      <div class="reco-head">
+        <span class="pill ph-high">High priority</span>
+        <span class="reco-title">Title of recommendation</span>
+      </div>
+      <div class="reco-body">Description of the issue and why it matters for AI visibility.</div>
+      <div class="code-block">code example here</div>
+      <div class="reco-meta">Estimated time: X min · implementation note</div>
+    </div>
+  Omit <div class="code-block"> if no code example applies.
+-->
+<div class="section">
+  <h2>Top recommendations — sorted by ROI</h2>
+  {{RECOMMENDATION_CARDS}}
+</div>
+
+<div class="footer">Generated by ICODA AI Visibility Checker &nbsp;·&nbsp; {{AUDIT_DATE}}</div>
+</div>

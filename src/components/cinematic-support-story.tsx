@@ -31,7 +31,7 @@ const imageByKind = {
 const clamp = (value: number) => Math.min(Math.max(value, 0), 1);
 
 export function CinematicSupportStory(props: CinematicSupportStoryProps) {
-  const rootRef = useRef<HTMLElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -65,7 +65,7 @@ export function CinematicSupportStory(props: CinematicSupportStoryProps) {
   }, []);
 
   return (
-    <main ref={rootRef} className={styles.story}>
+    <div ref={rootRef} className={styles.story}>
       <section className={`${styles.scene} ${styles.hero}`} data-support-scene>
         <div className={styles.frame} data-support-frame>
           <div className={styles.heroArt} aria-hidden="true">
@@ -156,6 +156,6 @@ export function CinematicSupportStory(props: CinematicSupportStoryProps) {
           <i className={styles.number}>04 / 04</i>
         </div>
       </section>
-    </main>
+    </div>
   );
 }

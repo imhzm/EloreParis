@@ -6,7 +6,37 @@ import { absoluteUrl, concerns, getConcernBySlug, getIngredientByName, getProduc
 
 type Props = { params: Promise<{ slug: string }> };
 export async function generateStaticParams() { return concerns.map(({ slug }) => ({ slug })); }
-export async function generateMetadata({ params }: Props): Promise<Metadata> { const item = getConcernBySlug((await params).slug); return item ? { title: `${item.title} | حسب المشكلة`, description: item.answer, alternates: { canonical: `/concerns/${item.slug}` } } : {}; }
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const item = getConcernBySlug((await params).slug);
+  if (!item) return {};
+  const title = `${item.title} | حسب المشكلة`;
+  const imageUrl = absoluteUrl("/brand-assets/product-02.jpg");
+  return {
+    title,
+    description: item.answer,
+    alternates: { canonical: `/concerns/${item.slug}` },
+    openGraph: {
+      title,
+      description: item.answer,
+      url: absoluteUrl(`/concerns/${item.slug}`),
+      type: "website",
+      images: [
+        {
+          url: imageUrl,
+          width: 1200,
+          height: 630,
+          alt: title,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description: item.answer,
+      images: [imageUrl],
+    },
+  };
+}
 
 export default async function Page({ params }: Props) {
   const concern = getConcernBySlug((await params).slug); if (!concern) notFound();

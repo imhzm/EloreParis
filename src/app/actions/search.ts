@@ -1,26 +1,17 @@
 "use server";
 
 import { searchSiteContent } from "@/lib/search";
+import type { Locale } from "@/lib/i18n";
 
-export async function predictSearch(query: string) {
+export async function predictSearch(query: string, locale: Locale = "ar") {
   if (!query || query.trim().length < 2) {
     return { total: 0, topResults: [] };
   }
 
-  const results = searchSiteContent(query);
-
-  // Flatten and grab top results for predictive dropdown
-  const allResults = [
-    ...results.groups.collection,
-    ...results.groups.product,
-    ...results.groups.concern,
-    ...results.groups.ingredient,
-    ...results.groups.routine,
-    ...results.groups.article,
-  ];
+  const results = searchSiteContent(query, locale);
 
   return {
     total: results.total,
-    topResults: allResults.slice(0, 5),
+    topResults: results.ordered.slice(0, 5),
   };
 }

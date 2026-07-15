@@ -1,706 +1,353 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { type ChangeEvent, type FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { OpsNav } from "@/components/ops-nav";
-import { TrackedLink } from "@/components/tracked-link";
-import {
-  getCatalogAdminProducts,
-  getCatalogAuthoritySnapshot,
-  getSupplierAuthoritySnapshot,
-  getSupplierExceptionQueue,
-  getSupplierRecords,
-  getSupplierSyncLogs,
-  type SupplierId,
-} from "@/lib/ops-catalog";
-import { fetchOpsOrdersFromAuthority } from "@/lib/order-authority-client";
-import { type StoredOrder } from "@/lib/orders";
-import { collectionDirectory } from "@/lib/site-content";
 import styles from "./order-flow.module.css";
+import catalogStyles from "./catalog-authority-ops.module.css";
 
-type CollectionFilter = "all" | keyof typeof collectionDirectory;
-type SupplierFilter = "all" | SupplierId;
+const CATALOG_ENDPOINT = "/api/ops/catalog/authority";
+const MAX_IMPORT_BYTES = 2 * 1024 * 1024;
 
-function formatPercentage(value: number) {
-  return `${(value * 100).toFixed(0)}%`;
+type CatalogReadiness = {
+  ready: boolean;
+  importId: string | null;
+  productCount: number;
+  variantCount: number;
+  blockers: string[];
+};
+
+type CatalogImportSummary = {
+  id: string;
+  sourceRef: string;
+  sourceHash: string;
+  status: "validated" | "active" | "retired";
+  productCount: number;
+  variantCount: number;
+  createdBy: string;
+  createdAt: string;
+  activatedAt: string | null;
+  readiness: CatalogReadiness;
+};
+
+type CatalogSnapshot = {
+  readiness: CatalogReadiness;
+  imports: CatalogImportSummary[];
+};
+
+type CatalogApiError = {
+  error?: string;
+  code?: string;
+  issues?: string[];
+};
+
+const statusLabels: Record<CatalogImportSummary["status"], string> = {
+  validated: "بانتظار النشر",
+  active: "منشور الآن",
+  retired: "نسخة سابقة",
+};
+
+const blockerLabels: Record<string, string> = {
+  active_catalog_publication_missing: "لا توجد نسخة كتالوج منشورة حتى الآن.",
+  catalog_empty: "الاستيراد لا يحتوي على منتجات.",
+  catalog_publication_approval_missing: "اعتماد نشر الكتالوج غير موجود.",
+  catalog_pricing_approval_missing: "اعتماد الأسعار العام غير موجود.",
+  shipping_methods_incomplete: "بيانات الشحن أو أدلتها غير مكتملة.",
+  quarantined_product_present: "الاستيراد يحتوي على منتج محجوز للمراجعة.",
+  quarantined_sku_present: "الاستيراد يحتوي على SKU محجوز للمراجعة.",
+};
+
+function formatBlocker(blocker: string) {
+  if (blockerLabels[blocker]) return blockerLabels[blocker];
+  const [code, subject] = blocker.split(":", 2);
+  const labels: Record<string, string> = {
+    product_not_approved: "المنتج غير معتمد",
+    product_compliance_incomplete: "ملف مطابقة المنتج غير مكتمل",
+    product_media_incomplete: "وسائط المنتج أو حقوقها غير مكتملة",
+    product_return_policy_missing: "سياسة إرجاع المنتج غير معتمدة",
+    product_claims_unapproved: "ادعاءات المنتج تحتاج اعتمادًا أو دليلًا",
+    product_data_approval_missing: "اعتماد بيانات المنتج غير موجود",
+    product_media_approval_missing: "اعتماد وسائط المنتج غير موجود",
+    product_claims_approval_missing: "اعتماد ادعاءات المنتج غير موجود",
+    product_compliance_approval_missing: "اعتماد مطابقة المنتج غير موجود",
+    variant_not_approved: "نسخة المنتج غير معتمدة",
+    variant_price_invalid: "سعر نسخة المنتج غير صالح",
+    variant_price_approval_missing: "اعتماد سعر نسخة المنتج غير موجود",
+  };
+  return `${labels[code] ?? blocker}${subject ? `: ${subject}` : ""}`;
 }
 
-function getOpsRouteLabel(route: string) {
-  switch (route) {
-    case "/ops/catalog":
-      return "Catalog desk";
-    case "/ops/orders":
-      return "Orders queue";
-    case "/ops/fulfillment":
-      return "Fulfillment desk";
-    default:
-      return route;
-  }
+function formatDate(value: string | null) {
+  if (!value) return "—";
+  return new Intl.DateTimeFormat("ar-SA", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(value));
 }
 
-function getOpsDestinationType(route: string) {
-  switch (route) {
-    case "/ops/catalog":
-      return "ops_catalog";
-    case "/ops/orders":
-      return "ops_orders";
-    case "/ops/fulfillment":
-      return "ops_fulfillment";
-    default:
-      return "ops_catalog";
+async function readApiResponse<T>(response: Response): Promise<T> {
+  const body = (await response.json().catch(() => ({}))) as T & CatalogApiError;
+  if (!response.ok) {
+    const details = body.issues?.length ? `\n${body.issues.map(formatBlocker).join("\n")}` : "";
+    throw new Error(`${body.error ?? "تعذر إتمام طلب الكتالوج."}${details}`);
   }
+  return body;
 }
 
 export function CatalogOpsSurface() {
-  const [query, setQuery] = useState("");
-  const [collectionFilter, setCollectionFilter] = useState<CollectionFilter>("all");
-  const [supplierFilter, setSupplierFilter] = useState<SupplierFilter>("all");
-  const [orders, setOrders] = useState<StoredOrder[]>([]);
+  const [snapshot, setSnapshot] = useState<CatalogSnapshot | null>(null);
+  const [jsonInput, setJsonInput] = useState("");
+  const [selectedFile, setSelectedFile] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [operation, setOperation] = useState<"import" | "publish" | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [publishCandidate, setPublishCandidate] = useState<string | null>(null);
 
-  const catalogProducts = useMemo(() => getCatalogAdminProducts(), []);
-  const supplierRecords = useMemo(() => getSupplierRecords(), []);
-  const supplierSyncLogs = useMemo(() => getSupplierSyncLogs(), []);
-  const supplierRecordMap = useMemo(
-    () =>
-      Object.fromEntries(
-        supplierRecords.map((supplier) => [supplier.id, supplier]),
-      ) as Record<SupplierId, (typeof supplierRecords)[number]>,
-    [supplierRecords],
-  );
-  const supplierExceptions = useMemo(
-    () => getSupplierExceptionQueue(catalogProducts),
-    [catalogProducts],
-  );
-  const catalogAuthority = useMemo(
-    () => getCatalogAuthoritySnapshot(orders, catalogProducts),
-    [catalogProducts, orders],
-  );
-  const supplierAuthority = useMemo(
-    () => getSupplierAuthoritySnapshot(orders, catalogProducts),
-    [catalogProducts, orders],
-  );
-  const supplierSyncState = useMemo(
-    () =>
-      Object.fromEntries(
-        supplierRecords.map((supplier) => {
-          const relatedLogs = supplierSyncLogs.filter(
-            (log) => log.supplierId === supplier.id,
-          );
-          const activeWatch = relatedLogs.filter(
-            (log) => log.status === "warning" || log.status === "error",
-          );
-
-          return [
-            supplier.id,
-            {
-              statusLabel: activeWatch.length ? "Watch" : "Stable",
-              watchCount: activeWatch.length,
-              latestArea: relatedLogs[relatedLogs.length - 1]?.area ?? "stock",
-            },
-          ];
-        }),
-      ) as Record<
-        SupplierId,
-        { statusLabel: string; watchCount: number; latestArea: string }
-      >,
-    [supplierRecords, supplierSyncLogs],
-  );
-
-  useEffect(() => {
-    void fetchOpsOrdersFromAuthority()
-      .then((nextOrders) => {
-        setOrders(nextOrders);
-        setError(null);
-      })
-      .catch((loadError: unknown) => {
-        setOrders([]);
-        setError(
-          loadError instanceof Error
-            ? loadError.message
-            : "تعذر تحميل طلبات authority لربطها بسطح الكتالوج التشغيلي.",
-        );
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
+  const loadSnapshot = useCallback(async () => {
+    const response = await fetch(CATALOG_ENDPOINT, {
+      credentials: "same-origin",
+      cache: "no-store",
+    });
+    setSnapshot(await readApiResponse<CatalogSnapshot>(response));
   }, []);
 
-  const filteredProducts = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
+  useEffect(() => {
+    void loadSnapshot()
+      .then(() => setError(null))
+      .catch((loadError: unknown) => {
+        setError(loadError instanceof Error ? loadError.message : "تعذر تحميل حقيقة الكتالوج الحالية.");
+      })
+      .finally(() => setIsLoading(false));
+  }, [loadSnapshot]);
 
-    return catalogProducts.filter((product) => {
-      if (collectionFilter !== "all" && product.collection !== collectionFilter) {
-        return false;
-      }
+  const importPreview = useMemo(() => {
+    if (!jsonInput.trim()) return null;
+    try {
+      const value = JSON.parse(jsonInput) as Record<string, unknown>;
+      return {
+        validJson: true,
+        sourceRef: typeof value.sourceRef === "string" ? value.sourceRef : "غير محدد",
+        products: Array.isArray(value.products) ? value.products.length : 0,
+        approvals: Array.isArray(value.approvals) ? value.approvals.length : 0,
+      };
+    } catch {
+      return { validJson: false, sourceRef: "—", products: 0, approvals: 0 };
+    }
+  }, [jsonInput]);
 
-      if (
-        supplierFilter !== "all" &&
-        !product.variants.some((variant) => variant.supplierId === supplierFilter)
-      ) {
-        return false;
-      }
+  async function handleFile(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.currentTarget.files?.[0];
+    if (!file) return;
+    setError(null);
+    setNotice(null);
+    if (file.size > MAX_IMPORT_BYTES) {
+      setSelectedFile("");
+      setError("حجم ملف الكتالوج يتجاوز الحد المسموح وهو 2 MB.");
+      event.currentTarget.value = "";
+      return;
+    }
+    try {
+      setJsonInput(await file.text());
+      setSelectedFile(file.name);
+    } catch {
+      setError("تعذر قراءة الملف المختار. تأكد أنه ملف JSON نصي صالح.");
+    }
+  }
 
-      if (!normalizedQuery) {
-        return true;
-      }
+  async function handleImport(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+    setNotice(null);
+    if (!jsonInput.trim()) {
+      setError("اختر ملف JSON أو الصق بيانات الكتالوج أولًا.");
+      return;
+    }
+    if (!importPreview?.validJson) {
+      setError("النص الحالي ليس JSON صالحًا.");
+      return;
+    }
 
-      const haystack = [
-        product.arabicName,
-        product.englishName,
-        product.productSlug,
-        product.brand,
-        product.productType,
-        product.concern,
-        product.ingredient,
-        ...product.variants.map(
-          (variant) => `${variant.sku} ${variant.supplierSku} ${variant.barcode}`,
-        ),
-      ]
-        .join(" ")
-        .toLowerCase();
+    setOperation("import");
+    try {
+      const response = await fetch(CATALOG_ENDPOINT, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: jsonInput,
+      });
+      const result = await readApiResponse<{ importId: string; readiness: CatalogReadiness }>(response);
+      await loadSnapshot();
+      setNotice(
+        result.readiness.ready
+          ? "تم استيراد النسخة والتحقق منها. أصبحت جاهزة لخطوة النشر اليدوية."
+          : `تم حفظ الاستيراد، لكنه يحتاج معالجة ${result.readiness.blockers.length} مانع قبل النشر.`,
+      );
+      setJsonInput("");
+      setSelectedFile("");
+    } catch (importError) {
+      setError(importError instanceof Error ? importError.message : "تعذر استيراد الكتالوج.");
+    } finally {
+      setOperation(null);
+    }
+  }
 
-      return haystack.includes(normalizedQuery);
-    });
-  }, [catalogProducts, collectionFilter, query, supplierFilter]);
+  async function handlePublish(importId: string) {
+    if (publishCandidate !== importId) {
+      setPublishCandidate(importId);
+      setNotice("راجع النسخة ثم اضغط تأكيد النشر. سيتم استبدال الكتالوج النشط بهذه النسخة.");
+      return;
+    }
 
-  const totalVariants = catalogProducts.reduce(
-    (sum, product) => sum + product.variants.length,
-    0,
-  );
+    setOperation("publish");
+    setError(null);
+    setNotice(null);
+    try {
+      const response = await fetch(CATALOG_ENDPOINT, {
+        method: "PATCH",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "publish", importId }),
+      });
+      await readApiResponse(response);
+      await loadSnapshot();
+      setPublishCandidate(null);
+      setNotice("تم نشر نسخة الكتالوج وتحديث الحقيقة النشطة بنجاح.");
+    } catch (publishError) {
+      setError(publishError instanceof Error ? publishError.message : "تعذر نشر الكتالوج.");
+    } finally {
+      setOperation(null);
+    }
+  }
+
+  const activeReadiness = snapshot?.readiness;
+  const readyDrafts = snapshot?.imports.filter((item) => item.status === "validated" && item.readiness.ready).length ?? 0;
 
   return (
-    <div className={`${styles.page} ${styles.opsDashboard} ${styles.opsCatalog}`}>
+    <div className={`${styles.page} ${styles.opsDashboard} ${styles.opsCatalog} ${catalogStyles.catalogPage}`}>
       <OpsNav activeHref="/ops/catalog" />
 
       <section className={styles.hero}>
         <div>
-          <p className={styles.eyebrow}>إدارة الكتالوج</p>
-          <h1>منتجات ومخزون وموردون، بقرار واحد واضح.</h1>
+          <p className={styles.eyebrow}>Catalog Authority</p>
+          <h1>حقيقة واحدة للمنتج، السعر والمخزون.</h1>
           <p className={styles.summary}>
-            راجعي حالة كل منتج ونسخه المتاحة، راقبي ضغط الطلب والمخزون، وتتبعي
-            ملاحظات المورد قبل أن تتحول إلى مشكلة في التنفيذ.
+            استورد ملف الكتالوج المعتمد، راجع بوابات المطابقة والأدلة، ثم انشر نسخة محددة فقط عندما تصبح جاهزة بالكامل.
           </p>
         </div>
-
         <div className={styles.heroAside}>
           <div className={styles.metricCard}>
-            <p>تغطية الكتالوج</p>
-            <strong>{catalogProducts.length}</strong>
-            <span>{totalVariants} variants تشغيلية عبر المنتجات الحالية.</span>
+            <p>حالة الكتالوج العام</p>
+            <strong>{isLoading ? "..." : activeReadiness?.ready ? "جاهز" : "موقوف"}</strong>
+            <span>{activeReadiness?.ready ? "النسخة النشطة اجتازت كل بوابات النشر." : "لن يستخدم المتجر بيانات غير مكتملة أو غير معتمدة."}</span>
           </div>
           <div className={styles.noticeCard}>
-            <p className={styles.eyebrow}>نطاق التشغيل</p>
-            <h2>مرجع داخلي للمنتج والمورد والمخزون</h2>
-            <p>
-              تعرض هذه الصفحة البيانات المتاحة حاليًا وتربطها بالطلبات النشطة.
-              التكاملات الخارجية النهائية تبقى موضحة ضمن حالة كل مورد.
-            </p>
+            <p className={styles.eyebrow}>نشر آمن</p>
+            <h2>الاستيراد لا يعني النشر</h2>
+            <p>كل ملف يُحفظ أولًا كنسخة متحقق منها. النشر يحتاج جاهزية كاملة وتأكيدًا يدويًا منفصلًا.</p>
           </div>
         </div>
       </section>
 
-      <section className={styles.statusSummaryGrid}>
-        <article className={styles.statusSummaryCard}>
-          <p className={styles.sectionTitle}>المنتجات النشطة</p>
-          <strong>{catalogProducts.length}</strong>
-          <span>منتجات storefront التي تملك admin records تشغيلية الآن.</span>
-        </article>
-        <article className={styles.statusSummaryCard}>
-          <p className={styles.sectionTitle}>عدد الـ variants</p>
-          <strong>{totalVariants}</strong>
-          <span>يشمل المقاسات والأحجام والدرجات القابلة للإدارة.</span>
-        </article>
-        <article className={styles.statusSummaryCard}>
-          <p className={styles.sectionTitle}>استثناءات الموردين</p>
-          <strong>{supplierExceptions.length}</strong>
-          <span>Low stock أو margin gaps التي تحتاج متابعة تشغيلية.</span>
-        </article>
-        <article className={styles.statusSummaryCard}>
-          <p className={styles.sectionTitle}>Live demand</p>
-          <strong>{isLoading ? "..." : catalogAuthority.productsWithDemand}</strong>
-          <span>منتجات ترتبط بطلبات حية داخل authority الحالية.</span>
-        </article>
-        <article className={styles.statusSummaryCard}>
-          <p className={styles.sectionTitle}>Catalog review</p>
-          <strong>{isLoading ? "..." : catalogAuthority.reviewRequiredProducts}</strong>
-          <span>سجلات تحتاج catalog review desk قبل الاعتماد التشغيلي.</span>
-        </article>
-        <article className={styles.statusSummaryCard}>
-          <p className={styles.sectionTitle}>Supplier follow-up</p>
-          <strong>{isLoading ? "..." : catalogAuthority.supplierFollowupProducts}</strong>
-          <span>منتجات مرتبطة بـ supplier watch أو dropship lane وتحتاج handoff واضحًا.</span>
-        </article>
-        <article className={styles.statusSummaryCard}>
-          <p className={styles.sectionTitle}>Supplier watch</p>
-          <strong>{isLoading ? "..." : supplierAuthority.suppliersOnWatch}</strong>
-          <span>موردون تحتاج truth الخاصة بهم إلى watch أو coordination قبل تثبيت القرار التجاري.</span>
-        </article>
-        <article className={styles.statusSummaryCard}>
-          <p className={styles.sectionTitle}>Suppliers with demand</p>
-          <strong>{isLoading ? "..." : supplierAuthority.suppliersWithDemand}</strong>
-          <span>موردون لديهم live orders مرتبطة مباشرة بالحقيقة الحالية للكتالوج.</span>
-        </article>
-        <article className={styles.statusSummaryCard}>
-          <p className={styles.sectionTitle}>Pending units</p>
-          <strong>{isLoading ? "..." : catalogAuthority.pendingDemandUnits}</strong>
-          <span>وحدات ما زالت تحت received/payment_pending وترتبط بقرار الكتالوج الآن.</span>
-        </article>
+      <section className={styles.statusSummaryGrid} aria-label="ملخص الكتالوج">
+        <article className={styles.statusSummaryCard}><p className={styles.sectionTitle}>المنتجات النشطة</p><strong>{activeReadiness?.productCount ?? 0}</strong><span>من مصدر الكتالوج المنشور.</span></article>
+        <article className={styles.statusSummaryCard}><p className={styles.sectionTitle}>النسخ النشطة</p><strong>{activeReadiness?.variantCount ?? 0}</strong><span>SKU متاح داخل authority الحالية.</span></article>
+        <article className={styles.statusSummaryCard}><p className={styles.sectionTitle}>جاهز للنشر</p><strong>{readyDrafts}</strong><span>استيرادات اجتازت كل بوابات الأدلة.</span></article>
+        <article className={styles.statusSummaryCard}><p className={styles.sectionTitle}>موانع الإطلاق</p><strong>{activeReadiness?.blockers.length ?? 0}</strong><span>موانع تمنع الكتالوج العام من العمل.</span></article>
       </section>
 
       <section className={styles.layout}>
-        <article className={styles.mainCard}>
-          <p className={styles.sectionTitle}>Catalog records</p>
-          <h2>سجلات المنتجات الحالية</h2>
-          <p>
-            يمكن هنا تصفية الكتالوج حسب الفئة أو المورد والبحث عبر slug أو SKU أو
-            اسم المنتج لإظهار readiness التشغيلية لكل منتج وvariant.
-          </p>
+        <div className={catalogStyles.mainColumn}>
+          <article className={styles.mainCard}>
+            <p className={styles.sectionTitle}>استيراد مضبوط</p>
+            <h2>إضافة نسخة كتالوج جديدة</h2>
+            <p>الحد الأقصى 2 MB. يتحقق الخادم من البنية، الأسعار، المخزون، SFDA/eCosma، حقوق الصور، الادعاءات والاعتمادات.</p>
 
-          {error ? <div className={styles.inlineError}>{error}</div> : null}
+            <form className={catalogStyles.importForm} onSubmit={handleImport}>
+              <label className={catalogStyles.filePicker}>
+                <span className={styles.fieldLabel}>ملف JSON</span>
+                <input type="file" accept="application/json,.json" onChange={handleFile} disabled={operation !== null} />
+                <strong>{selectedFile || "اختر ملف الكتالوج"}</strong>
+                <small>JSON فقط · بحد أقصى 2 MB</small>
+              </label>
+              <label className={styles.fieldFull}>
+                <span className={styles.fieldLabel}>أو الصق JSON</span>
+                <textarea className={`${styles.textArea} ${catalogStyles.jsonEditor}`} value={jsonInput} onChange={(event) => { setJsonInput(event.currentTarget.value); setSelectedFile(""); }} placeholder={'{\n  "sourceRef": "approved-source-...",\n  "currency": "SAR",\n  "products": []\n}'} spellCheck={false} disabled={operation !== null} />
+              </label>
 
-          <div className={styles.filterBar}>
-            <label className={styles.searchField}>
-              <span className={styles.fieldLabel}>بحث سريع</span>
-              <input
-                className={styles.textInput}
-                value={query}
-                onChange={(event) => setQuery(event.currentTarget.value)}
-                placeholder="اسم المنتج أو slug أو SKU"
-              />
-            </label>
+              {importPreview ? (
+                <div className={importPreview.validJson ? styles.inlineNotice : styles.inlineError} aria-live="polite">
+                  {importPreview.validJson ? `JSON صالح مبدئيًا · المصدر: ${importPreview.sourceRef} · المنتجات: ${importPreview.products} · الاعتمادات: ${importPreview.approvals}` : "JSON غير صالح. صحح التنسيق قبل الإرسال."}
+                </div>
+              ) : null}
 
-            <div className={styles.filterChipRow}>
-              <button
-                type="button"
-                className={`${styles.filterChip} ${
-                  collectionFilter === "all" ? styles.filterChipActive : ""
-                }`}
-                onClick={() => setCollectionFilter("all")}
-              >
-                <span>كل الفئات</span>
+              <button className={styles.primaryButton} type="submit" disabled={operation !== null || !importPreview?.validJson}>
+                {operation === "import" ? "جارٍ التحقق والاستيراد..." : "تحقق واحفظ كنسخة جديدة"}
               </button>
-              {Object.entries(collectionDirectory).map(([slug, collection]) => (
-                <button
-                  key={slug}
-                  type="button"
-                  className={`${styles.filterChip} ${
-                    collectionFilter === slug ? styles.filterChipActive : ""
-                  }`}
-                  onClick={() => setCollectionFilter(slug as CollectionFilter)}
-                >
-                  <span>{collection.title}</span>
-                </button>
-              ))}
+            </form>
+          </article>
+
+          <article className={styles.mainCard}>
+            <div className={catalogStyles.sectionHeading}>
+              <div><p className={styles.sectionTitle}>سجل النسخ</p><h2>الاستيرادات والنسخة المنشورة</h2></div>
+              <button className={styles.secondaryButton} type="button" onClick={() => void loadSnapshot().catch((refreshError: unknown) => setError(refreshError instanceof Error ? refreshError.message : "تعذر التحديث."))} disabled={operation !== null}>تحديث</button>
             </div>
 
-            <div className={styles.filterChipRow}>
-              <button
-                type="button"
-                className={`${styles.filterChip} ${
-                  supplierFilter === "all" ? styles.filterChipActive : ""
-                }`}
-                onClick={() => setSupplierFilter("all")}
-              >
-                <span>كل الموردين</span>
-              </button>
-              {supplierRecords.map((supplier) => (
-                <button
-                  key={supplier.id}
-                  type="button"
-                  className={`${styles.filterChip} ${
-                    supplierFilter === supplier.id ? styles.filterChipActive : ""
-                  }`}
-                  onClick={() => setSupplierFilter(supplier.id)}
-                >
-                  <span>{supplier.name}</span>
-                </button>
-              ))}
-            </div>
-          </div>
+            <div className={catalogStyles.importList}>
+              {isLoading ? <p>جارٍ تحميل سجل الكتالوج...</p> : snapshot?.imports.length ? snapshot.imports.map((item) => (
+                <article key={item.id} className={catalogStyles.importCard}>
+                  <div className={catalogStyles.importHeader}>
+                    <div><span className={`${catalogStyles.statusBadge} ${catalogStyles[item.status]}`}>{statusLabels[item.status]}</span><h3>{item.sourceRef}</h3><code>{item.id}</code></div>
+                    <div className={catalogStyles.counts}><strong>{item.productCount}</strong><span>منتج</span><strong>{item.variantCount}</strong><span>SKU</span></div>
+                  </div>
+                  <dl className={catalogStyles.metadata}>
+                    <div><dt>تاريخ الاستيراد</dt><dd>{formatDate(item.createdAt)}</dd></div>
+                    <div><dt>تاريخ النشر</dt><dd>{formatDate(item.activatedAt)}</dd></div>
+                    <div><dt>البصمة</dt><dd><code>{item.sourceHash.slice(0, 16)}…</code></dd></div>
+                    <div><dt>المشغّل</dt><dd>{item.createdBy}</dd></div>
+                  </dl>
 
-          <div className={styles.ordersGrid}>
-            {filteredProducts.length ? (
-              filteredProducts.map((product) => {
-                const authorityRecord =
-                  catalogAuthority.records[product.productSlug];
-                const productSupplierAuthority = Array.from(
-                  new Set(product.variants.map((variant) => variant.supplierId)),
-                ).map((supplierId) => supplierAuthority.records[supplierId]);
+                  {item.readiness.blockers.length ? (
+                    <details className={catalogStyles.blockers}>
+                      <summary>{item.readiness.blockers.length} مانع نشر</summary>
+                      <ul>{item.readiness.blockers.map((blocker) => <li key={blocker}>{formatBlocker(blocker)}</li>)}</ul>
+                    </details>
+                  ) : <div className={styles.inlineNotice}>كل بوابات الأدلة مكتملة وجاهزة.</div>}
 
-                return (
-                  <article key={product.productSlug} className={styles.lineItem}>
-                    <div className={styles.lineHead}>
-                      <div>
-                        <h3>{product.arabicName}</h3>
-                        <p className={styles.lineMeta}>
-                          {product.englishName} | {collectionDirectory[product.collection].title}
-                        </p>
-                      </div>
-                      <div className={styles.linePrice}>{product.productSlug}</div>
-                    </div>
-
-                    <div className={styles.badgeRow}>
-                      <span>{product.productType}</span>
-                      <span>{product.concern}</span>
-                      <span>{product.ingredient}</span>
-                      <span>{product.timing}</span>
-                    </div>
-
-                    <div className={styles.catalogPanelGrid}>
-                      <div className={styles.referenceCard}>
-                        <strong>Catalog truth contract</strong>
-                        <div className={styles.summaryList}>
-                          <div className={styles.referenceRow}>
-                            <span>Authority lane</span>
-                            <strong className={styles.referenceValue}>
-                              {authorityRecord?.authorityLane ?? "Catalog stable"}
-                            </strong>
-                          </div>
-                          <div className={styles.referenceRow}>
-                            <span>Supplier status</span>
-                            <strong className={styles.referenceValue}>
-                              {authorityRecord?.supplierStatus === "watch"
-                                ? "Watch"
-                                : "Stable"}
-                            </strong>
-                          </div>
-                          <div className={styles.referenceRow}>
-                            <span>Manual-review orders</span>
-                            <strong className={styles.referenceValue}>
-                              {authorityRecord?.manualReviewOrders ?? 0}
-                            </strong>
-                          </div>
-                          <div className={styles.referenceRow}>
-                            <span>COD-restricted variants</span>
-                            <strong className={styles.referenceValue}>
-                              {authorityRecord?.codRestrictedVariantCount ?? 0}
-                            </strong>
-                          </div>
-                        </div>
-                        <span className={styles.helperText}>
-                          {authorityRecord?.authorityNote ??
-                            "سجل الكتالوج الحالي مستقر ولا يفرض handoff إضافي الآن."}
-                        </span>
-                      </div>
-
-                      <div className={styles.referenceCard}>
-                        <strong>Demand linkage</strong>
-                        <div className={styles.summaryList}>
-                          <div className={styles.referenceRow}>
-                            <span>Live orders</span>
-                            <strong className={styles.referenceValue}>
-                              {authorityRecord?.liveOrderCount ?? 0}
-                            </strong>
-                          </div>
-                          <div className={styles.referenceRow}>
-                            <span>Pending units</span>
-                            <strong className={styles.referenceValue}>
-                              {authorityRecord?.pendingDemandUnits ?? 0}
-                            </strong>
-                          </div>
-                          <div className={styles.referenceRow}>
-                            <span>Low-stock variants</span>
-                            <strong className={styles.referenceValue}>
-                              {authorityRecord?.lowStockVariantCount ?? 0}
-                            </strong>
-                          </div>
-                          <div className={styles.referenceRow}>
-                            <span>Supplier watch items</span>
-                            <strong className={styles.referenceValue}>
-                              {authorityRecord?.supplierWarningCount ?? 0}
-                            </strong>
-                          </div>
-                        </div>
-                        <span className={styles.helperText}>
-                          {authorityRecord?.affectedOrderNumbers.length
-                            ? `Orders: ${authorityRecord.affectedOrderNumbers.join(" | ")}`
-                            : "لا توجد أوامر حية مرتبطة بهذا السجل الآن."}
-                        </span>
-                      </div>
-
-                      <div className={styles.referenceCard}>
-                        <strong>Supplier continuity</strong>
-                        <div className={styles.summaryList}>
-                          {productSupplierAuthority.map((record) => (
-                            <div key={record.supplierId} className={styles.referenceCard}>
-                              <div className={styles.referenceRow}>
-                                <span>{record.supplierName}</span>
-                                <strong className={styles.referenceValue}>
-                                  {record.authorityLane}
-                                </strong>
-                              </div>
-                              <span className={styles.helperText}>
-                                Truth source: {record.truthSourceLabel}
-                              </span>
-                              <span className={styles.helperText}>
-                                Next owner: {record.continuityOwnerLabel} | Live orders:{" "}
-                                {record.liveOrderCount} | Pending units:{" "}
-                                {record.pendingDemandUnits}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                        <span className={styles.helperText}>
-                          إذا تغيّر supplier lane لهذا المنتج، فالحقيقة التشغيلية يجب أن
-                          تتغير هنا أولًا قبل أي claim جديد داخل storefront أو COD.
-                        </span>
-                      </div>
-
-                      <div className={styles.referenceCard}>
-                        <strong>SEO + content</strong>
-                        <div className={styles.summaryList}>
-                          <div className={styles.referenceRow}>
-                            <span>Canonical</span>
-                            <strong className={styles.referenceValue}>
-                              {product.canonicalPath}
-                            </strong>
-                          </div>
-                          <div className={styles.referenceRow}>
-                            <span>Meta title</span>
-                            <strong className={styles.referenceValue}>
-                              {product.metaTitle}
-                            </strong>
-                          </div>
-                          <div className={styles.referenceRow}>
-                            <span>OG image</span>
-                            <strong className={styles.referenceValue}>
-                              {product.ogImagePath}
-                            </strong>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className={styles.referenceCard}>
-                        <strong>Variants</strong>
-                        <div className={styles.summaryList}>
-                          {product.variants.map((variant) => {
-                            const supplier = supplierRecordMap[variant.supplierId];
-
-                            return (
-                              <div key={variant.sku} className={styles.referenceCard}>
-                                <div className={styles.referenceRow}>
-                                  <span>{variant.sku}</span>
-                                  <strong className={styles.referenceValue}>
-                                    {variant.stockOnHand} قطعة
-                                  </strong>
-                                </div>
-                                <div className={styles.badgeRow}>
-                                  <span>{variant.supplierSku}</span>
-                                  <span>{supplier?.name ?? variant.supplierId}</span>
-                                  <span>{variant.shippingClass}</span>
-                                  <span>{variant.availability}</span>
-                                  <span>{variant.codEligible ? "COD yes" : "COD no"}</span>
-                                </div>
-                                <span className={styles.helperText}>
-                                  Barcode: {variant.barcode} | Low stock threshold:{" "}
-                                  {variant.lowStockThreshold}
-                                </span>
-                                {variant.swatchLabel ? (
-                                  <span className={styles.helperText}>
-                                    Swatch: {variant.swatchLabel} | Shade order:{" "}
-                                    {variant.shadeSortOrder ?? "-"}
-                                  </span>
-                                ) : null}
-                                <span className={styles.helperText}>
-                                  Retail: {variant.retailPrice} ر.س
-                                  {variant.compareAtPrice
-                                    ? ` | Compare at ${variant.compareAtPrice} ر.س`
-                                    : ""}
-                                </span>
-                                <span className={styles.helperText}>
-                                  Cost: {variant.cost} ر.س | Margin{" "}
-                                  {formatPercentage(variant.estimatedMargin)}
-                                </span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    </div>
-
+                  {item.status === "validated" ? (
                     <div className={styles.cardActions}>
-                      <TrackedLink
-                        href={`/products/${product.productSlug}`}
-                        className={styles.secondaryLink}
-                        analyticsLabel={`ops_catalog_product_${product.productSlug}`}
-                        analyticsSurface="ops_catalog_product"
-                        analyticsDestinationType="product"
-                      >
-                        فتح صفحة المنتج
-                      </TrackedLink>
-                      <TrackedLink
-                        href="/ops/orders"
-                        className={styles.secondaryLink}
-                        analyticsLabel={`ops_catalog_orders_${product.productSlug}`}
-                        analyticsSurface="ops_catalog_product"
-                        analyticsDestinationType="ops_orders"
-                      >
-                        متابعة الطلبات المرتبطة
-                      </TrackedLink>
+                      <button className={publishCandidate === item.id ? styles.primaryButton : styles.secondaryButton} type="button" onClick={() => void handlePublish(item.id)} disabled={operation !== null || !item.readiness.ready}>
+                        {operation === "publish" && publishCandidate === item.id ? "جارٍ النشر..." : publishCandidate === item.id ? "تأكيد النشر الآن" : "نشر هذه النسخة"}
+                      </button>
+                      {publishCandidate === item.id ? <button className={styles.secondaryButton} type="button" onClick={() => { setPublishCandidate(null); setNotice(null); }} disabled={operation !== null}>إلغاء</button> : null}
                     </div>
-                  </article>
-                );
-              })
-            ) : (
-              <article className={styles.emptyCard}>
-                <p className={styles.eyebrow}>Catalog filters</p>
-                <h1>لا توجد سجلات تطابق الفلتر الحالي</h1>
-                <p>
-                  غيّر الفئة أو المورد أو نص البحث حتى تظهر سجلات الكتالوج المتاحة
-                  في النسخة الحالية.
-                </p>
-              </article>
-            )}
-          </div>
-        </article>
+                  ) : null}
+                </article>
+              )) : <div className={styles.inlineNotice}>لا توجد استيرادات بعد. ابدأ بملف الكتالوج المعتمد.</div>}
+            </div>
+          </article>
+        </div>
 
         <aside className={styles.summaryList}>
+          {error ? <div className={styles.inlineError} role="alert" style={{ whiteSpace: "pre-line" }}>{error}</div> : null}
+          {notice ? <div className={styles.inlineNotice} role="status">{notice}</div> : null}
           <article className={styles.summaryCard}>
-            <p className={styles.sectionTitle}>Catalog authority lanes</p>
-            <h2>من يملك قرار الكتالوج الآن؟</h2>
+            <p className={styles.sectionTitle}>بوابات الحقيقة</p>
+            <h2>{activeReadiness?.ready ? "الكتالوج النشط مكتمل" : "النشر العام متوقف بأمان"}</h2>
             <div className={styles.summaryList}>
-              {catalogAuthority.ownerLanes.length ? (
-                catalogAuthority.ownerLanes.map((lane) => (
-                  <div key={lane.label} className={styles.referenceRow}>
-                    <span>{lane.label}</span>
-                    <strong className={styles.referenceValue}>{lane.count}</strong>
-                  </div>
-                ))
-              ) : (
-                <div className={styles.infoBullet}>
-                  ستظهر owner lanes هنا بعد ربط الطلبات الحية بسطح الكتالوج.
-                </div>
-              )}
+              {activeReadiness?.blockers.length ? activeReadiness.blockers.map((blocker) => <div key={blocker} className={catalogStyles.blockerItem}>{formatBlocker(blocker)}</div>) : <div className={styles.inlineNotice}>لا توجد موانع على النسخة النشطة.</div>}
             </div>
           </article>
-
           <article className={styles.summaryCard}>
-            <p className={styles.sectionTitle}>Supplier authority</p>
-            <h2>استمرارية صلاحية الموردين</h2>
-            <div className={styles.summaryList}>
-              {supplierAuthority.ownerLanes.length ? (
-                supplierAuthority.ownerLanes.map((lane) => (
-                  <div key={lane.label} className={styles.referenceRow}>
-                    <span>{lane.label}</span>
-                    <strong className={styles.referenceValue}>{lane.count}</strong>
-                  </div>
-                ))
-              ) : (
-                <div className={styles.infoBullet}>
-                  ستظهر supplier lanes هنا بعد اشتقاق authority continuity من
-                  الكتالوج والطلبات الحية.
-                </div>
-              )}
-            </div>
-          </article>
-
-          <article className={styles.summaryCard}>
-            <p className={styles.sectionTitle}>Supplier map</p>
-            <h2>الموردون الحاليون</h2>
-            <div className={styles.summaryList}>
-              {supplierRecords.map((supplier) => {
-                const authorityRecord = supplierAuthority.records[supplier.id];
-
-                return (
-                  <div key={supplier.id} className={styles.referenceCard}>
-                    <div className={styles.referenceRow}>
-                      <span>{supplier.name}</span>
-                      <strong className={styles.referenceValue}>
-                        {authorityRecord.authorityLane}
-                      </strong>
-                    </div>
-                    <p>{supplier.note}</p>
-                    <span className={styles.helperText}>
-                      Truth source: {supplier.truthSourceLabel}
-                    </span>
-                    <span className={styles.helperText}>
-                      Lead time: {supplier.leadTime} | Margin target:{" "}
-                      {formatPercentage(supplier.defaultMarginTarget)}
-                    </span>
-                    <span className={styles.helperText}>
-                      Sync: {supplierSyncState[supplier.id].statusLabel} | Watch items:{" "}
-                      {authorityRecord.watchItemCount} | Last area:{" "}
-                      {supplierSyncState[supplier.id].latestArea}
-                    </span>
-                    <span className={styles.helperText}>
-                      Products: {authorityRecord.activeProductCount} | Variants:{" "}
-                      {authorityRecord.activeVariantCount} | Live orders:{" "}
-                      {authorityRecord.liveOrderCount}
-                    </span>
-                    <span className={styles.helperText}>
-                      Pending units: {authorityRecord.pendingDemandUnits} | Low-stock
-                      variants: {authorityRecord.lowStockVariantCount}
-                    </span>
-                    <span className={styles.helperText}>
-                      Next owner: {authorityRecord.continuityOwnerLabel} via{" "}
-                      {getOpsRouteLabel(authorityRecord.continuityRoute)}
-                    </span>
-                    <span className={styles.helperText}>
-                      {authorityRecord.continuityRule}
-                    </span>
-                    {authorityRecord.affectedProductSlugs.length ? (
-                      <span className={styles.helperText}>
-                        Products: {authorityRecord.affectedProductSlugs.join(" | ")}
-                      </span>
-                    ) : null}
-                    {authorityRecord.affectedOrderNumbers.length ? (
-                      <span className={styles.helperText}>
-                        Orders: {authorityRecord.affectedOrderNumbers.join(" | ")}
-                      </span>
-                    ) : null}
-                    <div className={styles.cardActions}>
-                      <TrackedLink
-                        href={authorityRecord.continuityRoute}
-                        className={styles.secondaryLink}
-                        analyticsLabel={`ops_catalog_supplier_${supplier.id}`}
-                        analyticsSurface="ops_catalog_supplier"
-                        analyticsDestinationType={getOpsDestinationType(
-                          authorityRecord.continuityRoute,
-                        )}
-                      >
-                        متابعة مسار الصلاحية
-                      </TrackedLink>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </article>
-
-          <article className={styles.summaryCard}>
-            <p className={styles.sectionTitle}>Exception queue</p>
-            <h2>الملاحظات التشغيلية</h2>
-            <div className={styles.summaryList}>
-              {supplierExceptions.length ? (
-                supplierExceptions.map((exception) => (
-                  <div key={exception.id} className={styles.infoBullet}>
-                    <strong>{exception.title}</strong>
-                    <br />
-                    {exception.note}
-                  </div>
-                ))
-              ) : (
-                <div className={styles.infoBullet}>لا توجد استثناءات بارزة الآن.</div>
-              )}
-            </div>
-          </article>
-
-          <article className={styles.summaryCard}>
-            <p className={styles.sectionTitle}>Sync watch</p>
-            <h2>مراقبة sync الحالية</h2>
-            <div className={styles.summaryList}>
-              {supplierSyncLogs.map((log) => (
-                <div key={log.id} className={styles.referenceCard}>
-                  <div className={styles.referenceRow}>
-                    <span>{log.supplierId}</span>
-                    <strong className={styles.referenceValue}>{log.status}</strong>
-                  </div>
-                  <p>{log.note}</p>
-                  <span className={styles.helperText}>{log.area}</span>
-                </div>
-              ))}
-            </div>
+            <p className={styles.sectionTitle}>العقد المطلوب</p>
+            <h2>ما الذي يجب أن يحتويه الملف؟</h2>
+            <ul className={catalogStyles.requirements}>
+              <li>مرجع مصدر وتوقيت توليد واضحان.</li>
+              <li>ضريبة SAR شاملة مع دليل اعتماد.</li>
+              <li>مخزون وموقع تنفيذ لكل SKU.</li>
+              <li>بيانات مطابقة ومستندات SFDA/eCosma.</li>
+              <li>حقوق الصور وأدلة الادعاءات وسياسة الإرجاع.</li>
+              <li>اعتماد مستقل للبيانات والوسائط والسعر والنشر.</li>
+            </ul>
           </article>
         </aside>
       </section>

@@ -12,11 +12,34 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
   const collectionProducts = products.filter((product) => product.collection === "skincare");
   const state = getCollectionFilterState("/shop/skincare", collectionProducts, params);
   const summary = state.activeFilters.map((filter) => filter.value).join(" | ");
+  const title = summary ? `${skincareCategory.title} | ${summary}` : skincareCategory.title;
+  const imageUrl = absoluteUrl("/brand-assets/product-01.jpg");
+
   return {
-    title: summary ? `${skincareCategory.title} | ${summary}` : skincareCategory.title,
+    title,
     description: skincareCategory.description,
     alternates: { canonical: "/shop/skincare" },
     robots: hasActiveCollectionFilters(params) ? { index: false, follow: true } : publicRichPreviewRobots,
+    openGraph: {
+      title,
+      description: skincareCategory.description,
+      url: absoluteUrl("/shop/skincare"),
+      type: "website",
+      images: [
+        {
+          url: imageUrl,
+          width: 1200,
+          height: 630,
+          alt: skincareCategory.title,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description: skincareCategory.description,
+      images: [imageUrl],
+    },
   };
 }
 

@@ -8,6 +8,7 @@ import {
   getContentGovernanceSummary,
 } from "@/lib/content-governance";
 import { getAuthorityStorageInfo } from "@/lib/authority-database";
+import { getCatalogAuthorityReadiness } from "@/lib/catalog-authority";
 import { getHostingDirection } from "@/lib/hosting-direction";
 import { getOpsAccessConfig } from "@/lib/ops-access";
 import {
@@ -24,7 +25,16 @@ import type {
   ReleaseReadinessSnapshot,
   ReleaseReadinessStatus,
 } from "@/lib/release-readiness-types";
+import {
+  isPublicCatalogApproved,
+  isPublicCommerceAvailable,
+  isPublicCommerceEnabled,
+  isPublicDiscoveryContentApproved,
+  isPublicEditorialContentApproved,
+  isPublicLegalContentApproved,
+} from "@/lib/release-controls";
 import { getSiteUrl } from "@/lib/site-content";
+import { isPublicReleaseApproved } from "@/lib/search-visibility";
 
 function isLocalCanonicalUrl(url: string) {
   try {
@@ -40,6 +50,10 @@ function isLocalCanonicalUrl(url: string) {
 }
 
 function getRuntimeEnvironment() {
+  if (process.env.APP_ENV?.trim()) {
+    return process.env.APP_ENV.trim();
+  }
+
   if (process.env.VERCEL_ENV?.trim()) {
     return `vercel:${process.env.VERCEL_ENV.trim()}`;
   }
@@ -75,6 +89,16 @@ export function getReleaseReadinessSnapshot(): ReleaseReadinessSnapshot {
   const commerceOwner = getReleaseCommerceOwner();
   const securityOwner = getReleaseSecurityOwner();
   const contentOwner = getReleaseContentOwner();
+  const publicReleaseApproved = isPublicReleaseApproved();
+  const publicCatalogApproved = isPublicCatalogApproved();
+  const publicDiscoveryContentApproved = isPublicDiscoveryContentApproved();
+  const publicEditorialContentApproved = isPublicEditorialContentApproved();
+  const publicLegalContentApproved = isPublicLegalContentApproved();
+  const publicCommerceEnabled = isPublicCommerceEnabled();
+  const catalogAuthority = getCatalogAuthorityReadiness();
+  const publicCommerceConfigured = isPublicCommerceAvailable();
+  const publicCommerceAvailable =
+    publicCommerceConfigured && catalogAuthority.ready;
 
   const gates: ReleaseReadinessGate[] = [
     {
@@ -96,34 +120,133 @@ export function getReleaseReadinessSnapshot(): ReleaseReadinessSnapshot {
       title: "Hosting direction freeze",
       status: "ready",
       summary:
-        "The repository now freezes the primary runtime to a Render web service that runs the Next standalone server on persistent storage, which matches the current SQLite-backed operational authorities.",
+        "The repository now freezes the primary runtime to a Hostinger VPS systemd service behind nginx with persistent local storage for the current SQLite-backed authorities.",
       details: [
         `Primary provider: ${hostingDirection.primaryProvider}`,
         `Service type: ${hostingDirection.primaryServiceType}`,
         `Runtime artifact: ${hostingDirection.runtimeArtifact}`,
         `Persistent state path: ${hostingDirection.persistencePath}`,
+        `Reverse proxy: ${hostingDirection.reverseProxy}`,
         `Secondary path: ${hostingDirection.optionalSecondaryPath}`,
       ],
       owner: platformOwner,
       resolutionAction:
-        "Keep Render plus persistent disk as the only supported launch path until shared backend ownership replaces the single-host runtime.",
+        "Keep the Hostinger single-instance systemd deployment as the supported launch path until shared backend ownership replaces the single-host runtime.",
     },
     {
       id: "hosting-runtime",
       title: "Hosted canonical runtime",
       status: isLocalCanonicalUrl(siteUrl) ? "blocked" : "ready",
       summary: isLocalCanonicalUrl(siteUrl)
-        ? "Canonical URLs still resolve to a local runtime because no live hosted Render environment or production domain is wired yet."
+        ? "Canonical URLs still resolve to a local runtime because the Hostinger production domain is not configured in this runtime."
         : "Canonical URLs now resolve to a hosted runtime instead of a local fallback.",
       details: isLocalCanonicalUrl(siteUrl)
         ? [
             `Current canonical URL: ${siteUrl}`,
-            "A real Render deployment plus production domain configuration is still required.",
+            "The Hostinger runtime must set NEXT_PUBLIC_SITE_URL=https://elore-paris.com.",
           ]
         : [`Current canonical URL: ${siteUrl}`],
       owner: platformOwner,
       resolutionAction:
-        "Create the live Render service, bind the production domain, and republish the release package from the hosted runtime.",
+        "Deploy the verified Hostinger release, bind elore-paris.com, and republish the release package from that runtime.",
+    },
+    {
+      id: "public-release-approval",
+      title: "Explicit public release approval",
+      status: publicReleaseApproved ? "ready" : "blocked",
+      summary: publicReleaseApproved
+        ? "The runtime has an explicit public-release approval flag."
+        : "Public indexing and release claims remain disabled until PUBLIC_RELEASE_APPROVED is explicitly enabled after all gates pass.",
+      details: [
+        `PUBLIC_RELEASE_APPROVED: ${publicReleaseApproved ? "true" : "false"}`,
+        "This flag must not be inferred from NODE_ENV, a hosted URL, or a successful build.",
+      ],
+      owner: platformOwner,
+      resolutionAction:
+        "Enable PUBLIC_RELEASE_APPROVED only after the latest release packet has no blockers and the business owner approves launch.",
+    },
+    {
+      id: "public-catalog-approval",
+      title: "Approved public catalog",
+      status: publicCatalogApproved && catalogAuthority.ready ? "ready" : "blocked",
+      summary: publicCatalogApproved && catalogAuthority.ready
+        ? "The runtime flag and evidence-backed catalog authority both approve the public catalog."
+        : "Prototype products, pricing, claims, and media remain blocked until the catalog authority is complete and approved.",
+      details: [
+        `PUBLIC_CATALOG_APPROVED: ${publicCatalogApproved ? "true" : "false"}`,
+        `Catalog authority ready: ${catalogAuthority.ready ? "yes" : "no"}`,
+        `Active catalog products/variants: ${catalogAuthority.productCount}/${catalogAuthority.variantCount}`,
+        ...catalogAuthority.blockers.map((blocker) => `Authority blocker: ${blocker}`),
+        "Approval requires authoritative SKUs, variants, SAR prices, inventory, media rights, claims, and compliance records.",
+        "Concept imagery and research references must never satisfy this gate.",
+      ],
+      owner: commerceOwner,
+      resolutionAction:
+        "Import and validate the authoritative catalog, obtain business and compliance approval, then enable PUBLIC_CATALOG_APPROVED explicitly.",
+    },
+    {
+      id: "public-discovery-content-approval",
+      title: "Approved educational discovery content",
+      status: publicDiscoveryContentApproved ? "ready" : "blocked",
+      summary: publicDiscoveryContentApproved
+        ? "Concern, routine, and ingredient guidance has an explicit content and compliance approval."
+        : "Educational discovery pages remain outside public indexing until their claims, disclaimers, and localized copy receive explicit approval.",
+      details: [
+        `PUBLIC_DISCOVERY_CONTENT_APPROVED: ${publicDiscoveryContentApproved ? "true" : "false"}`,
+        "Approval covers both Arabic and English concern, routine, and ingredient pages.",
+        "This gate must not be inferred from a successful build or catalogue approval.",
+      ],
+      owner: contentOwner,
+      resolutionAction:
+        "Complete content and compliance review for every localized discovery route, then enable PUBLIC_DISCOVERY_CONTENT_APPROVED explicitly.",
+    },
+    {
+      id: "public-editorial-content-approval",
+      title: "Approved public editorial content",
+      status: publicEditorialContentApproved ? "ready" : "blocked",
+      summary: publicEditorialContentApproved
+        ? "The public journal has explicit editorial and cosmetics-claims approval."
+        : "The prototype journal remains outside public indexing until its Arabic and English editions are rewritten and approved.",
+      details: [
+        `PUBLIC_EDITORIAL_CONTENT_APPROVED: ${publicEditorialContentApproved ? "true" : "false"}`,
+        "Approval requires human editorial ownership, representative imagery, claim review, and removal of prototype product links.",
+      ],
+      owner: contentOwner,
+      resolutionAction:
+        "Replace the synthetic journal set with a focused reviewed edition, then enable PUBLIC_EDITORIAL_CONTENT_APPROVED explicitly.",
+    },
+    {
+      id: "public-legal-content-approval",
+      title: "Approved legal and support content",
+      status: publicLegalContentApproved ? "ready" : "blocked",
+      summary: publicLegalContentApproved
+        ? "Trust, legal, and support surfaces have explicit business and legal approval."
+        : "Trust and support pages remain provisional until entity, privacy, shipping, returns, and contact facts are approved.",
+      details: [
+        `PUBLIC_LEGAL_CONTENT_APPROVED: ${publicLegalContentApproved ? "true" : "false"}`,
+        "Approval requires the legal entity, contact channel, provider terms, privacy handling, shipping coverage, and return rules.",
+      ],
+      owner: contentOwner,
+      resolutionAction:
+        "Complete owner and legal review for every localized trust and support page, then enable PUBLIC_LEGAL_CONTENT_APPROVED explicitly.",
+    },
+    {
+      id: "public-commerce-activation",
+      title: "Public commerce activation",
+      status: publicCommerceAvailable ? "ready" : "blocked",
+      summary: publicCommerceAvailable
+        ? "Public commerce is explicitly enabled and all prerequisite approvals are present."
+        : "Production order creation remains disabled until release, catalog, and commerce approvals are all enabled.",
+      details: [
+        `PUBLIC_RELEASE_APPROVED: ${publicReleaseApproved ? "true" : "false"}`,
+        `PUBLIC_CATALOG_APPROVED: ${publicCatalogApproved ? "true" : "false"}`,
+        `PUBLIC_COMMERCE_ENABLED: ${publicCommerceEnabled ? "true" : "false"}`,
+        `Environment prerequisites configured: ${publicCommerceConfigured ? "yes" : "no"}`,
+        `Evidence-backed catalog authority ready: ${catalogAuthority.ready ? "yes" : "no"}`,
+      ],
+      owner: commerceOwner,
+      resolutionAction:
+        "Clear every release and catalog blocker, verify payment and shipping providers, and only then enable PUBLIC_COMMERCE_ENABLED.",
     },
     {
       id: "transactional-backend",
@@ -201,12 +324,15 @@ export function getReleaseReadinessSnapshot(): ReleaseReadinessSnapshot {
     runtimePreflight,
     ownerSummaries,
     nextActions: [
-      "Create the primary Render web service from render.yaml, attach the persistent disk, and set the deploy-hook plus live-base-url secrets for the manual Render workflow.",
+      "Bootstrap the Hostinger systemd/nginx runtime, install the dedicated SSH public key, and keep commerce plus indexing disabled during rehearsal deployments.",
       "Use the runtime preflight section inside /ops/release to clear the public URL, persistent path, signing-secret, and protected-identity blockers before the first live deploy claim.",
       ...providerNextActions,
       "Keep the current SQLite-backed authority only as a single-host launch path; replace it with a shared durable backend for orders, notifications, and audit data when the backend ownership phase starts.",
       "Upgrade the current signed-session ops gate into provider-backed auth and real RBAC.",
       "Clear the remaining sample-pack, legal, and business-input gates tracked in CONTENT-OWNERSHIP.md before public launch claims.",
+      "Approve the localized concern, routine, and ingredient guidance before enabling PUBLIC_DISCOVERY_CONTENT_APPROVED.",
+      "Replace and approve the bilingual journal before enabling PUBLIC_EDITORIAL_CONTENT_APPROVED.",
+      "Approve the bilingual trust, legal, and support facts before enabling PUBLIC_LEGAL_CONTENT_APPROVED.",
     ],
   };
 }

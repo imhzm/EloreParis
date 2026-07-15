@@ -9,7 +9,7 @@ type CheckoutSuccessPageProps = {
 export const metadata: Metadata = {
   title: "تأكيد الطلب",
   description:
-    "مرجع طلب محلي جاهز للتتبع ضمن النسخة التأسيسية الحالية من متجر Cozmateks.",
+    "مرجع طلب محلي جاهز للتتبع ضمن النسخة التأسيسية الحالية من متجر ÉLORÉ PARIS.",
   robots: {
     index: false,
     follow: false,

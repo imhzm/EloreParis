@@ -1,12 +1,20 @@
 :root {
-  --liquid-pearl: #f7f1ea;
-  --rose-sand: #d8b5ae;
-  --sage-mist: #97a095;
-  --aubergine-ink: #2b1c28;
-  --soft-brass: #c79a58;
-  --mauve-stone: #7a5f6c;
-  --foreground: #241c22;
-  --muted: #655a61;
+  --elore-ivory: #f3f0ea;
+  --elore-warm-white: #fffdfc;
+  --elore-burgundy: #491723;
+  --elore-rosewood: #85484f;
+  --elore-champagne: #c9a67f;
+  --elore-blush: #dcc4b9;
+  --elore-ink: #21151a;
+  --elore-cocoa: #725b60;
+  --liquid-pearl: var(--elore-ivory);
+  --rose-sand: var(--elore-blush);
+  --sage-mist: #b8aaa6;
+  --aubergine-ink: var(--elore-burgundy);
+  --soft-brass: var(--elore-champagne);
+  --mauve-stone: var(--elore-rosewood);
+  --foreground: var(--elore-ink);
+  --muted: var(--elore-cocoa);
   --surface: rgba(255, 252, 249, 0.7);
   --surface-strong: rgba(255, 250, 245, 0.9);
   --surface-pearl: rgba(255, 252, 248, 0.86);
@@ -18,14 +26,34 @@
   --shadow: 0 20px 60px rgba(43, 28, 40, 0.1);
   --shadow-soft: 0 24px 54px rgba(43, 28, 40, 0.08);
   --shadow-lift: 0 24px 48px rgba(43, 28, 40, 0.14);
-  --ease-luxury: 260ms cubic-bezier(0.22, 1, 0.36, 1);
-  --ease-reveal: 680ms cubic-bezier(0.23, 1, 0.32, 1);
+  --motion-micro: 160ms cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-control: 220ms cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-reveal: 360ms cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-section: 520ms cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-hero: 700ms cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-luxury: var(--motion-control);
+  --ease-reveal: var(--motion-hero);
   color-scheme: light;
 }
 
 html {
   height: 100%;
   scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 html,
@@ -41,10 +69,7 @@ body {
   display: flex;
   flex-direction: column;
   color: var(--foreground);
-  background:
-    radial-gradient(circle at 12% 12%, rgba(155, 93, 123, 0.22), transparent 28%),
-    radial-gradient(circle at 88% 8%, rgba(212, 155, 101, 0.18), transparent 26%),
-    linear-gradient(180deg, #10111a 0%, #171320 46%, #0d1018 100%);
+  background: var(--elore-ivory);
   font-family: var(--font-body), "Segoe UI", Tahoma, sans-serif;
   line-height: 1.6;
   text-rendering: optimizeLegibility;
@@ -58,12 +83,8 @@ body::before {
   inset: 0;
   z-index: -2;
   pointer-events: none;
-  background:
-    linear-gradient(rgba(255, 255, 255, 0.12) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.12) 1px, transparent 1px);
-  background-size: 120px 120px;
-  mask-image: radial-gradient(circle at center, black 28%, transparent 82%);
-  opacity: 0.2;
+  background-image: linear-gradient(90deg, transparent 0 49.9%, rgba(73, 23, 35, 0.035) 50%, transparent 50.1%);
+  opacity: 0.45;
 }
 
 body::after {
@@ -72,10 +93,8 @@ body::after {
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background:
-    radial-gradient(circle at top center, rgba(255, 239, 224, 0.08), transparent 34%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 42%, rgba(8, 9, 15, 0.16));
-  opacity: 0.9;
+  background: radial-gradient(circle at 18% 8%, rgba(201, 166, 127, 0.12), transparent 32%);
+  opacity: 1;
 }
 
 * {
@@ -102,6 +121,19 @@ h6 {
   line-height: 0.98;
   letter-spacing: -0.03em;
   text-wrap: balance;
+}
+
+:lang(en) {
+  font-family: var(--font-body-latin), sans-serif;
+}
+
+:lang(en) h1,
+:lang(en) h2,
+:lang(en) h3,
+:lang(en) h4,
+:lang(en) h5,
+:lang(en) h6 {
+  font-family: var(--font-display-latin), serif;
 }
 
 img {

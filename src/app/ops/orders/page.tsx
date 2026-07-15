@@ -5,7 +5,7 @@ import { StorefrontShell } from "@/components/storefront-shell";
 export const metadata: Metadata = {
   title: "لوحة الطلبات التشغيلية",
   description:
-    "لوحة داخلية محلية لمراجعة الطلبات وتحريك حالتها ضمن النموذج التشغيلي الحالي لمتجر Cozmateks.",
+    "لوحة داخلية محلية لمراجعة الطلبات وتحريك حالتها ضمن النموذج التشغيلي الحالي لمتجر ÉLORÉ PARIS.",
   robots: {
     index: false,
     follow: false,

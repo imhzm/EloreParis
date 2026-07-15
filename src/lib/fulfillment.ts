@@ -45,7 +45,7 @@ export type FulfillmentLinePlan = {
   supplierName: string;
   fulfillmentModel: SupplierRecord["fulfillmentModel"] | "unmapped";
   shippingClass: string;
-  availability: "InStock" | "PreOrder";
+  availability: "InStock" | "PreOrder" | "OutOfStock";
   routeLabel: string;
   stockOnHand: number;
   lowStockThreshold: number;
@@ -203,7 +203,7 @@ function buildFulfillmentLinePlans(lineSnapshots: CheckoutLineSnapshot[]) {
         catalogTruth.stockOnHand <= catalogTruth.lowStockThreshold,
     );
     const requiresReview =
-      catalogTruth.availability === "PreOrder" ||
+      catalogTruth.availability !== "InStock" ||
       requiresLowStockReview ||
       catalogTruth.mappingStatus !== "mapped";
 
@@ -212,7 +212,7 @@ function buildFulfillmentLinePlans(lineSnapshots: CheckoutLineSnapshot[]) {
     if (catalogTruth.mappingStatus !== "mapped") {
       routeLabel = "Catalog mapping required";
     } else if (
-      catalogTruth.availability === "PreOrder" ||
+      catalogTruth.availability !== "InStock" ||
       catalogTruth.fulfillmentModel === "dropship"
     ) {
       routeLabel = "Supplier direct handoff";
@@ -247,7 +247,7 @@ function buildManualReviewReasons(
 ) {
   const reasons = new Set<string>();
 
-  if (linePlans.some((line) => line.availability === "PreOrder")) {
+  if (linePlans.some((line) => line.availability !== "InStock")) {
     reasons.add("يوجد عنصر يعمل كطلب ممتد ويحتاج تأكيد lead time قبل الجدولة.");
   }
 
@@ -312,7 +312,7 @@ export function getCheckoutRules(
     (line) =>
       line.fulfillmentModel === "dropship" ||
       line.fulfillmentModel === "unmapped" ||
-      line.availability === "PreOrder",
+      line.availability !== "InStock",
   );
   const splitShipment = new Set(linePlans.map((line) => line.supplierId)).size > 1;
   const expressEligible =
@@ -747,7 +747,7 @@ export function getOrderFulfillmentPlan(order: StoredOrder): OrderFulfillmentPla
     (line) =>
       line.fulfillmentModel === "dropship" ||
       line.fulfillmentModel === "unmapped" ||
-      line.availability === "PreOrder",
+      line.availability !== "InStock",
   );
   const codEligible =
     deliveryZone.id !== "pending" &&
@@ -834,7 +834,7 @@ export function getCheckoutProviderHandoff(
     (line) =>
       line.fulfillmentModel === "dropship" ||
       line.fulfillmentModel === "unmapped" ||
-      line.availability === "PreOrder",
+      line.availability !== "InStock",
   );
   const splitShipment = new Set(linePlans.map((line) => line.supplierId)).size > 1;
 

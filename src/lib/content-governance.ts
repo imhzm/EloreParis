@@ -7,6 +7,7 @@ export type ContentGovernanceArea =
   | "support";
 
 export type ContentGovernanceStatus =
+  | "sample_based"
   | "awaiting_style_samples"
   | "awaiting_business_inputs";
 
@@ -28,6 +29,7 @@ export type ContentGovernanceSummary = {
   totalSurfaces: number;
   totalRoutes: number;
   awaitingStyleSamples: number;
+  sampleBased: number;
   awaitingBusinessInputs: number;
   ownersMapped: number;
   launchBlocked: number;
@@ -38,20 +40,20 @@ export const contentGovernanceEntries: ContentGovernanceEntry[] = [
     id: "home-and-shop",
     title: "Home and shop atlas surfaces",
     area: "storefront",
-    status: "awaiting_style_samples",
+    status: "sample_based",
     owner: "Founder / brand lead",
     approver: "Brand lead",
     routes: ["/", "/shop", "/shop/haircare", "/shop/bodycare", "/shop/tools", "/shop/beauty-sets"],
     freezeDecision:
-      "The IA, promise, and section rhythm are frozen, but the public voice is still provisional until real brand samples exist.",
+      "The IA, promise, copy, visual tokens, and motion direction are grounded in the 2026-07-14 ÉLORÉ PARIS handoff.",
     launchBlocker:
-      "Needs 2-3 real homepage or campaign samples to replace neutral provisional copy with final brand polish.",
+      "Concept imagery must be brand-approved and every product-facing scene must be replaced with approved SKU photography before commercial launch.",
     nextApproval:
-      "Approve the final hero promise, collection positioning language, and campaign vocabulary before launch.",
+      "Approve the concept campaign imagery and supply production product photography before launch.",
     requiredInputs: [
-      "Two or three real homepage, campaign, or brand-story samples",
-      "Approved visual references for premium Saudi beauty positioning",
-      "Final preferred naming for the brand promise and hero narrative",
+      "Brand approval for concept campaign imagery",
+      "Production product and packaging photography",
+      "Approved SKU data for every product-facing scene",
     ],
   },
   {
@@ -61,7 +63,7 @@ export const contentGovernanceEntries: ContentGovernanceEntry[] = [
     status: "awaiting_style_samples",
     owner: "Commerce owner",
     approver: "Commerce lead",
-    routes: ["/shop/skincare", "/shop/makeup", "/products/radiant-dew-serum", "/cart", "/checkout"],
+    routes: ["/shop/skincare", "/shop/makeup", "/ar/product/[slug]", "/cart", "/checkout"],
     freezeDecision:
       "Commerce structure, CRO blocks, and transactional UX are frozen. Product language remains intentionally safe and non-claim-heavy.",
     launchBlocker:
@@ -157,7 +159,6 @@ export const contentGovernanceEntries: ContentGovernanceEntry[] = [
 ];
 
 export const contentSamplePackChecklist = [
-  "Provide two or three real homepage or campaign samples that represent the intended public brand voice.",
   "Provide two or three real product-description or PDP samples that show how benefits should be phrased.",
   "Provide two or three real editorial or educational samples that define article tone and proof depth.",
   "Provide one support or service-response sample so FAQ and contact language can match the operating voice.",
@@ -180,6 +181,7 @@ const areaLabels: Record<ContentGovernanceArea, string> = {
 };
 
 const statusLabels: Record<ContentGovernanceStatus, string> = {
+  sample_based: "Sample-based",
   awaiting_style_samples: "Awaiting style samples",
   awaiting_business_inputs: "Awaiting business inputs",
 };
@@ -203,6 +205,9 @@ export function getContentGovernanceSummary() {
     ),
     awaitingStyleSamples: contentGovernanceEntries.filter(
       (entry) => entry.status === "awaiting_style_samples",
+    ).length,
+    sampleBased: contentGovernanceEntries.filter(
+      (entry) => entry.status === "sample_based",
     ).length,
     awaitingBusinessInputs: contentGovernanceEntries.filter(
       (entry) => entry.status === "awaiting_business_inputs",

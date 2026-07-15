@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createHash, randomUUID } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import type { NextRequest } from "next/server";
 import {
@@ -11,33 +11,31 @@ import {
   setAuthorityMetaValue,
 } from "@/lib/authority-database";
 import {
-  resolveCartLines,
-  sanitizeCartItems,
-  type StoredCartItem,
-} from "@/lib/cart";
-import {
-  type CheckoutSubmissionInput,
-  validateCheckoutSubmission,
-} from "@/lib/checkout-validation";
-import { getCheckoutRules } from "@/lib/fulfillment";
+  CatalogQuoteError,
+  getCheckoutQuoteForSession,
+  type CheckoutQuote,
+} from "@/lib/catalog-quote";
+import { getActiveCatalogAuthority } from "@/lib/catalog-authority";
+import { commitAuthorityInventoryReservations } from "@/lib/inventory-reservation-authority";
 import {
   buildExternalAuthProviderAuthorizeUrl,
   bookShipmentWithProvider,
   createPaymentLinkWithProvider,
+  ProviderGatewayError,
 } from "@/lib/provider-gateway";
-import {
-  assertOpsRequestAccess,
-  OpsAccessError,
-} from "@/lib/ops-access";
 import { syncAndDeliverNotificationsForOrders } from "@/lib/notification-dispatch";
+import { assertOpsRequestAccess, OpsAccessError } from "@/lib/ops-access";
 import {
-  createStoredOrder,
+  buildStoredOrderLineCatalogTruth,
+  createStoredOrderProviderBindings,
   type OrderProviderBindingAction,
   getNextOrderStatus,
   getPhoneLastFour,
   sanitizeStoredOrders,
   type StoredOrder,
 } from "@/lib/orders";
+import type { AuthorityCheckoutSubmissionInput } from "@/lib/order-request-validation";
+import { redactOrderForCustomerList } from "@/lib/customer-order-view";
 import {
   getExternalAuthProviderConfig,
 } from "@/lib/live-provider-config";
@@ -85,6 +83,8 @@ type CustomerAccountPayload = {
   scope: "customer_account";
   customerKey: string;
   providerLabel: string;
+  issuer?: string;
+  subject?: string;
   exp: number;
 };
 
@@ -95,25 +95,25 @@ type CustomerAccessHandoffPayload = {
   exp: number;
 };
 
-type CustomerProviderAuthHandoffPayload = {
-  scope: "customer_provider_auth_handoff";
-  customerKey: string;
-  orderNumber: string;
-  exp: number;
-};
-
 type CustomerProviderAuthStatePayload = {
-  scope: "customer_provider_auth_state";
   customerKey: string;
   orderNumber: string;
   returnTo: string;
-  exp: number;
+  nonce: string;
+  codeVerifier: string;
 };
 
-type CreateAuthorityOrderInput = {
-  items: StoredCartItem[];
-  checkout: CheckoutSubmissionInput;
+type CreateAuthorityOrderFromQuoteInput = {
+  quoteId: string;
+  checkoutSessionId: string;
+  idempotencyKey: string;
+  checkout: AuthorityCheckoutSubmissionInput;
 };
+
+export type AuthorityOrderAttemptRecovery =
+  | { state: "unknown" }
+  | { state: "in_progress" }
+  | { state: "completed"; order: StoredOrder; recentOrderToken: string };
 
 type OrderProviderBindingMetadata = {
   occurredAt?: string;
@@ -128,11 +128,13 @@ type OrderProviderBindingMetadata = {
 
 export class OrderAuthorityError extends Error {
   statusCode: number;
+  code: string;
 
-  constructor(message: string, statusCode = 400) {
+  constructor(message: string, statusCode = 400, code = "order_rejected") {
     super(message);
     this.name = "OrderAuthorityError";
     this.statusCode = statusCode;
+    this.code = code;
   }
 }
 
@@ -162,12 +164,45 @@ function buildProviderReference(prefix: string) {
   return `${prefix}-${randomUUID().split("-")[0].toUpperCase()}`;
 }
 
+function buildOrderNumber() {
+  return `CZM-${randomBytes(12).toString("hex").toUpperCase()}`;
+}
+
 function normalizeCustomerEmail(email: string) {
   return email.trim().toLowerCase();
 }
 
 function normalizeCustomerPhone(phone: string) {
   return phone.replace(/\D/g, "").trim();
+}
+
+function normalizeProviderIssuer(issuer: string) {
+  const normalized = issuer.trim().replace(/\/$/, "");
+  try {
+    const parsed = new URL(normalized);
+    const isLocalDevelopmentIssuer =
+      parsed.protocol === "http:" &&
+      ["localhost", "127.0.0.1", "::1"].includes(parsed.hostname);
+    if (parsed.protocol !== "https:" && !isLocalDevelopmentIssuer) return null;
+    return parsed.toString().replace(/\/$/, "");
+  } catch {
+    return null;
+  }
+}
+
+function normalizeProviderSubject(subject: string) {
+  const normalized = subject.trim();
+  return normalized && normalized.length <= 255 && !/[\u0000-\u001f\u007f]/.test(normalized)
+    ? normalized
+    : null;
+}
+
+function hashProviderAuthState(stateToken: string) {
+  return createHash("sha256").update(stateToken).digest("hex");
+}
+
+function createPkceCodeChallenge(codeVerifier: string) {
+  return createHash("sha256").update(codeVerifier).digest("base64url");
 }
 
 export function buildAuthorityCustomerAccessKeyFromIdentity(
@@ -199,7 +234,27 @@ function normalizeProviderReference(value: string | undefined) {
 
 function normalizeProviderUrl(value: string | undefined) {
   const normalizedValue = value?.trim();
-  return normalizedValue ? normalizedValue : null;
+  const configuredBaseUrl = process.env.PAYMENT_PROVIDER_BASE_URL?.trim();
+  if (!normalizedValue || !configuredBaseUrl) return null;
+
+  try {
+    const allowedBase = new URL(configuredBaseUrl);
+    const candidate = new URL(normalizedValue, allowedBase);
+    const isLocalDevelopmentUrl =
+      candidate.protocol === "http:" &&
+      ["localhost", "127.0.0.1", "::1"].includes(candidate.hostname);
+
+    if (
+      (candidate.protocol !== "https:" && !isLocalDevelopmentUrl) ||
+      candidate.host !== allowedBase.host
+    ) {
+      return null;
+    }
+
+    return candidate.toString();
+  } catch {
+    return null;
+  }
 }
 
 function resolveProviderOccurredAt(value: string | undefined, fallbackValue: string) {
@@ -261,6 +316,11 @@ function isCustomerAccountPayload(value: unknown): value is CustomerAccountPaylo
     value.scope === "customer_account" &&
     typeof value.customerKey === "string" &&
     typeof value.providerLabel === "string" &&
+    ((!("issuer" in value) && !("subject" in value)) ||
+      ("issuer" in value &&
+        "subject" in value &&
+        typeof value.issuer === "string" &&
+        typeof value.subject === "string")) &&
     typeof value.exp === "number"
   );
 }
@@ -278,42 +338,6 @@ function isCustomerAccessHandoffPayload(
     value.scope === "customer_access_handoff" &&
     typeof value.customerKey === "string" &&
     typeof value.orderNumber === "string" &&
-    typeof value.exp === "number"
-  );
-}
-
-function isCustomerProviderAuthHandoffPayload(
-  value: unknown,
-): value is CustomerProviderAuthHandoffPayload {
-  return (
-    value !== null &&
-    typeof value === "object" &&
-    "scope" in value &&
-    "customerKey" in value &&
-    "orderNumber" in value &&
-    "exp" in value &&
-    value.scope === "customer_provider_auth_handoff" &&
-    typeof value.customerKey === "string" &&
-    typeof value.orderNumber === "string" &&
-    typeof value.exp === "number"
-  );
-}
-
-function isCustomerProviderAuthStatePayload(
-  value: unknown,
-): value is CustomerProviderAuthStatePayload {
-  return (
-    value !== null &&
-    typeof value === "object" &&
-    "scope" in value &&
-    "customerKey" in value &&
-    "orderNumber" in value &&
-    "returnTo" in value &&
-    "exp" in value &&
-    value.scope === "customer_provider_auth_state" &&
-    typeof value.customerKey === "string" &&
-    typeof value.orderNumber === "string" &&
-    typeof value.returnTo === "string" &&
     typeof value.exp === "number"
   );
 }
@@ -351,6 +375,58 @@ function upsertAuthorityOrder(order: StoredOrder) {
       new Date().toISOString(),
       JSON.stringify(order),
     );
+}
+
+function insertAuthorityOrder(order: StoredOrder) {
+  getAuthorityDatabase()
+    .prepare(`
+      INSERT INTO authority_orders (
+        order_number,
+        phone_last_four,
+        status,
+        created_at,
+        updated_at,
+        payload_json
+      )
+      VALUES (?, ?, ?, ?, ?, ?)
+    `)
+    .run(
+      order.orderNumber,
+      getPhoneLastFour(order.customer.phone),
+      order.status,
+      order.createdAt,
+      new Date().toISOString(),
+      JSON.stringify(order),
+    );
+}
+
+function updateAuthorityOrderIfStatusMatches(
+  order: StoredOrder,
+  expectedStatus: StoredOrder["status"],
+) {
+  const result = getAuthorityDatabase()
+    .prepare(`
+      UPDATE authority_orders
+      SET
+        phone_last_four = ?,
+        status = ?,
+        created_at = ?,
+        updated_at = ?,
+        payload_json = ?
+      WHERE order_number = ?
+        AND status = ?
+    `)
+    .run(
+      getPhoneLastFour(order.customer.phone),
+      order.status,
+      order.createdAt,
+      new Date().toISOString(),
+      JSON.stringify(order),
+      order.orderNumber,
+      expectedStatus,
+    ) as { changes: number | bigint };
+
+  return Number(result.changes) === 1;
 }
 
 function readPersistedOrder(orderNumber: string, phoneLastFour?: string) {
@@ -472,91 +548,437 @@ export async function readAuthorityOrders() {
   return readPersistedOrders();
 }
 
-export async function createAuthorityOrder({
-  items,
-  checkout,
-}: CreateAuthorityOrderInput) {
-  await ensureAuthorityOrdersReady();
-  const sanitizedItems = sanitizeCartItems(items);
-  const lines = resolveCartLines(sanitizedItems);
-
-  if (lines.length === 0) {
+function normalizeIdempotencyKey(value: string) {
+  const normalized = value.trim();
+  if (!/^[A-Za-z0-9][A-Za-z0-9._:-]{15,159}$/.test(normalized)) {
     throw new OrderAuthorityError(
-      "لا يمكن إنشاء طلب جديد من سلة فارغة أو عناصر غير صالحة.",
+      "Idempotency-Key must be a stable 16-160 character token.",
       400,
+      "idempotency_key_invalid",
     );
   }
+  return normalized;
+}
 
-  const subtotal = lines.reduce((sum, line) => sum + line.lineTotal, 0);
-  const checkoutRules = getCheckoutRules(lines, checkout.city, subtotal);
-  const validationError = validateCheckoutSubmission(checkout, checkoutRules);
-
-  if (validationError) {
-    throw new OrderAuthorityError(validationError, 400);
+function normalizeCheckoutSessionId(value: string) {
+  const normalized = value.trim();
+  if (!/^[A-Za-z0-9_-]{16,160}$/.test(normalized)) {
+    throw new OrderAuthorityError(
+      "A valid checkout session cookie is required.",
+      400,
+      "checkout_session_invalid",
+    );
   }
+  return normalized;
+}
 
-  let order = createStoredOrder({
-    lines,
-    customer: {
-      fullName: checkout.fullName,
-      phone: checkout.phone,
-      email: checkout.email,
-      city: checkout.city,
-      district: checkout.district,
-      addressLine: checkout.addressLine,
-      notes: checkout.notes,
-    },
-    shippingMethodId: checkout.shippingMethodId,
-    paymentMethodId: checkout.paymentMethodId,
-    allowOperationalUpdates: checkout.acceptUpdates,
-    providerLabels: {
-      paymentProviderLabel: getPaymentProviderRuntimeConfig().label,
-      shippingProviderLabel: getShippingProviderRuntimeConfig().label,
-    },
-  });
-
-  if (order.paymentMethodId === "payment_link") {
-    const paymentProvider = assertPaymentProviderBindingReady();
-    const paymentHandoff = await createPaymentLinkWithProvider(order);
-    const paymentOccurredAt = new Date().toISOString();
-
-    order = {
-      ...order,
-      providerBindings: {
-        ...order.providerBindings,
-        payment: {
-          ...order.providerBindings.payment,
-          state: "link_sent",
-          providerLabel: paymentProvider.label,
-          referenceId: paymentHandoff.paymentReferenceId,
-          paymentUrl: paymentHandoff.paymentUrl ?? null,
-          settlementReference: paymentHandoff.settlementReference ?? null,
-          settlementEventId: paymentHandoff.providerEventId ?? null,
-          updatedAt: paymentOccurredAt,
-          linkSentAt: paymentOccurredAt,
-        },
-      },
-    };
-  }
-
-  runAuthorityTransaction(() => {
-    upsertAuthorityOrder(order);
-  });
-
-  await syncAndDeliverNotificationsForOrders([order]);
-
-  const recentOrderToken = await createSignedToken(
+async function createRecentOrderToken(orderNumber: string) {
+  return createSignedToken(
     {
       scope: "recent_order",
-      orderNumber: order.orderNumber,
+      orderNumber,
       exp: Date.now() + RECENT_ORDER_MAX_AGE_SECONDS * 1000,
     } satisfies RecentOrderPayload,
     getOrderAuthoritySecret(),
   );
+}
+
+function buildQuotedStoredOrder(
+  quote: CheckoutQuote,
+  checkout: AuthorityCheckoutSubmissionInput,
+) {
+  if (checkout.shippingMethodId !== quote.shipping.methodId) {
+    throw new OrderAuthorityError(
+      "The selected shipping method does not match the persisted quote.",
+      409,
+      "quote_stale",
+    );
+  }
+  if (!checkout.acceptPolicies) {
+    throw new OrderAuthorityError(
+      "Terms, privacy, shipping, and return policies must be accepted before order creation.",
+      400,
+      "policies_not_accepted",
+    );
+  }
+  const paymentOption = quote.paymentOptions.find(
+    (option) => option.id === checkout.paymentMethodId,
+  );
+  if (!paymentOption?.enabled) {
+    throw new OrderAuthorityError(
+      "The selected payment method is not available for this quote.",
+      409,
+      "payment_method_unavailable",
+    );
+  }
+  if (
+    checkout.termsVersion !== quote.policySet.termsVersion ||
+    checkout.privacyNoticeVersion !== quote.policySet.privacyNoticeVersion
+  ) {
+    throw new OrderAuthorityError(
+      "The accepted policy versions do not match the persisted quote.",
+      409,
+      "policy_version_mismatch",
+    );
+  }
+
+  const catalog = getActiveCatalogAuthority();
+  if (!catalog || catalog.importId !== quote.catalogVersion || catalog.sourceHash !== quote.catalogHash) {
+    throw new OrderAuthorityError(
+      "The approved catalog changed after this quote was created.",
+      409,
+      "quote_stale",
+    );
+  }
+  if (checkout.paymentMethodId === "payment_link") {
+    assertPaymentProviderBindingReady();
+  } else {
+    const codUnavailable = quote.lines.some((line) => {
+      const product = catalog.payload.products.find(
+        (candidate) => candidate.slug === line.productSlug,
+      );
+      const variant = product?.variants.find(
+        (candidate) => candidate.sku === line.sku,
+      );
+      return !variant?.codEligible;
+    });
+    if (codUnavailable) {
+      throw new OrderAuthorityError(
+        "Cash on delivery is not approved for every quoted SKU.",
+        409,
+        "payment_method_unavailable",
+      );
+    }
+  }
+
+  const createdAt = new Date().toISOString();
+  const providerBindings = createStoredOrderProviderBindings(
+    checkout.paymentMethodId,
+    createdAt,
+    {
+      paymentProviderLabel: getPaymentProviderRuntimeConfig().label,
+      shippingProviderLabel: getShippingProviderRuntimeConfig().label,
+    },
+  );
+  const order: StoredOrder = {
+    orderNumber: buildOrderNumber(),
+    createdAt,
+    status: checkout.paymentMethodId === "payment_link" ? "payment_pending" : "received",
+    subtotal: quote.subtotalGrossHalalas / 100,
+    shippingFeeEstimate: quote.shipping.grossHalalas / 100,
+    totalEstimate: quote.totalGrossHalalas / 100,
+    shippingMethodId: checkout.shippingMethodId,
+    paymentMethodId: checkout.paymentMethodId,
+    allowOperationalUpdates: checkout.acceptUpdates,
+    customer: {
+      fullName: checkout.fullName.trim(),
+      phone: checkout.phone.replace(/\D/g, ""),
+      email: checkout.email.trim().toLowerCase(),
+      city: checkout.city.trim(),
+      district: checkout.district.trim(),
+      addressLine: checkout.addressLine.trim(),
+      notes: checkout.notes.trim(),
+    },
+    lines: quote.lines.map((line) => ({
+      key: `${line.productSlug}:${line.sku}`,
+      productSlug: line.productSlug,
+      productName: line.nameAr,
+      productSubtitle: line.nameEn,
+      sku: line.sku,
+      variantLabel: line.labelAr,
+      size: line.size,
+      quantity: line.quantity,
+      unitPrice: line.unitGrossHalalas / 100,
+      lineTotal: line.lineGrossHalalas / 100,
+      shippingNote: quote.shipping.estimatedDeliveryAr,
+      catalogTruth: buildStoredOrderLineCatalogTruth({
+        productSlug: line.productSlug,
+        sku: line.sku,
+        availability: "InStock",
+      }),
+    })),
+    providerBindings,
+    pricingSnapshot: {
+      quoteId: quote.quoteId,
+      locale: quote.locale,
+      catalogVersion: quote.catalogVersion,
+      catalogHash: quote.catalogHash,
+      currency: "SAR",
+      taxInclusive: true,
+      vatRateBps: quote.vatRateBps,
+      roundingPolicy: quote.roundingPolicy,
+      subtotalGrossHalalas: quote.subtotalGrossHalalas,
+      subtotalVatHalalas: quote.subtotalVatHalalas,
+      shippingGrossHalalas: quote.shipping.grossHalalas,
+      shippingVatHalalas: quote.shipping.vatHalalas,
+      totalGrossHalalas: quote.totalGrossHalalas,
+      totalVatHalalas: quote.totalVatHalalas,
+      termsVersion: checkout.termsVersion,
+      privacyNoticeVersion: checkout.privacyNoticeVersion,
+      lines: quote.lines.map((line) => ({
+        sku: line.sku,
+        quantity: line.quantity,
+        unitGrossHalalas: line.unitGrossHalalas,
+        unitVatHalalas: line.unitVatHalalas,
+        lineGrossHalalas: line.lineGrossHalalas,
+        lineVatHalalas: line.lineVatHalalas,
+      })),
+    },
+  };
+  return order;
+}
+
+export async function createAuthorityOrderFromQuote({
+  quoteId,
+  checkoutSessionId,
+  idempotencyKey: rawIdempotencyKey,
+  checkout,
+}: CreateAuthorityOrderFromQuoteInput) {
+  await ensureAuthorityOrdersReady();
+  const idempotencyKey = normalizeIdempotencyKey(rawIdempotencyKey);
+  const normalizedSessionId = normalizeCheckoutSessionId(checkoutSessionId);
+  const requestHash = createHash("sha256")
+    .update(JSON.stringify({ quoteId, checkout }))
+    .digest("hex");
+
+  const result = runAuthorityTransaction((database) => {
+    const existing = database.prepare(`
+      SELECT request_hash, state, order_number
+      FROM authority_order_idempotency
+      WHERE checkout_session_id = ? AND idempotency_key = ?
+    `).get(normalizedSessionId, idempotencyKey) as
+      | { request_hash: string; state: "in_progress" | "completed"; order_number: string | null }
+      | undefined;
+
+    if (existing) {
+      if (existing.request_hash !== requestHash) {
+        throw new OrderAuthorityError(
+          "This Idempotency-Key was already used with a different order payload.",
+          409,
+          "idempotency_conflict",
+        );
+      }
+      if (existing.state !== "completed" || !existing.order_number) {
+        throw new OrderAuthorityError(
+          "The original order request is still being processed.",
+          409,
+          "idempotency_in_progress",
+        );
+      }
+      const replayedOrder = readPersistedOrder(existing.order_number);
+      if (!replayedOrder) {
+        throw new OrderAuthorityError(
+          "The idempotency record points to an unavailable order.",
+          500,
+          "idempotency_storage_invalid",
+        );
+      }
+      return { order: replayedOrder, replayed: true };
+    }
+
+    const now = new Date().toISOString();
+    database.prepare(`
+      INSERT INTO authority_order_idempotency (
+        checkout_session_id, idempotency_key, request_hash, state,
+        order_number, created_at, updated_at
+      ) VALUES (?, ?, ?, 'in_progress', NULL, ?, ?)
+    `).run(normalizedSessionId, idempotencyKey, requestHash, now, now);
+
+    let quoteRecord;
+    try {
+      quoteRecord = getCheckoutQuoteForSession(quoteId, normalizedSessionId);
+    } catch (error) {
+      if (error instanceof CatalogQuoteError) {
+        throw new OrderAuthorityError(error.message, error.statusCode, error.code);
+      }
+      throw error;
+    }
+    if (!quoteRecord) {
+      throw new OrderAuthorityError(
+        "Quote was not found for this checkout session.",
+        404,
+        "quote_not_found",
+      );
+    }
+    if (quoteRecord.status !== "active") {
+      throw new OrderAuthorityError(
+        "Quote has already been consumed or expired.",
+        409,
+        "quote_unavailable",
+      );
+    }
+    if (Date.parse(quoteRecord.expiresAt) <= Date.now()) {
+      database.prepare(`
+        UPDATE authority_checkout_quotes SET status = 'expired'
+        WHERE id = ? AND status = 'active'
+      `).run(quoteId);
+      throw new OrderAuthorityError(
+        "Quote has expired. Request a new quote before ordering.",
+        409,
+        "quote_expired",
+      );
+    }
+
+    const order = buildQuotedStoredOrder(quoteRecord.quote, checkout);
+    const reservationExpiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+    const reservationTargets: Array<{
+      sku: string;
+      quantity: number;
+      locationId: string;
+    }> = [];
+
+    for (const line of quoteRecord.quote.lines) {
+      const balance = database.prepare(`
+        SELECT location_id
+        FROM authority_inventory_balances
+        WHERE import_id = ? AND sku = ?
+          AND on_hand - reserved - safety_stock >= ?
+        ORDER BY (on_hand - reserved - safety_stock) DESC
+        LIMIT 1
+      `).get(
+        quoteRecord.quote.catalogVersion,
+        line.sku,
+        line.quantity,
+      ) as { location_id: string } | undefined;
+      if (!balance) {
+        throw new OrderAuthorityError(
+          `Inventory is no longer available for ${line.sku}.`,
+          409,
+          "insufficient_stock",
+        );
+      }
+      const updated = database.prepare(`
+        UPDATE authority_inventory_balances
+        SET reserved = reserved + ?, version = version + 1, updated_at = ?
+        WHERE import_id = ? AND sku = ? AND location_id = ?
+          AND on_hand - reserved - safety_stock >= ?
+      `).run(
+        line.quantity,
+        now,
+        quoteRecord.quote.catalogVersion,
+        line.sku,
+        balance.location_id,
+        line.quantity,
+      ) as { changes: number | bigint };
+      if (Number(updated.changes) !== 1) {
+        throw new OrderAuthorityError(
+          `Inventory changed while reserving ${line.sku}.`,
+          409,
+          "insufficient_stock",
+        );
+      }
+      reservationTargets.push({
+        sku: line.sku,
+        quantity: line.quantity,
+        locationId: balance.location_id,
+      });
+    }
+
+    insertAuthorityOrder(order);
+    const insertReservation = database.prepare(`
+      INSERT INTO authority_inventory_reservations (
+        id, reservation_key, quote_id, order_number, catalog_import_id,
+        sku, location_id, quantity, state, expires_at, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?)
+    `);
+    for (const target of reservationTargets) {
+      insertReservation.run(
+        `reservation_${randomUUID()}`,
+        `${order.orderNumber}:${target.sku}`,
+        quoteId,
+        order.orderNumber,
+        quoteRecord.quote.catalogVersion,
+        target.sku,
+        target.locationId,
+        target.quantity,
+        reservationExpiresAt,
+        now,
+        now,
+      );
+    }
+
+    database.prepare(`
+      UPDATE authority_checkout_quotes SET status = 'consumed'
+      WHERE id = ? AND status = 'active'
+    `).run(quoteId);
+
+    const insertOutbox = database.prepare(`
+      INSERT INTO authority_outbox (
+        id, aggregate_type, aggregate_id, event_type, dedupe_key, status,
+        attempts, next_attempt_at, last_error, payload_json, created_at, updated_at
+      ) VALUES (?, 'order', ?, ?, ?, 'pending', 0, ?, NULL, ?, ?, ?)
+    `);
+    const eventTypes = [
+      "order.created",
+      ...(order.paymentMethodId === "payment_link" ? ["payment.link.requested"] : []),
+      "notification.order.received",
+    ];
+    for (const eventType of eventTypes) {
+      insertOutbox.run(
+        `outbox_${randomUUID()}`,
+        order.orderNumber,
+        eventType,
+        `${order.orderNumber}:${eventType}`,
+        now,
+        JSON.stringify({ orderNumber: order.orderNumber }),
+        now,
+        now,
+      );
+    }
+
+    database.prepare(`
+      UPDATE authority_order_idempotency
+      SET state = 'completed', order_number = ?, updated_at = ?
+      WHERE checkout_session_id = ? AND idempotency_key = ?
+    `).run(order.orderNumber, now, normalizedSessionId, idempotencyKey);
+
+    return { order, replayed: false };
+  });
+
+  const recentOrderToken = await createRecentOrderToken(result.order.orderNumber);
+
+  return { ...result, recentOrderToken };
+}
+
+export async function recoverAuthorityOrderAttempt(
+  checkoutSessionId: string,
+  rawIdempotencyKey: string,
+): Promise<AuthorityOrderAttemptRecovery> {
+  await ensureAuthorityOrdersReady();
+  const normalizedSessionId = normalizeCheckoutSessionId(checkoutSessionId);
+  const idempotencyKey = normalizeIdempotencyKey(rawIdempotencyKey);
+  const record = getAuthorityDatabase().prepare(`
+    SELECT state, order_number
+    FROM authority_order_idempotency
+    WHERE checkout_session_id = ? AND idempotency_key = ?
+    LIMIT 1
+  `).get(normalizedSessionId, idempotencyKey) as
+    | { state: "in_progress" | "completed"; order_number: string | null }
+    | undefined;
+
+  if (!record) return { state: "unknown" };
+  if (record.state === "in_progress") return { state: "in_progress" };
+  if (!record.order_number) {
+    throw new OrderAuthorityError(
+      "The completed idempotency record does not reference an order.",
+      500,
+      "idempotency_storage_invalid",
+    );
+  }
+
+  const order = readPersistedOrder(record.order_number);
+  if (!order) {
+    throw new OrderAuthorityError(
+      "The idempotency record points to an unavailable order.",
+      500,
+      "idempotency_storage_invalid",
+    );
+  }
 
   return {
+    state: "completed",
     order,
-    recentOrderToken,
+    recentOrderToken: await createRecentOrderToken(order.orderNumber),
   };
 }
 
@@ -641,6 +1063,102 @@ export async function doesAuthorityCustomerIdentityMatch(
   });
 }
 
+function doesProviderIdentityBindingMatch(
+  customerKey: string,
+  issuer: string,
+  subject: string,
+) {
+  const row = getAuthorityDatabase()
+    .prepare(`
+      SELECT customer_key
+      FROM authority_customer_identities
+      WHERE issuer = ? AND subject = ?
+      LIMIT 1
+    `)
+    .get(issuer, subject) as { customer_key: string } | undefined;
+
+  return row?.customer_key === customerKey;
+}
+
+export async function bindAuthorityCustomerProviderIdentity(
+  customerKey: string,
+  identity: {
+    issuer: string;
+    subject: string;
+    email?: string | null;
+    phone?: string | null;
+  },
+) {
+  const issuer = normalizeProviderIssuer(identity.issuer);
+  const subject = normalizeProviderSubject(identity.subject);
+  if (!issuer || !subject) return false;
+
+  const existingIdentity = getAuthorityDatabase()
+    .prepare(`
+      SELECT customer_key
+      FROM authority_customer_identities
+      WHERE issuer = ? AND subject = ?
+      LIMIT 1
+    `)
+    .get(issuer, subject) as { customer_key: string } | undefined;
+
+  if (existingIdentity) {
+    return existingIdentity.customer_key === customerKey;
+  }
+
+  const customerIssuerBinding = getAuthorityDatabase()
+    .prepare(`
+      SELECT subject
+      FROM authority_customer_identities
+      WHERE customer_key = ? AND issuer = ?
+      LIMIT 1
+    `)
+    .get(customerKey, issuer) as { subject: string } | undefined;
+
+  if (customerIssuerBinding) return customerIssuerBinding.subject === subject;
+
+  if (!(await doesAuthorityCustomerIdentityMatch(customerKey, identity))) {
+    return false;
+  }
+
+  return runAuthorityTransaction((database) => {
+    const identityOwner = database
+      .prepare(`
+        SELECT customer_key
+        FROM authority_customer_identities
+        WHERE issuer = ? AND subject = ?
+        LIMIT 1
+      `)
+      .get(issuer, subject) as { customer_key: string } | undefined;
+    if (identityOwner) return identityOwner.customer_key === customerKey;
+
+    const existingCustomerIssuer = database
+      .prepare(`
+        SELECT subject
+        FROM authority_customer_identities
+        WHERE customer_key = ? AND issuer = ?
+        LIMIT 1
+      `)
+      .get(customerKey, issuer) as { subject: string } | undefined;
+    if (existingCustomerIssuer) return existingCustomerIssuer.subject === subject;
+
+    const now = new Date().toISOString();
+    database.prepare(`
+      INSERT INTO authority_customer_identities (
+        issuer, subject, customer_key, provider_label, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?)
+    `).run(
+      issuer,
+      subject,
+      customerKey,
+      getAuthProviderRuntimeConfig().label,
+      now,
+      now,
+    );
+    return true;
+  });
+}
+
 async function createAuthorityCustomerAccessTokenForCustomerKey(
   customerKey: string,
 ) {
@@ -662,6 +1180,7 @@ export async function createAuthorityCustomerAccessToken(order: StoredOrder) {
 
 async function createAuthorityCustomerAccountTokenForCustomerKey(
   customerKey: string,
+  identity: { issuer: string; subject: string },
 ) {
   const authProvider = getAuthProviderRuntimeConfig();
 
@@ -670,6 +1189,8 @@ async function createAuthorityCustomerAccountTokenForCustomerKey(
       scope: "customer_account",
       customerKey,
       providerLabel: authProvider.label,
+      issuer: identity.issuer,
+      subject: identity.subject,
       exp: Date.now() + CUSTOMER_ACCOUNT_MAX_AGE_SECONDS * 1000,
     } satisfies CustomerAccountPayload,
     getCustomerAuthProviderSecret(),
@@ -679,17 +1200,26 @@ async function createAuthorityCustomerAccountTokenForCustomerKey(
 export async function createAuthorityCustomerProviderSession(
   customerKey: string,
   orderNumber: string,
+  identity: { issuer: string; subject: string },
 ) {
   const normalizedOrderNumber = orderNumber.trim().toUpperCase();
   const orders = await getAuthorityOrdersForCustomerKey(customerKey);
 
-  if (!orders.some((order) => order.orderNumber === normalizedOrderNumber)) {
+  const issuer = normalizeProviderIssuer(identity.issuer);
+  const subject = normalizeProviderSubject(identity.subject);
+  if (
+    !issuer ||
+    !subject ||
+    !doesProviderIdentityBindingMatch(customerKey, issuer, subject) ||
+    !orders.some((order) => order.orderNumber === normalizedOrderNumber)
+  ) {
     return null;
   }
 
   return {
     customerAccountToken: await createAuthorityCustomerAccountTokenForCustomerKey(
       customerKey,
+      { issuer, subject },
     ),
     customerAccessToken: await createAuthorityCustomerAccessTokenForCustomerKey(
       customerKey,
@@ -726,41 +1256,58 @@ export async function createAuthorityCustomerAccessHandoffPath(
 export async function createAuthorityCustomerProviderAuthHandoffPath(
   customerKey: string,
   orderNumber: string,
+  returnTo = "/ar/account/orders",
 ) {
   const normalizedOrderNumber = orderNumber.trim().toUpperCase();
   const externalAuthProvider = getExternalAuthProviderConfig();
+  const safeReturnTo =
+    returnTo === "/en/account/orders"
+      ? "/en/account/orders"
+      : "/ar/account/orders";
 
   if (externalAuthProvider.externalAuthConfigured) {
-    const stateToken = await createSignedToken(
-      {
-        scope: "customer_provider_auth_state",
-        customerKey,
-        orderNumber: normalizedOrderNumber,
-        returnTo: "/account/orders",
-        exp: Date.now() + CUSTOMER_PROVIDER_AUTH_HANDOFF_MAX_AGE_SECONDS * 1000,
-      } satisfies CustomerProviderAuthStatePayload,
-      getCustomerAuthProviderSecret(),
-    );
+    const orders = await getAuthorityOrdersForCustomerKey(customerKey);
+    if (!orders.some((order) => order.orderNumber === normalizedOrderNumber)) {
+      return null;
+    }
 
-    return buildExternalAuthProviderAuthorizeUrl(stateToken);
+    const stateToken = randomBytes(32).toString("base64url");
+    const nonce = randomBytes(32).toString("base64url");
+    const codeVerifier = randomBytes(48).toString("base64url");
+    const now = new Date();
+    const expiresAt = new Date(
+      now.getTime() + CUSTOMER_PROVIDER_AUTH_HANDOFF_MAX_AGE_SECONDS * 1000,
+    ).toISOString();
+
+    runAuthorityTransaction((database) => {
+      database.prepare(`
+        DELETE FROM authority_customer_auth_states
+        WHERE expires_at <= ? OR consumed_at IS NOT NULL
+      `).run(now.toISOString());
+      database.prepare(`
+        INSERT INTO authority_customer_auth_states (
+          state_hash, customer_key, order_number, return_to,
+          nonce, code_verifier, expires_at, consumed_at, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, NULL, ?)
+      `).run(
+        hashProviderAuthState(stateToken),
+        customerKey,
+        normalizedOrderNumber,
+        safeReturnTo,
+        nonce,
+        codeVerifier,
+        expiresAt,
+        now.toISOString(),
+      );
+    });
+
+    return buildExternalAuthProviderAuthorizeUrl(stateToken, {
+      nonce,
+      codeChallenge: createPkceCodeChallenge(codeVerifier),
+    });
   }
 
-  const authProvider = getAuthProviderRuntimeConfig();
-  const handoffToken = await createSignedToken(
-    {
-      scope: "customer_provider_auth_handoff",
-      customerKey,
-      orderNumber: normalizedOrderNumber,
-      exp: Date.now() + CUSTOMER_PROVIDER_AUTH_HANDOFF_MAX_AGE_SECONDS * 1000,
-    } satisfies CustomerProviderAuthHandoffPayload,
-    getCustomerAuthProviderSecret(),
-  );
-  const params = new URLSearchParams({
-    token: handoffToken,
-    returnTo: "/account/orders",
-  });
-
-  return `${authProvider.callbackPath}?${params.toString()}`;
+  return null;
 }
 
 export async function getAuthorityOrderForAccessCookie(
@@ -802,7 +1349,10 @@ export async function getAuthorityOrdersForCustomerAccessCookie(
     return [] as StoredOrder[];
   }
 
-  return getAuthorityOrdersForCustomerKey(payload.customerKey);
+  const orders = await getAuthorityOrdersForCustomerKey(payload.customerKey);
+  return orders.map((order) =>
+    redactOrderForCustomerList(order, { allowPaymentUrl: false }),
+  );
 }
 
 export async function getAuthorityOrdersForCustomerAccountCookie(
@@ -822,7 +1372,22 @@ export async function getAuthorityOrdersForCustomerAccountCookie(
     return [] as StoredOrder[];
   }
 
-  return getAuthorityOrdersForCustomerKey(payload.customerKey);
+  if (
+    payload.issuer &&
+    payload.subject &&
+    !doesProviderIdentityBindingMatch(
+      payload.customerKey,
+      payload.issuer,
+      payload.subject,
+    )
+  ) {
+    return [] as StoredOrder[];
+  }
+
+  const orders = await getAuthorityOrdersForCustomerKey(payload.customerKey);
+  return orders.map((order) =>
+    redactOrderForCustomerList(order, { allowPaymentUrl: true }),
+  );
 }
 
 export async function getAuthorityOrderForCustomerAccessCookie(
@@ -868,35 +1433,6 @@ export async function exchangeAuthorityCustomerAccessHandoffToken(
   };
 }
 
-export async function exchangeAuthorityCustomerProviderAuthHandoffToken(
-  handoffToken: string | undefined,
-) {
-  if (!handoffToken) {
-    return null;
-  }
-
-  const payload = await verifySignedToken(
-    handoffToken,
-    getCustomerAuthProviderSecret(),
-    isCustomerProviderAuthHandoffPayload,
-  );
-
-  if (!payload) {
-    return null;
-  }
-
-  const orders = await getAuthorityOrdersForCustomerKey(payload.customerKey);
-
-  if (!orders.some((order) => order.orderNumber === payload.orderNumber)) {
-    return null;
-  }
-
-  return createAuthorityCustomerProviderSession(
-    payload.customerKey,
-    payload.orderNumber,
-  );
-}
-
 export async function exchangeAuthorityCustomerProviderAuthStateToken(
   stateToken: string | undefined,
 ) {
@@ -904,18 +1440,55 @@ export async function exchangeAuthorityCustomerProviderAuthStateToken(
     return null;
   }
 
-  return verifySignedToken(
-    stateToken,
-    getCustomerAuthProviderSecret(),
-    isCustomerProviderAuthStatePayload,
-  );
+  const normalizedStateToken = stateToken.trim();
+  if (!/^[A-Za-z0-9_-]{43,128}$/.test(normalizedStateToken)) return null;
+  const stateHash = hashProviderAuthState(normalizedStateToken);
+  const now = new Date().toISOString();
+
+  return runAuthorityTransaction((database) => {
+    const state = database.prepare(`
+      SELECT customer_key, order_number, return_to, nonce, code_verifier
+      FROM authority_customer_auth_states
+      WHERE state_hash = ?
+        AND consumed_at IS NULL
+        AND expires_at > ?
+      LIMIT 1
+    `).get(stateHash, now) as
+      | {
+          customer_key: string;
+          order_number: string;
+          return_to: string;
+          nonce: string;
+          code_verifier: string;
+        }
+      | undefined;
+    if (!state) return null;
+
+    const update = database.prepare(`
+      UPDATE authority_customer_auth_states
+      SET consumed_at = ?
+      WHERE state_hash = ? AND consumed_at IS NULL
+    `).run(now, stateHash) as { changes: number | bigint };
+    if (Number(update.changes) !== 1) return null;
+
+    return {
+      customerKey: state.customer_key,
+      orderNumber: state.order_number,
+      returnTo: state.return_to,
+      nonce: state.nonce,
+      codeVerifier: state.code_verifier,
+    } satisfies CustomerProviderAuthStatePayload;
+  });
 }
 
 export async function listAuthorityOrders() {
   return readAuthorityOrders();
 }
 
-export async function advanceAuthorityOrderStatus(orderNumber: string) {
+export async function advanceAuthorityOrderStatus(
+  orderNumber: string,
+  expectedStatus?: StoredOrder["status"],
+) {
   await ensureAuthorityOrdersReady();
   const order = readPersistedOrder(orderNumber);
 
@@ -923,6 +1496,13 @@ export async function advanceAuthorityOrderStatus(orderNumber: string) {
     throw new OrderAuthorityError(
       "الطلب المطلوب غير موجود داخل authority الحالية.",
       404,
+    );
+  }
+
+  if (expectedStatus && order.status !== expectedStatus) {
+    throw new OrderAuthorityError(
+      "حالة الطلب تغيّرت منذ آخر تحميل. حدّث القائمة وراجع الحالة الحالية قبل تنفيذ الإجراء مرة أخرى.",
+      409,
     );
   }
 
@@ -961,9 +1541,24 @@ export async function advanceAuthorityOrderStatus(orderNumber: string) {
     status: nextStatus,
   };
 
-  runAuthorityTransaction(() => {
-    upsertAuthorityOrder(updatedOrder);
-  });
+  if (!runAuthorityTransaction((database) => {
+    const updated = updateAuthorityOrderIfStatusMatches(updatedOrder, order.status);
+    if (updated && nextStatus === "confirmed") {
+      commitAuthorityInventoryReservations(
+        database,
+        order.orderNumber,
+        order.paymentMethodId === "cash_on_delivery"
+          ? "cod_order_confirmed"
+          : "payment_confirmed",
+      );
+    }
+    return updated;
+  })) {
+    throw new OrderAuthorityError(
+      "حالة الطلب تغيّرت أثناء تنفيذ الإجراء. حدّث القائمة وراجع الحالة الحالية قبل المحاولة مرة أخرى.",
+      409,
+    );
+  }
 
   await syncAndDeliverNotificationsForOrders([updatedOrder]);
 
@@ -976,7 +1571,6 @@ export async function advanceAuthorityOrderStatus(orderNumber: string) {
 
 export async function initiateAuthorityPaymentLink(orderNumber: string) {
   await ensureAuthorityOrdersReady();
-  assertPaymentProviderBindingReady();
   const order = readPersistedOrder(orderNumber);
 
   if (!order) {
@@ -993,6 +1587,17 @@ export async function initiateAuthorityPaymentLink(orderNumber: string) {
     );
   }
 
+  if (
+    order.providerBindings.payment.state !== "pending" &&
+    order.providerBindings.payment.referenceId
+  ) {
+    return {
+      order,
+      action: "payment_link_sent" as const,
+    };
+  }
+
+  assertPaymentProviderBindingReady();
   const paymentHandoff = await createPaymentLinkWithProvider(order);
 
   return updateAuthorityOrderProviderBinding(order.orderNumber, "payment_link_sent", {
@@ -1005,7 +1610,6 @@ export async function initiateAuthorityPaymentLink(orderNumber: string) {
 
 export async function initiateAuthorityShipmentBooking(orderNumber: string) {
   await ensureAuthorityOrdersReady();
-  assertShippingProviderBindingReady();
   const order = readPersistedOrder(orderNumber);
 
   if (!order) {
@@ -1015,6 +1619,17 @@ export async function initiateAuthorityShipmentBooking(orderNumber: string) {
     );
   }
 
+  if (
+    order.providerBindings.shipping.state !== "pending" &&
+    order.providerBindings.shipping.bookingReference
+  ) {
+    return {
+      order,
+      action: "shipping_booked" as const,
+    };
+  }
+
+  assertShippingProviderBindingReady();
   const shipmentBooking = await bookShipmentWithProvider(order);
 
   return updateAuthorityOrderProviderBinding(order.orderNumber, "shipping_booked", {
@@ -1095,6 +1710,13 @@ export async function updateAuthorityOrderProviderBinding(
         throw new OrderAuthorityError(
           "تم تأكيد الدفع بالفعل لهذا الطلب.",
           409,
+        );
+      }
+
+      if (!order.providerBindings.payment.paymentUrl && !paymentUrl) {
+        throw new ProviderGatewayError(
+          paymentProvider.label,
+          "Payment provider returned a checkout URL outside the configured provider origin.",
         );
       }
 
@@ -1297,8 +1919,15 @@ export async function updateAuthorityOrderProviderBinding(
     }
   }
 
-  runAuthorityTransaction(() => {
+  runAuthorityTransaction((database) => {
     upsertAuthorityOrder(updatedOrder);
+    if (action === "payment_confirmed") {
+      commitAuthorityInventoryReservations(
+        database,
+        updatedOrder.orderNumber,
+        "payment_provider_confirmed",
+      );
+    }
   });
 
   await syncAndDeliverNotificationsForOrders([updatedOrder]);

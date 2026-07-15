@@ -15,7 +15,14 @@ type Props = {
 };
 
 const clamp = (value: number) => Math.min(Math.max(value, 0), 1);
-const assets = ["/brand-assets/product-01.jpg", "/brand-assets/product-02.jpg", "/brand-assets/product-03.jpg", "/brand-assets/product-04.jpg", "/brand-assets/product-05.jpg", "/brand-assets/product-06.jpg"];
+const assets = [
+  "/elore-assets/texture-skincare-serum-concept-1536w.avif",
+  "/elore-assets/editorial-skin-light-concept-1122w.avif",
+  "/elore-assets/hero-silk-champagne-concept-1672w.avif",
+  "/elore-assets/transition-burgundy-satin-concept-1672w.avif",
+  "/elore-assets/texture-makeup-pigment-concept-1536w.avif",
+  "/elore-assets/gifting-ribbon-ritual-concept-1536w.avif",
+];
 
 export function CinematicCategoryExperience({ variant, title, subtitle, description, filterState }: Props) {
   const rootRef = useRef<HTMLDivElement>(null);

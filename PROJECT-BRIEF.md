@@ -1,5 +1,36 @@
 # Project Brief
 
+## Authoritative Brand Handoff Update - 2026-07-15
+
+The shared Google Drive folder `Elore Paris - Motion Website` (handoff snapshot
+dated 2026-07-14) now supersedes the provisional brand assumptions below.
+
+- Display name: `ÉLORÉ PARIS`; Arabic name: `إيلوري باريس`.
+- Primary market: Saudi Arabia; Arabic is an original RTL experience and English
+  is a separately authored LTR experience.
+- Positioning: premium beauty discovery and commerce with Parisian restraint and
+  Saudi relevance.
+- Recommended tagline: `Beauty, considered.` / `جمال باختيار مدروس.`
+- Visual tokens: porcelain `#F3F0EA`, warm white `#FFFDFC`, burgundy `#491723`,
+  rosewood `#85484F`, champagne `#C9A67F`, blush `#DCC4B9`, ink `#21151A`.
+- Motion direction: Block Motion / `The Unfolding Ritual`; motion reveals product
+  and texture without scroll hijacking. Parallax is capped at `24px`, linked scale
+  at `1.035`, product rotation at `2-3deg`, and mobile uses static imagery.
+- Content status: `sample-based` for brand, homepage, navigation, and microcopy.
+- Product/commercial status: `BLOCKED` until real approved SKU, price, inventory,
+  barcode, INCI, claims evidence, product imagery, shipping, returns, payment,
+  entity, tax, and licensing data are supplied and approved.
+- Concept assets may support the prototype but must not be represented as saleable
+  products. `10-Legacy-Do-Not-Use` is excluded from implementation.
+- Canonical MVP PDP route: `/{locale}/product/{slug}` with compatibility redirects
+  for legacy route shapes.
+- Production migration requires a backup of the existing domain deployment and a
+  verified rollback path before any replacement.
+
+Current phase: `implementation`, followed by unified validation and release gates.
+The site must remain unreleased for commerce while any explicit handoff blocker is
+open.
+
 ## SkyWave Snapshot
 
 - Date: 2026-04-01

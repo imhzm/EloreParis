@@ -1,0 +1,4 @@
+interface:
+  display_name: "SkyWave"
+  short_description: "Phase-based orchestrator for product delivery"
+  default_prompt: "Use $skywave to route this project by phase, activate the right skills, and keep the work release-ready."

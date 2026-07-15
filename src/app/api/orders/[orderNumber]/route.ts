@@ -1,11 +1,8 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import {
-  createAuthorityCustomerAccessHandoffPath,
-  createAuthorityCustomerAccessToken,
   createAuthorityOrderAccessToken,
   CUSTOMER_ACCESS_COOKIE,
-  CUSTOMER_ACCESS_MAX_AGE_SECONDS,
   getAuthorityOrderForCustomerAccessCookie,
   getAuthorityOrderForAccessCookie,
   getAuthorityOrderForRecentAccess,
@@ -15,7 +12,10 @@ import {
   OrderAuthorityError,
   RECENT_ORDER_COOKIE,
 } from "@/lib/order-authority";
-import { listAuthorityNotificationsForOrder } from "@/lib/notification-authority";
+import {
+  redactOrderForCustomerView,
+  redactOrderForPublicTracking,
+} from "@/lib/customer-order-view";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,6 +23,47 @@ export const dynamic = "force-dynamic";
 type OrderRouteContext = {
   params: Promise<{ orderNumber: string }>;
 };
+
+const TRACKING_WINDOW_MS = 5 * 60 * 1000;
+const TRACKING_ATTEMPT_LIMIT = 8;
+const MAX_TRACKING_BUCKETS = 5_000;
+const trackingAttempts = new Map<string, { count: number; resetAt: number }>();
+
+function consumeTrackingAttempt(orderNumber: string) {
+  const key = orderNumber.trim().toUpperCase();
+  const now = Date.now();
+  const current = trackingAttempts.get(key);
+
+  if (!current || current.resetAt <= now) {
+    if (trackingAttempts.size >= MAX_TRACKING_BUCKETS) {
+      for (const [candidateKey, candidate] of trackingAttempts) {
+        if (candidate.resetAt <= now) {
+          trackingAttempts.delete(candidateKey);
+        }
+      }
+
+      if (trackingAttempts.size >= MAX_TRACKING_BUCKETS) {
+        const oldestKey = trackingAttempts.keys().next().value;
+        if (typeof oldestKey === "string") {
+          trackingAttempts.delete(oldestKey);
+        }
+      }
+    }
+
+    trackingAttempts.set(key, {
+      count: 1,
+      resetAt: now + TRACKING_WINDOW_MS,
+    });
+    return null;
+  }
+
+  current.count += 1;
+  if (current.count <= TRACKING_ATTEMPT_LIMIT) {
+    return null;
+  }
+
+  return Math.max(1, Math.ceil((current.resetAt - now) / 1000));
+}
 
 export async function GET(request: NextRequest, context: OrderRouteContext) {
   try {
@@ -33,14 +74,43 @@ export async function GET(request: NextRequest, context: OrderRouteContext) {
     const orderAccessToken = request.cookies.get(ORDER_ACCESS_COOKIE)?.value;
     const customerAccessToken = request.cookies.get(CUSTOMER_ACCESS_COOKIE)?.value;
 
-    const order = phoneLastFour
+    if (phoneLastFour && !/^\d{4}$/.test(phoneLastFour)) {
+      return NextResponse.json(
+        { error: "يجب إدخال آخر أربعة أرقام من رقم الجوال." },
+        { status: 400 },
+      );
+    }
+
+    if (phoneLastFour) {
+      const retryAfter = consumeTrackingAttempt(orderNumber);
+      if (retryAfter !== null) {
+        return NextResponse.json(
+          { error: "تم تجاوز عدد محاولات التتبع المسموح. يرجى المحاولة لاحقًا." },
+          {
+            status: 429,
+            headers: { "Retry-After": retryAfter.toString() },
+          },
+        );
+      }
+    }
+
+    let accessMode: "tracking" | "customer" | "recent" | "order" = "tracking";
+    let order = phoneLastFour
       ? await getAuthorityOrderForTracking(orderNumber, phoneLastFour)
-      : (await getAuthorityOrderForAccessCookie(orderNumber, orderAccessToken)) ??
-        (await getAuthorityOrderForCustomerAccessCookie(
-          orderNumber,
-          customerAccessToken,
-        )) ??
-        (await getAuthorityOrderForRecentAccess(orderNumber, recentOrderToken));
+      : null;
+
+    if (!phoneLastFour) {
+      order = await getAuthorityOrderForCustomerAccessCookie(orderNumber, customerAccessToken);
+      if (order) accessMode = "customer";
+      if (!order) {
+        order = await getAuthorityOrderForRecentAccess(orderNumber, recentOrderToken);
+        if (order) accessMode = "recent";
+      }
+      if (!order) {
+        order = await getAuthorityOrderForAccessCookie(orderNumber, orderAccessToken);
+        if (order) accessMode = "order";
+      }
+    }
 
     if (!order) {
       return NextResponse.json(
@@ -49,36 +119,31 @@ export async function GET(request: NextRequest, context: OrderRouteContext) {
       );
     }
 
-    const notifications = await listAuthorityNotificationsForOrder(order);
-    const nextOrderAccessToken = await createAuthorityOrderAccessToken(
-      order.orderNumber,
-    );
+    const hasStrongAccess = accessMode === "customer" || accessMode === "recent";
+    const notifications: [] = [];
+    const responseOrder = hasStrongAccess
+      ? redactOrderForCustomerView(order)
+      : redactOrderForPublicTracking(order);
 
     const response = NextResponse.json({
-      order,
+      order: responseOrder,
       notifications,
-      customerAccessHandoffPath:
-        await createAuthorityCustomerAccessHandoffPath(order),
+      accessMode,
+      customerAccessHandoffPath: undefined,
     });
-    response.cookies.set({
-      name: ORDER_ACCESS_COOKIE,
-      value: nextOrderAccessToken,
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-      maxAge: ORDER_ACCESS_MAX_AGE_SECONDS,
-    });
-    response.cookies.set({
-      name: CUSTOMER_ACCESS_COOKIE,
-      value: await createAuthorityCustomerAccessToken(order),
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-      maxAge: CUSTOMER_ACCESS_MAX_AGE_SECONDS,
-    });
-
+    if (hasStrongAccess) {
+      const nextOrderAccessToken = await createAuthorityOrderAccessToken(order.orderNumber);
+      response.cookies.set({
+        name: ORDER_ACCESS_COOKIE,
+        value: nextOrderAccessToken,
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+        maxAge: ORDER_ACCESS_MAX_AGE_SECONDS,
+      });
+    }
+    response.headers.set("Cache-Control", "no-store");
     return response;
   } catch (error) {
     if (error instanceof OrderAuthorityError) {

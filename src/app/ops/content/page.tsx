@@ -5,7 +5,7 @@ import { StorefrontShell } from "@/components/storefront-shell";
 export const metadata: Metadata = {
   title: "Internal content governance",
   description:
-    "Internal ownership and sample-requirement freeze for the public Cozmateks content system.",
+    "Internal ownership and sample-requirement freeze for the public ÉLORÉ PARIS content system.",
   robots: {
     index: false,
     follow: false,

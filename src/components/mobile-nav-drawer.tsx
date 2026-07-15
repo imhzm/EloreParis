@@ -3,14 +3,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { TrackedLink } from "@/components/tracked-link";
-import { primaryNavigation } from "@/lib/site-content";
+import { localizePath, shellCopy, type Locale } from "@/lib/i18n";
 import styles from "./mobile-nav-drawer.module.css";
 
 type MobileNavDrawerProps = {
   activeHref: string;
+  locale?: Locale;
+  languageHref?: string;
 };
 
-export function MobileNavDrawer({ activeHref }: MobileNavDrawerProps) {
+export function MobileNavDrawer({ activeHref, locale = "ar", languageHref }: MobileNavDrawerProps) {
+  const copy = shellCopy[locale];
   const [isOpen, setIsOpen] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -77,7 +80,7 @@ export function MobileNavDrawer({ activeHref }: MobileNavDrawerProps) {
         ref={triggerRef}
         className={styles.trigger}
         onClick={() => setIsOpen(true)}
-        aria-label="فتح القائمة"
+        aria-label={copy.menuOpen}
         aria-expanded={isOpen}
         aria-controls="mobile-nav-drawer"
         type="button"
@@ -89,13 +92,13 @@ export function MobileNavDrawer({ activeHref }: MobileNavDrawerProps) {
 
       {isOpen && typeof document !== "undefined" ? createPortal(<>
         <div className={styles.backdrop} onClick={close} aria-hidden="true" />
-        <div ref={drawerRef} id="mobile-nav-drawer" className={`${styles.drawer} ${styles.drawerOpen}`} role="dialog" aria-modal="true" aria-label="القائمة الرئيسية">
+        <div ref={drawerRef} id="mobile-nav-drawer" className={`${styles.drawer} ${styles.drawerOpen}`} role="dialog" aria-modal="true" aria-label={copy.navLabel} dir={locale === "ar" ? "rtl" : "ltr"}>
         <div className={styles.drawerHeader}>
-          <span className={styles.drawerBrand}>Cozmateks</span>
+          <span className={styles.drawerBrand}>ÉLORÉ PARIS</span>
           <button
             className={styles.closeButton}
             onClick={close}
-            aria-label="إغلاق القائمة"
+            aria-label={copy.menuClose}
             type="button"
           >
             <svg
@@ -115,26 +118,26 @@ export function MobileNavDrawer({ activeHref }: MobileNavDrawerProps) {
           </button>
         </div>
 
-        <nav className={styles.drawerNav} aria-label="التنقل الرئيسي">
-          {primaryNavigation.map((item, index) => {
+        <nav className={styles.drawerNav} aria-label={copy.navLabel}>
+          {copy.nav.map(([itemHref, label], index) => {
             const isActive =
-              item.href === "/"
+              itemHref === "/"
                 ? activeHref === "/"
-                : activeHref.startsWith(item.href);
+                : activeHref.startsWith(itemHref);
 
             return (
               <TrackedLink
-                key={item.href}
-                href={item.href}
+                key={itemHref}
+                href={localizePath(locale, itemHref)}
                 analyticsEvent="navigation_click"
-                analyticsLabel={`mobile_nav_${item.href === "/" ? "home" : item.href.replaceAll("/", "_").replace(/^_+/, "")}`}
+                analyticsLabel={`mobile_nav_${itemHref === "/" ? "home" : itemHref.replaceAll("/", "_").replace(/^_+/, "")}`}
                 analyticsSurface="mobile_nav_drawer"
                 aria-current={isActive ? "page" : undefined}
                 className={`${styles.drawerLink} ${isActive ? styles.drawerLinkActive : ""}`}
                 onClick={close}
                 style={{ animationDelay: `${80 + index * 40}ms` }}
               >
-                <span className={styles.drawerLinkLabel}>{item.label}</span>
+                <span className={styles.drawerLinkLabel}>{label}</span>
                 <svg
                   className={styles.drawerLinkArrow}
                   width="16"
@@ -154,6 +157,9 @@ export function MobileNavDrawer({ activeHref }: MobileNavDrawerProps) {
               </TrackedLink>
             );
           })}
+          <TrackedLink href={languageHref ?? copy.languageHref} className={styles.drawerLink} analyticsLabel="mobile_language_switch" analyticsSurface="mobile_nav_drawer" onClick={close}>
+            <span className={styles.drawerLinkLabel}>{copy.languageLabel}</span>
+          </TrackedLink>
         </nav>
 
         <div className={styles.drawerFooter}>

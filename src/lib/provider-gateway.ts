@@ -16,10 +16,15 @@ import { getSiteUrl } from "@/lib/site-content";
 type ProviderJsonRecord = Record<string, unknown>;
 
 export type ProviderCustomerIdentity = {
+  issuer: string;
   email: string | null;
   phone: string | null;
-  subject: string | null;
-  rawProfile: unknown;
+  subject: string;
+};
+
+export type ExternalAuthSecurityContext = {
+  codeVerifier: string;
+  expectedNonce: string;
 };
 
 type ProviderFetchConfig = {
@@ -55,6 +60,99 @@ function normalizeEmail(value: string | null | undefined) {
 function normalizePhone(value: string | null | undefined) {
   const normalizedValue = normalizeValue(value).replace(/\D/g, "");
   return normalizedValue || null;
+}
+
+function normalizeIssuer(value: string) {
+  const normalized = value.trim().replace(/\/$/, "");
+  try {
+    const issuer = new URL(normalized);
+    const isLocalDevelopmentIssuer =
+      issuer.protocol === "http:" &&
+      ["localhost", "127.0.0.1", "::1"].includes(issuer.hostname);
+    if (issuer.protocol !== "https:" && !isLocalDevelopmentIssuer) return null;
+    return issuer.toString().replace(/\/$/, "");
+  } catch {
+    return null;
+  }
+}
+
+function normalizeSubject(value: string | null) {
+  const normalized = value?.trim() ?? "";
+  return normalized && normalized.length <= 255 && !/[\u0000-\u001f\u007f]/.test(normalized)
+    ? normalized
+    : null;
+}
+
+function base64UrlDecode(value: string) {
+  return Buffer.from(value, "base64url").toString("utf8");
+}
+
+function parseIdTokenClaims(value: unknown, providerLabel: string) {
+  if (typeof value !== "string" || !value.trim()) return null;
+  const parts = value.split(".");
+  if (parts.length !== 3) {
+    throw new ProviderGatewayError(providerLabel, "Auth provider returned a malformed id_token.");
+  }
+  try {
+    const header = ensureProviderRecord(
+      JSON.parse(base64UrlDecode(parts[0])) as unknown,
+      providerLabel,
+    );
+    if (
+      typeof header.alg !== "string" ||
+      !["RS256", "PS256", "ES256"].includes(header.alg)
+    ) {
+      throw new ProviderGatewayError(
+        providerLabel,
+        "Auth provider id_token uses an unsupported signing algorithm.",
+        401,
+      );
+    }
+    const claims = JSON.parse(base64UrlDecode(parts[1])) as unknown;
+    return ensureProviderRecord(claims, providerLabel);
+  } catch (error) {
+    if (error instanceof ProviderGatewayError) throw error;
+    throw new ProviderGatewayError(providerLabel, "Auth provider returned invalid id_token claims.");
+  }
+}
+
+function claimIsExplicitlyTrue(value: unknown, candidatePaths: string[]) {
+  return candidatePaths.some((path) => readPathValue(value, path) === true);
+}
+
+function validateIdTokenClaims({
+  claims,
+  config,
+  expectedNonce,
+}: {
+  claims: ProviderJsonRecord;
+  config: RuntimeExternalAuthProviderConfig;
+  expectedNonce: string;
+}) {
+  const issuer = normalizeIssuer(pickFirstString(claims, ["iss"]) ?? "");
+  const configuredIssuer = normalizeIssuer(config.issuer);
+  const subject = normalizeSubject(pickFirstString(claims, ["sub"]));
+  const nonce = pickFirstString(claims, ["nonce"]);
+  const audience = readPathValue(claims, "aud");
+  const audienceMatches =
+    audience === config.clientId ||
+    (Array.isArray(audience) && audience.some((entry) => entry === config.clientId));
+  const expiresAt = readPathValue(claims, "exp");
+
+  if (
+    !issuer ||
+    !configuredIssuer ||
+    issuer !== configuredIssuer ||
+    !subject ||
+    nonce !== expectedNonce ||
+    !audienceMatches ||
+    typeof expiresAt !== "number" ||
+    expiresAt * 1000 <= Date.now()
+  ) {
+    throw new ProviderGatewayError(config.label, "Auth provider id_token claims failed validation.", 401);
+  }
+
+  return subject;
 }
 
 function buildAbsoluteAppUrl(pathname: string) {
@@ -217,6 +315,7 @@ function assertLiveRequestConfigured(
 export async function createPaymentLinkWithProvider(order: StoredOrder) {
   const config = getLivePaymentProviderConfig();
   assertLiveRequestConfigured(config);
+  const orderLocale = order.pricingSnapshot?.locale === "en" ? "en" : "ar";
 
   const response = ensureProviderRecord(
     await requestProviderJson(
@@ -230,6 +329,9 @@ export async function createPaymentLinkWithProvider(order: StoredOrder) {
         headers: buildProviderJsonHeaders(
           config.requestAuthHeaderName,
           config.requestAuthToken,
+          {
+            "Idempotency-Key": `cozmateks:${order.orderNumber}:payment-link`,
+          },
         ),
         body: JSON.stringify({
           orderNumber: order.orderNumber,
@@ -237,7 +339,7 @@ export async function createPaymentLinkWithProvider(order: StoredOrder) {
           currency: "SAR",
           callbackUrl: buildAbsoluteAppUrl(config.callbackPath),
           returnUrl: buildAbsoluteAppUrl(
-            `/checkout/success?order=${encodeURIComponent(order.orderNumber)}`,
+            `/${orderLocale}/checkout/success?order=${encodeURIComponent(order.orderNumber)}`,
           ),
           customer: {
             fullName: order.customer.fullName,
@@ -250,6 +352,7 @@ export async function createPaymentLinkWithProvider(order: StoredOrder) {
             addressLine: order.customer.addressLine,
           },
           metadata: {
+            locale: orderLocale,
             paymentMethodId: order.paymentMethodId,
             shippingMethodId: order.shippingMethodId,
           },
@@ -324,6 +427,9 @@ export async function bookShipmentWithProvider(order: StoredOrder) {
         headers: buildProviderJsonHeaders(
           config.requestAuthHeaderName,
           config.requestAuthToken,
+          {
+            "Idempotency-Key": `cozmateks:${order.orderNumber}:shipping-booking`,
+          },
         ),
         body: JSON.stringify({
           orderNumber: order.orderNumber,
@@ -415,6 +521,9 @@ export async function dispatchNotificationWithProvider(
         headers: buildProviderJsonHeaders(
           config.requestAuthHeaderName,
           config.requestAuthToken,
+          {
+            "Idempotency-Key": `cozmateks:${notification.id}:notification`,
+          },
         ),
         body: JSON.stringify({
           notificationId: notification.id,
@@ -481,7 +590,10 @@ export async function dispatchNotificationWithProvider(
   };
 }
 
-export function buildExternalAuthProviderAuthorizeUrl(stateToken: string) {
+export function buildExternalAuthProviderAuthorizeUrl(
+  stateToken: string,
+  security?: { nonce: string; codeChallenge: string },
+) {
   const config = getExternalAuthProviderConfig();
 
   if (!config.externalAuthConfigured) {
@@ -501,6 +613,11 @@ export function buildExternalAuthProviderAuthorizeUrl(stateToken: string) {
   );
   authorizeUrl.searchParams.set("scope", config.scope);
   authorizeUrl.searchParams.set("state", stateToken);
+  if (security) {
+    authorizeUrl.searchParams.set("nonce", security.nonce);
+    authorizeUrl.searchParams.set("code_challenge", security.codeChallenge);
+    authorizeUrl.searchParams.set("code_challenge_method", "S256");
+  }
 
   return authorizeUrl.toString();
 }
@@ -508,6 +625,7 @@ export function buildExternalAuthProviderAuthorizeUrl(stateToken: string) {
 async function exchangeAuthorizationCode(
   config: RuntimeExternalAuthProviderConfig,
   code: string,
+  codeVerifier?: string,
 ) {
   const response = ensureProviderRecord(
     await requestProviderJson(
@@ -528,6 +646,7 @@ async function exchangeAuthorizationCode(
           client_id: config.clientId,
           client_secret: config.clientSecret,
           redirect_uri: buildAbsoluteAppUrl(config.callbackPath),
+          ...(codeVerifier ? { code_verifier: codeVerifier } : {}),
         }).toString(),
       },
     ),
@@ -554,7 +673,10 @@ async function exchangeAuthorizationCode(
   };
 }
 
-export async function exchangeExternalAuthCodeForCustomerIdentity(code: string) {
+export async function exchangeExternalAuthCodeForCustomerIdentity(
+  code: string,
+  securityContext?: ExternalAuthSecurityContext,
+) {
   const config = getExternalAuthProviderConfig();
 
   if (!config.externalAuthConfigured) {
@@ -565,7 +687,33 @@ export async function exchangeExternalAuthCodeForCustomerIdentity(code: string) 
     );
   }
 
-  const exchange = await exchangeAuthorizationCode(config, code);
+  const issuer = normalizeIssuer(config.issuer);
+  if (!issuer) {
+    throw new ProviderGatewayError(config.label, "Customer auth provider issuer is invalid.", 503);
+  }
+  const exchange = await exchangeAuthorizationCode(
+    config,
+    code,
+    securityContext?.codeVerifier,
+  );
+  const idTokenClaims = parseIdTokenClaims(
+    readPathValue(exchange.tokenPayload, "id_token"),
+    config.label,
+  );
+  if (idTokenClaims && !securityContext) {
+    throw new ProviderGatewayError(
+      config.label,
+      "Auth provider id_token cannot be accepted without the original nonce context.",
+      401,
+    );
+  }
+  const idTokenSubject = idTokenClaims && securityContext
+    ? validateIdTokenClaims({
+        claims: idTokenClaims,
+        config,
+        expectedNonce: securityContext.expectedNonce,
+      })
+    : null;
   const profilePayload =
     config.profileUrl && config.profileUrl.length > 0
       ? ensureProviderRecord(
@@ -587,31 +735,55 @@ export async function exchangeExternalAuthCodeForCustomerIdentity(code: string) 
         )
       : exchange.tokenPayload;
 
-  return {
-    email: normalizeEmail(
-      pickFirstString(profilePayload, [
-        "email",
-        "user.email",
-        "profile.email",
-        "data.email",
-      ]),
-    ),
-    phone: normalizePhone(
-      pickFirstString(profilePayload, [
-        "phone",
-        "phoneNumber",
-        "user.phone",
-        "profile.phone",
-        "data.phone",
-      ]),
-    ),
-    subject: pickFirstString(profilePayload, [
+  const email = claimIsExplicitlyTrue(profilePayload, [
+    "email_verified",
+    "user.email_verified",
+    "profile.email_verified",
+    "data.email_verified",
+  ])
+    ? normalizeEmail(
+        pickFirstString(profilePayload, [
+          "email",
+          "user.email",
+          "profile.email",
+          "data.email",
+        ]),
+      )
+    : null;
+  const phone = claimIsExplicitlyTrue(profilePayload, [
+    "phone_number_verified",
+    "phone_verified",
+    "user.phone_verified",
+    "profile.phone_verified",
+    "data.phone_verified",
+  ])
+    ? normalizePhone(
+        pickFirstString(profilePayload, [
+          "phone",
+          "phoneNumber",
+          "user.phone",
+          "profile.phone",
+          "data.phone",
+        ]),
+      )
+    : null;
+  const profileSubject = normalizeSubject(pickFirstString(profilePayload, [
       "sub",
       "subject",
       "user.id",
       "profile.id",
       "data.id",
-    ]),
-    rawProfile: profilePayload,
+    ]));
+  const subject = idTokenSubject ?? profileSubject;
+
+  if (!subject || (idTokenSubject && profileSubject && idTokenSubject !== profileSubject)) {
+    throw new ProviderGatewayError(config.label, "Auth provider subject claim is missing or inconsistent.", 401);
+  }
+
+  return {
+    issuer,
+    email,
+    phone,
+    subject,
   } satisfies ProviderCustomerIdentity;
 }

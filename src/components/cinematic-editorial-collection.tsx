@@ -45,7 +45,7 @@ export function CinematicEditorialCollection({ collection }: Props) {
       <div className={styles.frame}>
         <div className={styles.heroHalo} aria-hidden="true"><i /><i /></div>
         <div className={styles.visualCluster} aria-hidden="true">{visuals.map((visual, index) => <div key={visual} style={{ "--index": index } as CSSProperties}><Image src={visual} alt="" fill sizes="250px" /></div>)}</div>
-        <div className={styles.heroCopy}><p>{collection.subtitle}</p><h1>{collection.title}</h1><span>{collection.description}</span><div><TrackedLink href="#decision-lanes" className={styles.primaryAction} analyticsLabel={`${collection.slug}_start`} analyticsSurface="editorial_cinematic">اكتشفي الفئة</TrackedLink><TrackedLink href="/shop" className={styles.secondaryAction} analyticsLabel={`${collection.slug}_shop`} analyticsSurface="editorial_cinematic">كل الأقسام</TrackedLink></div></div>
+        <div className={styles.heroCopy}><p>{collection.subtitle}</p><h1>{collection.title}</h1><span>{collection.description}</span><div><TrackedLink href="#decision-lanes" className={styles.primaryAction} analyticsLabel={`collection_${collection.slug}_primary_route`} analyticsSurface="editorial_cinematic">اكتشفي الفئة</TrackedLink><TrackedLink href="/shop" className={styles.secondaryAction} analyticsLabel={`collection_${collection.slug}_to_shop_hub`} analyticsSurface="editorial_cinematic">كل الأقسام</TrackedLink></div></div>
         <div className={styles.counter}>01 — 04</div>
       </div>
     </section>

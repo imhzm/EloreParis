@@ -3,9 +3,9 @@ import { OpsNotificationsSurface } from "@/components/ops-notifications-surface"
 import { StorefrontShell } from "@/components/storefront-shell";
 
 export const metadata: Metadata = {
-  title: "إدارة الإشعارات التشغيلية | Cozmateks",
+  title: "إدارة الإشعارات التشغيلية | ÉLORÉ PARIS",
   description:
-    "سطح داخلي محلي لمراجعة queue الإشعارات المرتبطة بالطلبات داخل مشروع Cozmateks.",
+    "سطح داخلي محلي لمراجعة طابور الإشعارات المرتبطة بالطلبات داخل مشروع ÉLORÉ PARIS.",
   robots: {
     index: false,
     follow: false,

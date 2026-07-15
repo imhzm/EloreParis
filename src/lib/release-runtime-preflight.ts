@@ -97,7 +97,7 @@ export function getReleaseRuntimePreflightSnapshot(): ReleaseRuntimePreflightSna
   const authorityPathAccess = getPathWriteAccess(authorityDatabasePath);
   const releaseEvidencePathAccess = getPathWriteAccess(releaseEvidencePath);
   const nextPublicSiteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
-  const renderExternalUrl = process.env.RENDER_EXTERNAL_URL?.trim();
+  const hostingProvider = process.env.HOSTING_PROVIDER?.trim();
   const identityUsers = opsAccessConfig.users.filter(
     (user) => Boolean(user.username) && Boolean(user.passwordHash),
   );
@@ -120,24 +120,20 @@ export function getReleaseRuntimePreflightSnapshot(): ReleaseRuntimePreflightSna
         ? isHostedUrl(nextPublicSiteUrl)
           ? "ready"
           : "blocked"
-        : renderExternalUrl && isHostedUrl(renderExternalUrl)
-          ? "warning"
-          : "blocked",
+        : "blocked",
       summary: nextPublicSiteUrl
         ? isHostedUrl(nextPublicSiteUrl)
           ? "A non-local public site URL is configured explicitly for metadata, canonical URLs, and live release verification."
           : "NEXT_PUBLIC_SITE_URL is still configured against a local runtime, so public metadata is not yet bound to a real hosted domain."
-        : renderExternalUrl && isHostedUrl(renderExternalUrl)
-          ? "The runtime can resolve a hosted URL from Render, but the final public site URL is still not frozen explicitly."
-          : "No hosted public site URL is configured yet, so canonical URLs still depend on a local or missing runtime contract.",
+        : "No explicit hosted public site URL is configured, so canonical URLs still depend on a local runtime contract.",
       details: [
         `Resolved site URL: ${siteUrl}`,
         `NEXT_PUBLIC_SITE_URL: ${nextPublicSiteUrl || "missing"}`,
-        `RENDER_EXTERNAL_URL: ${renderExternalUrl || "missing"}`,
+        `HOSTING_PROVIDER: ${hostingProvider || "missing"}`,
       ],
       owner: platformOwner,
       resolutionAction:
-        "Set NEXT_PUBLIC_SITE_URL to the hosted production domain and keep the Render external URL only as a fallback signal.",
+        "Set NEXT_PUBLIC_SITE_URL=https://elore-paris.com explicitly in the Hostinger environment.",
     },
     {
       id: "persistent-runtime-paths",
@@ -156,9 +152,9 @@ export function getReleaseRuntimePreflightSnapshot(): ReleaseRuntimePreflightSna
         releaseEvidencePathAccess.writable &&
         isPathUnderRoot(authorityDatabasePath, hostingDirection.persistencePath) &&
         isPathUnderRoot(releaseEvidencePath, hostingDirection.persistencePath)
-          ? "Authority data and release evidence both align with the frozen Render persistent-disk contract."
+          ? "Authority data and release evidence both align with the Hostinger persistent-state contract."
           : authorityPathAccess.writable && releaseEvidencePathAccess.writable
-            ? "Runtime write paths are usable, but they are not yet aligned with the frozen `/var/data` Render disk contract."
+            ? "Runtime write paths are usable, but they are not aligned with the `/var/lib/elore-paris` Hostinger contract."
             : "The current runtime cannot confirm writable paths for authority storage and release evidence publication.",
       details: [
         `Expected persistent root: ${hostingDirection.persistencePath}`,

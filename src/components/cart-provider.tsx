@@ -17,6 +17,11 @@ import {
   type ResolvedCartLine,
   type StoredCartItem,
 } from "@/lib/cart";
+import type {
+  PublicCartResolution,
+  PublicCatalogProduct,
+} from "@/lib/public-catalog-types";
+import { usePathname } from "next/navigation";
 
 type CartItemInput = {
   productSlug: string;
@@ -26,6 +31,9 @@ type CartItemInput = {
 
 type CartContextValue = {
   isHydrated: boolean;
+  catalogStatus: "loading" | "ready" | "unavailable" | "error";
+  catalogError: string | null;
+  unavailableItems: StoredCartItem[];
   items: StoredCartItem[];
   lines: ResolvedCartLine[];
   cartCount: number;
@@ -47,8 +55,14 @@ function clampQuantity(value: number) {
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
+  const pathname = usePathname() ?? "/ar";
   const [items, setItems] = useState<StoredCartItem[]>([]);
-  const [isHydrated, setIsHydrated] = useState(false);
+  const [isStorageHydrated, setIsStorageHydrated] = useState(false);
+  const [catalogProducts, setCatalogProducts] = useState<PublicCatalogProduct[]>([]);
+  const [catalogStatus, setCatalogStatus] = useState<CartContextValue["catalogStatus"]>("loading");
+  const [catalogError, setCatalogError] = useState<string | null>(null);
+  const [unavailableKeys, setUnavailableKeys] = useState<string[]>([]);
+  const locale = pathname === "/en" || pathname.startsWith("/en/") ? "en" : "ar";
 
   useEffect(() => {
     try {
@@ -58,12 +72,53 @@ export function CartProvider({ children }: { children: ReactNode }) {
     } catch {
       setItems([]);
     } finally {
-      setIsHydrated(true);
+      setIsStorageHydrated(true);
     }
   }, []);
 
   useEffect(() => {
-    if (!isHydrated) {
+    if (!isStorageHydrated) return;
+    const controller = new AbortController();
+    setCatalogStatus("loading");
+    setCatalogError(null);
+
+    void fetch("/api/catalog", {
+      method: "POST",
+      cache: "no-store",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ locale, items }),
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        const body = (await response.json().catch(() => null)) as
+          | PublicCartResolution
+          | null;
+        if (!response.ok || !body || !Array.isArray(body.products)) {
+          throw new Error("تعذر تحميل كتالوج المنتجات المعتمد.");
+        }
+
+        setCatalogProducts(body.products);
+        setUnavailableKeys(body.unavailableKeys ?? []);
+        setCatalogStatus(body.available ? "ready" : "unavailable");
+      })
+      .catch((loadError: unknown) => {
+        if (loadError instanceof DOMException && loadError.name === "AbortError") return;
+        setCatalogStatus("error");
+        setCatalogError(
+          loadError instanceof Error
+            ? loadError.message
+            : "تعذر تحميل كتالوج المنتجات المعتمد.",
+        );
+      });
+
+    return () => controller.abort();
+  }, [isStorageHydrated, items, locale]);
+
+  const isHydrated = isStorageHydrated && catalogStatus !== "loading";
+
+  useEffect(() => {
+    if (!isStorageHydrated) {
       return;
     }
 
@@ -72,9 +127,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
     } catch {
       // Ignore storage write failures and keep the in-memory cart usable.
     }
-  }, [isHydrated, items]);
+  }, [isStorageHydrated, items]);
 
-  const lines = resolveCartLines(items);
+  const lines = resolveCartLines(items, catalogProducts);
+  const unavailableKeySet = new Set(unavailableKeys);
+  const unavailableItems = items.filter((item) =>
+    unavailableKeySet.has(`${item.productSlug}:${item.sku}`),
+  );
   const cartCount = getCartCount(lines);
   const subtotal = getCartSubtotal(lines);
 
@@ -128,6 +187,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
     <CartContext.Provider
       value={{
         isHydrated,
+        catalogStatus,
+        catalogError,
+        unavailableItems,
         items,
         lines,
         cartCount,

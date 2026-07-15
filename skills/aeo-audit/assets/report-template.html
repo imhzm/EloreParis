@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Visibility Report — {{DOMAIN}}</title>
+<style>
+  /* =========================================
+     DESIGN SYSTEM — ICODA AI Visibility Report
+     Primary: #3C50E0  Dark: #1D2A4D
+     Green: #22c55e  Yellow: #eab308
+     Orange: #f97316  Red: #ef4444
+  ========================================= */
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --primary: #3C50E0;
+    --primary-light: #EEF1FF;
+    --dark: #1D2A4D;
+    --gray-600: #4B5563;
+    --gray-400: #9CA3AF;
+    --gray-100: #F3F4F6;
+    --green: #22c55e;
+    --green-light: #dcfce7;
+    --yellow: #eab308;
+    --yellow-light: #fef9c3;
+    --orange: #f97316;
+    --orange-light: #ffedd5;
+    --red: #ef4444;
+    --red-light: #fee2e2;
+    --border: #E5E7EB;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06);
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+    background: #F8F9FD;
+    color: var(--dark);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .page-wrapper { max-width: 900px; margin: 0 auto; padding: 24px 16px; }
+
+  /* ---- HEADER ---- */
+  .report-header {
+    background: linear-gradient(135deg, var(--primary) 0%, #2D3DB5 100%);
+    border-radius: var(--radius);
+    padding: 32px;
+    color: white;
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+  }
+  .header-left h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .header-left .site-url { font-size: 14px; opacity: 0.8; word-break: break-all; }
+  .header-left .audit-date { font-size: 12px; opacity: 0.65; margin-top: 8px; }
+  .header-logo {
+    font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+    opacity: 0.9; white-space: nowrap;
+    border: 1.5px solid rgba(255,255,255,0.4);
+    padding: 6px 12px; border-radius: 6px;
+  }
+
+  /* ---- CARDS ---- */
+  .card {
+    background: white;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  .card-header {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #FAFBFF;
+  }
+  .card-header h2 { font-size: 15px; font-weight: 600; color: var(--dark); }
+  .card-header .icon { font-size: 18px; }
+  .card-body { padding: 24px; }
+
+  /* ---- SCORE OVERVIEW ---- */
+  .score-overview {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 32px;
+    align-items: center;
+  }
+
+  /* Score Gauge */
+  .score-gauge-wrap { position: relative; width: 160px; height: 160px; flex-shrink: 0; }
+  .score-gauge-wrap svg { width: 160px; height: 160px; transform: rotate(-90deg); }
+  .score-gauge-bg { fill: none; stroke: var(--gray-100); stroke-width: 14; }
+  .score-gauge-fill { fill: none; stroke-width: 14; stroke-linecap: round;
+    transition: stroke-dasharray 1s ease; }
+  .score-center {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    text-align: center;
+  }
+  .score-number { font-size: 40px; font-weight: 800; line-height: 1; }
+  .score-max { font-size: 14px; color: var(--gray-400); font-weight: 500; }
+  .score-label { font-size: 11px; color: var(--gray-600); margin-top: 2px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* Category bars */
+  .categories { display: flex; flex-direction: column; gap: 14px; }
+  .category-item {}
+  .category-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .category-name { font-size: 13px; font-weight: 600; }
+  .category-meta { font-size: 12px; color: var(--gray-400); }
+  .category-score-badge {
+    font-size: 13px; font-weight: 700; padding: 2px 10px; border-radius: 20px; min-width: 52px;
+    text-align: center;
+  }
+  .bar-track { background: var(--gray-100); border-radius: 99px; height: 10px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 99px; transition: width 0.8s ease; }
+
+  /* ---- SCORE BADGE ---- */
+  .badge-excellent { background: var(--green-light); color: #16a34a; }
+  .badge-good      { background: var(--yellow-light); color: #a16207; }
+  .badge-needs-work{ background: var(--orange-light); color: #c2410c; }
+  .badge-critical  { background: var(--red-light); color: #dc2626; }
+  .bar-excellent   { background: var(--green); }
+  .bar-good        { background: var(--yellow); }
+  .bar-needs-work  { background: var(--orange); }
+  .bar-critical    { background: var(--red); }
+
+  /* Overall score badge */
+  .overall-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 14px; border-radius: 99px; font-weight: 700; font-size: 13px; margin-top: 8px;
+  }
+
+  /* ---- BOT TABLE ---- */
+  .bot-table { width: 100%; border-collapse: collapse; }
+  .bot-table th {
+    text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.5px; color: var(--gray-400); padding: 0 12px 10px; border-bottom: 1px solid var(--border);
+  }
+  .bot-table td { padding: 12px; border-bottom: 1px solid #F3F4F6; vertical-align: middle; }
+  .bot-table tr:last-child td { border-bottom: none; }
+  .bot-name { font-weight: 600; font-size: 13px; }
+  .bot-desc { font-size: 12px; color: var(--gray-400); margin-top: 2px; }
+  .importance-badge {
+    display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase;
+    padding: 2px 8px; border-radius: 99px; letter-spacing: 0.5px;
+  }
+  .imp-critical { background: #fce7f3; color: #9d174d; }
+  .imp-high     { background: var(--orange-light); color: #c2410c; }
+  .imp-medium   { background: var(--yellow-light); color: #a16207; }
+  .imp-low      { background: var(--gray-100); color: var(--gray-600); }
+
+  .status-icon { font-size: 18px; }
+  .access-label { font-size: 12px; color: var(--gray-600); margin-top: 2px; }
+  .score-pill {
+    display: inline-block; font-size: 12px; font-weight: 700; padding: 3px 10px;
+    border-radius: 99px; text-align: center;
+  }
+
+  /* ---- CHECKLIST ---- */
+  .checklist { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .checklist-item {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--gray-100); border-radius: 8px; padding: 12px 16px;
+  }
+  .check-icon { font-size: 20px; flex-shrink: 0; }
+  .check-label { font-size: 12px; color: var(--gray-600); margin-bottom: 2px; }
+  .check-value { font-size: 14px; font-weight: 600; }
+  .check-pass  { color: #16a34a; }
+  .check-warn  { color: #a16207; }
+  .check-fail  { color: #dc2626; }
+  .check-info  { color: var(--primary); }
+
+  /* ---- SCHEMA SECTION ---- */
+  .schema-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .schema-col h3 { font-size: 13px; font-weight: 600; color: var(--gray-600); margin-bottom: 12px;
+    text-transform: uppercase; letter-spacing: 0.5px; }
+  .schema-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+  .schema-tag {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 6px;
+  }
+  .schema-found   { background: var(--green-light); color: #16a34a; }
+  .schema-missing { background: var(--gray-100); color: var(--gray-600); border: 1px dashed var(--border); }
+  .schema-missing-high { background: var(--red-light); color: #dc2626; border: 1px dashed #fca5a5; }
+
+  /* ---- CONTENT STRUCTURE ---- */
+  .content-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .metric-card {
+    background: var(--gray-100); border-radius: 8px; padding: 14px 16px; text-align: center;
+  }
+  .metric-icon { font-size: 22px; margin-bottom: 6px; }
+  .metric-value { font-size: 20px; font-weight: 800; }
+  .metric-label { font-size: 11px; color: var(--gray-600); margin-top: 2px; }
+  .metric-sub { font-size: 11px; color: var(--gray-400); margin-top: 4px; }
+
+  .content-details { margin-top: 20px; }
+  .detail-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 0; border-bottom: 1px solid var(--border);
+  }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-label { font-size: 13px; color: var(--gray-600); }
+  .detail-status { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+
+  /* ---- RECOMMENDATIONS ---- */
+  .recs-list { display: flex; flex-direction: column; gap: 14px; }
+  .rec-card {
+    border-radius: 10px; border: 1px solid var(--border);
+    overflow: hidden; background: white;
+  }
+  .rec-header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 18px; border-bottom: 1px solid var(--border);
+  }
+  .priority-badge {
+    font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;
+    padding: 3px 9px; border-radius: 99px; flex-shrink: 0;
+  }
+  .priority-high   { background: var(--red-light); color: #dc2626; }
+  .priority-medium { background: var(--yellow-light); color: #a16207; }
+  .priority-low    { background: var(--gray-100); color: var(--gray-600); }
+  .rec-title { font-size: 14px; font-weight: 700; }
+  .rec-meta { font-size: 12px; color: var(--gray-400); margin-left: auto; white-space: nowrap; }
+  .rec-body { padding: 14px 18px; }
+  .rec-desc { font-size: 13px; color: var(--gray-600); line-height: 1.6; margin-bottom: 12px; }
+  .rec-code {
+    background: #1E1E2E; border-radius: 8px; padding: 14px 16px; overflow-x: auto;
+    font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    font-size: 12px; color: #CDD6F4; line-height: 1.6;
+    white-space: pre; tab-size: 2;
+  }
+
+  /* ---- FOOTER ---- */
+  .report-footer {
+    text-align: center; padding: 24px; color: var(--gray-400);
+    font-size: 12px; border-top: 1px solid var(--border); margin-top: 8px;
+  }
+  .report-footer a { color: var(--primary); text-decoration: none; }
+  .report-footer strong { color: var(--gray-600); }
+
+  /* ---- SUMMARY BANNER ---- */
+  .summary-banner {
+    border-radius: var(--radius); padding: 20px 24px; margin-bottom: 24px;
+    display: flex; gap: 16px; align-items: center; border: 1px solid;
+  }
+  .summary-icon { font-size: 36px; flex-shrink: 0; }
+  .summary-title { font-size: 18px; font-weight: 800; margin-bottom: 4px; }
+  .summary-text { font-size: 13px; line-height: 1.6; }
+
+  /* =========================================
+     PRINT STYLES — Clean PDF output
+  ========================================= */
+  @media print {
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    body { background: white; font-size: 12px; }
+    .page-wrapper { max-width: 100%; padding: 0; }
+    .card { break-inside: avoid; box-shadow: none; border: 1px solid #E5E7EB; }
+    .report-header { break-inside: avoid; }
+    .rec-card { break-inside: avoid; }
+    .checklist { grid-template-columns: repeat(3, 1fr); }
+    .content-metrics { grid-template-columns: repeat(3, 1fr); }
+    .schema-grid { grid-template-columns: 1fr 1fr; }
+    a { text-decoration: none; color: inherit; }
+    .no-print { display: none !important; }
+  }
+
+  /* ---- UTILITY ---- */
+  .text-green  { color: #16a34a; }
+  .text-yellow { color: #a16207; }
+  .text-orange { color: #c2410c; }
+  .text-red    { color: #dc2626; }
+  .text-gray   { color: var(--gray-600); }
+  .divider { height: 1px; background: var(--border); margin: 16px 0; }
+  .flex-between { display: flex; justify-content: space-between; align-items: center; }
+  .tag {
+    display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px;
+    border-radius: 99px; background: var(--primary-light); color: var(--primary);
+  }
+</style>
+</head>
+<body>
+
+<div class="page-wrapper">
+
+  <!-- ===================== HEADER ===================== -->
+  <div class="report-header">
+    <div class="header-left">
+      <h1>AI Visibility Report</h1>
+      <div class="site-url">{{SITE_URL}}</div>
+      <div class="audit-date">Audit date: {{AUDIT_DATE}}</div>
+    </div>
+    <div class="header-logo">ICODA</div>
+  </div>
+
+  <!-- ===================== SCORE OVERVIEW CARD ===================== -->
+  <div class="card">
+    <div class="card-header">
+      <span class="icon">📊</span>
+      <h2>AI Visibility Score Overview</h2>
+    </div>
+    <div class="card-body">
+      <div class="score-overview">
+
+        <!-- Gauge -->
+        <div class="score-gauge-wrap">
+          <svg viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
+            <circle class="score-gauge-bg" cx="80" cy="80" r="66"/>
+            <!-- stroke-dasharray = (score/100) * (2*PI*66) and total = 2*PI*66 ≈ 414.69 -->
+            <!-- For score={{OVERALL_SCORE}}: dasharray = {{GAUGE_DASH}} 414.69 -->
+            <circle class="score-gauge-fill" cx="80" cy="80" r="66"
+              stroke="{{SCORE_COLOR}}"
+              stroke-dasharray="{{GAUGE_DASH}} 414.69"/>
+          </svg>
+          <div class="score-center">
+            <div class="score-number" style="color:{{SCORE_COLOR}}">{{OVERALL_SCORE}}</div>
+            <div class="score-max">/100</div>
+            <div class="score-label">AI Score</div>
+          </div>
+        </div>
+
+        <!-- Categories -->
+        <div class="categories">
+
+          <div class="category-item">
+            <div class="category-top">
+              <span class="category-name">Content Structure</span>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span class="category-meta">Weight 35%</span>
+                <span class="category-score-badge {{CONTENT_BADGE_CLASS}}">{{CONTENT_SCORE}}</span>
+              </div>
+            </div>
+            <div class="bar-track">
+              <div class="bar-fill {{CONTENT_BAR_CLASS}}" style="width:{{CONTENT_SCORE}}%"></div>
+            </div>
+          </div>
+
+          <div class="category-item">
+            <div class="category-top">
+              <span class="category-name">Structured Data</span>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span class="category-meta">Weight 25%</span>
+                <span class="category-score-badge {{SCHEMA_BADGE_CLASS}}">{{SCHEMA_SCORE}}</span>
+              </div>
+            </div>
+            <div class="bar-track">
+              <div class="bar-fill {{SCHEMA_BAR_CLASS}}" style="width:{{SCHEMA_SCORE}}%"></div>
+            </div>
+          </div>
+
+          <div class="category-item">
+            <div class="category-top">
+              <span class="category-name">AI Bot Access</span>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span class="category-meta">Weight 20%</span>
+                <span class="category-score-badge {{BOT_BADGE_CLASS}}">{{BOT_SCORE}}</span>
+              </div>
+            </div>
+            <div class="bar-track">
+              <div class="bar-fill {{BOT_BAR_CLASS}}" style="width:{{BOT_SCORE}}%"></div>
+            </div>
+          </div>
+
+          <div class="category-item">
+            <div class="category-top">
+              <span class="category-name">Technical</span>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span class="category-meta">Weight 20%</span>
+                <span class="category-score-badge {{TECH_BADGE_CLASS}}">{{TECH_SCORE}}</span>
+              </div>
+            </div>
+            <div class="bar-track">
+              <div class="bar-fill {{TECH_BAR_CLASS}}" style="width:{{TECH_SCORE}}%"></div>
+            </div>
+          </div>
+
+          <div style="margin-top:8px;">
+            <span class="overall-badge {{OVERALL_BADGE_CLASS}}">
+              {{OVERALL_EMOJI}} {{OVERALL_LABEL}}
+            </span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== AI BOT ACCESS ===================== -->
+  <div class="card">
+    <div class="card-header">
+      <span class="icon">🤖</span>
+      <h2>AI Bot Access (robots.txt)</h2>
+      <span class="tag" style="margin-left:auto;">Score: {{BOT_SCORE}}/100</span>
+    </div>
+    <div class="card-body" style="padding:0;">
+      <table class="bot-table">
+        <thead>
+          <tr>
+            <th style="padding-left:24px;">Bot / Crawler</th>
+            <th>Importance</th>
+            <th>Status</th>
+            <th>Score</th>
+            <th>Note</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Example row pattern — replace with actual bot data:
+          <tr>
+            <td style="padding-left:24px;">
+              <div class="bot-name">GPTBot</div>
+              <div class="bot-desc">OpenAI / ChatGPT crawler</div>
+            </td>
+            <td><span class="importance-badge imp-critical">Critical</span></td>
+            <td>
+              <div class="status-icon">✅</div>
+              <div class="access-label">Full access</div>
+            </td>
+            <td><span class="score-pill badge-excellent">100</span></td>
+            <td style="font-size:12px;color:var(--gray-600);">No restrictions</td>
+          </tr>
+          -->
+          {{BOT_TABLE_ROWS}}
+        </tbody>
+      </table>
+      {{ROBOTS_NOTE}}
+    </div>
+  </div>
+
+  <!-- ===================== TECHNICAL CHECKLIST ===================== -->
+  <div class="card">
+    <div class="card-header">
+      <span class="icon">⚙️</span>
+      <h2>Technical Checklist</h2>
+      <span class="tag" style="margin-left:auto;">Score: {{TECH_SCORE}}/100</span>
+    </div>
+    <div class="card-body">
+      <div class="checklist">
+
+        <!-- HTTPS -->
+        <div class="checklist-item">
+          <div class="check-icon">{{HTTPS_ICON}}</div>
+          <div>
+            <div class="check-label">HTTPS / SSL</div>
+            <div class="check-value {{HTTPS_CLASS}}">{{HTTPS_VALUE}}</div>
+          </div>
+        </div>
+
+        <!-- HTTP Status -->
+        <div class="checklist-item">
+          <div class="check-icon">{{STATUS_ICON}}</div>
+          <div>
+            <div class="check-label">HTTP Status</div>
+            <div class="check-value {{STATUS_CLASS}}">{{STATUS_VALUE}}</div>
+          </div>
+        </div>
+
+        <!-- Response Time -->
+        <div class="checklist-item">
+          <div class="check-icon">{{SPEED_ICON}}</div>
+          <div>
+            <div class="check-label">Response Time</div>
+            <div class="check-value {{SPEED_CLASS}}">{{SPEED_VALUE}}</div>
+          </div>
+        </div>
+
+        <!-- Sitemap -->
+        <div class="checklist-item">
+          <div class="check-icon">{{SITEMAP_ICON}}</div>
+          <div>
+            <div class="check-label">XML Sitemap</div>
+            <div class="check-value {{SITEMAP_CLASS}}">{{SITEMAP_VALUE}}</div>
+          </div>
+        </div>
+
+        <!-- llms.txt -->
+        <div class="checklist-item">
+          <div class="check-icon">{{LLMS_ICON}}</div>
+          <div>
+            <div class="check-label">llms.txt</div>
+            <div class="check-value {{LLMS_CLASS}}">{{LLMS_VALUE}}</div>
+          </div>
+        </div>
+
+        <!-- Redirects -->
+        <div class="checklist-item">
+          <div class="check-icon">{{REDIR_ICON}}</div>
+          <div>
+            <div class="check-label">Redirects</div>
+            <div class="check-value {{REDIR_CLASS}}">{{REDIR_VALUE}}</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== STRUCTURED DATA ===================== -->
+  <div class="card">
+    <div class="card-header">
+      <span class="icon">🗂️</span>
+      <h2>Structured Data (Schema.org)</h2>
+      <span class="tag" style="margin-left:auto;">Score: {{SCHEMA_SCORE}}/100</span>
+    </div>
+    <div class="card-body">
+      <div class="schema-grid">
+
+        <div class="schema-col">
+          <h3>✅ Schemas Found</h3>
+          <div class="schema-tags">
+            {{SCHEMAS_FOUND_TAGS}}
+            <!-- Pattern: <span class="schema-tag schema-found">✓ Organization</span> -->
+            <!-- If none: <span style="color:var(--gray-400);font-size:13px;">No schemas detected</span> -->
+          </div>
+          <div class="divider"></div>
+          <div style="font-size:12px;color:var(--gray-600);">
+            <strong>Formats detected:</strong>
+            {{SCHEMA_FORMATS}}
+            <!-- e.g.: JSON-LD ✓ | Microdata — | RDFa — -->
+          </div>
+        </div>
+
+        <div class="schema-col">
+          <h3>⚠️ Recommended (Missing)</h3>
+          <div class="schema-tags">
+            {{SCHEMAS_MISSING_TAGS}}
+            <!-- High priority missing: <span class="schema-tag schema-missing-high">! FAQPage</span> -->
+            <!-- Medium priority: <span class="schema-tag schema-missing">HowTo</span> -->
+            <!-- If all present: <span style="color:#16a34a;font-size:13px;">All key schemas present ✓</span> -->
+          </div>
+        </div>
+
+      </div>
+
+      {{SCHEMA_JSON_PREVIEW}}
+      <!-- If JSON-LD found, show first block preview:
+      <div class="divider"></div>
+      <div style="font-size:12px;color:var(--gray-600);margin-bottom:8px;">JSON-LD Preview (first block):</div>
+      <pre class="rec-code">{{JSONLD_PREVIEW}}</pre>
+      -->
+    </div>
+  </div>
+
+  <!-- ===================== CONTENT STRUCTURE ===================== -->
+  <div class="card">
+    <div class="card-header">
+      <span class="icon">📝</span>
+      <h2>Content Structure</h2>
+      <span class="tag" style="margin-left:auto;">Score: {{CONTENT_SCORE}}/100</span>
+    </div>
+    <div class="card-body">
+
+      <div class="content-metrics">
+
+        <div class="metric-card">
+          <div class="metric-icon">{{H1_ICON}}</div>
+          <div class="metric-value {{H1_CLASS}}">{{H1_VALUE}}</div>
+          <div class="metric-label">H1 Heading</div>
+          <div class="metric-sub">{{H1_TEXT}}</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon">{{META_ICON}}</div>
+          <div class="metric-value {{META_CLASS}}">{{META_VALUE}}</div>
+          <div class="metric-label">Meta Description</div>
+          <div class="metric-sub">{{META_LENGTH}} chars</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon">{{IMG_ICON}}</div>
+          <div class="metric-value {{IMG_CLASS}}">{{IMG_COVERAGE}}%</div>
+          <div class="metric-label">Image Alt Coverage</div>
+          <div class="metric-sub">{{IMG_WITH}}/{{IMG_TOTAL}} images</div>
+        </div>
+
+      </div>
+
+      <div class="content-details">
+
+        <div class="detail-row">
+          <span class="detail-label">🏷️ Title Tag</span>
+          <span class="detail-status {{TITLE_CLASS}}">
+            {{TITLE_ICON}} {{TITLE_TEXT}} <span style="font-weight:400;color:var(--gray-400);font-size:12px;">({{TITLE_LENGTH}} chars)</span>
+          </span>
+        </div>
+
+        <div class="detail-row">
+          <span class="detail-label">📋 Heading Hierarchy</span>
+          <span class="detail-status {{HIERARCHY_CLASS}}">{{HIERARCHY_ICON}} {{HIERARCHY_VALUE}}</span>
+        </div>
+
+        <div class="detail-row">
+          <span class="detail-label">🏗️ Semantic HTML</span>
+          <span class="detail-status {{SEMANTIC_CLASS}}">{{SEMANTIC_ICON}} {{SEMANTIC_VALUE}}</span>
+        </div>
+
+        <div class="detail-row">
+          <span class="detail-label">📱 Open Graph Tags</span>
+          <span class="detail-status {{OG_CLASS}}">{{OG_ICON}} {{OG_VALUE}}</span>
+        </div>
+
+        <div class="detail-row">
+          <span class="detail-label">🐦 Twitter Cards</span>
+          <span class="detail-status {{TWITTER_CLASS}}">{{TWITTER_ICON}} {{TWITTER_VALUE}}</span>
+        </div>
+
+        <div class="detail-row">
+          <span class="detail-label">🔗 Internal Links</span>
+          <span class="detail-status {{LINKS_CLASS}}">{{LINKS_ICON}} {{LINKS_VALUE}} internal links</span>
+        </div>
+
+        {{HEADING_COUNTS}}
+        <!-- Optional: H1: 1, H2: 8, H3: 14 -->
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== RECOMMENDATIONS ===================== -->
+  <div class="card">
+    <div class="card-header">
+      <span class="icon">🎯</span>
+      <h2>Recommendations (sorted by ROI)</h2>
+      <span class="tag" style="margin-left:auto;">{{REC_COUNT}} actions</span>
+    </div>
+    <div class="card-body">
+      <div class="recs-list">
+
+        <!-- Recommendation card pattern:
+        <div class="rec-card">
+          <div class="rec-header">
+            <span class="priority-badge priority-high">High</span>
+            <span class="rec-title">Add JSON-LD Structured Data</span>
+            <span class="rec-meta">⏱ 1-2 hours</span>
+          </div>
+          <div class="rec-body">
+            <p class="rec-desc">Description of why this matters and what to do.</p>
+            <pre class="rec-code">code example here</pre>
+          </div>
+        </div>
+        -->
+
+        {{RECOMMENDATION_CARDS}}
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== FOOTER ===================== -->
+  <div class="report-footer">
+    <strong>ICODA AI Visibility Checker</strong> &nbsp;·&nbsp;
+    Generated on {{AUDIT_DATE}} &nbsp;·&nbsp;
+    <a href="https://icoda.io">icoda.io</a>
+    <br><br>
+    <span style="font-size:11px;">
+      Methodology: robots.txt analysis (20%), structured data (25%), content structure (35%), technical (20%).
+      Score 0-100. Recommendations sorted by ROI (impact ÷ effort).
+    </span>
+  </div>
+
+</div>
+
+<!-- ===================== INSTRUCTIONS FOR CLAUDE =====================
+When populating this template, replace all {{PLACEHOLDER}} values with real data.
+
+SCORE COLOR & CLASS LOGIC:
+  score >= 80: color=#22c55e, badge=badge-excellent, bar=bar-excellent, label="Excellent"
+  score 65-79: color=#eab308, badge=badge-good, bar=bar-good, label="Good"
+  score 50-64: color=#f97316, badge=badge-needs-work, bar=bar-needs-work, label="Needs Work"
+  score < 50:  color=#ef4444, badge=badge-critical, bar=bar-critical, label="Critical"
+
+GAUGE DASH CALCULATION:
+  circle radius = 66, circumference = 2 × π × 66 = 414.69
+  GAUGE_DASH = round((overall_score / 100) × 414.69, 2)
+
+ICONS FOR CHECKLIST:
+  Pass: ✅  Warning: ⚠️  Fail: ❌  Info: ℹ️
+  HTTPS pass: ✅, fail: ❌
+  Status 200: ✅, other: ❌ or ⚠️
+  Speed <1s: ✅, 1-2s: ⚠️, >2s: ❌
+  Sitemap found+valid: ✅, found invalid: ⚠️, not found: ❌
+  llms.txt found: ✅, not found: ℹ️ (optional, not critical)
+  Redirects 0: ✅, 1-2: ⚠️, 3+: ❌
+
+CSS CLASSES FOR VALUES:
+  Good: check-pass / text-green
+  Warning: check-warn / text-yellow
+  Bad: check-fail / text-red
+  Info: check-info
+
+BOT STATUS ICONS:
+  allowed (full): ✅
+  restricted (partial/limited): ⚠️
+  blocked: ❌
+
+BOT IMPORTANCE BADGE CLASS:
+  critical → imp-critical
+  high → imp-high
+  medium → imp-medium
+  low → imp-low
+
+If a section has no data (e.g., no schemas found), show a friendly empty state message
+instead of leaving the section blank.
+
+Remove this comment block before outputting the final HTML.
+-->
+
+</body>
+</html>

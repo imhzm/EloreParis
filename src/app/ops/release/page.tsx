@@ -5,7 +5,7 @@ import { StorefrontShell } from "@/components/storefront-shell";
 export const metadata: Metadata = {
   title: "Internal release readiness",
   description:
-    "سطح داخلي يعرض blockers الإطلاق الحية من runtime الحالية داخل مشروع Cozmateks.",
+    "سطح داخلي يعرض عوائق الإطلاق الحية من بيئة التشغيل الحالية داخل مشروع ÉLORÉ PARIS.",
   robots: {
     index: false,
     follow: false,

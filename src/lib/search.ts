@@ -1,13 +1,12 @@
+import { categoryCopy, categorySlugs, type CategorySlug } from "@/lib/category-content";
 import {
-  collectionDirectory,
-  concerns,
-  ingredients,
-  journalArticles,
-  products,
-  routines,
-  shopCollections,
-  type CollectionSlug,
-} from "@/lib/site-content";
+  discoveryPaths,
+  discoveryRecords,
+  type DiscoveryKind,
+} from "@/lib/discovery-content";
+import { localizePath, type Locale } from "@/lib/i18n";
+import { journalContent } from "@/lib/journal-content";
+import { journalSlugs } from "@/lib/journal-routing";
 
 export type SearchResultKind =
   | "collection"
@@ -23,7 +22,7 @@ export type SearchResult = {
   href: string;
   title: string;
   description: string;
-  collection: CollectionSlug;
+  collection: CategorySlug;
   eyebrow: string;
   metadata: string;
 };
@@ -33,41 +32,69 @@ type SearchRecord = SearchResult & {
   searchText: string;
 };
 
-export const popularSearchQueries = [
-  { label: "فاونديشن مخملي", query: "فاونديشن مخملي", slug: "foundation_velvet" },
-  { label: "فيتامين C", query: "فيتامين C", slug: "vitamin_c" },
-  { label: "العناية بالشعر", query: "العناية بالشعر", slug: "haircare" },
-  { label: "لوشن جسم", query: "لوشن جسم", slug: "bodycare_lotion" },
-  { label: "فرش مكياج", query: "فرش مكياج", slug: "makeup_tools" },
-  { label: "روتين صباحي", query: "روتين صباحي", slug: "morning_routine" },
-];
+type PopularSearch = { label: string; query: string; slug: string };
+
+export const popularSearchQueriesByLocale: Record<Locale, PopularSearch[]> = {
+  ar: [
+    { label: "روتين صباحي", query: "روتين صباحي", slug: "morning_routine" },
+    { label: "ثبات المكياج", query: "ثبات المكياج", slug: "makeup_longwear" },
+    { label: "نياسيناميد", query: "نياسيناميد", slug: "niacinamide" },
+    { label: "العناية بالشعر", query: "العناية بالشعر", slug: "haircare" },
+    { label: "قوام العناية بالجسم", query: "قوام الجسم", slug: "body_texture" },
+    { label: "قراءة المكونات", query: "المكونات", slug: "ingredient_reading" },
+  ],
+  en: [
+    { label: "Morning ritual", query: "morning ritual", slug: "morning_routine" },
+    { label: "Makeup longevity", query: "makeup longevity", slug: "makeup_longwear" },
+    { label: "Niacinamide", query: "niacinamide", slug: "niacinamide" },
+    { label: "Hair care", query: "hair care", slug: "haircare" },
+    { label: "Body-care texture", query: "body texture", slug: "body_texture" },
+    { label: "Reading ingredients", query: "ingredients", slug: "ingredient_reading" },
+  ],
+};
+
+// Kept for the legacy Arabic route while /search redirects to /ar/search.
+export const popularSearchQueries = popularSearchQueriesByLocale.ar;
 
 const synonymGroups = [
-  ["skincare", "العناية بالبشرة", "عناية بالبشرة", "بشرة", "بشره"],
-  ["makeup", "مكياج", "ميك اب"],
-  ["haircare", "العناية بالشعر", "عناية بالشعر", "شعر", "هير كير"],
-  ["bodycare", "العناية بالجسم", "بودي كير", "body care", "جسم"],
-  ["tools", "الأدوات", "فرش", "فرش مكياج", "beauty tools", "ادوات"],
-  ["beauty sets", "بيوتي سيتس", "مجموعات", "هدايا", "gift set", "starter kit"],
-  ["foundation", "فاونديشن", "كريم اساس", "base", "base makeup"],
-  ["concealer", "كونسيلر"],
-  ["routine", "روتين", "routine-led"],
-  ["pigmentation", "تصبغات", "بقع", "اسمرار"],
-  ["oily skin", "البشرة الدهنية", "دهنية", "دهنيه", "oily"],
-  ["vitamin c", "فيتامين c", "فيتامين سي", "vitamin c"],
+  ["skincare", "skin care", "العناية بالبشرة", "عناية بالبشرة", "بشرة", "بشره"],
+  ["makeup", "make up", "مكياج", "ميك اب"],
+  ["haircare", "hair care", "العناية بالشعر", "عناية بالشعر", "شعر", "هير كير"],
+  ["bodycare", "body care", "body texture", "العناية بالجسم", "قوام الجسم", "جسم"],
+  ["tools", "beauty tools", "الأدوات", "فرش", "ادوات"],
+  ["beauty sets", "gift set", "gifting", "مجموعات", "هدايا"],
+  ["routine", "ritual", "روتين", "طقس"],
+  ["pigmentation", "uneven tone", "تصبغات", "بقع", "تفاوت اللون"],
+  ["makeup longevity", "longwear", "long wear", "ثبات", "ثبات المكياج"],
+  ["vitamin c", "فيتامين c", "فيتامين سي"],
   ["niacinamide", "نياسيناميد"],
-  ["hyaluronic acid", "هيالورونيك", "هيالورونيك اسيد", "hyaluronic"],
-  ["finish", "نتيجة نهائية", "مخملي", "velvet", "finish"],
-  ["longwear", "ثبات", "ثبات المكياج", "longwear", "long wear"],
+  ["hyaluronic acid", "hyaluronic", "هيالورونيك", "هيالورونيك اسيد"],
+  ["panthenol", "بانثينول"],
+  ["shea butter", "زبدة الشيا"],
+  ["ingredient", "ingredients", "مكون", "مكوّن", "المكونات"],
 ];
 
-const emptyGroups: Record<SearchResultKind, SearchResult[]> = {
-  collection: [],
-  product: [],
-  concern: [],
-  ingredient: [],
-  routine: [],
-  article: [],
+const discoveryCollectionBySlug: Record<string, CategorySlug> = {
+  pigmentation: "skincare",
+  "makeup-longwear": "makeup",
+  "morning-routine-oily-skin": "skincare",
+  "occasion-base-routine": "makeup",
+  "humidity-proof-hair-routine": "haircare",
+  "after-shower-body-routine": "bodycare",
+  niacinamide: "skincare",
+  "vitamin-c": "skincare",
+  "hyaluronic-acid": "skincare",
+  panthenol: "haircare",
+  "shea-butter": "bodycare",
+};
+
+const journalCollectionBySlug: Record<string, CategorySlug> = {
+  "morning-ritual-for-hot-weather": "skincare",
+  "uneven-tone-without-overcomplication": "skincare",
+  "makeup-longevity-without-heavy-layers": "makeup",
+  "post-wash-hair-rhythm-in-humidity": "haircare",
+  "after-shower-bodycare-by-texture": "bodycare",
+  "read-an-ingredient-before-you-choose": "skincare",
 };
 
 function normalizeArabic(text: string) {
@@ -94,181 +121,112 @@ function splitSearchTokens(value: string) {
 
 function expandSearchTerms(query: string) {
   const normalizedQuery = normalizeSearchText(query);
-  const expandedTerms = new Set([normalizedQuery, ...splitSearchTokens(query)]);
+  const queryTokens = splitSearchTokens(query).filter((token) => token.length >= 2);
+  const expandedTerms = new Set([normalizedQuery, ...queryTokens]);
 
   for (const group of synonymGroups) {
-    const normalizedGroup = group.map((term) => normalizeSearchText(term));
-    const queryMatchesGroup = normalizedGroup.some(
+    const normalizedGroup = group.map(normalizeSearchText);
+    const matches = normalizedGroup.some(
       (term) =>
         term.includes(normalizedQuery) ||
         normalizedQuery.includes(term) ||
-        splitSearchTokens(query).some(
-          (token) => term.includes(token) || token.includes(term),
-        ),
+        queryTokens.some((token) => term.includes(token) || token.includes(term)),
     );
-
-    if (queryMatchesGroup) {
-      normalizedGroup.forEach((term) => expandedTerms.add(term));
-    }
+    if (matches) normalizedGroup.forEach((term) => expandedTerms.add(term));
   }
 
   return Array.from(expandedTerms).filter(Boolean);
 }
 
-function createSearchRecords(): SearchRecord[] {
-  const collectionRecords: SearchRecord[] = shopCollections.map((collection) => ({
-    kind: "collection",
-    slug: collection.slug,
-    href: collection.href,
-    title: collection.title,
-    description: collection.description,
-    collection: collection.slug,
-    eyebrow: collection.subtitle,
-    metadata:
-      collection.mode === "filtered" ? "فئة رئيسية" : "فئة قابلة للتوسع",
-    priority: collection.mode === "filtered" ? 3 : 2,
-    searchText: [
-      collection.title,
-      collection.subtitle,
-      collection.description,
-      collection.introduction,
-      collection.entryDescription,
-      ...collection.searchTerms,
-      ...collection.shoppingSignals,
-      ...collection.focusCards.flatMap((card) => [
-        card.title,
-        card.label,
-        card.body,
-      ]),
-      ...collection.discoveryLinks.flatMap((link) => [
-        link.title,
-        link.label,
-        link.description,
-      ]),
-      ...collection.faqs.flatMap((faq) => [faq.question, faq.answer]),
-    ].join(" "),
-  }));
+function createCategoryRecords(locale: Locale): SearchRecord[] {
+  return categorySlugs.map((slug) => {
+    const record = categoryCopy[locale][slug];
+    return {
+      kind: "collection",
+      slug,
+      href: localizePath(locale, `/shop/${slug}`),
+      title: record.title,
+      description: record.description,
+      collection: slug,
+      eyebrow: record.eyebrow,
+      metadata: locale === "ar" ? "فئة جمال" : "Beauty category",
+      priority: 4,
+      searchText: [
+        record.title,
+        record.eyebrow,
+        record.description,
+        ...record.principles.flat(),
+        ...record.routes.flatMap(([title, description]) => [title, description]),
+      ].join(" "),
+    };
+  });
+}
 
-  const productRecords = products.map<SearchRecord>((product) => ({
-    kind: "product",
-    slug: product.slug,
-    href: `/products/${product.slug}`,
-    title: product.name,
-    description: product.description,
-    collection: product.collection,
-    eyebrow: product.category,
-    metadata: collectionDirectory[product.collection].title,
-    priority: 5,
-    searchText: [
-      product.name,
-      product.subtitle,
-      product.brand,
-      product.category,
-      product.concern,
-      product.ingredient,
-      product.description,
-      product.texture,
-      product.finish,
-      product.usageTiming,
-      product.routineStep,
-      ...product.skinTypes,
-      ...product.badges,
-      ...product.benefits,
-      ...product.ingredientsHighlights,
-    ].join(" "),
-  }));
+function createDiscoveryRecords(locale: Locale): SearchRecord[] {
+  return (["concern", "routine", "ingredient"] as const).flatMap((kind) =>
+    discoveryRecords[locale][kind].map((record) => ({
+      kind,
+      slug: record.slug,
+      href: localizePath(locale, `/${discoveryPaths[kind]}/${record.slug}`),
+      title: record.title,
+      description: record.summary,
+      collection: discoveryCollectionBySlug[record.slug] ?? "skincare",
+      eyebrow: record.subtitle,
+      metadata: getKindLabel(locale, kind),
+      priority: 5,
+      searchText: [
+        record.title,
+        record.subtitle,
+        record.summary,
+        ...record.signals,
+        ...record.chapters.flat(),
+        ...record.watchouts,
+        ...record.faqs.flat(),
+      ].join(" "),
+    })),
+  );
+}
 
-  const concernRecords = concerns.map<SearchRecord>((concern) => ({
-    kind: "concern",
-    slug: concern.slug,
-    href: `/concerns/${concern.slug}`,
-    title: concern.title,
-    description: concern.answer,
-    collection: concern.collection,
-    eyebrow: concern.subtitle,
-    metadata: collectionDirectory[concern.collection].title,
-    priority: 4,
-    searchText: [
-      concern.title,
-      concern.subtitle,
-      concern.answer,
-      concern.summary,
-      concern.routineLabel,
-      ...concern.keyIngredients,
-      ...concern.faqs.flatMap((faq) => [faq.question, faq.answer]),
-    ].join(" "),
-  }));
+function createJournalRecords(locale: Locale): SearchRecord[] {
+  return journalSlugs.map((slug) => {
+    const record = journalContent[locale][slug];
+    return {
+      kind: "article",
+      slug,
+      href: localizePath(locale, `/journal/${slug}`),
+      title: record.title.replace("\n", " "),
+      description: record.summary,
+      collection: journalCollectionBySlug[slug] ?? "skincare",
+      eyebrow: record.eyebrow,
+      metadata: record.readingLabel,
+      priority: 3,
+      searchText: [
+        record.title,
+        record.category,
+        record.eyebrow,
+        record.summary,
+        record.answer,
+        ...record.sections.flatMap(({ title, body }) => [title, body]),
+        ...record.takeaways,
+        ...record.faqs.flat(),
+      ].join(" "),
+    };
+  });
+}
 
-  const ingredientRecords = ingredients.map<SearchRecord>((ingredient) => ({
-    kind: "ingredient",
-    slug: ingredient.slug,
-    href: `/ingredients/${ingredient.slug}`,
-    title: ingredient.title,
-    description: ingredient.answer,
-    collection: ingredient.collection,
-    eyebrow: ingredient.subtitle,
-    metadata: collectionDirectory[ingredient.collection].title,
-    priority: 4,
-    searchText: [
-      ingredient.title,
-      ingredient.subtitle,
-      ingredient.answer,
-      ingredient.summary,
-      ingredient.role,
-      ...ingredient.fitNotes,
-      ...ingredient.watchouts,
-      ...ingredient.faqs.flatMap((faq) => [faq.question, faq.answer]),
-    ].join(" "),
-  }));
+function getKindLabel(locale: Locale, kind: DiscoveryKind) {
+  const labels: Record<Locale, Record<DiscoveryKind, string>> = {
+    ar: { concern: "حسب الاحتياج", routine: "روتين", ingredient: "مكوّن" },
+    en: { concern: "By concern", routine: "Ritual", ingredient: "Ingredient" },
+  };
+  return labels[locale][kind];
+}
 
-  const routineRecords = routines.map<SearchRecord>((routine) => ({
-    kind: "routine",
-    slug: routine.slug,
-    href: `/routines/${routine.slug}`,
-    title: routine.title,
-    description: routine.summary,
-    collection: routine.collection,
-    eyebrow: routine.subtitle,
-    metadata: collectionDirectory[routine.collection].title,
-    priority: 4,
-    searchText: [
-      routine.title,
-      routine.subtitle,
-      routine.summary,
-      ...routine.audience,
-      ...routine.steps.flatMap((step) => [step.label, step.description]),
-      ...routine.pairings.map((pairing) => pairing.label),
-      ...routine.faqs.flatMap((faq) => [faq.question, faq.answer]),
-    ].join(" "),
-  }));
-
-  const articleRecords = journalArticles.map<SearchRecord>((article) => ({
-    kind: "article",
-    slug: article.slug,
-    href: `/journal/${article.slug}`,
-    title: article.title,
-    description: article.excerpt,
-    collection: article.collection,
-    eyebrow: article.category,
-    metadata: `${article.readingTime} • ${collectionDirectory[article.collection].title}`,
-    priority: 2,
-    searchText: [
-      article.title,
-      article.category,
-      article.excerpt,
-      article.answer,
-      ...article.sections.flatMap((section) => [section.heading, section.body]),
-      ...article.faq.flatMap((faq) => [faq.question, faq.answer]),
-    ].join(" "),
-  }));
-
+function createSearchRecords(locale: Locale) {
   return [
-    ...collectionRecords,
-    ...productRecords,
-    ...concernRecords,
-    ...ingredientRecords,
-    ...routineRecords,
-    ...articleRecords,
+    ...createCategoryRecords(locale),
+    ...createDiscoveryRecords(locale),
+    ...createJournalRecords(locale),
   ];
 }
 
@@ -276,87 +234,48 @@ function getRecordScore(record: SearchRecord, query: string, expandedTerms: stri
   const haystack = normalizeSearchText(record.searchText);
   const title = normalizeSearchText(record.title);
   const queryTokens = splitSearchTokens(query);
-
   let score = 0;
 
-  if (title.includes(query)) {
-    score += 8;
-  }
-
-  if (haystack.includes(query)) {
-    score += 5;
-  }
-
-  if (queryTokens.length > 1 && queryTokens.every((token) => haystack.includes(token))) {
-    score += 3;
-  }
+  if (title.includes(query)) score += 8;
+  if (haystack.includes(query)) score += 5;
+  if (queryTokens.length > 1 && queryTokens.every((token) => haystack.includes(token))) score += 3;
 
   for (const term of expandedTerms) {
-    if (!term || term === query) {
-      continue;
-    }
-
-    if (title.includes(term)) {
-      score += 3;
-      continue;
-    }
-
-    if (haystack.includes(term)) {
-      score += 1;
-    }
+    if (!term || term === query) continue;
+    if (title.includes(term)) score += 3;
+    else if (haystack.includes(term)) score += 1;
   }
 
   return score + record.priority;
 }
 
-export function searchSiteContent(rawQuery: string) {
-  const query = rawQuery.trim();
-  const normalizedQuery = normalizeSearchText(query);
+function createEmptyGroups(): Record<SearchResultKind, SearchResult[]> {
+  return { collection: [], product: [], concern: [], ingredient: [], routine: [], article: [] };
+}
 
-  if (!normalizedQuery) {
-    return {
-      query,
-      normalizedQuery,
-      total: 0,
-      groups: emptyGroups,
-    };
-  }
+export function searchSiteContent(rawQuery: string, locale: Locale = "ar") {
+  const query = rawQuery.trim().slice(0, 120);
+  const normalizedQuery = normalizeSearchText(query);
+  if (!normalizedQuery) return { query, normalizedQuery, total: 0, ordered: [] as SearchResult[], groups: createEmptyGroups() };
 
   const expandedTerms = expandSearchTerms(query);
-  const rankedResults = createSearchRecords()
-    .map((record) => ({
-      record,
-      score: getRecordScore(record, normalizedQuery, expandedTerms),
-    }))
-    .filter((item) => item.score > item.record.priority)
-    .sort((left, right) => {
-      if (right.score !== left.score) {
-        return right.score - left.score;
-      }
-
-      return left.record.title.localeCompare(right.record.title, "ar");
-    })
-    .map((item) => item.record);
+  const rankedResults = createSearchRecords(locale)
+    .map((record) => ({ record, score: getRecordScore(record, normalizedQuery, expandedTerms) }))
+    .filter(({ record, score }) => score > record.priority)
+    .sort((left, right) =>
+      right.score !== left.score
+        ? right.score - left.score
+        : left.record.title.localeCompare(right.record.title, locale),
+    )
+    .map(({ record }) => record);
 
   const groups = rankedResults.reduce<Record<SearchResultKind, SearchResult[]>>(
     (accumulator, result) => {
       accumulator[result.kind].push(result);
       return accumulator;
     },
-    {
-      collection: [],
-      product: [],
-      concern: [],
-      ingredient: [],
-      routine: [],
-      article: [],
-    },
+    createEmptyGroups(),
   );
 
-  return {
-    query,
-    normalizedQuery,
-    total: rankedResults.length,
-    groups,
-  };
+  return { query, normalizedQuery, total: rankedResults.length, ordered: rankedResults, groups };
 }

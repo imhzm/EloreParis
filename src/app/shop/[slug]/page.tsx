@@ -17,9 +17,47 @@ export function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const collection = getCollection((await params).slug);
+  const slug = (await params).slug;
+  const collection = getCollection(slug);
   if (!collection) return {};
-  return { title: collection.title, description: collection.description, alternates: { canonical: collection.href }, robots: publicRichPreviewRobots };
+
+  const collectionImages: Record<string, string> = {
+    skincare: "/brand-assets/product-01.jpg",
+    makeup: "/brand-assets/product-05.jpg",
+    haircare: "/brand-assets/product-02.jpg",
+    bodycare: "/brand-assets/product-04.jpg",
+    tools: "/brand-assets/product-06.jpg",
+    "beauty-sets": "/brand-assets/product-03.jpg",
+  };
+  const relativeImageUrl = collectionImages[slug] ?? "/brand-assets/product-03.jpg";
+  const imageUrl = absoluteUrl(relativeImageUrl);
+
+  return {
+    title: collection.title,
+    description: collection.description,
+    alternates: { canonical: collection.href },
+    robots: publicRichPreviewRobots,
+    openGraph: {
+      title: collection.title,
+      description: collection.description,
+      url: absoluteUrl(collection.href),
+      type: "website",
+      images: [
+        {
+          url: imageUrl,
+          width: 1200,
+          height: 630,
+          alt: collection.title,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: collection.title,
+      description: collection.description,
+      images: [imageUrl],
+    },
+  };
 }
 
 export default async function EditorialCollectionPage({ params }: PageProps) {

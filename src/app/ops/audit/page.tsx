@@ -5,7 +5,7 @@ import { StorefrontShell } from "@/components/storefront-shell";
 export const metadata: Metadata = {
   title: "سجل المراجعة الداخلي",
   description:
-    "سجل داخلي لجلسات ops وتحديثات حالات الطلبات داخل مشروع Cozmateks.",
+    "سجل داخلي لجلسات التشغيل وتحديثات حالات الطلبات داخل مشروع ÉLORÉ PARIS.",
   robots: {
     index: false,
     follow: false,

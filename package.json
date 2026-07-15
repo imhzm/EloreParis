@@ -10,12 +10,25 @@
     "build": "next build && node scripts/prepare-standalone.mjs",
     "start": "node scripts/start-standalone.mjs",
     "lint": "eslint .",
+    "test:home-3d": "python scripts/home-3d-regression.py",
     "test:smoke": "node scripts/smoke-check.mjs",
-    "test:render-live": "node scripts/render-live-check.mjs",
+    "test:production-fence": "node scripts/production-fence-check.mjs",
+    "test:catalog-authority": "node scripts/catalog-authority-check.mjs",
+    "test:provider-auth-security": "node scripts/provider-auth-security-check.mjs",
+    "test:ops-lifecycle-source": "node scripts/ops-lifecycle-source-check.mjs",
+    "test:provider-callback-security": "node scripts/provider-callback-security-check.mjs",
+    "test:lifecycle-authority": "node scripts/lifecycle-authority-check.mjs",
+    "test:lifecycle-delivery": "node scripts/lifecycle-delivery-outbox-check.mjs",
+    "test:lifecycle-ses": "node scripts/lifecycle-ses-adapter-check.mjs",
+    "test:lifecycle-email-templates": "node scripts/lifecycle-email-templates-check.mjs",
+    "test:authority-backup": "node scripts/authority-db-backup-check.mjs",
+    "test:boundaries": "node scripts/localized-boundary-check.mjs",
+    "authority:backup": "node scripts/authority-db-backup.mjs",
     "ops:hash-password": "node scripts/generate-ops-password-hash.mjs"
   },
   "dependencies": {
-    "next": "16.2.2",
+    "@aws-sdk/client-sesv2": "^3.1087.0",
+    "next": "16.2.10",
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },
@@ -24,7 +37,10 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.2.2",
+    "eslint-config-next": "16.2.10",
     "typescript": "^5"
+  },
+  "overrides": {
+    "postcss": "8.5.19"
   }
 }
