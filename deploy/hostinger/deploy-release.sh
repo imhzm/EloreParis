@@ -3,6 +3,7 @@ set -Eeuo pipefail
 
 APP_ROOT="${APP_ROOT:-/srv/elore-paris}"
 REPOSITORY_DIR="${REPOSITORY_DIR:-${APP_ROOT}/repository}"
+REPOSITORY_URL="${REPOSITORY_URL:-https://github.com/imhzm/EloreParis.git}"
 RELEASES_DIR="${RELEASES_DIR:-${APP_ROOT}/releases}"
 CURRENT_LINK="${CURRENT_LINK:-${APP_ROOT}/current}"
 ENV_FILE="${ENV_FILE:-/etc/elore-paris/elore-paris.env}"
@@ -22,10 +23,15 @@ for command_name in git node npm systemctl curl tar sed tail; do
   }
 done
 
-[[ -d "${REPOSITORY_DIR}/.git" ]] || {
-  echo "Repository is missing at ${REPOSITORY_DIR}" >&2
-  exit 66
-}
+if [[ ! -d "${REPOSITORY_DIR}/.git" ]]; then
+  mkdir -p "${APP_ROOT}"
+  git clone "${REPOSITORY_URL}" "${REPOSITORY_DIR}"
+else
+  current_remote="$(git -C "${REPOSITORY_DIR}" remote get-url origin 2>/dev/null || true)"
+  if [[ "${current_remote}" != "${REPOSITORY_URL}" ]]; then
+    git -C "${REPOSITORY_DIR}" remote set-url origin "${REPOSITORY_URL}"
+  fi
+fi
 
 [[ -f "${ENV_FILE}" ]] || {
   echo "Environment file is missing at ${ENV_FILE}" >&2
