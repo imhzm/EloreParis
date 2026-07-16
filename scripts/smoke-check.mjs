@@ -32,14 +32,10 @@ function readLegacyJournalSlugs() {
   return Array.from(block.matchAll(/"([a-z0-9-]+)"/g), (match) => match[1]);
 }
 
-function readLegacyJournalSourceSlugs() {
-  const source = readFileSync(path.resolve(process.cwd(), "src/lib/site-content.ts"), "utf8");
-  const start = source.indexOf("export const journalArticles");
-  const end = source.indexOf("export type TrustPolicyRecord", start);
-  assert.ok(start >= 0 && end > start, "Legacy journal source block is missing");
-  const block = source.slice(start, end);
-  return Array.from(block.matchAll(/\bslug:\s*"([a-z0-9-]+)"/g), (match) => match[1]);
-}
+// The quarantined journalArticles corpus this used to be diffed against was
+// retired with the legacy route tree, so journal-routing.ts is now the sole
+// frozen record of what was ever published. The count assertions below are what
+// hold the line against silent drift.
 
 if (!existsSync(serverFile)) {
   throw new Error("Standalone build is missing. Run `npm run build` first.");
@@ -372,10 +368,10 @@ async function run() {
   }
 
   const legacyJournalSlugs = readLegacyJournalSlugs();
-  assert.deepEqual(
-    [...legacyJournalSlugs].sort(),
-    [...readLegacyJournalSourceSlugs()].sort(),
-    "Lightweight journal routing registry drifted from the quarantined source corpus",
+  assert.equal(
+    new Set(legacyJournalSlugs).size,
+    legacyJournalSlugs.length,
+    "Legacy journal registry must not contain duplicate slugs",
   );
   assert.equal(legacyJournalSlugs.length, 120, "Legacy journal registry count changed unexpectedly");
   const retiredJournalSlugs = legacyJournalSlugs.filter((slug) => !(slug in legacyJournalRedirects));
