@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { isLocalizedCommercePath, isLocalizedDiscoveryPath, isLocalizedJournalPath, isLocalizedShopCollectionPath, isLocalizedTrustSupportPath } from "@/lib/i18n";
+import { isLocale, isLocalizedCommercePath, isLocalizedDiscoveryPath, isLocalizedJournalPath, isLocalizedShopCollectionPath, isLocalizedTrustSupportPath } from "@/lib/i18n";
 import { getLegacyJournalRedirect, isRetiredLegacyJournalSlug } from "@/lib/journal-routing";
 import { isPublicCatalogApproved } from "@/lib/release-controls";
 import { getSearchCrawlerDirectiveHeader } from "@/lib/search-visibility";
@@ -135,6 +135,30 @@ export async function proxy(request: NextRequest) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/ar/shop";
     return applySearchCrawlerDirective(NextResponse.redirect(redirectUrl, 308));
+  }
+
+  // The canonical product route needs the same guard the legacy shape above has
+  // had all along, and needs it more: with no approved catalogue every product
+  // URL resolves to nothing, and the page answers with notFound(). A runtime
+  // notFound() raised inside this tree has no boundary it can render into —
+  // both root layouts live under route groups, so Next falls back to its own
+  // bare error document with no lang, no dir and no font variables. The Arabic
+  // language guard in globals.css keys off :lang(ar), so on that document it
+  // never matches: the headline comes back negatively tracked with its letter
+  // joins severed, in Georgia, left to right.
+  //
+  // Redirecting is also the more honest answer. There is no catalogue yet, so
+  // there is no product that is missing — there is a shop to go to. Once a
+  // catalogue is published this rule stops firing and real slugs resolve.
+  const localeSegment = pathname.split("/", 3)[1] ?? "";
+  if (
+    isLocale(localeSegment) &&
+    pathname.startsWith(`/${localeSegment}/product/`) &&
+    !isPublicCatalogApproved()
+  ) {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = `/${localeSegment}/shop`;
+    return applySearchCrawlerDirective(NextResponse.redirect(redirectUrl, 307));
   }
 
   return applySearchCrawlerDirective(NextResponse.next());
