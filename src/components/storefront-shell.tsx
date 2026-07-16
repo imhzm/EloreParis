@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { CartStatusLink } from "@/components/cart-status-link";
 import { MobileNavDrawer } from "@/components/mobile-nav-drawer";
 import { TrackedLink } from "@/components/tracked-link";
-import { localizePath, shellCopy, type Locale } from "@/lib/i18n";
+import { localizePath, resolveActiveNavHref, shellCopy, type Locale } from "@/lib/i18n";
 import styles from "./storefront-shell.module.css";
 
 type StorefrontShellProps = {
@@ -22,6 +22,8 @@ export function StorefrontShell({
   const copy = shellCopy[locale];
   const isOperationsSurface =
     activeHref === "/ops-access" || activeHref.startsWith("/ops");
+
+  const activeNavHref = resolveActiveNavHref(copy.nav, activeHref);
 
   if (isOperationsSurface) {
     return (
@@ -80,7 +82,7 @@ export function StorefrontShell({
 
         <nav className={styles.nav} aria-label={copy.navLabel}>
           {copy.nav.map(([itemHref, label]) => {
-            const isActive = itemHref === "/" ? activeHref === "/" : activeHref.startsWith(itemHref);
+            const isActive = itemHref === activeNavHref;
             return (
               <TrackedLink
                 key={itemHref}

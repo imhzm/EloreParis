@@ -103,6 +103,28 @@ function isLocalizablePath(pathname: string) {
   );
 }
 
+/**
+ * Which navigation entry, if any, should carry aria-current on this path.
+ *
+ * Exactly one may. A plain `startsWith` marks every ancestor too — on
+ * /shop/perfumes both "/shop" and "/shop/perfumes" would claim the current
+ * page — so the deepest matching entry wins and its ancestors stay quiet. The
+ * trailing slash in the prefix test stops "/shop" from matching "/shopping".
+ */
+export function resolveActiveNavHref(
+  nav: readonly (readonly [string, string])[],
+  activeHref: string,
+) {
+  return nav.reduce<string | null>((best, [itemHref]) => {
+    const matches =
+      itemHref === "/"
+        ? activeHref === "/"
+        : activeHref === itemHref || activeHref.startsWith(`${itemHref}/`);
+    if (!matches) return best;
+    return best === null || itemHref.length > best.length ? itemHref : best;
+  }, null);
+}
+
 export function localizePath(locale: Locale, href: string) {
   // Absolute URLs, protocol-relative hrefs, and non-path values are never ours
   // to rewrite. Everything else is matched on its pathname alone so that hrefs
@@ -264,7 +286,11 @@ export const shellCopy = {
     menuOpen: "فتح القائمة", menuClose: "إغلاق القائمة", footerBody: "بيت جمال رقمي فاخر يجمع الحس الباريسي مع وضوح يناسب روتينك في السعودية.",
     footerStatus: "نعرض معلومات المنتجات والسياسات من مصادر موثقة وبوضوح قبل اتخاذ القرار.", policyTitle: "الثقة والسياسات", supportTitle: "خدمة الطلب",
     footerTagline: "جمال باختيار مدروس.", languageLabel: "English", languageHref: "/en",
-    nav: [["/", "الرئيسية"], ["/shop", "المتجر"], ["/concerns", "حسب المشكلة"], ["/routines", "الروتينات"], ["/search", "البحث"], ["/journal", "المجلة"], ["/trust", "الثقة"]],
+    // The reference concept leads its navigation with the categories. Perfumes
+    // joins them here. Search is not a nav entry: the header already carries a
+    // search control beside it, and two routes to the same page is the kind of
+    // clutter this brand is meant to be the opposite of.
+    nav: [["/", "الرئيسية"], ["/shop", "المتجر"], ["/shop/perfumes", "العطور"], ["/concerns", "حسب المشكلة"], ["/routines", "الروتينات"], ["/journal", "المجلة"], ["/trust", "الثقة"]],
     policies: [["/terms", "الشروط والأحكام"], ["/trust/verification", "بيانات المنشأة"], ["/trust/privacy", "الخصوصية"], ["/trust/shipping", "الشحن والتوصيل"], ["/trust/returns", "الاستبدال والاسترجاع"]],
     support: [["/contact", "تواصلي معنا"], ["/faq", "الأسئلة الشائعة"], ["/track-order", "تتبع الطلب"], ["/cart", "السلة"], ["/search", "البحث داخل المتجر"]],
   },
@@ -274,7 +300,7 @@ export const shellCopy = {
     menuOpen: "Open menu", menuClose: "Close menu", footerBody: "A premium digital beauty house pairing Parisian sensibility with clarity made for life in Saudi Arabia.",
     footerStatus: "Product and policy information is presented from verified sources, with clarity before every decision.", policyTitle: "Trust and policies", supportTitle: "Order support",
     footerTagline: "Beauty, considered.", languageLabel: "العربية", languageHref: "/ar",
-    nav: [["/", "Home"], ["/shop", "Shop"], ["/concerns", "By concern"], ["/routines", "Rituals"], ["/search", "Search"], ["/journal", "Journal"], ["/trust", "Trust"]],
+    nav: [["/", "Home"], ["/shop", "Shop"], ["/shop/perfumes", "Perfumes"], ["/concerns", "By concern"], ["/routines", "Rituals"], ["/journal", "Journal"], ["/trust", "Trust"]],
     policies: [["/terms", "Terms and conditions"], ["/trust/verification", "Business information"], ["/trust/privacy", "Privacy"], ["/trust/shipping", "Shipping and delivery"], ["/trust/returns", "Returns and refunds"]],
     support: [["/contact", "Contact us"], ["/faq", "Frequently asked questions"], ["/track-order", "Track order"], ["/cart", "Cart"], ["/search", "Search the store"]],
   },

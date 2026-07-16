@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { TrackedLink } from "@/components/tracked-link";
-import { localizePath, shellCopy, type Locale } from "@/lib/i18n";
+import { localizePath, resolveActiveNavHref, shellCopy, type Locale } from "@/lib/i18n";
 import styles from "./mobile-nav-drawer.module.css";
 
 type MobileNavDrawerProps = {
@@ -14,6 +14,7 @@ type MobileNavDrawerProps = {
 
 export function MobileNavDrawer({ activeHref, locale = "ar", languageHref }: MobileNavDrawerProps) {
   const copy = shellCopy[locale];
+  const activeNavHref = resolveActiveNavHref(copy.nav, activeHref);
   const [isOpen, setIsOpen] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -120,10 +121,7 @@ export function MobileNavDrawer({ activeHref, locale = "ar", languageHref }: Mob
 
         <nav className={styles.drawerNav} aria-label={copy.navLabel}>
           {copy.nav.map(([itemHref, label], index) => {
-            const isActive =
-              itemHref === "/"
-                ? activeHref === "/"
-                : activeHref.startsWith(itemHref);
+            const isActive = itemHref === activeNavHref;
 
             return (
               <TrackedLink
