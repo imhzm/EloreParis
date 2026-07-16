@@ -51,21 +51,72 @@
   position: sticky;
   top: 0;
   z-index: 130;
-  min-height: 78px;
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: clamp(18px, 3vw, 42px);
-  padding: 10px max(24px, calc((100vw - 1380px) / 2));
+  display: flex;
+  flex-direction: column;
+  padding-block: 10px 0;
+  padding-inline: max(24px, calc((100vw - 1380px) / 2));
   border-bottom: 1px solid rgba(73, 23, 35, 0.14);
+  /* Slightly translucent with a blur, so the ivory reads as a surface over the
+     scene rather than a slab. Opaque fallback first for browsers without
+     backdrop-filter. */
   background: rgba(255, 253, 252, 0.98);
   box-shadow: 0 8px 26px rgba(33, 21, 26, 0.08);
 }
 
-.brand {
-  width: clamp(190px, 17vw, 250px);
+@supports (backdrop-filter: blur(1px)) {
+  .header {
+    background: rgba(255, 253, 252, 0.86);
+    backdrop-filter: blur(14px) saturate(1.1);
+  }
+}
+
+/* Three tracks: market control, centred wordmark, actions. The outer tracks are
+   sized equally so the wordmark lands on the true centre of the header rather
+   than the centre of the space left over. */
+.headerBar {
+  min-height: 68px;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: clamp(12px, 2vw, 32px);
+}
+
+.marketControl {
   display: flex;
   align-items: center;
+  gap: 10px;
+  justify-self: start;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--elore-cocoa);
+}
+
+.currency {
+  font-family: var(--font-body-latin), sans-serif;
+  letter-spacing: 0.08em;
+}
+
+.marketDivider {
+  inline-size: 1px;
+  block-size: 12px;
+  background: rgba(73, 23, 35, 0.3);
+}
+
+.languageLink {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  color: var(--elore-burgundy);
+  transition: opacity var(--motion-control);
+}
+
+.languageLink:hover { opacity: 0.7; }
+
+.brand {
+  width: clamp(160px, 15vw, 230px);
+  display: flex;
+  align-items: center;
+  justify-self: center;
 }
 
 .brand img {
@@ -80,6 +131,7 @@
   align-items: center;
   justify-content: center;
   gap: 4px;
+  padding-block-end: 2px;
 }
 
 .navLink {
@@ -95,9 +147,8 @@
 .navLink::after {
   content: "";
   position: absolute;
-  right: 14px;
-  left: 14px;
-  bottom: 5px;
+  inset-inline: 14px;
+  inset-block-end: 5px;
   height: 1px;
   background: var(--elore-burgundy);
   transform: scaleX(0);
@@ -234,7 +285,6 @@
 
 @media (max-width: 1040px) {
   .nav { display: none; }
-  .header { grid-template-columns: auto 1fr; }
   .headerActions { justify-self: end; }
   .footer { grid-template-columns: 1fr 1fr; }
   .footerBrand { grid-column: 1 / -1; }
@@ -243,22 +293,22 @@
 @media (max-width: 700px) {
   .topRibbon span:nth-child(2) { display: none; }
   .topRibbon { justify-content: flex-start; padding-inline: 14px; }
-  .topRibbon a { margin-right: auto; }
-  .header { min-height: 64px; padding: 7px 14px; }
-  .brand { width: 142px; }
+  .topRibbon a { margin-inline-start: auto; }
+  .header { padding-block: 7px 0; padding-inline: 14px; }
+  .headerBar { min-height: 58px; }
+  .brand { width: 132px; }
+  /* The market control loses the currency chip before it loses the language
+     switch — the pack requires the language stay visible, not buried. */
+  .currency, .marketDivider { display: none; }
   .headerActions { gap: 5px; }
   .searchLink,
   .cartLink { min-width: 40px; height: 40px; }
-  .cartLink { width: 40px; padding: 0; font-size: 0; }
-  .cartLink::before {
-    content: "";
-    width: 18px;
-    height: 16px;
-    border: 1.7px solid currentColor;
-    border-top: 0;
-    border-radius: 2px;
-    transform: translateY(2px);
-  }
+  /* The word collapses and the icon carries the control. It used to be a
+     rectangle drawn out of borders on a ::before, which read as an empty box;
+     the link now ships a real bag icon and the accessible name lives on
+     aria-label rather than on text that font-size: 0 had already hidden. */
+  .cartLink { width: 40px; padding: 0; }
+  .cartLink span[aria-hidden] { display: none; }
   .footer { grid-template-columns: 1fr; padding-top: 55px; }
   .footerBrand { grid-column: auto; }
   .footerBottom { align-items: flex-start; gap: 12px; flex-direction: column; }

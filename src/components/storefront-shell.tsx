@@ -42,10 +42,41 @@ export function StorefrontShell({
         <TrackedLink href={localizePath(locale, "/track-order")} analyticsLabel="header_track_order" analyticsSurface="top_ribbon">{copy.trackOrder}</TrackedLink>
       </div>
 
+      {/* The reference concept centres the wordmark and splits the utilities
+          either side of it, with navigation on its own row beneath. Laid out
+          with logical properties, so the market control sits at the reading
+          start in both directions rather than being pinned to one edge. */}
       <header className={styles.header}>
-        <TrackedLink className={styles.brand} href={localizePath(locale, "/")} analyticsEvent="navigation_click" analyticsLabel="brand_home" analyticsSurface="header_brand" analyticsDestinationType="home">
-          <Image src="/elore-assets/logo-horizontal-gold.png" alt="ÉLORÉ PARIS" width={260} height={82} priority />
-        </TrackedLink>
+        <div className={styles.headerBar}>
+          <div className={styles.marketControl}>
+            {/* SAR is shown, not offered: the catalogue authority constrains
+                currency to SAR in SQL, so a picker here would be a control that
+                cannot do anything. */}
+            <span className={styles.currency} lang="en">SAR</span>
+            <span className={styles.marketDivider} aria-hidden="true" />
+            <TrackedLink
+              href={languageHref ?? copy.languageHref}
+              className={styles.languageLink}
+              analyticsLabel="header_language_switch"
+              analyticsSurface="header_actions"
+              lang={locale === "ar" ? "en" : "ar"}
+            >
+              {copy.languageLabel}
+            </TrackedLink>
+          </div>
+
+          <TrackedLink className={styles.brand} href={localizePath(locale, "/")} analyticsEvent="navigation_click" analyticsLabel="brand_home" analyticsSurface="header_brand" analyticsDestinationType="home">
+            <Image src="/elore-assets/logo-horizontal-gold.png" alt="ÉLORÉ PARIS" width={260} height={82} priority />
+          </TrackedLink>
+
+          <div className={styles.headerActions}>
+            <TrackedLink href={localizePath(locale, "/search")} className={styles.searchLink} analyticsLabel="header_search" analyticsSurface="header_actions" analyticsDestinationType="search" aria-label={copy.searchLabel}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="6.5" stroke="currentColor" strokeWidth="1.7" /><path d="m16 16 4 4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" /></svg>
+            </TrackedLink>
+            <CartStatusLink href={localizePath(locale, "/cart")} className={styles.cartLink} badgeClassName={styles.cartBadge} label={copy.cart} countLabel={copy.cartCountLabel} />
+            <MobileNavDrawer activeHref={activeHref} locale={locale} languageHref={languageHref} />
+          </div>
+        </div>
 
         <nav className={styles.nav} aria-label={copy.navLabel}>
           {copy.nav.map(([itemHref, label]) => {
@@ -65,17 +96,6 @@ export function StorefrontShell({
             );
           })}
         </nav>
-
-        <div className={styles.headerActions}>
-          <TrackedLink href={localizePath(locale, "/search")} className={styles.searchLink} analyticsLabel="header_search" analyticsSurface="header_actions" analyticsDestinationType="search" aria-label={copy.searchLabel}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="6.5" stroke="currentColor" strokeWidth="1.7" /><path d="m16 16 4 4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" /></svg>
-          </TrackedLink>
-          <CartStatusLink href={localizePath(locale, "/cart")} className={styles.cartLink} badgeClassName={styles.cartBadge} label={copy.cart} countLabel={copy.cartCountLabel} />
-          <TrackedLink href={languageHref ?? copy.languageHref} className={styles.searchLink} analyticsLabel="header_language_switch" analyticsSurface="header_actions" aria-label={copy.languageLabel}>
-            {locale === "ar" ? "EN" : "AR"}
-          </TrackedLink>
-          <MobileNavDrawer activeHref={activeHref} locale={locale} languageHref={languageHref} />
-        </div>
       </header>
 
       <main className={styles.main} id="main-content">{children}</main>
