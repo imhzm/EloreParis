@@ -1,6 +1,45 @@
 # Elore Paris — Full Site Upgrade Ledger
 
-Last updated: 2026-07-16 16:56 (Africa/Cairo, UTC+03:00)
+Last updated: 2026-07-17 (Africa/Cairo, UTC+03:00)
+
+## 2026-07-17 reference concept, type system, and prerendering
+
+Driven by `ELORE_Claude_Implementation_Pack` (owner-supplied roadmap, design
+tokens, and the approved `reference/elore-home-concept.png`).
+
+- [x] Restored static generation. `src/app/layout.tsx` called `headers()` to read
+      the locale, which opted all 111 routes out of prerendering and left seven
+      `generateStaticParams()` inert. The storefront moved under
+      `(storefront)/[locale]` with a root layout reading `params`; `/ops`,
+      `/ops-access` and the redirect shims moved under `(system)` with their own
+      root layout. **109 pages now prerender**; only cookie-, query- and
+      catalogue-backed routes stay dynamic.
+- [x] Replaced the type system on measured evidence, not preference. The pack
+      proposed Noto Naskh / IBM Plex Sans Arabic / Cormorant / Inter as a
+      starting suggestion; the owner confirmed the measured alternative instead.
+      Cormorant's hairline renders at 0.68 device px at a 28px mobile headline
+      (sub-pixel — it drops), and IBM Plex Sans Arabic is the production body
+      face of Nice One, the discount leader. Now Alyamama + Fustat (self-hosted,
+      Arabic-only subsets) and Newsreader (`axes:["opsz"]`) + Public Sans.
+      Preloaded font payload per page: **326 KB → 155 KB**.
+- [x] Built the bento commerce grid from the reference as a card system with
+      typed variants, replacing the narrower three-band intention list.
+- [x] Rebuilt the header on the reference composition: centred wordmark, market
+      control, navigation on its own row.
+- [x] Added `perfumes` as a first-class category by owner decision, reversing the
+      recorded separation from the fragrance business (see PROJECT-BRIEF.md).
+- [x] Closed a hole in the policy gate: `isConfiguredVersion` omitted `replace`
+      from its placeholder list, so a template default would have counted as an
+      approved terms version and been stamped onto real orders. Locked by
+      `npm run test:release-controls`.
+- [ ] Hero art direction from the reference (brand rail, ribbon, 01–04
+      pagination) is not built. The current hero remains the handoff's.
+- [ ] Dedicated perfume concept imagery. The category borrows the transition
+      scene, marked as a placeholder in both content modules. Blocked: no image
+      generation credential is available in this environment.
+- [ ] The reference's trust strip is not built. Its five claims (delivery,
+      samples, wrapping, sourcing, returns) are operational promises this
+      project cannot substantiate yet, and the pack forbids inventing them.
 
 ## Current status
 
@@ -16,14 +55,18 @@ Last updated: 2026-07-16 16:56 (Africa/Cairo, UTC+03:00)
 
 ## 2026-07-16 typography and commerce-surface pass
 
+> Superseded by the 2026-07-17 entry above: this four-family set was replaced
+> after measurement. Kept for the record, not as current state.
+
 - [x] Replaced the single-family Alexandria setup with a locale-aware luxury type system: Noto Naskh Arabic for Arabic display, IBM Plex Sans Arabic for Arabic body/UI, Cormorant Garamond for English display, and Manrope for English body/UI.
 - [x] Kept typography behind shared tokens so cinematic and localized surfaces inherit the correct family without per-component overrides.
 - [x] Verified the font system across Arabic and English home, shop, and journal routes on desktop and mobile; all webfonts loaded, with no horizontal overflow or browser errors.
 - [x] Localized public cart and checkout gate states, corrected locale-aware metadata, reduced the tracking-page dead interval, and fixed the order-success secondary-action contrast.
 - [x] Rebuilt 111 routes and passed lint, TypeScript, smoke, home 3D regression, and targeted browser QA.
-- [ ] Isolate the legacy technical/funnel corpus in `site-content.ts` from every reachable public and schema surface.
+- [x] Isolate the legacy technical/funnel corpus in `site-content.ts` from every reachable public and schema surface. **Done 2026-07-17** — the corpus was retired with the non-localized route tree that was its only remaining consumer; `site-content.ts` went 8,742 → 185 lines.
 - [ ] Consolidate repeated concept-image and catalog-gate disclosures into a single quiet, accessible pattern.
-- [ ] Add consent-aware analytics, server-side purchase deduplication, and a report-only CSP before any production analytics or indexing activation.
+- [x] Add a report-only CSP. **Done 2026-07-17** — hash/allowlist based in `next.config.ts`, deliberately not nonce-based: a per-request nonce forces dynamic rendering and would undo the prerendering above. Still report-only; not yet enforced.
+- [ ] Add consent-aware analytics and server-side purchase deduplication before any production analytics or indexing activation.
 
 ## 2026-07-15 Drive source-of-truth intake
 
