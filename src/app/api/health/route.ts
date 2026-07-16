@@ -22,6 +22,19 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+/**
+ * Strips the identifier off each readiness blocker, keeping only its kind.
+ *
+ * `product_not_approved:radiant-dew-serum` -> `product_not_approved`
+ * `active_catalog_publication_missing`     -> unchanged (carries no identifier)
+ *
+ * Deduplicated, so ten unapproved products read as one `product_not_approved`
+ * rather than leaking the count through the array length.
+ */
+function redactCatalogBlockers(blockers: readonly string[]) {
+  return [...new Set(blockers.map((blocker) => blocker.split(":", 1)[0]))];
+}
+
 function getEnvironmentLabel() {
   return (
     process.env.APP_ENV ??
@@ -78,10 +91,22 @@ export function GET() {
         isPublicCommerceAvailable() && catalogAuthority.ready,
       catalogAuthority: {
         ready: catalogAuthority.ready,
-        importId: catalogAuthority.importId,
-        productCount: catalogAuthority.productCount,
-        variantCount: catalogAuthority.variantCount,
-        blockers: catalogAuthority.blockers,
+        // Deliberately omitted from this public payload: importId, productCount,
+        // variantCount, and the identifier half of each blocker.
+        //
+        // This route has no auth and proxy.ts guards only /ops, so it is
+        // reachable by anyone. Readiness blockers are minted as
+        // `product_not_approved:{slug}` and `variant_price_approval_missing:{sku}`
+        // (catalog-authority.ts), so the moment an operator imports the real
+        // catalogue to rehearse — which is the intended flow — curling this URL
+        // would return every unreleased product slug, every SKU, and the size of
+        // the line-up, before announcement.
+        //
+        // The blocker KIND is the useful diagnostic and is kept; the identifier
+        // is not, and is dropped rather than hashed, because a stable hash of a
+        // small slug set is not much of a secret either. Operators who need the
+        // detail have /api/ops/catalog/authority, which is gated.
+        blockers: redactCatalogBlockers(catalogAuthority.blockers),
       },
       searchIndexingEnabled,
       canonicalUrl: getSiteUrl(),
