@@ -1,14 +1,20 @@
 :root {
   /* Type roles, never font names — a token called --font-cormorant is how a
      face survives a swap it should have been part of.
-     The stacks are Latin-first deliberately: CSS resolves font fallback per
-     glyph, so the Latin face renders "ÉLORÉ PARIS" and every Western digit
-     while the Arabic face catches Arabic codepoints by fall-through. That
-     gives one Latin voice across both locales and means we never inherit the
-     borrowed Latin drawn into the Arabic faces. It also removes the need for
-     any per-lang font override. */
-  --stack-display: var(--font-en-display), var(--font-ar-display), Georgia, serif;
-  --stack-body: var(--font-en-body), var(--font-ar-body), "Segoe UI", Tahoma, sans-serif;
+
+     Arabic first, then Latin. CSS resolves fallback per glyph, and the Arabic
+     faces are subset to Arabic blocks only — no Latin letters, no Western
+     digits — so this order sorts the two scripts by itself: Arabic finds its
+     face immediately, while "ÉLORÉ PARIS" and every price find nothing there
+     and fall through to the Latin voice. No per-lang font override needed, and
+     the borrowed Latin bundled inside an Arabic face is unreachable.
+
+     Do not "fix" this to Latin-first. next/font/google ignores
+     adjustFontFallback, so --font-en-* always drags a generated fallback family
+     that resolves to a local serif with Arabic coverage; ahead of the Arabic
+     face it swallows every Arabic glyph and the site renders in Times. */
+  --stack-display: var(--font-ar-display), var(--font-en-display), Georgia, serif;
+  --stack-body: var(--font-ar-body), var(--font-en-body), "Segoe UI", Tahoma, sans-serif;
 
   --font-display: var(--stack-display);
   --font-body: var(--stack-body);
@@ -67,7 +73,10 @@
      Tracking goes to zero because letter-spacing an Arabic run breaks the
      joins between letters — it is not a stylistic preference. */
   --leading-body: 1.75;
-  --leading-display: 1.08;
+  /* Measured, not chosen: an Arabic display line inks at ~1.22x font-size in
+     Alyamama at size-adjust 106%. This is the floor that stops clipping, with a
+     little headroom for the vowelled tagline. */
+  --leading-display: 1.28;
   --tracking-display: 0;
 }
 
@@ -162,6 +171,30 @@ h6 {
      resets kill it — and never set font-variation-settings: "opsz" by hand,
      which overrides it and re-breaks exactly that. */
   font-optical-sizing: auto;
+}
+
+/* Two correctness guards for Arabic headings, not style preferences — which is
+   why they are !important and scoped by language rather than left to each
+   component. A dozen CSS modules hard-code display tracking and leading that
+   are right for Latin and wrong for Arabic, at a specificity that beats any
+   token, and one of them getting it wrong must not be able to break the primary
+   locale.
+
+   letter-spacing: spacing an Arabic run pulls the letters apart and severs the
+   joins between them. It produces broken words, not looser words.
+
+   line-height: Arabic sets a shorter body on much taller ascenders, and harakat
+   need headroom above the line. Measured on this type system, an Arabic display
+   line inks at ~1.22x its font-size, so the 0.82-0.98 leading these modules use
+   for Latin clips the tops and tails off every Arabic heading. */
+:lang(ar) h1,
+:lang(ar) h2,
+:lang(ar) h3,
+:lang(ar) h4,
+:lang(ar) h5,
+:lang(ar) h6 {
+  letter-spacing: normal !important;
+  line-height: var(--leading-display) !important;
 }
 
 img {

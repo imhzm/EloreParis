@@ -323,8 +323,11 @@ try {
   assert.doesNotMatch(confirmationSource, /console\.(?:log|info|warn|error)/);
   assert.doesNotMatch(confirmationSource, />\s*\{unsubscribeToken\}\s*</);
 
+  // The storefront lives under a route group so that [locale]/layout.tsx can be
+  // a root layout and read the locale from params. Route groups do not appear
+  // in URLs, only on disk.
   const unsubscribePageSource = readFileSync(
-    path.join(root, "src/app/[locale]/unsubscribe/page.tsx"),
+    path.join(root, "src/app/(storefront)/[locale]/unsubscribe/page.tsx"),
     "utf8",
   );
   assert.doesNotMatch(unsubscribePageSource, /searchParams|unsubscribeToken/);

@@ -8,6 +8,15 @@ import { absoluteUrl, siteName } from "@/lib/site-content";
 import { shopCopy } from "@/lib/shop-content";
 import { getPublicCatalogSnapshot } from "@/lib/public-catalog";
 
+// This page reads the approved catalogue out of the authority database, which
+// is runtime state: an operator publishing an import must be reflected without
+// a rebuild. Prerendering it would freeze whatever the catalogue held at build
+// time — an empty shelf — and no publication would ever appear.
+//
+// The rest of the storefront is authored content and stays prerendered; this is
+// the deliberate exception, alongside the catalogue-backed product route.
+export const dynamic = "force-dynamic";
+
 type PageProps = { params: Promise<{ locale: string }> };
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {

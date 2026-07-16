@@ -1,0 +1,165 @@
+{
+  "$schema": "https://design-tokens.github.io/community-group/format/",
+  "color": {
+    "wine": {
+      "950": {
+        "$value": "#120305",
+        "$type": "color"
+      },
+      "900": {
+        "$value": "#25080C",
+        "$type": "color"
+      },
+      "800": {
+        "$value": "#371319",
+        "$type": "color"
+      },
+      "700": {
+        "$value": "#521A25",
+        "$type": "color"
+      },
+      "600": {
+        "$value": "#6B2632",
+        "$type": "color"
+      }
+    },
+    "ivory": {
+      "50": {
+        "$value": "#F8F5F2",
+        "$type": "color"
+      },
+      "100": {
+        "$value": "#F1E9E3",
+        "$type": "color"
+      }
+    },
+    "sand": {
+      "200": {
+        "$value": "#E1D1C4",
+        "$type": "color"
+      },
+      "300": {
+        "$value": "#CEB49F",
+        "$type": "color"
+      }
+    },
+    "taupe": {
+      "500": {
+        "$value": "#A78A77",
+        "$type": "color"
+      }
+    },
+    "gold": {
+      "400": {
+        "$value": "#C7A36D",
+        "$type": "color"
+      },
+      "500": {
+        "$value": "#B8935E",
+        "$type": "color"
+      },
+      "600": {
+        "$value": "#9C7646",
+        "$type": "color"
+      }
+    },
+    "ink": {
+      "$value": "#1C1011",
+      "$type": "color"
+    },
+    "muted": {
+      "$value": "#765F58",
+      "$type": "color"
+    },
+    "white": {
+      "$value": "#FFFFFF",
+      "$type": "color"
+    }
+  },
+  "spacing": {
+    "1": {
+      "$value": "4px",
+      "$type": "dimension"
+    },
+    "2": {
+      "$value": "8px",
+      "$type": "dimension"
+    },
+    "3": {
+      "$value": "12px",
+      "$type": "dimension"
+    },
+    "4": {
+      "$value": "16px",
+      "$type": "dimension"
+    },
+    "6": {
+      "$value": "24px",
+      "$type": "dimension"
+    },
+    "8": {
+      "$value": "32px",
+      "$type": "dimension"
+    },
+    "12": {
+      "$value": "48px",
+      "$type": "dimension"
+    },
+    "16": {
+      "$value": "64px",
+      "$type": "dimension"
+    },
+    "20": {
+      "$value": "80px",
+      "$type": "dimension"
+    },
+    "28": {
+      "$value": "112px",
+      "$type": "dimension"
+    },
+    "36": {
+      "$value": "144px",
+      "$type": "dimension"
+    }
+  },
+  "radius": {
+    "sm": {
+      "$value": "12px",
+      "$type": "dimension"
+    },
+    "md": {
+      "$value": "20px",
+      "$type": "dimension"
+    },
+    "lg": {
+      "$value": "32px",
+      "$type": "dimension"
+    },
+    "xl": {
+      "$value": "48px",
+      "$type": "dimension"
+    },
+    "pill": {
+      "$value": "999px",
+      "$type": "dimension"
+    }
+  },
+  "motion": {
+    "control": {
+      "$value": "200ms",
+      "$type": "duration"
+    },
+    "card": {
+      "$value": "320ms",
+      "$type": "duration"
+    },
+    "reveal": {
+      "$value": "600ms",
+      "$type": "duration"
+    },
+    "page": {
+      "$value": "400ms",
+      "$type": "duration"
+    }
+  }
+}
