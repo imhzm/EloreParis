@@ -42,7 +42,17 @@
 }
 
 .topRibbon a {
-  margin-right: auto;
+  /* Physical `right` in a bidirectional ribbon pushed this link to opposite
+     ends of the intent depending on direction. It belongs at the reading end in
+     both. */
+  margin-inline-start: auto;
+  /* The ribbon is 34px tall but the link only inked to 20px, leaving a
+     standalone target under the WCAG 2.2 minimum of 24. It now fills the band.
+     (The privacy link inside the newsletter consent sentence stays as it is —
+     targets inline in a sentence are exempt.) */
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 24px;
   color: var(--elore-warm-white);
   font-weight: 700;
 }
