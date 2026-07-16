@@ -603,6 +603,45 @@ const authorityMigrations = [
         );
     `,
   },
+  {
+    id: "2026-07-15-lifecycle-sns-callback-v1",
+    sql: `
+      CREATE TABLE authority_lifecycle_sns_messages (
+        topic_arn TEXT NOT NULL,
+        message_id TEXT NOT NULL,
+        message_type TEXT NOT NULL CHECK (
+          message_type IN (
+            'Notification',
+            'SubscriptionConfirmation',
+            'UnsubscribeConfirmation'
+          )
+        ),
+        payload_hash TEXT NOT NULL,
+        received_at TEXT NOT NULL,
+        PRIMARY KEY (topic_arn, message_id)
+      );
+
+      CREATE INDEX idx_authority_lifecycle_sns_received
+        ON authority_lifecycle_sns_messages (received_at DESC);
+    `,
+  },
+  {
+    id: "2026-07-16-public-request-throttle-v1",
+    sql: `
+      CREATE TABLE authority_public_request_throttle (
+        throttle_key TEXT PRIMARY KEY,
+        scope TEXT NOT NULL,
+        label TEXT NOT NULL,
+        request_count INTEGER NOT NULL CHECK (request_count >= 0),
+        window_started_at TEXT NOT NULL,
+        last_request_at TEXT NOT NULL,
+        blocked_until TEXT
+      );
+
+      CREATE INDEX idx_authority_public_request_throttle_last_request
+        ON authority_public_request_throttle (last_request_at);
+    `,
+  },
 ] as const;
 
 function applyAuthorityMigrations(database: DatabaseSync) {

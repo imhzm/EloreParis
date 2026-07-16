@@ -10,37 +10,36 @@ import { AnalyticsProvider } from "@/components/analytics-provider";
 import { CartProvider } from "@/components/cart-provider";
 import { defaultMetadataRobots } from "@/lib/seo";
 import { defaultLocale, isLocale, localeConfig } from "@/lib/i18n";
-import { defaultDescription, siteName, siteTagline, siteUrl } from "@/lib/site-content";
+import { defaultDescription, getSiteUrl, siteName, siteTagline } from "@/lib/site-content";
 import "./globals.css";
 
-const bodyFont = IBM_Plex_Sans_Arabic({
-  variable: "--font-body",
+const arabicBody = IBM_Plex_Sans_Arabic({
+  variable: "--font-arabic-body",
   subsets: ["arabic", "latin"],
-  weight: ["300", "400", "500", "600", "700"],
-  display: "swap",
-});
-
-const displayFont = Noto_Naskh_Arabic({
-  variable: "--font-display",
-  subsets: ["arabic", "latin"],
-  weight: ["500", "600", "700"],
-  display: "swap",
-});
-
-const latinBodyFont = Manrope({
-  variable: "--font-body-latin",
-  subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 
-const latinDisplayFont = Cormorant_Garamond({
-  variable: "--font-display-latin",
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
+const arabicDisplay = Noto_Naskh_Arabic({
+  variable: "--font-arabic-display",
+  subsets: ["arabic"],
+  weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 
+const latinBody = Manrope({
+  variable: "--font-latin-body",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+const cormorant = Cormorant_Garamond({
+  variable: "--font-cormorant",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+const siteUrl = getSiteUrl();
 const socialImageUrl = new URL("/opengraph-image", siteUrl).toString();
 
 export const metadata: Metadata = {
@@ -119,7 +118,7 @@ export default async function RootLayout({
     <html
       lang={language.htmlLang}
       dir={language.dir}
-      className={`${bodyFont.variable} ${displayFont.variable} ${latinBodyFont.variable} ${latinDisplayFont.variable}`}
+      className={`${arabicBody.variable} ${arabicDisplay.variable} ${latinBody.variable} ${cormorant.variable}`}
     >
       <body>
         <CartProvider>

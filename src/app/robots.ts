@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import { isSearchIndexingEnabled } from "@/lib/search-visibility";
-import { siteUrl } from "@/lib/site-content";
+import { getSiteUrl } from "@/lib/site-content";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +13,8 @@ export default function robots(): MetadataRoute.Robots {
       },
     };
   }
+
+  const siteUrl = getSiteUrl();
 
   return {
     rules: {

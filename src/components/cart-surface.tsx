@@ -46,6 +46,29 @@ export function CartSurface() {
     updateItemQuantity,
   } = useCart();
   const locale: Locale = pathname === "/en" || pathname.startsWith("/en/") ? "en" : "ar";
+  const copy = locale === "en" ? {
+    loading: ["Cart verification", "Restoring your cart", "We are checking saved items against the latest verified catalog before showing prices or availability."],
+    error: ["Verification unavailable", "Your cart items are still saved", "We could not reach the verified product catalog. Reload the page to try again."],
+    retry: "Try again",
+    backToShop: "Return to shop",
+    gate: ["Catalog verification", "Shopping is temporarily paused", "Your choices remain saved locally, but prices, availability, and checkout will stay unavailable until the verified product catalog is published."],
+    explore: "Explore the shop",
+    trust: "How we verify products",
+    empty: ["Shopping cart", "Your cart is currently empty", "Explore the collection or search the shop, then return here to review verified prices and availability."],
+    browse: "Browse the collection",
+    search: "Search the shop",
+  } : {
+    loading: ["التحقق من السلة", "جارٍ استعادة سلتك", "نراجع العناصر المحفوظة مقابل أحدث كتالوج موثّق قبل عرض السعر أو التوفر."],
+    error: ["تعذر التحقق", "عناصر السلة ما زالت محفوظة", "تعذر الاتصال بكتالوج المنتجات الموثّق. أعيدي تحميل الصفحة للمحاولة مرة أخرى."],
+    retry: "إعادة المحاولة",
+    backToShop: "العودة إلى المتجر",
+    gate: ["التحقق من الكتالوج", "الشراء متوقف مؤقتًا", "نحافظ على اختياراتك محليًا، لكن الأسعار والتوفر والدفع ستظل غير متاحة حتى نشر كتالوج المنتجات الموثّق."],
+    explore: "استكشاف المتجر",
+    trust: "كيف نتحقق من المنتجات؟",
+    empty: ["سلة التسوق", "السلة فارغة حاليًا", "ابدئي من المجموعة أو البحث، ثم عودي هنا لمراجعة السعر والتوفر الموثّقين."],
+    browse: "تصفح المجموعة",
+    search: "البحث داخل المتجر",
+  };
 
   function updateQuantity(productSlug: string, sku: string, quantity: number) {
     updateItemQuantity({ productSlug, sku, quantity });
@@ -72,9 +95,9 @@ export function CartSurface() {
   if (!isHydrated) {
     return (
       <StateCard
-        eyebrow="Cart authority"
-        title="جارٍ استعادة السلة والتحقق من المنتجات"
-        body="نراجع العناصر المحفوظة على هذا الجهاز مقابل آخر كتالوج منشور، من دون الاعتماد على سعر محفوظ في المتصفح."
+        eyebrow={copy.loading[0]}
+        title={copy.loading[1]}
+        body={copy.loading[2]}
       />
     );
   }
@@ -82,16 +105,16 @@ export function CartSurface() {
   if (catalogStatus === "error") {
     return (
       <StateCard
-        eyebrow="تعذر التحقق"
-        title="عناصر السلة محفوظة ولم تُحذف"
-        body={catalogError ?? "تعذر الاتصال بكتالوج المنتجات الآن. أعيدي تحميل الصفحة للمحاولة مرة أخرى."}
+        eyebrow={copy.error[0]}
+        title={copy.error[1]}
+        body={catalogError ?? copy.error[2]}
       >
         <div className={styles.actionColumn}>
           <button className={styles.primaryButton} type="button" onClick={() => window.location.reload()}>
-            إعادة المحاولة
+            {copy.retry}
           </button>
           <TrackedLink href={localizePath(locale, "/shop")} className={styles.secondaryLink} analyticsLabel="cart_error_to_shop" analyticsSurface="cart_error">
-            العودة إلى المتجر
+            {copy.backToShop}
           </TrackedLink>
         </div>
       </StateCard>
@@ -101,16 +124,16 @@ export function CartSurface() {
   if (catalogStatus === "unavailable") {
     return (
       <StateCard
-        eyebrow="Catalog gate"
-        title="الشراء متوقف مؤقتًا حتى اعتماد الكتالوج"
-        body="نحافظ على اختياراتك المحلية، لكننا لن نعرض أسعارًا أو توفرًا غير معتمدين ولن نفتح checkout قبل نشر بيانات المنتجات الحقيقية."
+        eyebrow={copy.gate[0]}
+        title={copy.gate[1]}
+        body={copy.gate[2]}
       >
         <div className={styles.actionColumn}>
           <TrackedLink href={localizePath(locale, "/shop")} className={styles.primaryLink} analyticsLabel="cart_gate_to_shop" analyticsSurface="cart_gate">
-            استكشاف المتجر
+            {copy.explore}
           </TrackedLink>
           <TrackedLink href={localizePath(locale, "/trust")} className={styles.secondaryLink} analyticsLabel="cart_gate_to_trust" analyticsSurface="cart_gate">
-            كيف نتحقق من المنتجات؟
+            {copy.trust}
           </TrackedLink>
         </div>
       </StateCard>
@@ -120,16 +143,16 @@ export function CartSurface() {
   if (!lines.length && !unavailableItems.length) {
     return (
       <StateCard
-        eyebrow="السلة"
-        title="السلة فارغة حاليًا"
-        body="ابدئي من المجموعة أو البحث، ثم عودي هنا لمراجعة السعر والتوفر من الكتالوج المعتمد قبل إنشاء الطلب."
+        eyebrow={copy.empty[0]}
+        title={copy.empty[1]}
+        body={copy.empty[2]}
       >
         <div className={styles.actionColumn}>
           <TrackedLink href={localizePath(locale, "/shop")} className={styles.primaryLink} analyticsLabel="cart_empty_to_shop" analyticsSurface="cart_empty">
-            تصفح المجموعة
+            {copy.browse}
           </TrackedLink>
           <TrackedLink href={localizePath(locale, "/search")} className={styles.secondaryLink} analyticsLabel="cart_empty_to_search" analyticsSurface="cart_empty">
-            البحث داخل المتجر
+            {copy.search}
           </TrackedLink>
         </div>
       </StateCard>

@@ -3,10 +3,12 @@ import type { Locale } from "@/lib/i18n";
 const images = {
   skincare: "/elore-assets/texture-skincare-serum-concept-1536w.avif",
   makeup: "/elore-assets/texture-makeup-pigment-concept-1536w.avif",
+  haircare: "/elore-assets/haircare-ribbon-editorial-concept-1122x1402.avif",
+  bodycare: "/elore-assets/bodycare-stone-ritual-concept-1122x1402.avif",
+  tools: "/elore-assets/tools-brass-flatlay-concept-1254x1254.avif",
   editorial: "/elore-assets/editorial-skin-light-concept-1122w.avif",
   silk: "/elore-assets/hero-silk-champagne-concept-1672w.avif",
-  satin: "/elore-assets/transition-burgundy-satin-concept-1672w.avif",
-  gifting: "/elore-assets/gifting-ribbon-ritual-concept-1536w.avif",
+  gifting: "/elore-assets/gifting-folds-concept-1536x1024.avif",
 } as const;
 
 export const shopCopy = {
@@ -27,9 +29,9 @@ export const shopCopy = {
     collections: [
       ["العناية بالبشرة", "SKINCARE", "/shop/skincare", images.skincare, "shop_hub_collection_skincare"],
       ["المكياج", "MAKEUP", "/shop/makeup", images.makeup, "shop_hub_collection_makeup"],
-      ["العناية بالشعر", "HAIRCARE", "/shop/haircare", images.editorial, "shop_hub_collection_haircare"],
-      ["العناية بالجسم", "BODYCARE", "/shop/bodycare", images.silk, "shop_hub_collection_bodycare"],
-      ["الأدوات", "TOOLS", "/shop/tools", images.satin, "shop_hub_collection_tools"],
+      ["العناية بالشعر", "HAIRCARE", "/shop/haircare", images.haircare, "shop_hub_collection_haircare"],
+      ["العناية بالجسم", "BODYCARE", "/shop/bodycare", images.bodycare, "shop_hub_collection_bodycare"],
+      ["الأدوات", "TOOLS", "/shop/tools", images.tools, "shop_hub_collection_tools"],
       ["مجموعات الجمال", "BEAUTY SETS", "/shop/beauty-sets", images.gifting, "shop_hub_collection_beauty_sets"],
     ],
     studies: [
@@ -63,9 +65,9 @@ export const shopCopy = {
     collections: [
       ["Skincare", "SKINCARE", "/shop/skincare", images.skincare, "shop_hub_collection_skincare"],
       ["Makeup", "MAKEUP", "/shop/makeup", images.makeup, "shop_hub_collection_makeup"],
-      ["Haircare", "HAIRCARE", "/shop/haircare", images.editorial, "shop_hub_collection_haircare"],
-      ["Bodycare", "BODYCARE", "/shop/bodycare", images.silk, "shop_hub_collection_bodycare"],
-      ["Tools", "TOOLS", "/shop/tools", images.satin, "shop_hub_collection_tools"],
+      ["Haircare", "HAIRCARE", "/shop/haircare", images.haircare, "shop_hub_collection_haircare"],
+      ["Bodycare", "BODYCARE", "/shop/bodycare", images.bodycare, "shop_hub_collection_bodycare"],
+      ["Tools", "TOOLS", "/shop/tools", images.tools, "shop_hub_collection_tools"],
       ["Beauty sets", "BEAUTY SETS", "/shop/beauty-sets", images.gifting, "shop_hub_collection_beauty_sets"],
     ],
     studies: [

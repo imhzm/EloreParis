@@ -88,6 +88,6 @@ export function buildSearchSchema(locale: Locale) {
     name: locale === "ar" ? "البحث داخل ÉLORÉ PARIS" : "Search ÉLORÉ PARIS",
     description: searchPageCopy[locale].intro,
     inLanguage: localeConfig[locale].htmlLang,
-    isPartOf: { "@id": `${siteUrl}/#website` },
+    isPartOf: { "@id": `${siteUrl}/${locale}#website` },
   };
 }

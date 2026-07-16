@@ -109,12 +109,23 @@ assert.deepEqual(calls[0].command.input, {
   },
 });
 
+const defaultTimeoutEnvironment = { ...environment };
+delete defaultTimeoutEnvironment.LIFECYCLE_SES_TIMEOUT_MS;
+const defaultTimeoutAdapter = adapterModule.createAwsSesLifecycleEmailAdapter({
+  environment: defaultTimeoutEnvironment,
+  client: { send: async () => ({ MessageId: "unused", $metadata: {} }) },
+});
+assert.equal(defaultTimeoutAdapter.timeoutMs, 10_000);
+
 for (const invalidEnvironment of [
   { ...environment, LIFECYCLE_DELIVERY_PROVIDER_KEY: "other" },
+  { ...environment, LIFECYCLE_SES_REGION: "replace-with-region" },
   { ...environment, LIFECYCLE_SES_REGION: "invalid" },
   { ...environment, LIFECYCLE_SES_FROM_EMAIL: "not-an-email" },
   { ...environment, LIFECYCLE_SES_CONFIGURATION_SET: "bad set" },
   { ...environment, LIFECYCLE_SES_TIMEOUT_MS: "999" },
+  { ...environment, LIFECYCLE_SES_TIMEOUT_MS: "01000" },
+  { ...environment, LIFECYCLE_SES_TIMEOUT_MS: "30001" },
 ]) {
   assert.throws(
     () =>
@@ -153,6 +164,11 @@ await assertAwsFailure(
   false,
 );
 await assertAwsFailure(
+  { name: "AccessDeniedException", $metadata: { httpStatusCode: 403 } },
+  "aws_ses_accessdeniedexception",
+  false,
+);
+await assertAwsFailure(
   { name: "AbortError" },
   "provider_timeout",
   true,
@@ -163,9 +179,41 @@ await assertAwsFailure(
   true,
 );
 await assertAwsFailure(
+  { name: "UnknownProviderError", $retryable: { throttling: true } },
+  "aws_ses_unknownprovidererror",
+  true,
+);
+await assertAwsFailure(
+  { name: "UnknownProviderError", $metadata: { httpStatusCode: 503 } },
+  "aws_ses_unknownprovidererror",
+  true,
+);
+await assertAwsFailure(
   {},
   "aws_ses_request_failed",
   false,
+);
+
+const invalidResponseAdapter = adapterModule.createAwsSesLifecycleEmailAdapter({
+  environment,
+  client: { send: async () => ({ MessageId: "   ", $metadata: {} }) },
+});
+await assert.rejects(
+  invalidResponseAdapter.send(payload, context),
+  (error) => error.code === "provider_response_invalid" && !error.retryable,
+);
+
+const upstreamAdapterError = new MockLifecycleEmailAdapterError({
+  code: "provider_contract_rejected",
+  retryable: false,
+});
+const passthroughAdapter = adapterModule.createAwsSesLifecycleEmailAdapter({
+  environment,
+  client: { send: async () => Promise.reject(upstreamAdapterError) },
+});
+await assert.rejects(
+  passthroughAdapter.send(payload, context),
+  (error) => error === upstreamAdapterError,
 );
 
 assert.match(source, /from "@aws-sdk\/client-sesv2"/u);

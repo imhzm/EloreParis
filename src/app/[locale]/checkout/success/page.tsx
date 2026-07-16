@@ -9,11 +9,14 @@ type Props = {
   searchParams: Promise<{ order?: string | string[] }>;
 };
 
-export const metadata: Metadata = {
-  title: "Order confirmation",
-  robots: { index: false, follow: false },
-  referrer: "no-referrer",
-};
+export async function generateMetadata({ params }: Pick<Props, "params">): Promise<Metadata> {
+  const { locale } = await params;
+  return {
+    title: locale === "ar" ? "تأكيد الطلب" : "Order confirmation",
+    robots: { index: false, follow: false },
+    referrer: "no-referrer",
+  };
+}
 
 function safeOrderReference(value: string | string[] | undefined) {
   const candidate = (Array.isArray(value) ? value[0] : value)?.trim() ?? "";

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { type FocusEvent } from "react";
 import { TrackedLink } from "@/components/tracked-link";
 import { useScrollSceneProgress } from "@/hooks/use-scroll-scene-progress";
@@ -33,6 +34,12 @@ function routeFor(locale: Locale, href: string) {
   return localizePath(locale, href);
 }
 
+const visualByKind: Record<DiscoveryKind, string> = {
+  concern: "/elore-assets/editorial-skin-light-concept-1122w.avif",
+  routine: "/elore-assets/saudi-evening-ritual-concept-1672x941.avif",
+  ingredient: "/elore-assets/ingredient-botanical-lab-concept-1536x1024.avif",
+};
+
 type HubProps = { locale: Locale; kind: DiscoveryKind; items: DiscoveryRecord[] };
 
 export function LocalizedDiscoveryHub({ locale, kind, items }: HubProps) {
@@ -42,11 +49,14 @@ export function LocalizedDiscoveryHub({ locale, kind, items }: HubProps) {
   const baseHref = `/${discoveryPaths[kind]}`;
 
   return (
-    <div ref={rootRef} className={styles.experience} data-discovery-experience>
+    <div ref={rootRef} className={styles.experience} data-discovery-experience data-discovery-kind={kind}>
       <section className={`${styles.scene} ${styles.hubHero}`} data-discovery-scene aria-labelledby="discovery-title">
         <div className={styles.frame}>
           <div className={styles.motionGrid} data-discovery-motion aria-hidden="true"><span>01</span><span>{copy.eyebrow}</span><span>ÉLORÉ</span></div>
-          <div className={styles.heroIndex} aria-hidden="true">{items.map((item, index) => <span key={item.slug}>0{index + 1}<b>{item.title}</b></span>)}</div>
+          <div className={styles.heroVisual} data-discovery-motion aria-hidden="true">
+            <Image src={visualByKind[kind]} alt="" fill priority sizes="(max-width: 900px) 88vw, 39vw" />
+            <div className={styles.heroIndex}>{items.map((item, index) => <span key={item.slug}>0{index + 1}<b>{item.title}</b></span>)}</div>
+          </div>
           <div className={styles.heroCopy}><p>{copy.eyebrow}</p><h1 id="discovery-title"><MultilineTitle value={copy.title} /></h1><span>{copy.intro}</span><TrackedLink href="#directory" onFocus={keepFocusVisible} className={styles.primaryAction} analyticsLabel={`${kind}_directory_begin`} analyticsSurface="discovery_block_motion">{shared.openLabel}</TrackedLink><small>{shared.conceptNotice}</small></div>
           <div className={styles.counter} aria-hidden="true">01 — 04</div>
         </div>
@@ -85,15 +95,13 @@ export function LocalizedDiscoveryDetail({ locale, kind, record }: DetailProps) 
   const rootRef = useScrollSceneProgress<HTMLDivElement>({ selector: "[data-knowledge-scene]" });
   const copy = discoveryDetailCopy[locale];
   const baseHref = `/${discoveryPaths[kind]}`;
-  const relatedLinks = record.related.filter(([, , href]) => (
-    locale !== "en" || !href.startsWith("/search")
-  ));
+  const relatedLinks = record.related;
 
   return (
     <div ref={rootRef} className={styles.experience} data-discovery-experience>
       <section className={`${styles.scene} ${styles.detailHero}`} data-knowledge-scene aria-labelledby="knowledge-title">
         <div className={styles.frame}>
-          <div className={styles.detailMark} data-discovery-motion aria-hidden="true"><span>{record.subtitle}</span><b>ÉLORÉ<br />PARIS</b></div>
+          <div className={styles.detailMark} data-discovery-motion aria-hidden="true"><Image src={visualByKind[kind]} alt="" fill priority sizes="(max-width: 900px) 88vw, 40vw" /><span>{record.subtitle}</span><b>ÉLORÉ<br />PARIS</b></div>
           <div className={styles.detailHeroCopy}><p>{record.subtitle}</p><h1 id="knowledge-title">{record.title}</h1><span>{record.summary}</span><TrackedLink href="#chapters" onFocus={keepFocusVisible} className={styles.primaryAction} analyticsLabel={`${kind}_${record.slug}_begin`} analyticsSurface="knowledge_block_motion">{copy.chaptersEyebrow}</TrackedLink><small>{copy.disclaimer}</small></div>
           <div className={styles.counter} aria-hidden="true">01 — 05</div>
         </div>

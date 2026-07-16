@@ -6,10 +6,13 @@ import { isLocale } from "@/lib/i18n";
 
 type Props = { params: Promise<{ locale: string }> };
 
-export const metadata: Metadata = {
-  title: "Secure checkout",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
+  return {
+    title: locale === "ar" ? "الدفع الآمن" : "Secure checkout",
+    robots: { index: false, follow: false },
+  };
+}
 
 export default async function LocalizedCheckoutPage({ params }: Props) {
   const { locale } = await params;

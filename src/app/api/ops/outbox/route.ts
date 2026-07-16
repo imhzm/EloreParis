@@ -5,6 +5,10 @@ import {
   getAuthorityOutboxSummary,
 } from "@/lib/order-outbox";
 import { expireDueAuthorityInventoryReservations } from "@/lib/inventory-reservation-authority";
+import {
+  RequestHardeningError,
+  assertTrustedMutationRequest,
+} from "@/lib/request-hardening";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -30,6 +34,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    assertTrustedMutationRequest(request);
     await assertOpsRequestAccess(request, "/ops/orders");
     const body = await request.json().catch(() => ({})) as { limit?: unknown };
     const limit =
@@ -40,6 +45,9 @@ export async function POST(request: NextRequest) {
     const result = await drainAuthorityOutbox({ limit });
     return noStoreJson({ result, reservations, outbox: getAuthorityOutboxSummary() });
   } catch (error) {
+    if (error instanceof RequestHardeningError) {
+      return noStoreJson({ error: error.message, code: "untrusted_request" }, error.statusCode);
+    }
     if (error instanceof OpsAccessError) {
       return noStoreJson({ error: error.message, code: "ops_access_denied" }, error.statusCode);
     }

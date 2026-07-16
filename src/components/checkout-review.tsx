@@ -137,6 +137,25 @@ export function CheckoutReview() {
   const router = useRouter();
   const isEnglish = pathname === "/en/checkout" || pathname.startsWith("/en/checkout/");
   const locale: Locale = isEnglish ? "en" : "ar";
+  const gateCopy = isEnglish ? {
+    loadingEyebrow: "Checkout verification",
+    loadingTitle: "Restoring your cart",
+    loadingBody: "The order form will remain closed until every cart item is verified.",
+    eyebrow: "Checkout unavailable",
+    title: "Your cart is not ready for checkout",
+    unavailable: "An item in your cart is no longer available. Review it before continuing.",
+    empty: "The verified catalog is unavailable, or your cart has no eligible items.",
+    action: "Return to cart",
+  } : {
+    loadingEyebrow: "التحقق من الدفع",
+    loadingTitle: "جارٍ استعادة السلة وتثبيت بيانات الكتالوج",
+    loadingBody: "لن نفتح نموذج الطلب قبل اكتمال التحقق من عناصر السلة.",
+    eyebrow: "الدفع غير متاح",
+    title: "السلة ليست جاهزة لإنشاء طلب",
+    unavailable: "تحتوي السلة على عنصر لم يعد متاحًا. راجعيه قبل المتابعة.",
+    empty: "الكتالوج التجاري غير متاح أو لا توجد عناصر صالحة في السلة.",
+    action: "العودة إلى السلة",
+  };
   const [formState, setFormState] = useState(initialFormState);
   const [quote, setQuote] = useState<CheckoutQuoteResponse | null>(null);
   const [quoteState, setQuoteState] = useState<"idle" | "loading" | "ready" | "error" | "expired">("idle");
@@ -407,16 +426,16 @@ export function CheckoutReview() {
   }
 
   if (!isHydrated || catalogStatus === "loading") {
-    return <section className={styles.emptyCard}><p className={styles.eyebrow}>Checkout authority</p><h1>جارٍ استعادة السلة وتثبيت بيانات الكتالوج</h1><p>لن نفتح نموذج الطلب قبل اكتمال التحقق من عناصر السلة.</p></section>;
+    return <section className={styles.emptyCard}><p className={styles.eyebrow}>{gateCopy.loadingEyebrow}</p><h1>{gateCopy.loadingTitle}</h1><p>{gateCopy.loadingBody}</p></section>;
   }
 
   if (catalogStatus !== "ready" || !items.length || !lines.length || unavailableItems.length) {
     return (
       <section className={styles.emptyCard}>
-        <p className={styles.eyebrow}>Checkout unavailable</p>
-        <h1>السلة ليست جاهزة لإنشاء طلب</h1>
-        <p>{unavailableItems.length ? "تحتوي السلة على عنصر لم يعد متاحًا. راجعيه قبل المتابعة." : "الكتالوج التجاري غير متاح أو لا توجد عناصر صالحة في السلة."}</p>
-        <div className={styles.actionColumn}><TrackedLink href={localizePath(locale, "/cart")} className={styles.primaryLink} analyticsLabel="checkout_back_to_cart" analyticsSurface="checkout_gate">العودة إلى السلة</TrackedLink></div>
+        <p className={styles.eyebrow}>{gateCopy.eyebrow}</p>
+        <h1>{gateCopy.title}</h1>
+        <p>{unavailableItems.length ? gateCopy.unavailable : gateCopy.empty}</p>
+        <div className={styles.actionColumn}><TrackedLink href={localizePath(locale, "/cart")} className={styles.primaryLink} analyticsLabel="checkout_back_to_cart" analyticsSurface="checkout_gate">{gateCopy.action}</TrackedLink></div>
       </section>
     );
   }

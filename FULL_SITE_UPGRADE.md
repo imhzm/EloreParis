@@ -1,6 +1,6 @@
 # Elore Paris — Full Site Upgrade Ledger
 
-Last updated: 2026-07-15 01:15 (Africa/Cairo, UTC+03:00)
+Last updated: 2026-07-16 16:56 (Africa/Cairo, UTC+03:00)
 
 ## Current status
 
@@ -12,7 +12,18 @@ Last updated: 2026-07-15 01:15 (Africa/Cairo, UTC+03:00)
 - Local preview: `http://127.0.0.1:3056`.
 - LAN mobile preview: `http://192.168.1.5:3056` (same Wi-Fi; address may change after DHCP renewal).
 - Intended production domain: `https://elore-paris.com`.
-- Intended GitHub repository: `ireda8041-lab/www.elore-paris.com`.
+- Intended GitHub repository: `imhzm/EloreParis`.
+
+## 2026-07-16 typography and commerce-surface pass
+
+- [x] Replaced the single-family Alexandria setup with a locale-aware luxury type system: Noto Naskh Arabic for Arabic display, IBM Plex Sans Arabic for Arabic body/UI, Cormorant Garamond for English display, and Manrope for English body/UI.
+- [x] Kept typography behind shared tokens so cinematic and localized surfaces inherit the correct family without per-component overrides.
+- [x] Verified the font system across Arabic and English home, shop, and journal routes on desktop and mobile; all webfonts loaded, with no horizontal overflow or browser errors.
+- [x] Localized public cart and checkout gate states, corrected locale-aware metadata, reduced the tracking-page dead interval, and fixed the order-success secondary-action contrast.
+- [x] Rebuilt 111 routes and passed lint, TypeScript, smoke, home 3D regression, and targeted browser QA.
+- [ ] Isolate the legacy technical/funnel corpus in `site-content.ts` from every reachable public and schema surface.
+- [ ] Consolidate repeated concept-image and catalog-gate disclosures into a single quiet, accessible pattern.
+- [ ] Add consent-aware analytics, server-side purchase deduplication, and a report-only CSP before any production analytics or indexing activation.
 
 ## 2026-07-15 Drive source-of-truth intake
 

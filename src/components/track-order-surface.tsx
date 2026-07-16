@@ -370,7 +370,7 @@ export function TrackOrderSurface({ initialOrderNumber = "", locale }: TrackOrde
       : null;
 
   return (
-    <div className={styles.page}>
+    <div className={`${styles.page} ${styles.trackOrderPage}`}>
       <section className={styles.hero}>
         <div>
           <p className={styles.eyebrow}>Order tracking</p>

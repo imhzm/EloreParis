@@ -16,8 +16,8 @@ function alternates(locale: Locale, path: string) {
 }
 
 export function buildTrustSupportMetadata(locale: Locale, path: string, record?: TrustSupportRecord): Metadata {
-  const title = record ? `${record.title.replace("\n", " ")} | ÉLORÉ PARIS` : locale === "ar" ? "الثقة والوضوح | ÉLORÉ PARIS" : "Trust and clarity | ÉLORÉ PARIS";
-  const description = record?.summary ?? (locale === "ar" ? "معلومات واضحة وسياسات مؤقتة بانتظار الاعتماد قبل الإطلاق التجاري." : "Clear information and provisional policies awaiting approval before commercial launch.");
+  const title = record ? record.title.replace("\n", " ") : locale === "ar" ? "الثقة والوضوح" : "Trust and clarity";
+  const description = record?.summary ?? (locale === "ar" ? "معلومات وسياسات واضحة تساعدك على معرفة ما يهم قبل اتخاذ القرار." : "Clear information and policies that help you understand what matters before a decision.");
   const url = `${getSiteUrl()}/${locale}${path}`;
 
   return {
@@ -40,7 +40,7 @@ export function buildTrustSupportSchema(locale: Locale, path: string, record?: T
       name: record?.title.replace("\n", " ") ?? (locale === "ar" ? "الثقة والوضوح" : "Trust and clarity"),
       description: record?.summary,
       inLanguage: localeConfig[locale].htmlLang,
-      isPartOf: { "@id": `${siteUrl}/#website` },
+      isPartOf: { "@id": `${siteUrl}/${locale}#website` },
     },
     {
       "@type": "BreadcrumbList",

@@ -7,7 +7,7 @@
 - Runtime: Next.js standalone on Node.js 24 LTS, supervised by systemd.
 - Reverse proxy and TLS: nginx with Let's Encrypt.
 - Persistent application state: `/var/lib/elore-paris`.
-- Repository target: `ireda8041-lab/www.elore-paris.com`.
+- Repository target: `imhzm/EloreParis`.
 - Public launch: blocked until the release packet, legal/business data, catalog data, payment/shipping integrations, security checks, and user approval are complete.
 
 The existing live site must not be replaced merely because a build succeeds. A release needs the full gate below.

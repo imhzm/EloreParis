@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { DatabaseSync } from "node:sqlite";
 import { runAuthorityTransaction } from "@/lib/authority-database";
 import {
   resolveLifecycleDeliveryEnvelope,
@@ -309,7 +310,9 @@ function requireWebhookString(
   return normalized;
 }
 
-function normalizeProviderEventType(value: string) {
+function normalizeProviderEventType(
+  value: string,
+): LifecycleEmailProviderEventType | null {
   return value === "delivered" || value === "bounced" || value === "complained"
     ? value
     : null;
@@ -320,6 +323,15 @@ type LifecycleProviderEventRow = {
   provider_message_id: string;
   event_type: LifecycleEmailProviderEventType;
   payload_hash: string;
+};
+
+export type LifecycleEmailProviderEventInput = {
+  providerKey: string;
+  eventId: string;
+  providerMessageId: string;
+  eventType: LifecycleEmailProviderEventType;
+  occurredAt: string;
+  payloadHash: string;
 };
 
 function assertMatchingProviderEvent(
@@ -340,6 +352,150 @@ function assertMatchingProviderEvent(
   }
 }
 
+function normalizeAuthorityEventInput(
+  input: LifecycleEmailProviderEventInput,
+) {
+  const eventId = requireWebhookString({ eventId: input.eventId }, "eventId", 200);
+  const providerMessageId = requireWebhookString(
+    { providerMessageId: input.providerMessageId },
+    "providerMessageId",
+    200,
+  );
+  const eventType = normalizeProviderEventType(input.eventType);
+  const occurredAt = requireWebhookString(
+    { occurredAt: input.occurredAt },
+    "occurredAt",
+    80,
+  );
+  const payloadHash = requireWebhookString(
+    { payloadHash: input.payloadHash },
+    "payloadHash",
+    128,
+  ).toLowerCase();
+  if (
+    !eventType ||
+    Number.isNaN(Date.parse(occurredAt)) ||
+    !/^[a-f0-9]{64}$/u.test(payloadHash)
+  ) {
+    throw new LifecycleEmailWebhookError(
+      "The provider event type, timestamp, or payload hash is invalid.",
+    );
+  }
+
+  return {
+    providerKey: normalizeProviderKey(input.providerKey),
+    eventId,
+    providerMessageId,
+    eventType,
+    occurredAtIso: new Date(occurredAt).toISOString(),
+    payloadHash,
+  };
+}
+
+export function processLifecycleEmailProviderEventWithDatabase(
+  database: DatabaseSync,
+  input: LifecycleEmailProviderEventInput,
+) {
+  const event = normalizeAuthorityEventInput(input);
+  const delivery = database.prepare(`
+    SELECT id, subscription_id, consent_revision, delivery_type
+    FROM authority_lifecycle_delivery_outbox
+    WHERE provider_key = ? AND provider_message_id = ? AND status = 'accepted'
+    LIMIT 1
+  `).get(event.providerKey, event.providerMessageId) as
+    | {
+        id: string;
+        subscription_id: string;
+        consent_revision: number;
+        delivery_type: "newsletter_confirmation" | "back_in_stock_available";
+      }
+    | undefined;
+  if (!delivery) {
+    throw new LifecycleEmailWebhookError(
+      "The lifecycle provider event target was not found.",
+      404,
+      "provider_event_target_not_found",
+    );
+  }
+
+  const expected: LifecycleProviderEventRow = {
+    delivery_id: delivery.id,
+    provider_message_id: event.providerMessageId,
+    event_type: event.eventType,
+    payload_hash: event.payloadHash,
+  };
+  const existing = database.prepare(`
+    SELECT delivery_id, provider_message_id, event_type, payload_hash
+    FROM authority_lifecycle_provider_events
+    WHERE provider_key = ? AND event_id = ?
+  `).get(event.providerKey, event.eventId) as LifecycleProviderEventRow | undefined;
+  if (existing) {
+    assertMatchingProviderEvent(existing, expected);
+    return { accepted: true as const, replayed: true as const };
+  }
+
+  database.prepare(`
+    INSERT INTO authority_lifecycle_provider_events (
+      provider_key, event_id, delivery_id, provider_message_id, event_type,
+      payload_hash, occurred_at, processed_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    event.providerKey,
+    event.eventId,
+    delivery.id,
+    event.providerMessageId,
+    event.eventType,
+    event.payloadHash,
+    event.occurredAtIso,
+    new Date().toISOString(),
+  );
+
+  if (
+    event.eventType === "delivered" &&
+    delivery.delivery_type === "back_in_stock_available"
+  ) {
+    database.prepare(`
+      UPDATE authority_lifecycle_subscriptions
+      SET status = 'fulfilled', fulfilled_at = ?, updated_at = ?
+      WHERE id = ? AND status = 'subscribed' AND consent_revision = ?
+    `).run(
+      event.occurredAtIso,
+      event.occurredAtIso,
+      delivery.subscription_id,
+      delivery.consent_revision,
+    );
+  } else if (event.eventType === "complained") {
+    const suppressed = database.prepare(`
+      UPDATE authority_lifecycle_subscriptions
+      SET status = 'unsubscribed', contact_email = '',
+          consent_withdrawn_at = ?, consent_revision = consent_revision + 1,
+          updated_at = ?
+      WHERE id = ? AND status = 'subscribed' AND consent_revision = ?
+    `).run(
+      event.occurredAtIso,
+      event.occurredAtIso,
+      delivery.subscription_id,
+      delivery.consent_revision,
+    ) as { changes: number | bigint };
+    if (Number(suppressed.changes) === 1) {
+      cancelLifecycleDeliveriesForSubscriptionWithDatabase(
+        database,
+        delivery.subscription_id,
+      );
+    }
+  }
+
+  return { accepted: true as const, replayed: false as const };
+}
+
+export function processLifecycleEmailProviderEvent(
+  input: LifecycleEmailProviderEventInput,
+) {
+  return runAuthorityTransaction((database) =>
+    processLifecycleEmailProviderEventWithDatabase(database, input),
+  );
+}
+
 export async function processLifecycleEmailProviderWebhook({
   request,
   providerKey,
@@ -349,7 +505,6 @@ export async function processLifecycleEmailProviderWebhook({
   providerKey: string;
   callbackSecret: string;
 }) {
-  const normalizedProviderKey = normalizeProviderKey(providerKey);
   let callback: Awaited<ReturnType<typeof readAuthenticatedProviderCallback>>;
   try {
     callback = await readAuthenticatedProviderCallback(
@@ -384,96 +539,12 @@ export async function processLifecycleEmailProviderWebhook({
     );
   }
 
-  const occurredAtIso = new Date(occurredAt).toISOString();
-  return runAuthorityTransaction((database) => {
-    const delivery = database.prepare(`
-      SELECT id, subscription_id, consent_revision, delivery_type
-      FROM authority_lifecycle_delivery_outbox
-      WHERE provider_key = ? AND provider_message_id = ? AND status = 'accepted'
-      LIMIT 1
-    `).get(normalizedProviderKey, providerMessageId) as
-      | {
-          id: string;
-          subscription_id: string;
-          consent_revision: number;
-          delivery_type: "newsletter_confirmation" | "back_in_stock_available";
-        }
-      | undefined;
-    if (!delivery) {
-      throw new LifecycleEmailWebhookError(
-        "The lifecycle provider event target was not found.",
-        404,
-        "provider_event_target_not_found",
-      );
-    }
-
-    const expected: LifecycleProviderEventRow = {
-      delivery_id: delivery.id,
-      provider_message_id: providerMessageId,
-      event_type: eventType,
-      payload_hash: callback.payloadHash,
-    };
-    const existing = database.prepare(`
-      SELECT delivery_id, provider_message_id, event_type, payload_hash
-      FROM authority_lifecycle_provider_events
-      WHERE provider_key = ? AND event_id = ?
-    `).get(normalizedProviderKey, eventId) as LifecycleProviderEventRow | undefined;
-    if (existing) {
-      assertMatchingProviderEvent(existing, expected);
-      return { accepted: true as const, replayed: true as const };
-    }
-
-    database.prepare(`
-      INSERT INTO authority_lifecycle_provider_events (
-        provider_key, event_id, delivery_id, provider_message_id, event_type,
-        payload_hash, occurred_at, processed_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      normalizedProviderKey,
-      eventId,
-      delivery.id,
-      providerMessageId,
-      eventType,
-      callback.payloadHash,
-      occurredAtIso,
-      new Date().toISOString(),
-    );
-
-    if (
-      eventType === "delivered" &&
-      delivery.delivery_type === "back_in_stock_available"
-    ) {
-      database.prepare(`
-        UPDATE authority_lifecycle_subscriptions
-        SET status = 'fulfilled', fulfilled_at = ?, updated_at = ?
-        WHERE id = ? AND status = 'subscribed' AND consent_revision = ?
-      `).run(
-        occurredAtIso,
-        occurredAtIso,
-        delivery.subscription_id,
-        delivery.consent_revision,
-      );
-    } else if (eventType === "complained") {
-      const suppressed = database.prepare(`
-        UPDATE authority_lifecycle_subscriptions
-        SET status = 'unsubscribed', contact_email = '',
-            consent_withdrawn_at = ?, consent_revision = consent_revision + 1,
-            updated_at = ?
-        WHERE id = ? AND status = 'subscribed' AND consent_revision = ?
-      `).run(
-        occurredAtIso,
-        occurredAtIso,
-        delivery.subscription_id,
-        delivery.consent_revision,
-      ) as { changes: number | bigint };
-      if (Number(suppressed.changes) === 1) {
-        cancelLifecycleDeliveriesForSubscriptionWithDatabase(
-          database,
-          delivery.subscription_id,
-        );
-      }
-    }
-
-    return { accepted: true as const, replayed: false as const };
+  return processLifecycleEmailProviderEvent({
+    providerKey,
+    eventId,
+    providerMessageId,
+    eventType,
+    occurredAt,
+    payloadHash: callback.payloadHash,
   });
 }

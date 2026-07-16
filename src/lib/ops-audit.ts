@@ -13,7 +13,20 @@ import { resolveProjectPath } from "@/lib/runtime-paths";
 import type { OpsAuditAction, OpsAuditActor, OpsAuditEntry } from "@/lib/ops-types";
 
 const OPS_AUDIT_LEGACY_IMPORT_META_KEY = "legacy_ops_audit_import_v2";
-const OPS_AUDIT_RETENTION_LIMIT = 200;
+
+// Retention is budgeted per entity type rather than globally. Session events are
+// unauthenticated-triggerable and therefore floodable: under a single shared cap
+// a burst of failed logins would evict release decisions and order history. Each
+// class can now only ever evict its own oldest rows.
+const OPS_AUDIT_RETENTION_LIMITS: Record<OpsAuditEntry["entityType"], number> = {
+  release: 2000,
+  order: 2000,
+  notification: 2000,
+  ops_session: 1000,
+};
+
+const OPS_AUDIT_READ_LIMIT = 500;
+
 let opsAuditReadyPromise: Promise<void> | null = null;
 
 type LogOpsAuditEventInput = {
@@ -130,16 +143,21 @@ function upsertAuditEntry(entry: OpsAuditEntry) {
     );
 }
 
-function pruneAuditEntries() {
-  getAuthorityDatabase().prepare(`
+function pruneAuditEntries(entityTypes: Iterable<OpsAuditEntry["entityType"]>) {
+  const statement = getAuthorityDatabase().prepare(`
     DELETE FROM authority_ops_audit
     WHERE id IN (
       SELECT id
       FROM authority_ops_audit
+      WHERE entity_type = ?
       ORDER BY created_at DESC
-      LIMIT -1 OFFSET ${OPS_AUDIT_RETENTION_LIMIT}
+      LIMIT -1 OFFSET ?
     )
-  `).run();
+  `);
+
+  for (const entityType of new Set(entityTypes)) {
+    statement.run(entityType, OPS_AUDIT_RETENTION_LIMITS[entityType]);
+  }
 }
 
 async function importLegacyAuditIfNeeded() {
@@ -167,7 +185,7 @@ async function importLegacyAuditIfNeeded() {
           upsertAuditEntry(entry);
         }
 
-        pruneAuditEntries();
+        pruneAuditEntries(entries.map((entry) => entry.entityType));
       });
     }
   } catch (error) {
@@ -204,7 +222,7 @@ export async function readOpsAuditEntries() {
       ORDER BY created_at DESC
       LIMIT ?
     `)
-    .all(OPS_AUDIT_RETENTION_LIMIT) as { payload_json: string }[];
+    .all(OPS_AUDIT_READ_LIMIT) as { payload_json: string }[];
 
   return rows
     .map((row) => parseAuditPayload(row.payload_json))
@@ -234,7 +252,7 @@ export async function logOpsAuditEvent({
 
   runAuthorityTransaction(() => {
     upsertAuditEntry(nextEntry);
-    pruneAuditEntries();
+    pruneAuditEntries([nextEntry.entityType]);
   });
 
   return nextEntry;

@@ -140,14 +140,22 @@ export async function GET(request: NextRequest) {
           })),
         },
         providerReadiness: {
+          ready: providerReadiness.ready,
+          deliveryEnabled: providerReadiness.deliveryEnabled,
+          providerEnabled: providerReadiness.providerEnabled,
           selectedProvider: safeOptionalText(
             providerReadiness.selectedProvider,
             80,
           ),
+          providerSupported: providerReadiness.providerSupported,
           region: safeOptionalText(providerReadiness.region, 40),
+          regionConfigured: providerReadiness.regionConfigured,
           fromDomainConfigured: providerReadiness.fromDomainConfigured,
           configurationSetConfigured:
             providerReadiness.configurationSetConfigured,
+          timeoutValid: providerReadiness.timeoutValid,
+          timeoutOverrideConfigured:
+            providerReadiness.timeoutOverrideConfigured,
           callbackConfigured: providerReadiness.callbackConfigured,
           blockers: providerReadiness.blockers.map((code) => safeText(code, 80)),
         },

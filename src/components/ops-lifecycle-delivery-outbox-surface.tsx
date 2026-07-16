@@ -49,10 +49,17 @@ type DeliveryOutboxSnapshot = {
 };
 
 type ProviderReadiness = {
+  ready: boolean;
+  deliveryEnabled: boolean;
+  providerEnabled: boolean;
   selectedProvider: string | null;
+  providerSupported: boolean;
   region: string | null;
+  regionConfigured: boolean;
   fromDomainConfigured: boolean;
   configurationSetConfigured: boolean;
+  timeoutValid: boolean;
+  timeoutOverrideConfigured: boolean;
   callbackConfigured: boolean;
   blockers: string[];
 };
@@ -104,11 +111,18 @@ function isProviderReadiness(value: unknown): value is ProviderReadiness {
   if (!value || typeof value !== "object") return false;
   const candidate = value as Partial<ProviderReadiness>;
   return (
+    typeof candidate.ready === "boolean" &&
+    typeof candidate.deliveryEnabled === "boolean" &&
+    typeof candidate.providerEnabled === "boolean" &&
     (candidate.selectedProvider === null ||
       typeof candidate.selectedProvider === "string") &&
+    typeof candidate.providerSupported === "boolean" &&
     (candidate.region === null || typeof candidate.region === "string") &&
+    typeof candidate.regionConfigured === "boolean" &&
     typeof candidate.fromDomainConfigured === "boolean" &&
     typeof candidate.configurationSetConfigured === "boolean" &&
+    typeof candidate.timeoutValid === "boolean" &&
+    typeof candidate.timeoutOverrideConfigured === "boolean" &&
     typeof candidate.callbackConfigured === "boolean" &&
     Array.isArray(candidate.blockers) &&
     candidate.blockers.every((blocker) => typeof blocker === "string")
@@ -223,21 +237,62 @@ export function OpsLifecycleDeliveryOutboxSurface() {
             <p className={styles.eyebrow}>Provider preflight</p>
             <h3 id="provider-readiness-title">جاهزية الإرسال الحالية</h3>
           </div>
-          <strong data-ready={providerReadiness?.blockers.length === 0}>
+          <strong data-ready={providerReadiness?.ready === true}>
             {isLoading
               ? "جارٍ الفحص"
-              : providerReadiness?.blockers.length === 0
-                ? "Ready"
-                : "Blocked"}
+              : !providerReadiness
+                ? "Unavailable"
+                : providerReadiness.ready
+                  ? "Ready"
+                  : "Blocked"}
           </strong>
         </div>
 
         <div className={styles.readinessGrid} aria-live="polite" aria-busy={isLoading}>
-          <article><span>Selected provider</span><strong>{providerReadiness?.selectedProvider ?? "—"}</strong></article>
-          <article><span>Region</span><strong>{providerReadiness?.region ?? "—"}</strong></article>
-          <article><span>From domain</span><strong>{providerReadiness?.fromDomainConfigured ? "Configured" : "Not configured"}</strong></article>
-          <article><span>Configuration set</span><strong>{providerReadiness?.configurationSetConfigured ? "Configured" : "Not configured"}</strong></article>
-          <article><span>Provider callback</span><strong>{providerReadiness?.callbackConfigured ? "Configured" : "Not configured"}</strong></article>
+          <article>
+            <span>Delivery gate</span>
+            <strong>{providerReadiness ? (providerReadiness.deliveryEnabled ? "Enabled" : "Disabled") : "—"}</strong>
+          </article>
+          <article>
+            <span>Provider gate</span>
+            <strong>{providerReadiness ? (providerReadiness.providerEnabled ? "Enabled" : "Disabled") : "—"}</strong>
+          </article>
+          <article>
+            <span>Selected provider</span>
+            <strong>{providerReadiness?.selectedProvider ?? "—"}</strong>
+          </article>
+          <article>
+            <span>Provider support</span>
+            <strong>{providerReadiness ? (providerReadiness.providerSupported ? "Supported" : "Not supported") : "—"}</strong>
+          </article>
+          <article>
+            <span>Region</span>
+            <strong>{providerReadiness ? (providerReadiness.regionConfigured ? providerReadiness.region : "Not configured") : "—"}</strong>
+          </article>
+          <article>
+            <span>From domain</span>
+            <strong>{providerReadiness ? (providerReadiness.fromDomainConfigured ? "Configured" : "Not configured") : "—"}</strong>
+          </article>
+          <article>
+            <span>Configuration set</span>
+            <strong>{providerReadiness ? (providerReadiness.configurationSetConfigured ? "Configured" : "Not configured") : "—"}</strong>
+          </article>
+          <article>
+            <span>Request timeout</span>
+            <strong>
+              {providerReadiness
+                ? providerReadiness.timeoutValid
+                  ? providerReadiness.timeoutOverrideConfigured
+                    ? "Override valid"
+                    : "Safe default"
+                  : "Invalid"
+                : "—"}
+            </strong>
+          </article>
+          <article>
+            <span>Provider callback</span>
+            <strong>{providerReadiness ? (providerReadiness.callbackConfigured ? "Configured" : "Not configured") : "—"}</strong>
+          </article>
         </div>
 
         {providerReadiness?.blockers.length ? (

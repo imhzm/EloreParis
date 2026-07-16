@@ -10,6 +10,12 @@ import {
   assertTrustedMutationRequest,
   RequestHardeningError,
 } from "@/lib/request-hardening";
+import {
+  assertPublicRequestAllowed,
+  LIFECYCLE_COLLECTION_THROTTLE_POLICY,
+  LIFECYCLE_WITHDRAWAL_THROTTLE_POLICY,
+  PublicRequestThrottleError,
+} from "@/lib/public-request-throttle";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -26,6 +32,15 @@ function localeFromBody(body: Record<string, unknown>) {
 }
 
 function lifecycleErrorResponse(error: unknown) {
+  if (error instanceof PublicRequestThrottleError) {
+    return NextResponse.json(
+      { error: error.message, code: error.code },
+      {
+        status: error.statusCode,
+        headers: { "Retry-After": String(error.retryAfterSeconds) },
+      },
+    );
+  }
   if (error instanceof RequestHardeningError) {
     return NextResponse.json(
       { error: error.message, code: "mutation_request_untrusted" },
@@ -58,6 +73,12 @@ export async function POST(request: Request) {
       );
     }
     const body = await readLifecycleRequestBody(request, subscribeKeys);
+    assertPublicRequestAllowed({
+      request,
+      scope: "newsletter_subscribe",
+      policy: LIFECYCLE_COLLECTION_THROTTLE_POLICY,
+      subject: typeof body.email === "string" ? body.email : undefined,
+    });
     const result = subscribeLifecycle({
       kind: "newsletter",
       email: typeof body.email === "string" ? body.email : "",
@@ -78,6 +99,11 @@ export async function POST(request: Request) {
 export async function DELETE(request: Request) {
   try {
     assertTrustedMutationRequest(request);
+    assertPublicRequestAllowed({
+      request,
+      scope: "newsletter_unsubscribe",
+      policy: LIFECYCLE_WITHDRAWAL_THROTTLE_POLICY,
+    });
     const body = await readLifecycleRequestBody(request, unsubscribeKeys);
     if (typeof body.unsubscribeToken !== "string") {
       throw new LifecycleAuthorityError(

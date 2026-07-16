@@ -43,6 +43,16 @@ export async function POST(request: NextRequest) {
     assertTrustedMutationRequest(request);
     const session = await assertOpsRequestAccess(request, "/ops/release");
 
+    // Publishing a package re-baselines the comparison, which is one of the
+    // preconditions an approval decision is checked against. Restrict it to the
+    // same role that is allowed to cast the decision itself.
+    if (session.role !== "manager") {
+      return NextResponse.json(
+        { error: "Only manager sessions can publish release packages." },
+        { status: 403 },
+      );
+    }
+
     return NextResponse.json(
       {
         releasePackageRecord: await publishReleasePackageRecord(session),

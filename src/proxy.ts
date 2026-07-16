@@ -122,8 +122,9 @@ export async function proxy(request: NextRequest) {
       redirectUrl.pathname = `/ar${destination}`;
       return applySearchCrawlerDirective(NextResponse.redirect(redirectUrl, 308));
     }
+
     if (isRetiredLegacyJournalSlug(slug)) {
-      return new NextResponse("<!doctype html><html lang=\"ar\" dir=\"rtl\"><meta charset=\"utf-8\"><title>المحتوى لم يعد متاحًا</title><main><h1>المحتوى لم يعد متاحًا</h1><p>تم إيقاف هذا المحتوى التجريبي لأنه لم يعد يطابق معايير المجلة.</p></main></html>", {
+      return new NextResponse("<!doctype html><html lang=\"ar\" dir=\"rtl\"><meta charset=\"utf-8\"><title>المحتوى لم يعد متاحًا</title><main><h1>المحتوى لم يعد متاحًا</h1><p>تم إيقاف هذا المحتوى لأنه لم يعد يطابق معايير المجلة الحالية.</p></main></html>", {
         status: 410,
         headers: { "Content-Type": "text/html; charset=utf-8", "X-Robots-Tag": "noindex, nofollow, noarchive", "Cache-Control": "public, max-age=3600" },
       });

@@ -61,7 +61,7 @@ export function LocalizedCategoryStage({ locale, slug }: Props) {
       <section className={`${styles.scene} ${styles.gateScene}`} data-category-scene aria-label={shared.sceneLabels[3]}>
         <div className={styles.frame}>
           <div className={styles.gateMedia} aria-hidden="true"><Image src={copy.image} alt="" fill sizes="(max-width: 900px) 100vw, 43vw" /></div>
-          <div className={styles.gateCopy}><p>{shared.gateEyebrow}</p><h2><MultilineTitle value={shared.gateTitle} /></h2><span>{shared.gateBody}</span><div><TrackedLink href={localizePath(locale, "/shop")} onFocus={keepFocusVisible} className={styles.primaryAction} analyticsLabel={`${slug}_back_shop`} analyticsSurface="category_block_motion">{shared.backToShop}</TrackedLink><TrackedLink href="/trust" onFocus={keepFocusVisible} className={styles.secondaryAction} analyticsLabel={`${slug}_trust`} analyticsSurface="category_block_motion">{shared.trust}</TrackedLink></div></div>
+          <div className={styles.gateCopy}><p>{shared.gateEyebrow}</p><h2><MultilineTitle value={shared.gateTitle} /></h2><span>{shared.gateBody}</span><div><TrackedLink href={localizePath(locale, "/shop")} onFocus={keepFocusVisible} className={styles.primaryAction} analyticsLabel={`${slug}_back_shop`} analyticsSurface="category_block_motion">{shared.backToShop}</TrackedLink><TrackedLink href={localizePath(locale, "/trust")} onFocus={keepFocusVisible} className={styles.secondaryAction} analyticsLabel={`${slug}_trust`} analyticsSurface="category_block_motion">{shared.trust}</TrackedLink></div></div>
           <div className={styles.counter} aria-hidden="true">04 — 04</div>
         </div>
       </section>

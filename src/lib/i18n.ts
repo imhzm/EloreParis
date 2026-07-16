@@ -87,24 +87,34 @@ export const localeConfig: Record<
   en: { htmlLang: "en-SA", dir: "ltr", ogLocale: "en_SA" },
 };
 
-export function localizePath(locale: Locale, href: string) {
+function isLocalizablePath(pathname: string) {
   // Expand this allowlist only after each complete route has moved. Descendant
   // category pages remain on their legacy URLs until their content is localized.
-  if (href === "/" || href === "/shop" || href === "/search" || isLocalizedShopCollectionPath(href) || isLocalizedDiscoveryPath(href) || isLocalizedTrustSupportPath(href) || isLocalizedJournalPath(href) || isLocalizedCommercePath(href)) {
-    return `/${locale}${href === "/" ? "" : href}`;
-  }
+  return (
+    pathname === "/" ||
+    pathname === "/shop" ||
+    pathname === "/search" ||
+    isLocalizedShopCollectionPath(pathname) ||
+    isLocalizedDiscoveryPath(pathname) ||
+    isLocalizedTrustSupportPath(pathname) ||
+    isLocalizedJournalPath(pathname) ||
+    isLocalizedCommercePath(pathname)
+  );
+}
 
-  if (
-    !href.startsWith("/") ||
-    href.startsWith("//") ||
-    href.startsWith("/api/") ||
-    href.startsWith("/ops") ||
-    href.startsWith("/account/access")
-  ) {
-    return href;
-  }
+export function localizePath(locale: Locale, href: string) {
+  // Absolute URLs, protocol-relative hrefs, and non-path values are never ours
+  // to rewrite. Everything else is matched on its pathname alone so that hrefs
+  // carrying a query or hash (`/search?q=…`) still resolve to their locale.
+  if (!href.startsWith("/") || href.startsWith("//")) return href;
 
-  return href;
+  const suffixIndex = href.search(/[?#]/);
+  const pathname = suffixIndex === -1 ? href : href.slice(0, suffixIndex);
+  const suffix = suffixIndex === -1 ? "" : href.slice(suffixIndex);
+
+  if (!isLocalizablePath(pathname)) return href;
+
+  return `/${locale}${pathname === "/" ? "" : pathname}${suffix}`;
 }
 
 export const homeCopy = {
@@ -115,22 +125,22 @@ export const homeCopy = {
       body: "تجربة جمال هادئة تجمع الإحساس الباريسي مع وضوح يناسب روتينك اليومي. اكتشفي القوام والدرجة والتفاصيل قبل أن تختاري.",
       primary: "اكتشفي المجموعة",
       secondary: "ابني روتينك",
-      assetStatus: "صورة مفاهيمية معتمدة للنموذج الأولي وليست صورة منتج.",
+      assetStatus: "مشهد تحريري مفاهيمي · لا يعرض منتجًا للبيع.",
     },
     productTruth: {
       eyebrow: "PRODUCT TRUTH",
-      title: "المنتج أمامك كما هو.",
-      body: "قوام واضح، درجة حقيقية، وطريقة استخدام مفهومة. لأن الاختيار الأفضل يبدأ بمعلومة وصورة يمكنك الوثوق بهما.",
-      gate: "تُضاف منتجات ÉLORÉ PARIS هنا فقط بعد اعتماد صور العبوة والملصق والبيانات التشغيلية لكل SKU.",
-      stageAria: "مكان مخصص لصورة المنتج المعتمدة",
+      title: "تفاصيل تساعدك على الاختيار بثقة.",
+      body: "نرتّب القوام وطريقة الاستخدام والمعلومات الأساسية في صورة أسهل للقراءة، حتى لا تحتاجي إلى التخمين قبل القرار.",
+      gate: "تظهر المنتجات هنا عندما تكتمل صور العبوة والملصق والبيانات الموثقة لكل اختيار.",
+      stageAria: "تصور تحريري لمكان عرض المنتج",
       markAlt: "علامة ÉLORÉ PARIS",
-      pending: "REAL PRODUCT PHOTOGRAPHY · PENDING",
+      pending: "CONCEPTUAL DISPLAY · NO SKU SHOWN",
     },
     texture: {
       eyebrow: "TEXTURE THEATRE",
       title: "اختاري بالقوام، لا بالضجيج.",
       body: "جل خفيف، كريم غني، أو لمسة مخملية. نعرض الإحساس بوضوح لتعرفي ما ينسجم معك قبل الشراء.",
-      assetStatus: "تصوير مفاهيمي للقوام؛ يستبدل بقوام المنتج الفعلي قبل الإطلاق التجاري.",
+      assetStatus: "دراسة تحريرية مفاهيمية للقوام · لا تعرض منتجًا للبيع.",
     },
     intentionsTitle: "ابدئي من نيتك.",
     intentions: [
@@ -149,13 +159,13 @@ export const homeCopy = {
       ],
     },
     shades: {
-      title: "الدرجة تُرى على بشرة حقيقية.",
-      body: "نعمل على تصوير السواتشات بلا فلاتر لونية وعلى درجات بشرة عربية وخليجية. لن ننشر أسماء الدرجات أو نتائجها قبل اكتمال التصوير والبيانات.",
-      status: "TRUE SWATCH LIBRARY · IN PRODUCTION",
+      title: "الدرجة تُفهم في سياقها.",
+      body: "عند وصول الدرجات الفعلية، ستظهر بسواتشات موثقة وإضاءة متسقة وعلى أكثر من لون بشرة، مع تنبيه واضح لاختلاف الشاشات.",
+      status: "VERIFIED SWATCHES · WHEN AVAILABLE",
     },
     story: {
-      title: "من باريس إلى تفاصيل يومك.",
-      body: "تستلهم ÉLORÉ PARIS دقتها من طقوس الجمال الباريسية، وتعيد صياغتها لتناسب إيقاع الحياة واحتياجات الجمال في السعودية. فخامة هادئة، ومعلومات أوضح، واختيار أقرب إليك.",
+      title: "أناقة هادئة، صُممت ليومك.",
+      body: "نبني تجربة جمال عربية راقية تجمع الاختيار المدروس مع تفاصيل تناسب المناخ وإيقاع الحياة والمناسبات في السعودية.",
       cta: "اقرئي قصتنا",
     },
     proofTitle: "ثقة تبدأ مما يمكن إثباته.",
@@ -167,7 +177,7 @@ export const homeCopy = {
     ],
     gifting: {
       title: "هدية جميلة في كل تفصيلة.",
-      body: "اختيارات مدروسة للمناسبة والميزانية، مع تجربة تغليف تُعرض هنا بعد اعتمادها وتصويرها فعليًا.",
+      body: "اختيارات مدروسة للمناسبة والميزانية، مع تفاصيل تقديم هادئة تجعل لحظة الهدية جزءًا من التجربة.",
       cta: "اكتشفي عالم الهدايا",
     },
     edit: {
@@ -183,22 +193,22 @@ export const homeCopy = {
       body: "A quieter beauty experience, pairing Parisian sensibility with the clarity your daily ritual deserves. Discover texture, shade and detail before you choose.",
       primary: "Explore the collection",
       secondary: "Build your ritual",
-      assetStatus: "Approved concept image for prototype use; not product photography.",
+      assetStatus: "Conceptual editorial scene · no product offered for sale.",
     },
     productTruth: {
       eyebrow: "PRODUCT TRUTH",
-      title: "See the product as it is.",
-      body: "Clear texture, faithful shade and practical directions. A better choice starts with information and imagery you can trust.",
-      gate: "ÉLORÉ PARIS products appear here only after packaging, label and operational data are approved for every SKU.",
-      stageAria: "Reserved for approved product photography",
+      title: "Details that support a confident choice.",
+      body: "We organise texture, directions and essential information into a clearer view, so the decision never begins with guesswork.",
+      gate: "Products appear here when packaging, label imagery and verified data are complete for each choice.",
+      stageAria: "Editorial concept for the future product display",
       markAlt: "ÉLORÉ PARIS mark",
-      pending: "REAL PRODUCT PHOTOGRAPHY · PENDING",
+      pending: "CONCEPTUAL DISPLAY · NO SKU SHOWN",
     },
     texture: {
       eyebrow: "TEXTURE THEATRE",
       title: "Choose by texture, not noise.",
       body: "A weightless gel, a rich cream or a velvet finish. We make the feel legible before it becomes part of your ritual.",
-      assetStatus: "Concept texture study; replaced with the real product texture before commercial launch.",
+      assetStatus: "Conceptual texture study · no product offered for sale.",
     },
     intentionsTitle: "Begin with intention.",
     intentions: [
@@ -217,13 +227,13 @@ export const homeCopy = {
       ],
     },
     shades: {
-      title: "Shade belongs on real skin.",
-      body: "Our swatch library is being photographed without colour-altering filters across Arab and Gulf skin tones. Shade names and results remain unpublished until imagery and data are complete.",
-      status: "TRUE SWATCH LIBRARY · IN PRODUCTION",
+      title: "Shade needs context.",
+      body: "When actual shades arrive, they will be shown through verified swatches, consistent lighting and more than one skin tone, with a clear screen-variation note.",
+      status: "VERIFIED SWATCHES · WHEN AVAILABLE",
     },
     story: {
-      title: "From Paris to the detail of your day.",
-      body: "ÉLORÉ PARIS draws precision from Parisian beauty rituals and reframes it for the rhythm and beauty needs of Saudi life. Quiet luxury, clearer information and choices that feel closer to you.",
+      title: "Quiet elegance, shaped for your day.",
+      body: "We are building a refined Arabic beauty experience around considered choices, Saudi climate, everyday rhythm and the moments worth dressing for.",
       cta: "Read our story",
     },
     proofTitle: "Trust begins with what can be proven.",
@@ -235,7 +245,7 @@ export const homeCopy = {
     ],
     gifting: {
       title: "A beautiful gift, down to every detail.",
-      body: "Considered choices for the occasion and budget, with a gifting ritual shown only after it has been approved and photographed.",
+      body: "Considered choices for the occasion and budget, finished with thoughtful details that make the giving part of the experience.",
       cta: "Discover the art of gifting",
     },
     edit: {
@@ -251,7 +261,7 @@ export const shellCopy = {
     skip: "تخطي إلى المحتوى", market: "تجربة عربية للسوق السعودي", tagline: "جمال باختيار مدروس", trackOrder: "تتبّع طلبك ←",
     navLabel: "التنقل الرئيسي", searchLabel: "البحث داخل المتجر", cart: "السلة", cartCountLabel: "عناصر في السلة",
     menuOpen: "فتح القائمة", menuClose: "إغلاق القائمة", footerBody: "بيت جمال رقمي فاخر يجمع الحس الباريسي مع وضوح يناسب روتينك في السعودية.",
-    footerStatus: "بيانات المنتجات والتجارة والسياسات النهائية قيد الاعتماد قبل الإطلاق العام.", policyTitle: "الثقة والسياسات", supportTitle: "خدمة الطلب",
+    footerStatus: "نعرض معلومات المنتجات والسياسات من مصادر موثقة وبوضوح قبل اتخاذ القرار.", policyTitle: "الثقة والسياسات", supportTitle: "خدمة الطلب",
     footerTagline: "جمال باختيار مدروس.", languageLabel: "English", languageHref: "/en",
     nav: [["/", "الرئيسية"], ["/shop", "المتجر"], ["/concerns", "حسب المشكلة"], ["/routines", "الروتينات"], ["/search", "البحث"], ["/journal", "المجلة"], ["/trust", "الثقة"]],
     policies: [["/terms", "الشروط والأحكام"], ["/trust/verification", "بيانات المنشأة"], ["/trust/privacy", "الخصوصية"], ["/trust/shipping", "الشحن والتوصيل"], ["/trust/returns", "الاستبدال والاسترجاع"]],
@@ -261,7 +271,7 @@ export const shellCopy = {
     skip: "Skip to content", market: "A Saudi beauty experience", tagline: "Beauty, considered", trackOrder: "Track your order →",
     navLabel: "Primary navigation", searchLabel: "Search the store", cart: "Cart", cartCountLabel: "items in cart",
     menuOpen: "Open menu", menuClose: "Close menu", footerBody: "A premium digital beauty house pairing Parisian sensibility with clarity made for life in Saudi Arabia.",
-    footerStatus: "Final product, commerce and policy information remains under approval before public launch.", policyTitle: "Trust and policies", supportTitle: "Order support",
+    footerStatus: "Product and policy information is presented from verified sources, with clarity before every decision.", policyTitle: "Trust and policies", supportTitle: "Order support",
     footerTagline: "Beauty, considered.", languageLabel: "العربية", languageHref: "/ar",
     nav: [["/", "Home"], ["/shop", "Shop"], ["/concerns", "By concern"], ["/routines", "Rituals"], ["/search", "Search"], ["/journal", "Journal"], ["/trust", "Trust"]],
     policies: [["/terms", "Terms and conditions"], ["/trust/verification", "Business information"], ["/trust/privacy", "Privacy"], ["/trust/shipping", "Shipping and delivery"], ["/trust/returns", "Returns and refunds"]],

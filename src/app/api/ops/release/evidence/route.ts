@@ -51,6 +51,15 @@ export async function POST(request: NextRequest) {
     assertTrustedMutationRequest(request);
     const session = await assertOpsRequestAccess(request, "/ops/release");
 
+    // Evidence existence is an approval precondition, so writing it carries the
+    // same weight as the decision it unblocks.
+    if (session.role !== "manager") {
+      return NextResponse.json(
+        { error: "Only manager sessions can publish release evidence." },
+        { status: 403 },
+      );
+    }
+
     let body: {
       releaseEvidence?: unknown;
     };

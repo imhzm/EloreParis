@@ -830,6 +830,10 @@
     var(--commerce-ink);
 }
 
+.trackOrderPage .hero {
+  min-height: min(560px, 62svh);
+}
+
 .statusSummaryGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1344,6 +1348,12 @@
   color: var(--aubergine-ink);
 }
 
+.emptyCard .secondaryLink {
+  border-color: rgba(255, 250, 242, 0.28);
+  color: #fffaf2;
+  background: rgba(255, 250, 242, 0.1);
+}
+
 .primaryButton:disabled {
   opacity: 0.65;
   cursor: progress;
@@ -1474,6 +1484,15 @@
 
 @media (max-width: 780px) {
   .hero { min-height: 72svh; padding-inline: 20px; }
+
+  .trackOrderPage .hero {
+    min-height: auto;
+    padding-block: 48px;
+  }
+
+  .trackOrderPage .layout {
+    padding-top: 32px;
+  }
 
   .layout { padding: 52px 20px 76px; }
 

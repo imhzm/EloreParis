@@ -22,7 +22,7 @@ export function buildJournalSchema(locale: Locale, records: JournalRecord[], rec
   const url = `${siteUrl}/${locale}${path}`;
   const pageName = record?.title.replace("\n", " ") ?? (locale === "ar" ? "مجلة الجمال" : "The beauty journal");
   const graph: Record<string, unknown>[] = [
-    { "@type": record ? "WebPage" : "CollectionPage", "@id": `${url}#page`, url, name: pageName, description: record?.summary, inLanguage: localeConfig[locale].htmlLang, isPartOf: { "@id": `${siteUrl}/#website` } },
+    { "@type": record ? "WebPage" : "CollectionPage", "@id": `${url}#page`, url, name: pageName, description: record?.summary, inLanguage: localeConfig[locale].htmlLang, isPartOf: { "@id": `${siteUrl}/${locale}#website` } },
     { "@type": "BreadcrumbList", "@id": `${url}#breadcrumb`, itemListElement: [
       { "@type": "ListItem", position: 1, name: locale === "ar" ? "الرئيسية" : "Home", item: `${siteUrl}/${locale}` },
       { "@type": "ListItem", position: 2, name: locale === "ar" ? "المجلة" : "Journal", item: `${siteUrl}/${locale}/journal` },

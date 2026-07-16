@@ -6,8 +6,8 @@ import { absoluteUrl, siteName } from "@/lib/site-content";
 
 const socialImages: Record<DiscoveryKind, { src: string; width: number; height: number }> = {
   concern: { src: "/elore-assets/editorial-skin-light-concept-1122w.avif", width: 1122, height: 1402 },
-  routine: { src: "/elore-assets/hero-silk-champagne-concept-1672w.avif", width: 1672, height: 941 },
-  ingredient: { src: "/elore-assets/texture-skincare-serum-concept-1536w.avif", width: 1536, height: 1024 },
+  routine: { src: "/elore-assets/saudi-evening-ritual-concept-1672x941.avif", width: 1672, height: 941 },
+  ingredient: { src: "/elore-assets/ingredient-botanical-lab-concept-1536x1024.avif", width: 1536, height: 1024 },
 };
 
 export function buildDiscoveryMetadata(locale: Locale, kind: DiscoveryKind, record?: DiscoveryRecord): Metadata {
