@@ -1,9 +1,18 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import { createAwsSesLifecycleEmailAdapter } from "@/lib/aws-ses-lifecycle-email-adapter";
 import { getLifecycleOpsSnapshot } from "@/lib/lifecycle-consent-authority";
 import { getLifecycleDeliveryOpsSnapshot } from "@/lib/lifecycle-delivery-outbox";
+import {
+  drainLifecycleEmailDeliveries,
+  LifecycleEmailAdapterError,
+} from "@/lib/lifecycle-email-provider";
 import { getLifecycleProviderReadiness } from "@/lib/lifecycle-provider-readiness";
 import { assertOpsRequestAccess, OpsAccessError } from "@/lib/ops-access";
+import {
+  assertTrustedMutationRequest,
+  RequestHardeningError,
+} from "@/lib/request-hardening";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -171,6 +180,87 @@ export async function GET(request: NextRequest) {
     }
     return NextResponse.json(
       { error: "Unable to load the protected lifecycle consent summary." },
+      { status: 500, headers: { "Cache-Control": "no-store" } },
+    );
+  }
+}
+
+function parseDrainLimit(value: unknown) {
+  if (value === undefined) return 20;
+  if (typeof value !== "number" || !Number.isSafeInteger(value)) return null;
+  return value >= 1 && value <= 50 ? value : null;
+}
+
+/**
+ * Drains the lifecycle delivery outbox.
+ *
+ * The outbox had no caller anywhere in the application: rows were enqueued and
+ * nothing ever sent them. The order outbox has had /api/ops/outbox to drain it
+ * from the start; this is the same shape for the lifecycle one, so an operator
+ * who can see the queue can also work it.
+ *
+ * Nothing here decides whether mail may be sent. drainLifecycleEmailDeliveries
+ * re-checks getLifecycleDeliveryAvailability and refuses unless every gate is
+ * open, and the SES adapter throws at construction on a placeholder config — so
+ * on a stock deployment this answers 503 and sends nothing. The response
+ * carries counts only: no address, no subject, no payload.
+ */
+export async function POST(request: NextRequest) {
+  try {
+    assertTrustedMutationRequest(request);
+    await assertOpsRequestAccess(request, "/ops/notifications");
+
+    const body = (await request.json().catch(() => ({}))) as { limit?: unknown };
+    const limit = parseDrainLimit(body.limit);
+    if (limit === null) {
+      return NextResponse.json(
+        { error: "Lifecycle drain limit is invalid." },
+        { status: 400, headers: { "Cache-Control": "no-store" } },
+      );
+    }
+
+    const summary = await drainLifecycleEmailDeliveries({
+      adapter: createAwsSesLifecycleEmailAdapter(),
+      limit,
+    });
+
+    return NextResponse.json(
+      {
+        drain: {
+          claimed: boundedCount(summary.claimed),
+          accepted: boundedCount(summary.accepted),
+          retried: boundedCount(summary.retried),
+          failed: boundedCount(summary.failed),
+        },
+        deliveryOutbox: {
+          metrics: getLifecycleDeliveryOpsSnapshot(1).metrics,
+        },
+      },
+      { headers: { "Cache-Control": "no-store" } },
+    );
+  } catch (error) {
+    if (error instanceof RequestHardeningError) {
+      return NextResponse.json(
+        { error: error.message, code: "untrusted_request" },
+        { status: error.statusCode, headers: { "Cache-Control": "no-store" } },
+      );
+    }
+    if (error instanceof OpsAccessError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.statusCode, headers: { "Cache-Control": "no-store" } },
+      );
+    }
+    if (error instanceof LifecycleEmailAdapterError) {
+      // Gate refusals and provider-config failures are expected states, not
+      // faults. The code is safe to surface; the message is not guaranteed to be.
+      return NextResponse.json(
+        { error: "Lifecycle delivery is not available.", code: error.code },
+        { status: 503, headers: { "Cache-Control": "no-store" } },
+      );
+    }
+    return NextResponse.json(
+      { error: "Unable to drain the lifecycle delivery outbox." },
       { status: 500, headers: { "Cache-Control": "no-store" } },
     );
   }
