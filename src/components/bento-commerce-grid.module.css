@@ -1,0 +1,359 @@
+/* Bento commerce grid.
+   Everything is expressed in logical properties (inline/block, start/end) so a
+   single source serves RTL and LTR. Nothing here uses left/right. */
+
+.section {
+  --bento-gap: 10px;
+  --bento-radius: 28px;
+  position: relative;
+  padding: clamp(2rem, 5vw, 4.5rem) clamp(1rem, 4vw, 3.5rem) clamp(3rem, 6vw, 5rem);
+  background: var(--elore-ivory);
+}
+
+.grid {
+  display: grid;
+  gap: var(--bento-gap);
+  max-width: 1600px;
+  margin-inline: auto;
+  padding: var(--bento-gap);
+  border-radius: var(--bento-radius);
+  background: var(--elore-warm-white);
+  border: 1px solid rgba(73, 23, 35, 0.1);
+  /* Desktop: the reference's two bands — six across, then the editorial row. */
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.cell {
+  min-width: 0;
+}
+
+/* Row 1 — intro tile then five category cards. */
+.grid [data-kind="category"] .card,
+.grid [data-kind="intro"] .card {
+  aspect-ratio: 4 / 5;
+}
+
+/* Row 2 — editorial band. The media cards pair with their editorial sibling. */
+.grid [data-cell="rituals"] {
+  grid-column: span 1;
+}
+.grid [data-cell="ritual-media"],
+.grid [data-cell="journal-media"] {
+  grid-column: span 1;
+}
+.grid [data-cell="journal"],
+.grid [data-cell="gifting"],
+.grid [data-cell="quote"] {
+  grid-column: span 1;
+}
+
+/* The editorial band carries a heading, a line of copy and an action, in two
+   languages of different lengths. A fixed aspect ratio would decide the height
+   before the copy does and clip whichever locale runs longer — so these cards
+   take a floor and grow, and the grid row stretches them level. */
+.grid [data-kind="editorial"] .card,
+.grid [data-kind="quote"] .card {
+  min-block-size: 15rem;
+}
+
+.grid [data-kind="media"] .card {
+  aspect-ratio: 4 / 5;
+  min-block-size: 15rem;
+}
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 0.55rem;
+  height: 100%;
+  padding: clamp(1rem, 1.6vw, 1.65rem);
+  overflow: hidden;
+  border-radius: calc(var(--bento-radius) - var(--bento-gap));
+  background: var(--elore-ivory);
+  color: var(--elore-ink);
+  text-decoration: none;
+  isolation: isolate;
+}
+
+/* ---- media ------------------------------------------------------------- */
+
+.media {
+  object-fit: cover;
+  z-index: -2;
+  transition: transform var(--motion-reveal);
+}
+
+.category::after,
+.mediaCard::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(
+    to top,
+    rgba(33, 21, 26, 0.72) 0%,
+    rgba(33, 21, 26, 0.24) 42%,
+    transparent 72%
+  );
+}
+
+/* ---- intro ------------------------------------------------------------- */
+
+.intro {
+  justify-content: space-between;
+  background: var(--elore-ivory);
+}
+
+.eyebrow {
+  font-family: var(--font-body-latin), sans-serif;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--elore-rosewood);
+}
+
+:lang(ar) .eyebrow {
+  font-family: var(--font-body);
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.introTitle {
+  margin-block: auto 0;
+  font-size: clamp(1.5rem, 2.1vw, 2.15rem);
+  font-weight: 400;
+  color: var(--elore-ink);
+}
+
+/* ---- category ---------------------------------------------------------- */
+
+.category {
+  justify-content: flex-end;
+  color: var(--elore-warm-white);
+}
+
+.categoryLabel {
+  font-family: var(--font-display);
+  font-size: clamp(1rem, 1.4vw, 1.4rem);
+  line-height: 1.2;
+  text-shadow: 0 1px 12px rgba(33, 21, 26, 0.45);
+}
+
+/* ---- editorial --------------------------------------------------------- */
+
+.editorial {
+  justify-content: flex-end;
+}
+
+.wine {
+  background: var(--elore-burgundy);
+  color: var(--elore-warm-white);
+}
+
+.ivory {
+  background: var(--elore-warm-white);
+  border: 1px solid rgba(73, 23, 35, 0.12);
+}
+
+.sand {
+  background: var(--elore-blush);
+  color: var(--elore-ink);
+}
+
+.editorialTitle {
+  font-size: clamp(1.25rem, 1.7vw, 1.75rem);
+  font-weight: 400;
+  line-height: 1.18;
+}
+
+.editorialBody {
+  font-size: 0.86rem;
+  line-height: 1.6;
+  opacity: 0.86;
+  max-width: 28ch;
+}
+
+/* ---- quote ------------------------------------------------------------- */
+
+.quote {
+  justify-content: center;
+  gap: 0.9rem;
+  margin: 0;
+  background: var(--elore-warm-white);
+  border: 1px solid rgba(73, 23, 35, 0.12);
+  text-align: start;
+}
+
+.quoteMark {
+  font-family: var(--font-display-latin), serif;
+  font-size: 3.4rem;
+  line-height: 0.5;
+  color: var(--elore-champagne);
+}
+
+.quoteText {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.05rem, 1.35vw, 1.35rem);
+  line-height: 1.5;
+  color: var(--elore-ink);
+}
+
+.quoteAttribution {
+  font-family: var(--font-body-latin), sans-serif;
+  font-size: 0.64rem;
+  letter-spacing: 0.18em;
+  color: var(--elore-rosewood);
+}
+
+/* ---- actions ----------------------------------------------------------- */
+
+.textAction {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  align-self: flex-start;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.35em;
+  text-decoration-thickness: 1px;
+  text-decoration-color: color-mix(in srgb, currentColor 45%, transparent);
+}
+
+.arrow {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 30px;
+  block-size: 30px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
+  transition: transform var(--motion-control), background-color var(--motion-control);
+}
+
+/* The arrow points along the reading direction, so it mirrors in RTL. */
+[dir="rtl"] .arrow svg {
+  transform: scaleX(-1);
+}
+
+.category .arrow {
+  position: absolute;
+  inset-block-start: clamp(1rem, 1.6vw, 1.65rem);
+  inset-inline-end: clamp(1rem, 1.6vw, 1.65rem);
+  background: color-mix(in srgb, var(--elore-champagne) 92%, transparent);
+  border-color: transparent;
+  color: var(--elore-ink);
+}
+
+.notice {
+  max-width: 1600px;
+  margin: 1.25rem auto 0;
+  font-size: 0.7rem;
+  color: var(--elore-cocoa);
+  text-align: start;
+}
+
+/* ---- interaction ------------------------------------------------------- */
+
+.category:hover .media,
+.mediaCard:hover .media {
+  transform: scale(1.035);
+}
+
+.textAction:hover .arrow,
+.category:hover .arrow {
+  transform: translateX(3px);
+}
+
+[dir="rtl"] .textAction:hover .arrow,
+[dir="rtl"] .category:hover .arrow {
+  transform: translateX(-3px);
+}
+
+.category:focus-visible,
+.textAction:focus-visible {
+  outline: 3px solid var(--elore-champagne);
+  outline-offset: 3px;
+}
+
+/* ---- tablet ------------------------------------------------------------ */
+
+@media (max-width: 1023px) {
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .grid [data-cell="intro"] {
+    grid-column: span 3;
+  }
+  .grid [data-kind="intro"] .card {
+    aspect-ratio: auto;
+    min-block-size: 12rem;
+  }
+  .grid [data-cell="rituals"],
+  .grid [data-cell="journal"],
+  .grid [data-cell="gifting"],
+  .grid [data-cell="quote"] {
+    grid-column: span 3;
+  }
+  .grid [data-kind="media"] {
+    display: none;
+  }
+}
+
+/* ---- mobile ------------------------------------------------------------ */
+
+@media (max-width: 767px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .grid [data-cell="intro"],
+  .grid [data-cell="rituals"],
+  .grid [data-cell="journal"],
+  .grid [data-cell="gifting"],
+  .grid [data-cell="quote"] {
+    grid-column: span 2;
+  }
+
+  .grid [data-kind="editorial"] .card,
+  .grid [data-kind="quote"] .card {
+    aspect-ratio: auto;
+    min-block-size: 11rem;
+  }
+
+  /* Five categories across two columns leaves the last one beside a hole.
+     Widening it closes the band and reads as intent rather than a gap. */
+  .grid [data-cell="gifts"] {
+    grid-column: span 2;
+  }
+  .grid [data-cell="gifts"] .card {
+    aspect-ratio: 16 / 9;
+  }
+
+  /* Hover cannot be relied on here, and it never carries information — the
+     labels and actions are always rendered. */
+  .category .arrow {
+    inline-size: 34px;
+    block-size: 34px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .media,
+  .arrow {
+    transition: none;
+  }
+
+  .category:hover .media,
+  .mediaCard:hover .media,
+  .textAction:hover .arrow,
+  .category:hover .arrow {
+    transform: none;
+  }
+}

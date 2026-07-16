@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import type { FocusEvent } from "react";
 import { SearchForm } from "@/components/search-form";
 import { TrackedLink } from "@/components/tracked-link";
 import { useScrollSceneProgress } from "@/hooks/use-scroll-scene-progress";

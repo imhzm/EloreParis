@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { BentoCommerceGrid } from "@/components/bento-commerce-grid";
 import { NewsletterSignup } from "@/components/newsletter-signup";
 import { TrackedLink } from "@/components/tracked-link";
 import { useScrollSceneProgress } from "@/hooks/use-scroll-scene-progress";
@@ -65,7 +66,7 @@ export function OmniraInspiredHome({ locale }: Props) {
                   <div className={styles.productLiquid} />
                   <div className={styles.productLabel}>
                     <Image src="/elore-assets/logo-mark-burgundy.png" alt="" width={210} height={280} />
-                    <small>RITUEL NÂ° 01</small>
+                    <small>RITUEL N° 01</small>
                   </div>
                   <span className={styles.glassHighlight} />
                 </div>
@@ -92,22 +93,16 @@ export function OmniraInspiredHome({ locale }: Props) {
         </div>
       </section>
 
-      <section className={`${styles.scene} ${styles.intentions}`} data-home-scene aria-labelledby="intentions-title">
+      {/* The bento grid from the approved reference concept replaces the older
+          three-band intention list: same job — routing a visitor into the house
+          — but it carries all six categories plus the editorial routes, and it
+          is a card system with variants rather than one bespoke band. */}
+      <section className={styles.bentoScene} aria-labelledby="intentions-title">
         <header className={styles.sectionHeading}>
           <p className={styles.eyebrow} lang="en">SHOP BY INTENTION</p>
           <h2 id="intentions-title">{copy.intentionsTitle}</h2>
         </header>
-        <div className={styles.intentionList}>
-          {copy.intentions.map(([label, caption, destination, image], index) => (
-            <TrackedLink key={destination} href={href(destination)} className={styles.intentionBand} analyticsLabel={`home_intention_${index + 1}`} analyticsSurface="elore_home" analyticsDestinationType="collection">
-              <Image src={image} alt="" fill sizes="100vw" />
-              <span className={styles.bandShade} aria-hidden="true" />
-              <small>0{index + 1}</small>
-              <div><h3>{label}</h3><p>{caption}</p></div>
-              <b aria-hidden="true">↙</b>
-            </TrackedLink>
-          ))}
-        </div>
+        <BentoCommerceGrid locale={locale} />
       </section>
 
       <section className={`${styles.scene} ${styles.routine}`} data-home-scene aria-labelledby="routine-title">

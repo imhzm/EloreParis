@@ -1003,3 +1003,17 @@
   .scrollCue { display: none; }
   .textureReveal { clip-path: none; }
 }
+
+/* The bento grid brings its own scroll rhythm, so it opts out of the sticky
+   scene treatment the cinematic sections use. */
+.bentoScene {
+  position: relative;
+  background: var(--elore-ivory);
+  padding-block-start: clamp(3rem, 7vh, 6rem);
+}
+
+.bentoScene .sectionHeading {
+  max-width: 1600px;
+  margin-inline: auto;
+  padding-inline: clamp(1rem, 4vw, 3.5rem);
+}
