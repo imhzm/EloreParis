@@ -21,7 +21,7 @@ export function LocalizedJournalHub({ locale, records }: { locale: Locale; recor
     </div></section>
 
     <section className={`${styles.scene} ${styles.lanes}`} data-journal-scene aria-label={copy.methodTitle}><div className={styles.frame} data-journal-frame>
-      <div className={styles.heading}><p>EDITORIAL LENSES</p><h2><MultilineTitle value={copy.methodTitle} /></h2><span>{copy.methodBody}</span></div>
+      <div className={styles.heading}><p lang="en">EDITORIAL LENSES</p><h2><MultilineTitle value={copy.methodTitle} /></h2><span>{copy.methodBody}</span></div>
       <nav className={styles.laneGrid} data-journal-lanes>
         {[{ number: "01", ar: "المشكلة", en: "Concern", href: "/concerns" }, { number: "02", ar: "الروتين", en: "Ritual", href: "/routines" }, { number: "03", ar: "المكوّن", en: "Ingredient", href: "/ingredients" }].map((lane) => <TrackedLink key={lane.href} href={localizePath(locale, lane.href)} onFocus={keepFocusVisible} analyticsLabel={`journal_lane_${lane.number}`} analyticsSurface="journal_block_motion"><b>{lane.number}</b><h3>{locale === "ar" ? lane.ar : lane.en}</h3><span>{locale === "ar" ? "ابدئي من السؤال، ثم ضيّقي القرار." : "Begin with the question, then narrow the decision."}</span></TrackedLink>)}
       </nav><b className={styles.counter}>02 — 05</b>

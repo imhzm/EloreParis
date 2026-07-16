@@ -41,7 +41,7 @@ export function CinematicShopAtlasStage({ locale, products }: Props) {
       <section className={`${styles.scene} ${styles.atlasScene}`} data-shop-scene aria-label={copy.hero.aria}>
         <div className={styles.frame}>
           <div className={styles.atlas} aria-hidden="true">
-            <span>01</span><span>02</span><span>03</span><b>ÉLORÉ<br />PARIS</b>
+            <span>01</span><span>02</span><span>03</span><b lang="en">ÉLORÉ<br />PARIS</b>
           </div>
           <div className={styles.heroCopy}>
             <p>{copy.hero.eyebrow}</p>

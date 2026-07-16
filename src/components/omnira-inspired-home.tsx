@@ -66,7 +66,7 @@ export function OmniraInspiredHome({ locale }: Props) {
                   <div className={styles.productLiquid} />
                   <div className={styles.productLabel}>
                     <Image src="/elore-assets/logo-mark-burgundy.png" alt="" width={210} height={280} />
-                    <small>RITUEL N° 01</small>
+                    <small lang="en">RITUEL N° 01</small>
                   </div>
                   <span className={styles.glassHighlight} />
                 </div>

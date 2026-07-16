@@ -52,7 +52,7 @@ export function LocalizedDiscoveryHub({ locale, kind, items }: HubProps) {
 
       <section className={`${styles.scene} ${styles.decisionScene}`} data-discovery-scene aria-label={copy.decisionTitle}>
         <div className={styles.frame}>
-          <div className={styles.decisionCopy} data-discovery-column="copy"><p>DECISION BEFORE PRODUCT</p><h2>{copy.decisionTitle}</h2><span>{copy.decisionBody}</span></div>
+          <div className={styles.decisionCopy} data-discovery-column="copy"><p lang="en">DECISION BEFORE PRODUCT</p><h2>{copy.decisionTitle}</h2><span>{copy.decisionBody}</span></div>
           <div className={styles.signalGrid} data-discovery-column="panel">{items.map((item, index) => <article key={item.slug}><b>0{index + 1}</b><h3>{item.title}</h3><small>{shared.signalLabel}</small><ul>{item.signals.slice(0,3).map((signal) => <li key={signal}>{signal}</li>)}</ul></article>)}</div>
           <div className={styles.counter} aria-hidden="true">03 — 04</div>
         </div>
@@ -81,7 +81,7 @@ export function LocalizedDiscoveryDetail({ locale, kind, record }: DetailProps) 
     <div ref={rootRef} className={styles.experience} data-discovery-experience>
       <section className={`${styles.scene} ${styles.detailHero}`} data-knowledge-scene aria-labelledby="knowledge-title">
         <div className={styles.frame}>
-          <div className={styles.detailMark} data-discovery-motion aria-hidden="true"><Image src={visualByKind[kind]} alt="" fill priority sizes="(max-width: 900px) 88vw, 40vw" /><span>{record.subtitle}</span><b>ÉLORÉ<br />PARIS</b></div>
+          <div className={styles.detailMark} data-discovery-motion aria-hidden="true"><Image src={visualByKind[kind]} alt="" fill priority sizes="(max-width: 900px) 88vw, 40vw" /><span>{record.subtitle}</span><b lang="en">ÉLORÉ<br />PARIS</b></div>
           <div className={styles.detailHeroCopy}><p>{record.subtitle}</p><h1 id="knowledge-title">{record.title}</h1><span>{record.summary}</span><TrackedLink href="#chapters" onFocus={keepFocusVisible} className={styles.primaryAction} analyticsLabel={`${kind}_${record.slug}_begin`} analyticsSurface="knowledge_block_motion">{copy.chaptersEyebrow}</TrackedLink><small>{copy.disclaimer}</small></div>
           <div className={styles.counter} aria-hidden="true">01 — 05</div>
         </div>

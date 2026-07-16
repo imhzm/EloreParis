@@ -27,7 +27,7 @@ export function LocalizedTrustHub({ locale }: { locale: Locale }) {
 
   return <div ref={rootRef} className={styles.experience} data-trust-experience>
     <section className={`${styles.scene} ${styles.hero}`} data-trust-scene aria-labelledby="trust-title"><div className={styles.frame}>
-      <div className={styles.motionMark} aria-hidden="true"><Image src="/elore-assets/editorial-skin-light-concept-1122w.avif" alt="" fill priority sizes="(max-width: 900px) 90vw, 42vw" /><span>É</span><i>TRUST / 01</i></div>
+      <div className={styles.motionMark} aria-hidden="true"><Image src="/elore-assets/editorial-skin-light-concept-1122w.avif" alt="" fill priority sizes="(max-width: 900px) 90vw, 42vw" /><span>É</span><i lang="en">TRUST / 01</i></div>
       <div className={styles.heroCopy}><p>{copy.eyebrow}</p><h1 id="trust-title"><MultilineTitle value={copy.title} /></h1><span>{copy.intro}</span><TrackedLink className={styles.action} href="#trust-directory" onFocus={keepFocusVisible} analyticsLabel="trust_directory_begin" analyticsSurface="trust_block_motion">{copy.directory}</TrackedLink><small>{copy.notice}</small></div>
       <b className={styles.counter}>01 — 04</b>
     </div></section>
@@ -37,12 +37,12 @@ export function LocalizedTrustHub({ locale }: { locale: Locale }) {
       <b className={styles.counter}>02 — 04</b>
     </div></section>
     <section className={`${styles.scene} ${styles.principles}`} data-trust-scene aria-label={copy.principlesTitle}><div className={styles.frame}>
-      <div className={styles.statement}><p>PROOF BEFORE PROMISE</p><h2><MultilineTitle value={copy.principlesTitle} /></h2><span>{copy.notice}</span></div>
+      <div className={styles.statement}><p lang="en">PROOF BEFORE PROMISE</p><h2><MultilineTitle value={copy.principlesTitle} /></h2><span>{copy.notice}</span></div>
       <ol className={styles.rules}>{records.slice(0, 4).map((record, index) => <li key={record.slug}><b>0{index + 1}</b><span>{record.sections[0].title}</span><small>{record.sections[0].body}</small></li>)}</ol>
       <b className={styles.counter}>03 — 04</b>
     </div></section>
     <section className={`${styles.scene} ${styles.close}`} data-trust-scene aria-label={copy.closeTitle}><div className={styles.frame}>
-      <div className={styles.closeCopy}><p>CLARITY BEFORE COMMERCE</p><h2><MultilineTitle value={copy.closeTitle} /></h2><span>{copy.intro}</span><TrackedLink className={styles.action} href={`/${locale}/faq`} onFocus={keepFocusVisible} analyticsLabel="trust_to_faq" analyticsSurface="trust_block_motion">{copy.support}</TrackedLink></div>
+      <div className={styles.closeCopy}><p lang="en">CLARITY BEFORE COMMERCE</p><h2><MultilineTitle value={copy.closeTitle} /></h2><span>{copy.intro}</span><TrackedLink className={styles.action} href={`/${locale}/faq`} onFocus={keepFocusVisible} analyticsLabel="trust_to_faq" analyticsSurface="trust_block_motion">{copy.support}</TrackedLink></div>
       <b className={styles.counter}>04 — 04</b>
     </div></section>
   </div>;
@@ -65,7 +65,7 @@ export function LocalizedTrustSupportDetail({ locale, record, parentHref }: { lo
       <b className={styles.counter}>02 — 04</b>
     </div></section>
     <section className={`${styles.scene} ${styles.questions}`} data-trust-detail-scene aria-label={isAr ? "أسئلة واضحة" : "Clear questions"}><div className={styles.frame}>
-      <div className={styles.statement}><p>QUESTIONS / ANSWERS</p><h2>{isAr ? "لا إجابة مخترعة." : "No invented answer."}</h2><span>{record.status}</span></div>
+      <div className={styles.statement}><p lang="en">QUESTIONS / ANSWERS</p><h2>{isAr ? "لا إجابة مخترعة." : "No invented answer."}</h2><span>{record.status}</span></div>
       <div className={styles.faqList}>{record.faqs.map(([question, answer]) => <details key={question}><summary>{question}</summary><p>{answer}</p></details>)}</div>
       <b className={styles.counter}>03 — 04</b>
     </div></section>
