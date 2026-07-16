@@ -1,9 +1,29 @@
 :root {
-  --font-body: var(--font-arabic-body);
-  --font-body-latin: var(--font-latin-body);
-  --font-display: var(--font-arabic-display);
-  --font-display-latin: var(--font-cormorant);
-  --font-sans: var(--font-arabic-body);
+  /* Type roles, never font names — a token called --font-cormorant is how a
+     face survives a swap it should have been part of.
+     The stacks are Latin-first deliberately: CSS resolves font fallback per
+     glyph, so the Latin face renders "ÉLORÉ PARIS" and every Western digit
+     while the Arabic face catches Arabic codepoints by fall-through. That
+     gives one Latin voice across both locales and means we never inherit the
+     borrowed Latin drawn into the Arabic faces. It also removes the need for
+     any per-lang font override. */
+  --stack-display: var(--font-en-display), var(--font-ar-display), Georgia, serif;
+  --stack-body: var(--font-en-body), var(--font-ar-body), "Segoe UI", Tahoma, sans-serif;
+
+  --font-display: var(--stack-display);
+  --font-body: var(--stack-body);
+  --font-sans: var(--stack-body);
+  /* Explicitly Latin, for eyebrows, counters and labels that are Latin text in
+     both locales. */
+  --font-display-latin: var(--font-en-display);
+  --font-body-latin: var(--font-en-body);
+
+  /* Size is handled by size-adjust on the Arabic faces themselves. Leading and
+     tracking are not, so they are reset per locale below. */
+  --leading-body: 1.6;
+  --leading-display: 0.98;
+  --tracking-display: -0.03em;
+
   --elore-ivory: #f3f0ea;
   --elore-warm-white: #fffdfc;
   --elore-burgundy: #491723;
@@ -41,20 +61,14 @@
   color-scheme: light;
 }
 
-html[lang^="ar"] {
-  --font-body: var(--font-arabic-body);
-  --font-body-latin: var(--font-latin-body);
-  --font-display: var(--font-arabic-display);
-  --font-display-latin: var(--font-cormorant);
-  --font-sans: var(--font-arabic-body);
-}
-
-html[lang^="en"] {
-  --font-body: var(--font-latin-body);
-  --font-body-latin: var(--font-latin-body);
-  --font-display: var(--font-cormorant);
-  --font-display-latin: var(--font-cormorant);
-  --font-sans: var(--font-latin-body);
+:root:lang(ar) {
+  /* Arabic sets a shorter body on taller ascenders, and harakat need headroom
+     above the line, so it carries more leading than the Latin default.
+     Tracking goes to zero because letter-spacing an Arabic run breaks the
+     joins between letters — it is not a stylistic preference. */
+  --leading-body: 1.75;
+  --leading-display: 1.08;
+  --tracking-display: 0;
 }
 
 html {
@@ -91,8 +105,8 @@ body {
   flex-direction: column;
   color: var(--foreground);
   background: var(--elore-ivory);
-  font-family: var(--font-body), "Segoe UI", Tahoma, sans-serif;
-  line-height: 1.6;
+  font-family: var(--font-body);
+  line-height: var(--leading-body);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -137,36 +151,17 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: var(--font-display), var(--font-body), serif;
-  font-weight: 600;
-  line-height: 0.98;
-  letter-spacing: -0.03em;
+  font-family: var(--font-display);
+  font-weight: 500;
+  line-height: var(--leading-display);
+  letter-spacing: var(--tracking-display);
   text-wrap: balance;
-}
-
-[dir="rtl"] h1,
-[dir="rtl"] h2,
-[dir="rtl"] h3,
-[dir="rtl"] h4,
-[dir="rtl"] h5,
-[dir="rtl"] h6 {
-  font-weight: 500;
-  line-height: 1.08;
-  letter-spacing: normal !important;
-}
-
-:lang(en) {
-  font-family: var(--font-body-latin), sans-serif;
-}
-
-:lang(en) h1,
-:lang(en) h2,
-:lang(en) h3,
-:lang(en) h4,
-:lang(en) h5,
-:lang(en) h6 {
-  font-family: var(--font-display-latin), serif;
-  font-weight: 500;
+  /* Newsreader's optical-size axis is the reason it was chosen over a static
+     Didone: it keeps hairlines above one device pixel at mobile headline sizes
+     and opens the contrast back up at hero sizes. This is the default, but
+     resets kill it — and never set font-variation-settings: "opsz" by hand,
+     which overrides it and re-breaks exactly that. */
+  font-optical-sizing: auto;
 }
 
 img {

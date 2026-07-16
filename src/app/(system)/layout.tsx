@@ -1,40 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import {
-  Cormorant_Garamond,
-  IBM_Plex_Sans_Arabic,
-  Manrope,
-  Noto_Naskh_Arabic,
-} from "next/font/google";
+import { fontVariables } from "@/lib/fonts";
 import { localeConfig } from "@/lib/i18n";
 import { previewNoindexRobots } from "@/lib/seo";
 import { getSiteUrl, siteName } from "@/lib/site-content";
 import "../globals.css";
-
-const arabicBody = IBM_Plex_Sans_Arabic({
-  variable: "--font-arabic-body",
-  subsets: ["arabic", "latin"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-});
-
-const arabicDisplay = Noto_Naskh_Arabic({
-  variable: "--font-arabic-display",
-  subsets: ["arabic"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-});
-
-const latinBody = Manrope({
-  variable: "--font-latin-body",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const cormorant = Cormorant_Garamond({
-  variable: "--font-cormorant",
-  subsets: ["latin"],
-  display: "swap",
-});
 
 // The second root layout. It covers the surfaces that have no locale segment:
 // the operations dashboard, the operations sign-in, and the redirect shims for
@@ -75,7 +44,7 @@ export default function SystemRootLayout({
     <html
       lang={language.htmlLang}
       dir={language.dir}
-      className={`${arabicBody.variable} ${arabicDisplay.variable} ${latinBody.variable} ${cormorant.variable}`}
+      className={fontVariables}
     >
       <body>{children}</body>
     </html>

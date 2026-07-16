@@ -1,43 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
-import {
-  Cormorant_Garamond,
-  IBM_Plex_Sans_Arabic,
-  Manrope,
-  Noto_Naskh_Arabic,
-} from "next/font/google";
 import { AnalyticsProvider } from "@/components/analytics-provider";
 import { CartProvider } from "@/components/cart-provider";
+import { fontVariables } from "@/lib/fonts";
 import { defaultMetadataRobots } from "@/lib/seo";
 import { isLocale, locales, localeConfig } from "@/lib/i18n";
 import { defaultDescription, getSiteUrl, siteName, siteTagline } from "@/lib/site-content";
 import "../../globals.css";
-
-const arabicBody = IBM_Plex_Sans_Arabic({
-  variable: "--font-arabic-body",
-  subsets: ["arabic", "latin"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-});
-
-const arabicDisplay = Noto_Naskh_Arabic({
-  variable: "--font-arabic-display",
-  subsets: ["arabic"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-});
-
-const latinBody = Manrope({
-  variable: "--font-latin-body",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const cormorant = Cormorant_Garamond({
-  variable: "--font-cormorant",
-  subsets: ["latin"],
-  display: "swap",
-});
 
 const siteUrl = getSiteUrl();
 const socialImageUrl = new URL("/opengraph-image", siteUrl).toString();
@@ -131,7 +100,7 @@ export default async function StorefrontRootLayout({
     <html
       lang={language.htmlLang}
       dir={language.dir}
-      className={`${arabicBody.variable} ${arabicDisplay.variable} ${latinBody.variable} ${cormorant.variable}`}
+      className={fontVariables}
     >
       <body>
         <CartProvider>

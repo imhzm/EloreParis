@@ -1,18 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { IBM_Plex_Sans_Arabic } from "next/font/google";
+import { fontVariables } from "@/lib/fonts";
 import { localeConfig } from "@/lib/i18n";
 import { previewNoindexRobots } from "@/lib/seo";
 import { getSiteUrl } from "@/lib/site-content";
 import styles from "./fallback.module.css";
 import "./globals.css";
-
-const arabicBody = IBM_Plex_Sans_Arabic({
-  variable: "--font-arabic-body",
-  subsets: ["arabic", "latin"],
-  weight: ["400", "600"],
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   // This file sits at the app root, above both route groups, so it inherits no
@@ -46,7 +39,7 @@ export default function GlobalNotFound() {
     <html
       lang={language.htmlLang}
       dir={language.dir}
-      className={arabicBody.variable}
+      className={fontVariables}
     >
       <body>
         <main className={styles.page}>
