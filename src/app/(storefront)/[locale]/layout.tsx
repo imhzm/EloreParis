@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { headers } from "next/headers";
+import { notFound } from "next/navigation";
 import {
   Cormorant_Garamond,
   IBM_Plex_Sans_Arabic,
@@ -9,9 +9,9 @@ import {
 import { AnalyticsProvider } from "@/components/analytics-provider";
 import { CartProvider } from "@/components/cart-provider";
 import { defaultMetadataRobots } from "@/lib/seo";
-import { defaultLocale, isLocale, localeConfig } from "@/lib/i18n";
+import { isLocale, locales, localeConfig } from "@/lib/i18n";
 import { defaultDescription, getSiteUrl, siteName, siteTagline } from "@/lib/site-content";
-import "./globals.css";
+import "../../globals.css";
 
 const arabicBody = IBM_Plex_Sans_Arabic({
   variable: "--font-arabic-body",
@@ -41,6 +41,17 @@ const cormorant = Cormorant_Garamond({
 
 const siteUrl = getSiteUrl();
 const socialImageUrl = new URL("/opengraph-image", siteUrl).toString();
+
+// This is a root layout: it is the highest layout over the storefront tree, so
+// it owns <html>. `lang` and `dir` are attributes of that element and there is
+// no way to compose them from a nested layout, which is why the locale segment
+// has to sit above every storefront page rather than beside it.
+export function generateStaticParams() {
+  return locales.map((locale) => ({ locale }));
+}
+
+// Anything that is not a known locale is a 404, not a runtime render.
+export const dynamicParams = false;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -105,13 +116,15 @@ export const viewport: Viewport = {
   themeColor: "#491723",
 };
 
-export default async function RootLayout({
+export default async function StorefrontRootLayout({
   children,
+  params,
 }: Readonly<{
   children: React.ReactNode;
+  params: Promise<{ locale: string }>;
 }>) {
-  const localeHeader = (await headers()).get("x-elore-locale") ?? "";
-  const locale = isLocale(localeHeader) ? localeHeader : defaultLocale;
+  const { locale } = await params;
+  if (!isLocale(locale)) notFound();
   const language = localeConfig[locale];
 
   return (

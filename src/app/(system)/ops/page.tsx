@@ -13,7 +13,7 @@ import { readAuthorityOrders } from "@/lib/order-authority";
 import { getOrderStatusMeta, type StoredOrder } from "@/lib/orders";
 
 export const metadata: Metadata = {
-  title: "لوحة التحكم التشغيلية | ÉLORÉ PARIS",
+  title: "لوحة التحكم التشغيلية",
   description:
     "لوحة داخلية غير مفهرسة لإدارة الطلبات والكتالوج والتنفيذ التشغيلي داخل ÉLORÉ PARIS.",
   robots: {

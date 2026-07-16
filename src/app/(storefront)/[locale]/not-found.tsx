@@ -1,6 +1,6 @@
 import { StorefrontShell } from "@/components/storefront-shell";
 import { TrackedLink } from "@/components/tracked-link";
-import styles from "./fallback.module.css";
+import styles from "../../fallback.module.css";
 
 export default function NotFound() {
   return (

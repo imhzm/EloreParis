@@ -3,7 +3,7 @@ import { OpsFulfillmentSurface } from "@/components/ops-fulfillment-surface";
 import { StorefrontShell } from "@/components/storefront-shell";
 
 export const metadata: Metadata = {
-  title: "إدارة الـ fulfillment التشغيلية | ÉLORÉ PARIS",
+  title: "إدارة الـ fulfillment التشغيلية",
   description:
     "صفحة داخلية محلية لمراجعة مسارات الشحن والدفع والإشعارات التشغيلية للطلبات الحالية داخل ÉLORÉ PARIS.",
   robots: {

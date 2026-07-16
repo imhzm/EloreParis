@@ -3,7 +3,7 @@ import { OpsNotificationsSurface } from "@/components/ops-notifications-surface"
 import { StorefrontShell } from "@/components/storefront-shell";
 
 export const metadata: Metadata = {
-  title: "إدارة الإشعارات التشغيلية | ÉLORÉ PARIS",
+  title: "إدارة الإشعارات التشغيلية",
   description:
     "سطح داخلي محلي لمراجعة طابور الإشعارات المرتبطة بالطلبات داخل مشروع ÉLORÉ PARIS.",
   robots: {

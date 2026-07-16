@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { isLocale, isLocalizedCommercePath, isLocalizedDiscoveryPath, isLocalizedJournalPath, isLocalizedShopCollectionPath, isLocalizedTrustSupportPath } from "@/lib/i18n";
+import { isLocalizedCommercePath, isLocalizedDiscoveryPath, isLocalizedJournalPath, isLocalizedShopCollectionPath, isLocalizedTrustSupportPath } from "@/lib/i18n";
 import { getLegacyJournalRedirect, isRetiredLegacyJournalSlug } from "@/lib/journal-routing";
 import { isPublicCatalogApproved } from "@/lib/release-controls";
 import { getSearchCrawlerDirectiveHeader } from "@/lib/search-visibility";
@@ -135,13 +135,6 @@ export async function proxy(request: NextRequest) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/ar/shop";
     return applySearchCrawlerDirective(NextResponse.redirect(redirectUrl, 308));
-  }
-
-  const localeSegment = pathname.split("/", 3)[1] ?? "";
-  if (isLocale(localeSegment)) {
-    const requestHeaders = new Headers(request.headers);
-    requestHeaders.set("x-elore-locale", localeSegment);
-    return applySearchCrawlerDirective(NextResponse.next({ request: { headers: requestHeaders } }));
   }
 
   return applySearchCrawlerDirective(NextResponse.next());
