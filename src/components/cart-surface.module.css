@@ -96,7 +96,7 @@
 .metricCard {
   padding: 22px;
   border-radius: 24px;
-  background: rgba(43, 28, 40, 0.94);
+  background: rgba(33, 21, 26, 0.94);
   color: #fff8f3;
 }
 
@@ -144,14 +144,14 @@
   gap: 8px;
   padding: 20px;
   border-radius: 24px;
-  border: 1px solid rgba(43, 28, 40, 0.08);
+  border: 1px solid rgba(33, 21, 26, 0.08);
   background: rgba(255, 255, 255, 0.6);
 }
 
 .lineItem {
   padding: 20px;
   border-radius: 24px;
-  border: 1px solid rgba(43, 28, 40, 0.08);
+  border: 1px solid rgba(33, 21, 26, 0.08);
   background: rgba(255, 255, 255, 0.58);
   display: grid;
   gap: 16px;
@@ -193,7 +193,7 @@
 .inlineLink {
   padding: 8px 12px;
   border-radius: 999px;
-  border: 1px solid rgba(43, 28, 40, 0.08);
+  border: 1px solid rgba(33, 21, 26, 0.08);
   background: rgba(255, 255, 255, 0.68);
   color: var(--aubergine-ink);
   font-size: 0.88rem;
@@ -210,7 +210,7 @@
   gap: 12px;
   padding: 8px;
   border-radius: 999px;
-  border: 1px solid rgba(43, 28, 40, 0.12);
+  border: 1px solid rgba(33, 21, 26, 0.12);
   background: rgba(255, 255, 255, 0.68);
 }
 
@@ -229,7 +229,7 @@
 }
 
 .ghostButton {
-  border: 1px solid rgba(43, 28, 40, 0.12);
+  border: 1px solid rgba(33, 21, 26, 0.12);
   background: rgba(255, 255, 255, 0.58);
   color: var(--aubergine-ink);
   min-height: 44px;
@@ -251,7 +251,7 @@
   display: grid;
   gap: 6px;
   padding-bottom: 12px;
-  border-bottom: 1px solid rgba(43, 28, 40, 0.08);
+  border-bottom: 1px solid rgba(33, 21, 26, 0.08);
 }
 
 .questionItem:last-child {
@@ -364,7 +364,7 @@
 
 .summaryRow {
   padding-top: 12px;
-  border-top: 1px solid rgba(43, 28, 40, 0.08);
+  border-top: 1px solid rgba(33, 21, 26, 0.08);
 }
 
 .summaryRow:first-child {
@@ -406,7 +406,7 @@
 }
 
 .secondaryLink {
-  border: 1px solid rgba(43, 28, 40, 0.12);
+  border: 1px solid rgba(33, 21, 26, 0.12);
   background: rgba(255, 255, 255, 0.58);
   color: var(--aubergine-ink);
 }
@@ -423,7 +423,7 @@
   gap: 12px;
   padding: 14px 16px;
   border-radius: 20px;
-  border: 1px solid rgba(43, 28, 40, 0.08);
+  border: 1px solid rgba(33, 21, 26, 0.08);
   background: rgba(255, 255, 255, 0.58);
   color: var(--aubergine-ink);
   text-decoration: none;

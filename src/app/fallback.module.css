@@ -74,7 +74,7 @@
 }
 
 .secondaryAction {
-  border: 1px solid rgba(43, 28, 40, 0.14);
+  border: 1px solid rgba(33, 21, 26, 0.14);
   background: rgba(255, 255, 255, 0.5);
   color: var(--aubergine-ink);
 }
@@ -104,7 +104,7 @@
   gap: 12px;
   padding: 20px;
   border-radius: 24px;
-  border: 1px solid rgba(43, 28, 40, 0.08);
+  border: 1px solid rgba(33, 21, 26, 0.08);
   background: rgba(255, 255, 255, 0.58);
 }
 

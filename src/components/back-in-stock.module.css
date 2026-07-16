@@ -4,7 +4,7 @@
   gap: 10px;
   padding: 18px;
   border-radius: 20px;
-  border: 1px solid rgba(43, 28, 40, 0.08);
+  border: 1px solid rgba(33, 21, 26, 0.08);
   background:
     linear-gradient(180deg, rgba(255, 252, 249, 0.92), rgba(247, 241, 234, 0.88));
 }
@@ -33,7 +33,7 @@
   flex: 1;
   min-height: 42px;
   padding: 0 14px;
-  border: 1px solid rgba(43, 28, 40, 0.1);
+  border: 1px solid rgba(33, 21, 26, 0.1);
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.7);
   font-size: 0.92rem;
@@ -60,9 +60,9 @@
   justify-content: center;
   min-height: 42px;
   padding: 0 18px;
-  border: 1px solid rgba(43, 28, 40, 0.14);
+  border: 1px solid rgba(33, 21, 26, 0.14);
   border-radius: 14px;
-  background: linear-gradient(135deg, rgba(43, 28, 40, 1), rgba(88, 63, 81, 0.94));
+  background: linear-gradient(135deg, rgba(33, 21, 26, 1), rgba(88, 63, 81, 0.94));
   color: #fff8f3;
   font-size: 0.92rem;
   font-weight: 500;
@@ -109,7 +109,7 @@
 @media (hover: hover) and (pointer: fine) {
   .button:not(:disabled):hover {
     transform: translateY(-1px);
-    box-shadow: 0 8px 18px rgba(43, 28, 40, 0.16);
+    box-shadow: 0 8px 18px rgba(33, 21, 26, 0.16);
   }
 }
 
