@@ -1,30 +1,14 @@
 "use client";
 
 import Image from "next/image";
-import { type FocusEvent } from "react";
 import { TrackedLink } from "@/components/tracked-link";
 import { useScrollSceneProgress } from "@/hooks/use-scroll-scene-progress";
 import { categoryCopy, categorySharedCopy, type CategorySlug } from "@/lib/category-content";
 import { localizePath, type Locale } from "@/lib/i18n";
 import styles from "./localized-category-stage.module.css";
+import { MultilineTitle, keepFocusVisible } from "@/components/scene-primitives";
 
 type Props = { locale: Locale; slug: CategorySlug };
-
-function MultilineTitle({ value }: { value: string }) {
-  const [first, ...rest] = value.split("\n");
-  return <>{first}{rest.map((line) => <span key={line}><br />{line}</span>)}</>;
-}
-
-function keepFocusVisible(event: FocusEvent<HTMLAnchorElement>) {
-  const target = event.currentTarget;
-  requestAnimationFrame(() => {
-    const root = document.documentElement;
-    const previous = root.style.scrollBehavior;
-    root.style.scrollBehavior = "auto";
-    target.scrollIntoView({ block: "center", inline: "nearest" });
-    root.style.scrollBehavior = previous;
-  });
-}
 
 export function LocalizedCategoryStage({ locale, slug }: Props) {
   const rootRef = useScrollSceneProgress<HTMLDivElement>({ selector: "[data-category-scene]" });

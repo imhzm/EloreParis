@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import { type FocusEvent } from "react";
 import { TrackedLink } from "@/components/tracked-link";
 import { useScrollSceneProgress } from "@/hooks/use-scroll-scene-progress";
 import {
@@ -13,26 +12,7 @@ import {
 } from "@/lib/discovery-content";
 import { localizePath, type Locale } from "@/lib/i18n";
 import styles from "./localized-discovery-experience.module.css";
-
-function MultilineTitle({ value }: { value: string }) {
-  const [first, ...rest] = value.split("\n");
-  return <>{first}{rest.map((line) => <span key={line}><br />{line}</span>)}</>;
-}
-
-function keepFocusVisible(event: FocusEvent<HTMLAnchorElement>) {
-  const target = event.currentTarget;
-  requestAnimationFrame(() => {
-    const root = document.documentElement;
-    const previous = root.style.scrollBehavior;
-    root.style.scrollBehavior = "auto";
-    target.scrollIntoView({ block: "center", inline: "nearest" });
-    root.style.scrollBehavior = previous;
-  });
-}
-
-function routeFor(locale: Locale, href: string) {
-  return localizePath(locale, href);
-}
+import { MultilineTitle, keepFocusVisible } from "@/components/scene-primitives";
 
 const visualByKind: Record<DiscoveryKind, string> = {
   concern: "/elore-assets/editorial-skin-light-concept-1122w.avif",
@@ -81,7 +61,7 @@ export function LocalizedDiscoveryHub({ locale, kind, items }: HubProps) {
       <section className={`${styles.scene} ${styles.closingScene}`} data-discovery-scene aria-label={shared.closingEyebrow}>
         <div className={styles.frame}>
           <div className={styles.closingRule} aria-hidden="true" />
-          <div className={styles.closingCopy}><p>{shared.closingEyebrow}</p><h2><MultilineTitle value={shared.closingTitle} /></h2><span>{copy.decisionBody}</span><TrackedLink href={routeFor(locale, copy.nextHref)} onFocus={keepFocusVisible} className={styles.primaryAction} analyticsLabel={`${kind}_directory_next`} analyticsSurface="discovery_block_motion">{copy.nextLabel}</TrackedLink></div>
+          <div className={styles.closingCopy}><p>{shared.closingEyebrow}</p><h2><MultilineTitle value={shared.closingTitle} /></h2><span>{copy.decisionBody}</span><TrackedLink href={localizePath(locale, copy.nextHref)} onFocus={keepFocusVisible} className={styles.primaryAction} analyticsLabel={`${kind}_directory_next`} analyticsSurface="discovery_block_motion">{copy.nextLabel}</TrackedLink></div>
           <div className={styles.counter} aria-hidden="true">04 — 04</div>
         </div>
       </section>
@@ -126,7 +106,7 @@ export function LocalizedDiscoveryDetail({ locale, kind, record }: DetailProps) 
       <section className={`${styles.scene} ${styles.relatedScene}`} data-knowledge-scene aria-label={copy.relatedEyebrow}>
         <div className={styles.frame}>
           <div className={styles.relatedCopy}><p>{copy.relatedEyebrow}</p><h2><MultilineTitle value={copy.relatedTitle} /></h2></div>
-          <nav className={styles.relatedGrid} data-discovery-related aria-label={copy.relatedEyebrow}>{relatedLinks.map(([title, body, href], index) => <TrackedLink key={`${title}-${href}`} href={routeFor(locale, href)} onFocus={keepFocusVisible} analyticsLabel={`${kind}_${record.slug}_related_${index}`} analyticsSurface="knowledge_block_motion"><b>0{index + 1}</b><h3>{title}</h3><span>{body}</span></TrackedLink>)}</nav>
+          <nav className={styles.relatedGrid} data-discovery-related aria-label={copy.relatedEyebrow}>{relatedLinks.map(([title, body, href], index) => <TrackedLink key={`${title}-${href}`} href={localizePath(locale, href)} onFocus={keepFocusVisible} analyticsLabel={`${kind}_${record.slug}_related_${index}`} analyticsSurface="knowledge_block_motion"><b>0{index + 1}</b><h3>{title}</h3><span>{body}</span></TrackedLink>)}</nav>
           <div className={styles.counter} aria-hidden="true">04 — 05</div>
         </div>
       </section>

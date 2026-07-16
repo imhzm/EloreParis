@@ -8,6 +8,7 @@ import { localizePath, type Locale } from "@/lib/i18n";
 import { shopCopy } from "@/lib/shop-content";
 import type { PublicCatalogProduct } from "@/lib/public-catalog-types";
 import styles from "./cinematic-shop-atlas-stage.module.css";
+import { MultilineTitle } from "@/components/scene-primitives";
 
 type Props = { locale: Locale; products: PublicCatalogProduct[] };
 
@@ -28,11 +29,6 @@ function keepFocusedLinkVisible(event: FocusEvent<HTMLAnchorElement>) {
     target.scrollIntoView({ block: "center", inline: "nearest" });
     root.style.scrollBehavior = previousScrollBehavior;
   });
-}
-
-function MultilineTitle({ value }: { value: string }) {
-  const [first, ...rest] = value.split("\n");
-  return <>{first}{rest.map((line) => <span key={line}><br />{line}</span>)}</>;
 }
 
 export function CinematicShopAtlasStage({ locale, products }: Props) {

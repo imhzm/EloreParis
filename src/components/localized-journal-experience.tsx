@@ -1,22 +1,12 @@
 "use client";
 
 import Image from "next/image";
-import { type FocusEvent } from "react";
 import { TrackedLink } from "@/components/tracked-link";
 import { useScrollSceneProgress } from "@/hooks/use-scroll-scene-progress";
 import { localizePath, type Locale } from "@/lib/i18n";
 import { journalCopy, type JournalRecord } from "@/lib/journal-content";
 import styles from "./localized-journal-experience.module.css";
-
-function Title({ value }: { value: string }) {
-  const [first, ...rest] = value.split("\n");
-  return <>{first}{rest.map((line) => <span key={line}><br />{line}</span>)}</>;
-}
-
-function keepFocusVisible(event: FocusEvent<HTMLElement>) {
-  const target = event.currentTarget;
-  requestAnimationFrame(() => target.scrollIntoView({ block: "center", inline: "nearest" }));
-}
+import { MultilineTitle, keepFocusVisible } from "@/components/scene-primitives";
 
 export function LocalizedJournalHub({ locale, records }: { locale: Locale; records: JournalRecord[] }) {
   const rootRef = useScrollSceneProgress<HTMLDivElement>({ selector: "[data-journal-scene]" });
@@ -26,12 +16,12 @@ export function LocalizedJournalHub({ locale, records }: { locale: Locale; recor
   return <div ref={rootRef} className={styles.experience} data-journal-experience>
     <section className={`${styles.scene} ${styles.hero}`} data-journal-scene aria-labelledby="journal-title"><div className={styles.frame} data-journal-frame>
       <div className={styles.heroMedia} data-journal-motion aria-hidden="true"><Image src="/elore-assets/editorial-skin-light-concept-1122w.avif" alt="" fill priority sizes="(max-width: 900px) 100vw, 46vw" /></div>
-      <div className={styles.heroCopy}><p>{copy.eyebrow}</p><h1 id="journal-title"><Title value={copy.title} /></h1><span>{copy.intro}</span><TrackedLink className={styles.action} href="#journal-featured" onFocus={keepFocusVisible} analyticsLabel="journal_begin" analyticsSurface="journal_block_motion">{copy.open}</TrackedLink><small>{copy.notice}</small></div>
+      <div className={styles.heroCopy}><p>{copy.eyebrow}</p><h1 id="journal-title"><MultilineTitle value={copy.title} /></h1><span>{copy.intro}</span><TrackedLink className={styles.action} href="#journal-featured" onFocus={keepFocusVisible} analyticsLabel="journal_begin" analyticsSurface="journal_block_motion">{copy.open}</TrackedLink><small>{copy.notice}</small></div>
       <b className={styles.counter}>01 — 05</b>
     </div></section>
 
     <section className={`${styles.scene} ${styles.lanes}`} data-journal-scene aria-label={copy.methodTitle}><div className={styles.frame} data-journal-frame>
-      <div className={styles.heading}><p>EDITORIAL LENSES</p><h2><Title value={copy.methodTitle} /></h2><span>{copy.methodBody}</span></div>
+      <div className={styles.heading}><p>EDITORIAL LENSES</p><h2><MultilineTitle value={copy.methodTitle} /></h2><span>{copy.methodBody}</span></div>
       <nav className={styles.laneGrid} data-journal-lanes>
         {[{ number: "01", ar: "المشكلة", en: "Concern", href: "/concerns" }, { number: "02", ar: "الروتين", en: "Ritual", href: "/routines" }, { number: "03", ar: "المكوّن", en: "Ingredient", href: "/ingredients" }].map((lane) => <TrackedLink key={lane.href} href={localizePath(locale, lane.href)} onFocus={keepFocusVisible} analyticsLabel={`journal_lane_${lane.number}`} analyticsSurface="journal_block_motion"><b>{lane.number}</b><h3>{locale === "ar" ? lane.ar : lane.en}</h3><span>{locale === "ar" ? "ابدئي من السؤال، ثم ضيّقي القرار." : "Begin with the question, then narrow the decision."}</span></TrackedLink>)}
       </nav><b className={styles.counter}>02 — 05</b>
@@ -39,18 +29,18 @@ export function LocalizedJournalHub({ locale, records }: { locale: Locale; recor
 
     <section className={`${styles.scene} ${styles.featured}`} data-journal-scene id="journal-featured" aria-label={featured.title}><div className={styles.frame} data-journal-frame data-journal-featured>
       <div className={styles.featuredMedia} data-journal-motion><Image src={featured.image} alt={featured.imageAlt} fill sizes="(max-width: 900px) 100vw, 48vw" /></div>
-      <div className={styles.featuredCopy}><p>{featured.eyebrow}</p><h2><Title value={featured.title} /></h2><span>{featured.summary}</span><ul>{featured.takeaways.map((item) => <li key={item}>{item}</li>)}</ul><TrackedLink className={styles.action} href={`/${locale}/journal/${featured.slug}`} onFocus={keepFocusVisible} analyticsLabel={`journal_featured_${featured.slug}`} analyticsSurface="journal_block_motion">{copy.open}</TrackedLink></div>
+      <div className={styles.featuredCopy}><p>{featured.eyebrow}</p><h2><MultilineTitle value={featured.title} /></h2><span>{featured.summary}</span><ul>{featured.takeaways.map((item) => <li key={item}>{item}</li>)}</ul><TrackedLink className={styles.action} href={`/${locale}/journal/${featured.slug}`} onFocus={keepFocusVisible} analyticsLabel={`journal_featured_${featured.slug}`} analyticsSurface="journal_block_motion">{copy.open}</TrackedLink></div>
       <b className={styles.counter}>03 — 05</b>
     </div></section>
 
     <section className={`${styles.scene} ${styles.directory}`} data-journal-scene aria-label={copy.directory}><div className={styles.frame} data-journal-frame>
-      <div className={styles.heading}><p>{copy.directory}</p><h2><Title value={copy.directoryTitle} /></h2></div>
+      <div className={styles.heading}><p>{copy.directory}</p><h2><MultilineTitle value={copy.directoryTitle} /></h2></div>
       <nav className={styles.directoryList} data-journal-directory>{records.map((record, index) => <TrackedLink key={record.slug} href={`/${locale}/journal/${record.slug}`} onFocus={keepFocusVisible} data-journal-card analyticsLabel={`journal_directory_${record.slug}`} analyticsSurface="journal_block_motion"><b>0{index + 1}</b><small>{record.category}</small><h3>{record.title.replace("\n", " ")}</h3><span>{record.readingLabel}</span></TrackedLink>)}</nav>
       <b className={styles.counter}>04 — 05</b>
     </div></section>
 
     <section className={`${styles.scene} ${styles.close}`} data-journal-scene aria-label={copy.closeTitle}><div className={styles.frame} data-journal-frame data-journal-close>
-      <div className={styles.closeMark} aria-hidden="true">É</div><div className={styles.closeCopy}><p>BEAUTY, CONSIDERED</p><h2><Title value={copy.closeTitle} /></h2><span>{copy.notice}</span><TrackedLink className={styles.action} href={localizePath(locale, "/routines")} onFocus={keepFocusVisible} analyticsLabel="journal_close_routines" analyticsSurface="journal_block_motion">{copy.closeCta}</TrackedLink></div>
+      <div className={styles.closeMark} aria-hidden="true">É</div><div className={styles.closeCopy}><p>BEAUTY, CONSIDERED</p><h2><MultilineTitle value={copy.closeTitle} /></h2><span>{copy.notice}</span><TrackedLink className={styles.action} href={localizePath(locale, "/routines")} onFocus={keepFocusVisible} analyticsLabel="journal_close_routines" analyticsSurface="journal_block_motion">{copy.closeCta}</TrackedLink></div>
       <b className={styles.counter}>05 — 05</b>
     </div></section>
   </div>;
@@ -63,7 +53,7 @@ export function LocalizedJournalArticle({ locale, record, relatedArticles }: { l
   return <article ref={rootRef} className={styles.experience} data-article-experience>
     <section className={`${styles.scene} ${styles.articleHero}`} data-article-scene aria-labelledby="article-title"><div className={styles.frame} data-article-frame>
       <div className={styles.articleMedia} data-journal-motion><Image src={record.image} alt={record.imageAlt} fill priority sizes="(max-width: 900px) 100vw, 45vw" /></div>
-      <div className={styles.articleHeroCopy} data-article-meta><p>{record.eyebrow}</p><small>{record.category} · {record.readingLabel}</small><h1 id="article-title"><Title value={record.title} /></h1><span>{record.summary}</span><TrackedLink className={styles.action} href="#article-answer" onFocus={keepFocusVisible} analyticsLabel={`${record.slug}_answer`} analyticsSurface="article_block_motion">{copy.answer}</TrackedLink><em>{copy.disclaimer}</em></div>
+      <div className={styles.articleHeroCopy} data-article-meta><p>{record.eyebrow}</p><small>{record.category} · {record.readingLabel}</small><h1 id="article-title"><MultilineTitle value={record.title} /></h1><span>{record.summary}</span><TrackedLink className={styles.action} href="#article-answer" onFocus={keepFocusVisible} analyticsLabel={`${record.slug}_answer`} analyticsSurface="article_block_motion">{copy.answer}</TrackedLink><em>{copy.disclaimer}</em></div>
       <b className={styles.counter}>01 — 05</b>
     </div></section>
 
