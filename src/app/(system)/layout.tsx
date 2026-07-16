@@ -35,6 +35,23 @@ export const viewport: Viewport = {
   themeColor: "#491723",
 };
 
+/**
+ * Nothing under this root may be prerendered.
+ *
+ * These pages are instruments: they report what the authority database and the
+ * environment say *right now*. Baked at build time they lie, and they lie in
+ * the most expensive direction — an operator who flips PUBLIC_LEGAL_CONTENT_
+ * APPROVED and restarts would open /ops/release to confirm it, be told it is
+ * still blocked, and have no way to tell that the page is a photograph. The
+ * build was already shipping a live order number as static text in ops.html.
+ *
+ * Declared once here rather than on each page because the rule is a property of
+ * the whole operations surface, and eight separate declarations is seven
+ * chances to forget. Nothing here is public or cacheable anyway — the layout
+ * above already marks the entire tree noindex.
+ */
+export const dynamic = "force-dynamic";
+
 export default function SystemRootLayout({
   children,
 }: Readonly<{
