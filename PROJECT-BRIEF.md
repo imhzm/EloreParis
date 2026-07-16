@@ -66,7 +66,14 @@ The roadmap describes a Saudi premium beauty ecommerce experience, not a generic
 ## Confirmed Requirements
 
 - The public experience should feel premium, calm, editorial, and mobile-first.
-- The store must stay focused on beauty categories, not merge identity with the separate fragrance business.
+- ~~The store must stay focused on beauty categories, not merge identity with the separate fragrance business.~~
+  **Reversed by the project owner on 2026-07-17.** The approved `Elore Paris —
+  Motion Website` reference concept leads with `العطور` as the first navigation
+  entry and a fragrance still-life as the hero, and the owner confirmed the
+  reference governs. `perfumes` is now a first-class storefront category. This
+  reinstates the route shape that was withdrawn on 2026-07-14; it does not
+  approve any perfume product, claim, or price, all of which remain blocked
+  behind the same catalog authority as every other category.
 - The site architecture must support:
   - category browsing
   - concern pages

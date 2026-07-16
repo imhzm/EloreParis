@@ -7,6 +7,7 @@ export type Locale = (typeof locales)[number];
 export const defaultLocale: Locale = "ar";
 
 const localizedShopCollectionPaths = new Set([
+  "/shop/perfumes",
   "/shop/skincare",
   "/shop/makeup",
   "/shop/haircare",

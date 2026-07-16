@@ -1,6 +1,9 @@
 import type { Locale } from "@/lib/i18n";
 
 const images = {
+  // PLACEHOLDER: shared with the transition scene until a dedicated perfume
+  // still-life concept asset exists. Replace before any perfume launch.
+  perfumes: "/elore-assets/transition-burgundy-satin-concept-1672w.avif",
   skincare: "/elore-assets/texture-skincare-serum-concept-1536w.avif",
   makeup: "/elore-assets/texture-makeup-pigment-concept-1536w.avif",
   haircare: "/elore-assets/haircare-ribbon-editorial-concept-1122x1402.avif",
@@ -27,6 +30,7 @@ export const shopCopy = {
     routesIntro: { aria: "طرق الاختيار", eyebrow: "CHOOSE WITH INTENT", title: "حين لا تكفي\nالفئة وحدها.", body: "ابدئي من السؤال الأقرب لك." },
     finale: { aria: "نهاية تجربة المتجر", eyebrow: "BEAUTY, CONSIDERED", title: "اختيارك يبدأ\nمن الوضوح.", body: "نعرض المنتجات والأسعار فقط بعد اعتماد بياناتها وصورها ومعلوماتها التشغيلية.", primary: "دليل الجمال", secondary: "الثقة والسياسات" },
     collections: [
+      ["العطور", "PERFUMES", "/shop/perfumes", images.perfumes, "shop_hub_collection_perfumes"],
       ["العناية بالبشرة", "SKINCARE", "/shop/skincare", images.skincare, "shop_hub_collection_skincare"],
       ["المكياج", "MAKEUP", "/shop/makeup", images.makeup, "shop_hub_collection_makeup"],
       ["العناية بالشعر", "HAIRCARE", "/shop/haircare", images.haircare, "shop_hub_collection_haircare"],
@@ -63,6 +67,7 @@ export const shopCopy = {
     routesIntro: { aria: "Ways to choose", eyebrow: "CHOOSE WITH INTENT", title: "When category\nis not enough.", body: "Begin with the question closest to you." },
     finale: { aria: "End of the shop experience", eyebrow: "BEAUTY, CONSIDERED", title: "Your choice begins\nwith clarity.", body: "Products and prices appear only after their imagery, data and operational information are approved.", primary: "Beauty journal", secondary: "Trust and policies" },
     collections: [
+      ["Perfumes", "PERFUMES", "/shop/perfumes", images.perfumes, "shop_hub_collection_perfumes"],
       ["Skincare", "SKINCARE", "/shop/skincare", images.skincare, "shop_hub_collection_skincare"],
       ["Makeup", "MAKEUP", "/shop/makeup", images.makeup, "shop_hub_collection_makeup"],
       ["Haircare", "HAIRCARE", "/shop/haircare", images.haircare, "shop_hub_collection_haircare"],

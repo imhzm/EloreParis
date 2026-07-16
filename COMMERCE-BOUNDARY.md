@@ -25,10 +25,19 @@
 
 ### Editorial / IA Surfaces Kept Live But Not Yet True Catalog Authority
 
+- `/shop/perfumes`
 - `/shop/haircare`
 - `/shop/bodycare`
 - `/shop/tools`
 - `/shop/beauty-sets`
+
+`perfumes` was added on 2026-07-17 by owner decision, reversing the earlier
+separation from the fragrance business (see PROJECT-BRIEF.md). It enters here,
+not in the transactional MVP: the route, IA and editorial voice are live, while
+every perfume SKU, price, claim and asset stays blocked behind the same catalog
+authority as the rest. Before a perfume can be sold, it needs the same evidence
+gates as any other product, plus a dedicated concept asset — the category
+currently borrows the transition scene as a clearly-marked placeholder.
 
 These routes remain valid public surfaces for IA, SEO, and future merchandising, but they are not treated as full operational catalog scope until real product ownership, stock truth, and supplier flow are approved.
 

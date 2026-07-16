@@ -81,6 +81,7 @@ export const footerPolicyLinks = [
 ];
 
 export type CollectionSlug =
+  | "perfumes"
   | "skincare"
   | "makeup"
   | "haircare"
@@ -99,6 +100,12 @@ export const collectionDirectory: Record<
   CollectionSlug,
   CollectionDirectoryEntry
 > = {
+  perfumes: {
+    title: "العطور",
+    href: "/shop/perfumes",
+    subtitle: "Perfume Collection",
+    mode: "editorial",
+  },
   skincare: {
     title: "العناية بالبشرة",
     href: "/shop/skincare",
