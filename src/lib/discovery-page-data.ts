@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { discoveryDetailCopy, discoveryHubCopy, discoveryPaths, type DiscoveryKind, type DiscoveryRecord } from "@/lib/discovery-content";
 import { localeConfig, type Locale } from "@/lib/i18n";
-import { publicRichPreviewRobots } from "@/lib/seo";
+import { getPublicRichPreviewRobots } from "@/lib/seo";
 import { absoluteUrl, siteName } from "@/lib/site-content";
 
 const socialImages: Record<DiscoveryKind, { src: string; width: number; height: number }> = {
@@ -28,7 +28,7 @@ export function buildDiscoveryMetadata(locale: Locale, kind: DiscoveryKind, reco
         "x-default": `/ar/${pathSegment}${pathSuffix}`,
       },
     },
-    robots: publicRichPreviewRobots,
+    robots: getPublicRichPreviewRobots(),
     openGraph: {
       title: `${title} | ${siteName}`,
       description,

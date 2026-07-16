@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { AnalyticsProvider } from "@/components/analytics-provider";
 import { CartProvider } from "@/components/cart-provider";
 import { fontVariables } from "@/lib/fonts";
-import { defaultMetadataRobots } from "@/lib/seo";
+import { getDefaultMetadataRobots } from "@/lib/seo";
 import { isLocale, locales, localeConfig } from "@/lib/i18n";
 import { defaultDescription, getSiteUrl, siteName, siteTagline } from "@/lib/site-content";
 import "../../globals.css";
@@ -22,7 +22,13 @@ export function generateStaticParams() {
 // Anything that is not a known locale is a 404, not a runtime render.
 export const dynamicParams = false;
 
-export const metadata: Metadata = {
+// generateMetadata rather than a `metadata` const: the const is evaluated once
+// when the module is imported, which would freeze the robots directive for the
+// life of the process and let it drift from robots.txt, which is computed per
+// request. This runs per render. For a prerendered page that render is still
+// the build — which is why deploy-release.sh must export the approval gates.
+export async function generateMetadata(): Promise<Metadata> {
+  return {
   metadataBase: new URL(siteUrl),
   title: {
     default: `${siteName} | ${siteTagline}`,
@@ -77,8 +83,9 @@ export const metadata: Metadata = {
   },
   applicationName: siteName,
   category: "beauty ecommerce",
-  robots: defaultMetadataRobots,
-};
+  robots: getDefaultMetadataRobots(),
+  };
+}
 
 export const viewport: Viewport = {
   colorScheme: "light",

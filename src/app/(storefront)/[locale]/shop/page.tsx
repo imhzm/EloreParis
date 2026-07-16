@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { CinematicShopAtlasStage } from "@/components/cinematic-shop-atlas-stage";
 import { StorefrontShell } from "@/components/storefront-shell";
 import { isLocale, localeConfig } from "@/lib/i18n";
-import { publicRichPreviewRobots } from "@/lib/seo";
+import { getPublicRichPreviewRobots } from "@/lib/seo";
 import { absoluteUrl, siteName } from "@/lib/site-content";
 import { shopCopy } from "@/lib/shop-content";
 import { getPublicCatalogSnapshot } from "@/lib/public-catalog";
@@ -37,7 +37,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         "x-default": "/ar/shop",
       },
     },
-    robots: publicRichPreviewRobots,
+    robots: getPublicRichPreviewRobots(),
     openGraph: {
       title: `${copy.title} | ${siteName}`,
       description: copy.description,

@@ -4,7 +4,7 @@ import { CinematicProductExperience } from "@/components/cinematic-product-exper
 import { StorefrontShell } from "@/components/storefront-shell";
 import { isLocale, localeConfig } from "@/lib/i18n";
 import { getPublicCatalogSnapshot } from "@/lib/public-catalog";
-import { publicRichPreviewRobots } from "@/lib/seo";
+import { getPublicRichPreviewRobots } from "@/lib/seo";
 import { absoluteUrl, siteName } from "@/lib/site-content";
 
 type PageProps = { params: Promise<{ locale: string; slug: string }> };
@@ -36,7 +36,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         "x-default": `/ar/product/${product.slug}`,
       },
     },
-    robots: publicRichPreviewRobots,
+    robots: getPublicRichPreviewRobots(),
     openGraph: {
       title: `${product.name} | ${siteName}`,
       description: product.subtitle,

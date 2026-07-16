@@ -59,10 +59,25 @@ read_environment_value() {
   sed -n "s/^${key}=//p" "${ENV_FILE}" | tail -n 1
 }
 
+# The build bakes page metadata, so every gate isSearchIndexingEnabled() reads
+# must be present HERE, not only in the systemd EnvironmentFile the server later
+# loads. It needs all five approvals; exporting two of them meant the check was
+# structurally false at build time, so `noindex, nofollow` was baked into every
+# prerendered page — while /robots.txt and /sitemap.xml, which are dynamic and
+# read the server's environment, would publish `Allow: /` and a hundred URLs the
+# moment approvals landed. Crawlers would be invited to pages that turn them
+# away. It fails safe, but silently, and every instrument reports green.
+#
+# Consequence worth knowing: because metadata is baked, changing an approval in
+# the environment file requires a REDEPLOY, not just `systemctl restart`.
 export APP_ENV="$(read_environment_value APP_ENV)"
 export HOSTING_PROVIDER="$(read_environment_value HOSTING_PROVIDER)"
 export NEXT_PUBLIC_SITE_URL="$(read_environment_value NEXT_PUBLIC_SITE_URL)"
 export PUBLIC_RELEASE_APPROVED="$(read_environment_value PUBLIC_RELEASE_APPROVED)"
+export PUBLIC_CATALOG_APPROVED="$(read_environment_value PUBLIC_CATALOG_APPROVED)"
+export PUBLIC_DISCOVERY_CONTENT_APPROVED="$(read_environment_value PUBLIC_DISCOVERY_CONTENT_APPROVED)"
+export PUBLIC_EDITORIAL_CONTENT_APPROVED="$(read_environment_value PUBLIC_EDITORIAL_CONTENT_APPROVED)"
+export PUBLIC_LEGAL_CONTENT_APPROVED="$(read_environment_value PUBLIC_LEGAL_CONTENT_APPROVED)"
 export PUBLIC_COMMERCE_ENABLED="$(read_environment_value PUBLIC_COMMERCE_ENABLED)"
 export DEPLOYMENT_COMMIT_SHA="${DEPLOY_COMMIT}"
 

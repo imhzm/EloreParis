@@ -4,7 +4,7 @@ import { LocalizedCategoryStage } from "@/components/localized-category-stage";
 import { StorefrontShell } from "@/components/storefront-shell";
 import { categoryCopy, categorySharedCopy, categorySlugs, isCategorySlug } from "@/lib/category-content";
 import { isLocale, localeConfig, locales } from "@/lib/i18n";
-import { publicRichPreviewRobots } from "@/lib/seo";
+import { getPublicRichPreviewRobots } from "@/lib/seo";
 import { absoluteUrl, siteName } from "@/lib/site-content";
 
 type PageProps = { params: Promise<{ locale: string; slug: string }> };
@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         "x-default": `/ar/shop/${slug}`,
       },
     },
-    robots: publicRichPreviewRobots,
+    robots: getPublicRichPreviewRobots(),
     openGraph: {
       title: `${copy.title} | ${shared.metadataSuffix}`,
       description: copy.description,
