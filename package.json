@@ -13,6 +13,7 @@
     "test:home-3d": "python scripts/home-3d-regression.py",
     "test:smoke": "node scripts/smoke-check.mjs",
     "test:production-fence": "node scripts/production-fence-check.mjs",
+    "test:release-controls": "node scripts/release-controls-check.mjs",
     "test:catalog-authority": "node scripts/catalog-authority-check.mjs",
     "test:provider-auth-security": "node scripts/provider-auth-security-check.mjs",
     "test:ops-lifecycle-source": "node scripts/ops-lifecycle-source-check.mjs",

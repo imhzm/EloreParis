@@ -2,9 +2,23 @@ function isEnabled(value?: string | null) {
   return value?.trim().toLowerCase() === "true";
 }
 
+/**
+ * The vocabulary an unedited template speaks.
+ *
+ * One list, shared by every "is this actually configured?" check. It used to be
+ * duplicated with different members: the secret check rejected `replace` and
+ * `your-`, the version check did not — so `PUBLIC_TERMS_VERSION` left at the
+ * `replace-with-…` default that every env template in this repo ships would
+ * satisfy the policy gate and be recorded onto real quotes and orders as the
+ * version the customer agreed to. Two lists six lines apart will always drift;
+ * there is now one.
+ */
+const UNEDITED_TEMPLATE_VALUE =
+  /(replace|placeholder|example|changeme|todo|your-|set-this)/i;
+
 function isConfiguredSecret(value?: string | null) {
   const normalized = value?.trim() ?? "";
-  return normalized.length >= 8 && !/(replace|placeholder|example|changeme|todo|your-|set-this)/i.test(normalized);
+  return normalized.length >= 8 && !UNEDITED_TEMPLATE_VALUE.test(normalized);
 }
 
 function isHttpsUrl(value?: string | null) {
@@ -17,7 +31,7 @@ function isHttpsUrl(value?: string | null) {
 
 function isConfiguredVersion(value?: string | null) {
   const normalized = value?.trim() ?? "";
-  return normalized.length >= 3 && !/(placeholder|example|changeme|todo|set-this)/i.test(normalized);
+  return normalized.length >= 3 && !UNEDITED_TEMPLATE_VALUE.test(normalized);
 }
 
 export function isExternalCustomerAuthConfigured(
