@@ -17,7 +17,7 @@
 .atlasScene .frame::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent 49.8%,rgba(212, 175, 55,.16) 50%,transparent 50.2%),linear-gradient(0deg,transparent 49.8%,rgba(212, 175, 55,.12) 50%,transparent 50.2%);transform:translateY(calc((var(--progress) - .5)*24px));pointer-events:none}
 .atlas{position:absolute;inset-inline-start:7%;top:50%;display:grid;width:min(39vw,560px);aspect-ratio:4/5;grid-template-columns:repeat(3,1fr);border:1px solid rgba(212, 175, 55,.52);transform:translateY(-50%) rotate(calc(-1deg + var(--progress)*2deg)) scale(calc(1 + var(--progress)*.035));transform-origin:center}
 .atlas::before,.atlas::after{content:"";position:absolute;background:rgba(212, 175, 55,.35)}
-.atlas::before{inset:10% 0 auto;height:1px}.atlas::after{inset:0 auto 0 12%;width:1px}
+.atlas::before{inset:10% 0 auto;height:1px}.atlas::after{inset-block:0;inset-inline-start:12%;width:1px}
 .atlas span{padding:18px;color:rgba(243,240,234,.48);font:600 .68rem/1 var(--font-sans);letter-spacing:.16em;border-inline-end:1px solid rgba(212, 175, 55,.2)}
 .atlas b{position:absolute;inset:0;display:grid;place-content:center;color:var(--champagne);font-family:var(--font-display);font-size:clamp(1.4rem,2.8vw,2.7rem);font-weight:500;letter-spacing:.16em;line-height:1.35;text-align:center}
 .heroCopy{inset-inline-end:7%;top:50%;width:min(45rem,48vw);transform:translateY(calc(-50% - var(--progress)*24px))}

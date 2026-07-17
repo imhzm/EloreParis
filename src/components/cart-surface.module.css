@@ -198,6 +198,29 @@
   gap: 10px;
 }
 
+/* Row of card actions (إفراغ السلة / متابعة التسوق). Wraps on narrow widths and
+   sits at the reading start so it mirrors between RTL and LTR. */
+.cardActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+/* Soft inline error — brand error (#a23a3a) kept low-intensity so it reads as a
+   calm notice, not a harsh alert. Used for the status region and per-item errors. */
+.inlineError {
+  padding: 14px 16px;
+  border-radius: var(--radius-control);
+  border: 1px solid rgba(162, 58, 58, 0.28);
+  background: rgba(162, 58, 58, 0.08);
+  color: #a23a3a;
+  font-size: 0.88rem;
+  line-height: 1.7;
+}
+
 .badgeRow span,
 .inlineLink {
   padding: 8px 12px;
@@ -287,7 +310,7 @@
 .checklistCard {
   border-color: var(--commerce-line);
   background: rgba(255, 250, 242, 0.96);
-  box-shadow: 0 28px 90px rgba(0, 12, 12, 0.24);
+  box-shadow: 0 28px 90px rgba(42, 13, 20, 0.24);
 }
 
 .emptyCard {
@@ -317,8 +340,8 @@
 
 .noticeCard {
   border-color: rgba(212, 175, 55, 0.2);
-  background: rgba(3, 29, 28, 0.72);
-  box-shadow: 0 24px 70px rgba(0, 12, 12, 0.3);
+  background: rgba(42, 13, 20, 0.72);
+  box-shadow: 0 24px 70px rgba(42, 13, 20, 0.3);
 }
 
 .noticeCard h2 { color: var(--commerce-cream); }
@@ -327,7 +350,7 @@
   border: 1px solid rgba(212, 175, 55, 0.25);
   background:
     radial-gradient(circle at 85% 15%, rgba(212, 175, 55, 0.25), transparent 45%),
-    rgba(2, 23, 22, 0.9);
+    rgba(42, 13, 20, 0.9);
 }
 
 .lineItem,
@@ -340,7 +363,7 @@
 .signalCard:hover,
 .linkList a:hover {
   transform: translateY(-3px);
-  border-color: rgba(5, 47, 45, 0.24);
+  border-color: rgba(42, 13, 20, 0.24);
   background: #fff;
 }
 
@@ -421,6 +444,38 @@
   color: var(--aubergine-ink);
 }
 
+/* Full-width primary action rendered in place of .primaryLink when checkout is
+   blocked — same size/shape/typography, but a clearly-disabled muted burgundy
+   with no hover lift. */
+.primaryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding-inline: 24px;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-weight: 700;
+  background: var(--aubergine-ink);
+  color: #fff8f3;
+  cursor: pointer;
+}
+
+.primaryButton:disabled {
+  background: rgba(59, 15, 26, 0.4);
+  color: rgba(255, 248, 243, 0.7);
+  cursor: default;
+}
+
+/* Small muted note under the checkout action. */
+.helperText {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.7;
+}
+
 .linkList {
   display: grid;
   gap: 10px;
@@ -442,6 +497,17 @@
 .linkList a span:last-child {
   color: var(--mauve-stone);
   font-size: 0.78rem;
+}
+
+/* The glyph (←) points left, which reads as "onward" in Arabic RTL. Mirror it
+   under LTR so English sees a forward-pointing arrow — same directional-glyph
+   flip the drawer and bento arrows use. */
+.policyArrow {
+  display: inline-block;
+}
+
+[dir="ltr"] .policyArrow {
+  transform: scaleX(-1);
 }
 
 .emptyCard,

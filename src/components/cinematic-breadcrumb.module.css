@@ -39,8 +39,11 @@
   transition: color var(--motion-control);
 }
 
+/* The category hero defines a local --champagne; the product hero does not (it
+   defines --mint), so fall back to the global gold token there — otherwise the
+   current crumb would inherit the frame's white. */
 .current {
-  color: var(--champagne);
+  color: var(--champagne, var(--elore-champagne));
 }
 
 /* A chevron drawn from two fixed (physical) borders. Rotated 45° the top+right

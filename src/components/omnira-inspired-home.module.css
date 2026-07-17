@@ -506,7 +506,7 @@
 
 .glassHighlight {
   position: absolute;
-  inset: 7% auto 12% 10%;
+  inset-block: 7% 12%; inset-inline: 10% auto;
   width: 8%;
   border-radius: 99px;
   background: linear-gradient(180deg, rgba(255,255,255,.72), rgba(255,255,255,.06));
@@ -1181,3 +1181,7 @@
     display: none;
   }
 }
+
+/* RTL: the scroll-cue hairline grows from the inline-start; transform-origin has
+   no logical keyword, so mirror the physical origin for the Arabic layout. */
+[dir="rtl"] .scrollCue span { transform-origin: right; }

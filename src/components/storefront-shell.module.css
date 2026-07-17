@@ -8,7 +8,7 @@
 .opsShell {
   min-height: 100vh;
   color: #f7f2e8;
-  background: radial-gradient(circle at 82% 12%, rgba(31, 176, 145, 0.16), transparent 32rem), #071412;
+  background: radial-gradient(circle at 82% 12%, rgba(107, 29, 42, 0.2), transparent 32rem), #1C1011;
 }
 
 .opsMain { min-height: 100vh; }

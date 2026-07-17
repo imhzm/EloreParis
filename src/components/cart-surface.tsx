@@ -275,7 +275,7 @@ export function CartSurface() {
             <div className={styles.linkList}>
               {footerPolicyLinks.map((link) => (
                 <TrackedLink key={link.href} href={localizePath(locale, link.href)} analyticsLabel={`cart_policy_${link.href.split("/").at(-1)}`} analyticsSurface="cart_policy">
-                  <span>{link.label}</span><span>←</span>
+                  <span>{link.label}</span><span className={styles.policyArrow} aria-hidden="true">←</span>
                 </TrackedLink>
               ))}
             </div>
