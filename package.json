@@ -28,7 +28,8 @@
     "test:boundaries": "node scripts/localized-boundary-check.mjs",
     "authority:backup": "node scripts/authority-db-backup.mjs",
     "ops:hash-password": "node scripts/generate-ops-password-hash.mjs",
-    "test:font-stack": "node scripts/font-stack-check.mjs"
+    "test:font-stack": "node scripts/font-stack-check.mjs",
+    "test:scroll-reveal": "node scripts/scroll-reveal-check.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-sesv2": "^3.1087.0",

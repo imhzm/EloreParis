@@ -815,8 +815,12 @@
   grid-template-columns: minmax(0, 0.78fr) minmax(420px, 1fr);
   align-items: center;
   gap: clamp(28px, 5vw, 76px);
-  transform: translateY(calc((1 - var(--enter)) * 24px));
-  opacity: var(--enter);
+  /* Not `opacity: var(--enter)`. --enter is 0 until the scroll handler raises it,
+     so this hid the newsletter — field, submit and consent — behind a scroll the
+     visitor had no reason to make, while leaving all three in the tab order. The
+     translate below still carries the reveal; §13 allows the motion and forbids
+     delaying the content. */
+  opacity: 1;
   transform: translate3d(0, calc((1 - var(--enter)) * 24px), 70px) scale(calc(0.97 + var(--enter) * 0.03));
 }
 
