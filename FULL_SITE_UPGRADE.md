@@ -2,6 +2,68 @@
 
 Last updated: 2026-07-17 (Africa/Cairo, UTC+03:00)
 
+## 2026-07-17 adversarial audit of the rebuild
+
+An eight-agent audit reviewed the tree after the typography, header, routing and
+grid changes; every claim was re-verified against the running standalone server
+before being acted on. Nineteen findings survived the audit's own skeptic. What
+follows is what happened to them.
+
+### Fixed
+
+- **Every product URL 404'd into a document with no `lang`, `dir` or fonts.** A
+  runtime `notFound()` inside the storefront tree has no boundary it can render
+  into, because both root layouts sit under route groups. Reproduced in all four
+  combinations of the 404 files. `proxy.ts` now redirects the canonical product
+  route to the shop when no catalogue is approved, as it already did for the
+  legacy shape — 307, since the rule stops firing once a catalogue exists.
+- **`noindex` was baked into every prerendered page while robots.txt invited
+  crawlers.** `deploy-release.sh` exported two of the five approvals the build
+  needs. Demonstrated by building both ways.
+- **The whole operations surface was prerendered** — a live order number was
+  baked into `ops.html`. Now `force-dynamic` at the `(system)` root.
+- **`/api/health` enumerated the unreleased catalogue** to anyone: blockers
+  carry `{slug}` and `{sku}`. Redacted to the blocker kind.
+- **The policy gate accepted its own template default.** `isConfiguredVersion`
+  omitted `replace` from its placeholder list. Locked by `test:release-controls`.
+- **The mobile drawer opened from the opposite edge in Arabic**, the journal hero
+  faded the wrong edge in Arabic, and the keyboard-active search suggestion sat
+  at 1.04:1.
+- **The governance register never knew about perfumes**, so `/ops/content`
+  reported green on it by omission. Locked by `test:content-governance`.
+- **The shop headline counted its own cards** — "six doors" over seven.
+- **The concept disclosure rendered at 9.9px** on phones.
+- **Images that render nothing were preloaded at high priority**, and two logos
+  fetched 1920px files for 132–230px slots.
+
+### Refuted, with evidence
+
+- **"The commerce gate is fail-open outside production."** The stage condition is
+  deliberate and documented (see the 2026-07-15 entry below), and the supporting
+  claim — that those two routes are the only enforcement of the policy versions —
+  is false: `catalog-quote.ts` enforces them unconditionally.
+- **"Arabic is letter-spaced on six live surfaces."** Zero on measurement, and
+  zero when all 130 tracking rules were paired against the JSX using them. The
+  tracked elements carry Latin by design. Looking for it did surface a real
+  defect beside it: 14 Latin strings were not language-marked, so a screen reader
+  pronounced them with an Arabic voice. Those are fixed.
+- **"The Arabic fonts are not preloaded, so /ar has a FOUT."** The asymmetry is
+  real and deliberate — preloading them would ship 57 KB to every English page,
+  since next/font preloads unconditionally. The consequence is not: measured on
+  /ar, both Arabic faces complete at 241 ms and 245 ms against a first paint of
+  260 ms. The render-blocking stylesheet starts the fetch early enough. Left as
+  is; the trade is recorded rather than churned.
+
+### Open
+
+- Eight lower-severity findings remain unaddressed, including layout thrash in
+  the scroll hook, `og:image` missing on 34 journal and trust pages, and the
+  hero LCP being upscaled on phones.
+- On this Windows machine the image optimizer passes every PNG through
+  untouched while AVIF optimizes correctly. **Unverified on Linux** — the deploy
+  builds on the VPS with a different sharp binary. If it reproduces there, the
+  raw 365 KB 2600×820 wordmark ships on every page.
+
 ## 2026-07-17 reference concept, type system, and prerendering
 
 Driven by `ELORE_Claude_Implementation_Pack` (owner-supplied roadmap, design
