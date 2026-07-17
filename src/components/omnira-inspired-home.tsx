@@ -50,6 +50,33 @@ export function OmniraInspiredHome({ locale }: Props) {
             />
           </div>
           <div className={styles.heroShade} aria-hidden="true" />
+          {/* The brand rail. CLAUDE.md §7.2 opens the hero spec with "Brand rail
+              داكن في الجانب" and §11 lists HeroBrandRail as a component; it is
+              the element the reference composition hangs on, and it was the one
+              thing in that spec with no counterpart in the build.
+
+              aria-hidden, and it costs nothing to say so: the wordmark is already
+              the <h1>'s neighbour as a real <Image alt="ÉLORÉ PARIS">, and the
+              lockup repeats the tagline the footer carries. To a screen reader
+              this rail is the third recital of the same name.
+
+              The mark is the burgundy PNG masked to gold rather than a second
+              asset. It is line art with a real alpha channel, so the alpha IS the
+              shape — mask it and the ink is whatever colour you name. */}
+          <div className={styles.heroBrandRail} aria-hidden="true">
+            <span className={styles.heroBrandRailMark} />
+            {/* dir, not just lang. lang="en" names the language; it does not set
+                direction, and the document is RTL. A trailing comma is a neutral
+                character, so bidi hands it the paragraph's direction and
+                "Beauty," rendered as "،Beauty" — the comma jumped to the far side
+                of the word. Measured: two rects, the 4px comma laid out before
+                the 45px word. Every other lang="en" string in this repo is a
+                single all-caps run with no edge punctuation, which is why none of
+                them has needed this yet. */}
+            <span className={styles.heroBrandRailLockup} lang="en" dir="ltr">
+              Beauty,<br />composed<br />with<br />intention
+            </span>
+          </div>
           <div className={styles.heroContent}>
             {/* `sizes` is what makes next/image emit a w-descriptor srcset.
                 Without it the srcset is x-descriptors, which pick on device

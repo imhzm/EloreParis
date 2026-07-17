@@ -37,6 +37,71 @@
   place-items: center;
 }
 
+/* THE BRAND RAIL — CLAUDE.md §7.2, §11 (HeroBrandRail).
+   A dark column down the outer edge carrying the monogram and the identity
+   sheet's English lockup. It is what establishes the burgundy/ivory split the
+   whole reference composition is built on.
+
+   inset-inline-end, not left. The reference board is Arabic, and there the rail
+   sits at the far edge from the headline — which is the inline END. Pinning it
+   left would put it at the START of the English page, in front of the copy it is
+   supposed to bookend. */
+.heroBrandRail {
+  position: absolute;
+  z-index: 4;
+  inset-block: 0;
+  inset-inline-end: 0;
+  width: clamp(76px, 6.5vw, 124px);
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: clamp(22px, 3.5vh, 44px);
+  padding-block-start: clamp(26px, 5vh, 60px);
+  background: linear-gradient(
+    to bottom,
+    var(--elore-burgundy),
+    color-mix(in srgb, var(--elore-burgundy) 88%, var(--elore-ink))
+  );
+  /* The organic edge §7.2 asks for ("Organic / curved shapes بدل مستطيل تقليدي"):
+     the rail's inner boundary sweeps rather than cuts. A large radius on the two
+     inner corners is the whole trick — a straight gradient ramp is not a shaped
+     edge, which is why the previous attempt at this read as a photo in a box. */
+  border-start-start-radius: clamp(48px, 7vw, 120px);
+  border-end-start-radius: clamp(48px, 7vw, 120px);
+}
+
+/* Gold ink from a burgundy file. The PNG is line art with a real alpha channel,
+   so the alpha carries the shape and the background paints through it. Saves a
+   second asset that would then have to be kept in sync with the first. */
+.heroBrandRailMark {
+  width: clamp(26px, 2.2vw, 42px);
+  aspect-ratio: 605 / 808;
+  background: var(--elore-champagne);
+  -webkit-mask: url("/elore-assets/logo-mark-burgundy.png") center / contain no-repeat;
+  mask: url("/elore-assets/logo-mark-burgundy.png") center / contain no-repeat;
+}
+
+.heroBrandRailLockup {
+  color: var(--elore-champagne);
+  font-family: var(--font-body-latin), sans-serif;
+  font-size: clamp(0.5rem, 0.58vw, 0.62rem);
+  font-weight: 700;
+  line-height: 2;
+  letter-spacing: 0.22em;
+  text-align: center;
+  text-transform: uppercase;
+  opacity: 0.82;
+}
+
+/* The rail is desktop composition. Below 900px the cinematic frame goes
+   `position: relative` and stacks, and a 76px column down the side of a 375px
+   phone would take a fifth of the width to repeat the name twice more. */
+@media (max-width: 900px) {
+  .heroBrandRail {
+    display: none;
+  }
+}
+
 .heroWorld {
   position: absolute;
   inset: -5%;
