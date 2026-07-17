@@ -215,7 +215,14 @@ export function SearchForm({
                   id={`${listboxId}-option-${index}`}
                   key={`${item.kind}-${item.slug}`}
                   href={item.href}
-                  className={styles.predictiveItem}
+                  // The keyboard-active row was an inline mint wash left over
+                  // from the retired palette. Composited over the ivory panel it
+                  // measured 1.04:1 — a sighted keyboard user could arrow
+                  // through the list and never see which row they were on, then
+                  // press Enter and navigate somewhere they could not identify.
+                  // It is a class now, so the state carries real contrast and
+                  // the colour lives with the rest of the theme.
+                  className={`${styles.predictiveItem} ${activeResultIndex === index ? styles.predictiveItemActive : ""}`}
                   onClick={() => {
                     setIsFocused(false);
                     setActiveResultIndex(-1);
@@ -230,7 +237,6 @@ export function SearchForm({
                   role="option"
                   aria-selected={activeResultIndex === index}
                   tabIndex={-1}
-                  style={activeResultIndex === index ? { background: "rgba(185, 231, 217, 0.24)" } : undefined}
                 >
                   <span className={styles.predictiveKind}>{item.eyebrow}</span>
                   <div className={styles.predictiveDetails}>
