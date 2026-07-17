@@ -29,11 +29,42 @@ export function OmniraInspiredHome({ locale }: Props) {
             </div>
             <div className={`${styles.depthPlane} ${styles.depthPlaneOne}`} />
             <div className={`${styles.depthPlane} ${styles.depthPlaneTwo}`} />
-            <Image className={styles.floatingMark} src="/elore-assets/logo-mark-burgundy.png" alt="" width={605} height={808} priority />
+            {/* Neither priority nor eager. This mark is display:none below
+                900px, and a preload link carries no media condition, so every
+                phone fetched it at top priority to render 0×0 pixels — against
+                the real hero LCP. `sizes` cannot rescue it: with no layout box
+                the browser cannot resolve a sizes query and falls back to the
+                largest candidate, which measured *worse* (w=3840). Lazy is what
+                actually works: a display:none element never intersects the
+                viewport, so on a phone it is never fetched at all, while on
+                desktop it is in the hero and loads normally. It is decorative
+                (alt="", aria-hidden parent), so it is not an LCP candidate. */}
+            <Image
+              className={styles.floatingMark}
+              src="/elore-assets/logo-mark-burgundy.png"
+              alt=""
+              width={605}
+              height={808}
+              loading="lazy"
+              sizes="40vw"
+            />
           </div>
           <div className={styles.heroShade} aria-hidden="true" />
           <div className={styles.heroContent}>
-            <Image className={styles.heroLogo} src="/elore-assets/logo-horizontal-ivory.png" alt="ÉLORÉ PARIS" width={650} height={205} priority />
+            {/* `sizes` is what makes next/image emit a w-descriptor srcset.
+                Without it the srcset is x-descriptors, which pick on device
+                pixel ratio alone and ignore the layout box entirely: measured at
+                390px/DPR2 this fetched the w=1920 candidate for a slot that
+                renders 230px wide. Keeps priority — it is in the hero. */}
+            <Image
+              className={styles.heroLogo}
+              src="/elore-assets/logo-horizontal-ivory.png"
+              alt="ÉLORÉ PARIS"
+              width={650}
+              height={205}
+              sizes="(max-width: 767px) 230px, 30vw"
+              priority
+            />
             <p className={styles.eyebrow} lang="en">{copy.hero.eyebrow}</p>
             <h1 id="home-title">{copy.hero.title}</h1>
             <p className={styles.lead}>{copy.hero.body}</p>

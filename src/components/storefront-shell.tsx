@@ -68,7 +68,18 @@ export function StorefrontShell({
           </div>
 
           <TrackedLink className={styles.brand} href={localizePath(locale, "/")} analyticsEvent="navigation_click" analyticsLabel="brand_home" analyticsSurface="header_brand" analyticsDestinationType="home">
-            <Image src="/elore-assets/logo-horizontal-gold.png" alt="ÉLORÉ PARIS" width={260} height={82} priority />
+            {/* Not priority. This shell wraps all 109 prerendered pages, and a
+                132–230px wordmark is never the LCP on any of them — so the
+                preload it forced only ever stole a high-priority slot from
+                whatever the real LCP was on that page. `sizes` gives it a
+                w-descriptor srcset so it stops being chosen on DPR alone. */}
+            <Image
+              src="/elore-assets/logo-horizontal-gold.png"
+              alt="ÉLORÉ PARIS"
+              width={260}
+              height={82}
+              sizes="(max-width: 700px) 132px, 230px"
+            />
           </TrackedLink>
 
           <div className={styles.headerActions}>
