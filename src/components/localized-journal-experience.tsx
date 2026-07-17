@@ -35,7 +35,7 @@ export function LocalizedJournalHub({ locale, records }: { locale: Locale; recor
 
     <section className={`${styles.scene} ${styles.directory}`} data-journal-scene aria-label={copy.directory}><div className={styles.frame} data-journal-frame>
       <div className={styles.heading}><p>{copy.directory}</p><h2><MultilineTitle value={copy.directoryTitle} /></h2></div>
-      <nav className={styles.directoryList} data-journal-directory>{records.map((record, index) => <TrackedLink key={record.slug} href={`/${locale}/journal/${record.slug}`} onFocus={keepFocusVisible} data-journal-card analyticsLabel={`journal_directory_${record.slug}`} analyticsSurface="journal_block_motion"><b>0{index + 1}</b><small>{record.category}</small><h3>{record.title.replace("\n", " ")}</h3><span>{record.readingLabel}</span></TrackedLink>)}</nav>
+      <nav className={styles.directoryList} data-journal-directory>{records.map((record, index) => <TrackedLink key={record.slug} href={`/${locale}/journal/${record.slug}`} onFocus={keepFocusVisible} data-journal-card analyticsLabel={`journal_directory_${record.slug}`} analyticsSurface="journal_block_motion"><span className={styles.directoryThumb} aria-hidden="true"><Image src={record.image} alt="" fill sizes="(max-width: 900px) 28vw, 6vw" /><b>0{index + 1}</b></span><small>{record.category}</small><h3>{record.title.replace("\n", " ")}</h3><span>{record.readingLabel}</span></TrackedLink>)}</nav>
       <b className={styles.counter} aria-hidden="true">04 — 05</b>
     </div></section>
 
