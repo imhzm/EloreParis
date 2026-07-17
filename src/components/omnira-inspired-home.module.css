@@ -235,13 +235,20 @@
   transform: translateY(-2px);
 }
 
+/* The line that says the imagery is a concept and not a product for sale.
+   It is the honesty guarantee of the whole catalogue gate, so it is the last
+   thing that should be hard to read: it was 0.62rem — 9.9px measured — at 390px,
+   in Arabic, at 70% white over a photograph. It now has a floor it cannot fall
+   below, and enough weight and opacity to survive the image behind it. */
 .assetStatus {
   position: absolute;
   inset-inline-end: 4vw;
   bottom: 18px;
   z-index: 3;
-  color: rgba(255, 253, 252, 0.7);
-  font-size: 0.7rem;
+  color: rgba(255, 253, 252, 0.92);
+  font-size: max(0.78rem, 12.5px);
+  font-weight: 500;
+  text-shadow: 0 1px 3px rgba(33, 21, 26, 0.55);
 }
 
 .productTruth {
@@ -934,7 +941,7 @@
   .actions { width: 100%; }
   .primaryAction,
   .secondaryAction { flex: 1 1 100%; }
-  .assetStatus { inset-inline: 24px; bottom: 12px; font-size: 0.62rem; }
+  .assetStatus { inset-inline: 24px; bottom: 12px; }
   .productOrbit { width: min(88%, 360px); }
   .productObject { width: 132px; height: 288px; }
   .productPedestal { bottom: 8%; width: 66%; }
