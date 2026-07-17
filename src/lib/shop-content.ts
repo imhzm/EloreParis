@@ -25,7 +25,12 @@ export const shopCopy = {
       shop: "المتجر",
     },
     hero: { aria: "بوابة المتجر", eyebrow: "THE BEAUTY ATLAS", title: "اختاري طريقك.\nلا مجرد منتج.", body: "فئة، احتياج، روتين أو مكوّن. كل طريق يقرّبك من قرار أوضح.", cta: "ابدئي الرحلة" },
-    categories: { aria: "تصنيفات المتجر", eyebrow: "SHOP BY CATEGORY", title: "ستة أبواب.\nاختيار مدروس." },
+    // No number in the headline. It said "ستة" over seven cards the moment
+    // perfumes was added — copy that counts the thing beside it will always
+    // drift behind it, and Arabic number agreement means the fix is not a digit
+    // swap either. The line keeps its cadence and stops making a claim the data
+    // has to keep true.
+    categories: { aria: "تصنيفات المتجر", eyebrow: "SHOP BY CATEGORY", title: "كل باب مدخل.\nواختيار مدروس." },
     edit: { aria: "دراسات تحريرية للمجموعة", eyebrow: "THE EDIT IN PROGRESS", title: "المجموعة قيد التنسيق.\nوالاختيار يبدأ بالفهم.", cta: "استكشفي دليل الجمال ←", cardCta: "عرض القسم" },
     routesIntro: { aria: "طرق الاختيار", eyebrow: "CHOOSE WITH INTENT", title: "حين لا تكفي\nالفئة وحدها.", body: "ابدئي من السؤال الأقرب لك." },
     finale: { aria: "نهاية تجربة المتجر", eyebrow: "BEAUTY, CONSIDERED", title: "اختيارك يبدأ\nمن الوضوح.", body: "نعرض المنتجات والأسعار فقط بعد اعتماد بياناتها وصورها ومعلوماتها التشغيلية.", primary: "دليل الجمال", secondary: "الثقة والسياسات" },
@@ -62,7 +67,9 @@ export const shopCopy = {
       shop: "Shop",
     },
     hero: { aria: "Shop gateway", eyebrow: "THE BEAUTY ATLAS", title: "Choose your path.\nNot just a product.", body: "Category, concern, ritual or ingredient. Every route brings you closer to a clearer choice.", cta: "Begin the journey" },
-    categories: { aria: "Shop categories", eyebrow: "SHOP BY CATEGORY", title: "Six doors.\nOne considered choice." },
+    // See the Arabic note: the count was wrong the moment a seventh door
+    // opened, so the line no longer carries one.
+    categories: { aria: "Shop categories", eyebrow: "SHOP BY CATEGORY", title: "Every door an entrance.\nOne considered choice." },
     edit: { aria: "Editorial collection studies", eyebrow: "THE EDIT IN PROGRESS", title: "The collection is being composed.\nChoice begins with understanding.", cta: "Explore the beauty journal →", cardCta: "View section" },
     routesIntro: { aria: "Ways to choose", eyebrow: "CHOOSE WITH INTENT", title: "When category\nis not enough.", body: "Begin with the question closest to you." },
     finale: { aria: "End of the shop experience", eyebrow: "BEAUTY, CONSIDERED", title: "Your choice begins\nwith clarity.", body: "Products and prices appear only after their imagery, data and operational information are approved.", primary: "Beauty journal", secondary: "Trust and policies" },

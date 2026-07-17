@@ -71,7 +71,33 @@ for (const route of registeredRoutes) {
   );
 }
 
+// Copy that counts the thing next to it drifts the moment the thing changes.
+// The shop hub headline read "ستة أبواب" / "Six doors" over seven cards for as
+// long as it took someone to notice, because nothing tied the sentence to the
+// data. Numbers written as words are the ones that rot silently — a digit at
+// least looks like data.
+const shopContent = readFileSync("src/lib/shop-content.ts", "utf8");
+const countingWords = [
+  ["five", /\bfive\b/i, "خمسة|خمس"],
+  ["six", /\bsix\b/i, "ستة|ست"],
+  ["seven", /\bseven\b/i, "سبعة|سبع"],
+  ["eight", /\beight\b/i, "ثمانية|ثماني"],
+];
+
+for (const [word, latin, arabic] of countingWords) {
+  const titles = [...shopContent.matchAll(/title:\s*"([^"]+)"/g)].map((m) => m[1]);
+  for (const title of titles) {
+    assert.ok(
+      !latin.test(title) && !new RegExp(arabic).test(title),
+      `Shop copy states a count ("${word}") in a title: ${JSON.stringify(title)}. ` +
+        `Counts in copy drift behind the data — the headline said "six doors" over seven ` +
+        `cards. Write the line without the number, or derive it.`,
+    );
+  }
+}
+
 console.log(
   `Content governance coverage checks passed: ${categorySlugs.length} categories and ` +
-    `${navHrefs.length} navigation destinations are all mapped to an owner.`,
+    `${navHrefs.length} navigation destinations are all mapped to an owner, ` +
+    `and no shop headline hard-codes a count.`,
 );
