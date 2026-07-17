@@ -16,7 +16,10 @@
 .skipLink {
   position: fixed;
   top: -70px;
-  right: 20px;
+  /* The first thing a keyboard reaches belongs at the reading start: the right
+     in Arabic, the left in English. `right: 20px` parked it on the right in
+     both, so English opened with its skip link in the trailing corner. */
+  inset-inline-start: 20px;
   z-index: 220;
   padding: 12px 18px;
   border: 1px solid var(--elore-champagne);

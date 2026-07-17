@@ -187,7 +187,10 @@
   content: "";
   position: absolute;
   top: 50%;
-  right: 0;
+  /* The marker belongs at the start of the row, which is the right in Arabic and
+     the left in English. `right: 0` pinned it to the right in both, so English
+     put the current-page bar on the far side of the label it marks. */
+  inset-inline-start: 0;
   width: 3px;
   height: 20px;
   border-radius: 999px;
@@ -206,10 +209,25 @@
   transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+/* The glyph is drawn pointing left (M10 4L6 8l4 4), which reads as "onward" in
+   Arabic and backwards in English, and the hover nudge below travels left with
+   it. §10: "الأسهم الاتجاهية يجب أن تنعكس". Mirroring the whole thing keeps one
+   path in the JSX instead of two. */
+[dir="ltr"] .drawerLinkArrow {
+  transform: scaleX(-1);
+}
+
 .drawerLink:hover .drawerLinkArrow,
 .drawerLink:active .drawerLinkArrow {
   transform: translateX(-3px);
   opacity: 0.8;
+}
+
+/* Composed, not replaced: the nudge is re-stated inside the mirrored space, so
+   -3px still travels the way the arrow points. */
+[dir="ltr"] .drawerLink:hover .drawerLinkArrow,
+[dir="ltr"] .drawerLink:active .drawerLinkArrow {
+  transform: scaleX(-1) translateX(-3px);
 }
 
 .drawerFooter {
