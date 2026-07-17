@@ -30,7 +30,8 @@
     "ops:hash-password": "node scripts/generate-ops-password-hash.mjs",
     "test:font-stack": "node scripts/font-stack-check.mjs",
     "test:scroll-reveal": "node scripts/scroll-reveal-check.mjs",
-    "test:social-card": "node scripts/social-card-check.mjs"
+    "test:social-card": "node scripts/social-card-check.mjs",
+    "dev:seed-demo": "node scripts/dev-seed-demo-catalog.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-sesv2": "^3.1087.0",
