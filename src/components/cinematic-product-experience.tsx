@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState, type CSSProperties } from "react";
 import { BackInStock } from "@/components/back-in-stock";
 import { useCart } from "@/components/cart-provider";
+import { CinematicBreadcrumb, type CrumbItem } from "@/components/cinematic-breadcrumb";
 import { TrackedLink } from "@/components/tracked-link";
 import { useScrollSceneProgress } from "@/hooks/use-scroll-scene-progress";
 import { getPageType, trackAnalyticsEvent } from "@/lib/analytics";
@@ -12,7 +13,7 @@ import type { Locale } from "@/lib/i18n";
 import type { PublicCatalogProduct } from "@/lib/public-catalog-types";
 import styles from "./cinematic-product-experience.module.css";
 
-type Props = { product: PublicCatalogProduct; locale: Locale };
+type Props = { product: PublicCatalogProduct; locale: Locale; breadcrumb?: CrumbItem[] };
 
 const copy = {
   ar: {
@@ -45,7 +46,7 @@ function formatPrice(value: number, locale: Locale) {
   }).format(value);
 }
 
-export function CinematicProductExperience({ product, locale }: Props) {
+export function CinematicProductExperience({ product, locale, breadcrumb }: Props) {
   const rootRef = useScrollSceneProgress<HTMLDivElement>({ selector: "[data-product-scene]" });
   const pathname = usePathname() ?? `/${locale}/product/${product.slug}`;
   const { addItem, cartCount } = useCart();
@@ -86,6 +87,7 @@ export function CinematicProductExperience({ product, locale }: Props) {
   return <div ref={rootRef} className={styles.product} data-public-product>
     <section className={`${styles.scene} ${styles.heroScene}`} data-product-scene aria-label={product.name}>
       <div className={styles.frame}>
+        {breadcrumb && breadcrumb.length > 0 ? <CinematicBreadcrumb label={locale === "ar" ? "مسار التنقل" : "Breadcrumb"} items={breadcrumb} /> : null}
         <div className={styles.productHalo} aria-hidden="true"><i /><i /></div>
         <div className={styles.heroVisual}><Image src={productImage.url} alt={productImage.alt} fill sizes="(max-width: 800px) 78vw, 42vw" priority /></div>
         <div className={styles.heroCopy}><p>{product.brand}</p><h1>{product.name}</h1><span>{product.subtitle}</span><div><TrackedLink href="#purchase" className={styles.primaryAction} analyticsLabel={`${product.slug}_buy`} analyticsSurface="product_cinematic">{formatPrice(Math.min(...product.variants.map((variant) => variant.price)), locale)}</TrackedLink><TrackedLink href={collectionHref} className={styles.secondaryAction} analyticsLabel={`${product.slug}_collection`} analyticsSurface="product_cinematic">{text.collection}</TrackedLink></div></div>

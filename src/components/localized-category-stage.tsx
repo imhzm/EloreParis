@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { CinematicBreadcrumb } from "@/components/cinematic-breadcrumb";
 import { TrackedLink } from "@/components/tracked-link";
 import { useScrollSceneProgress } from "@/hooks/use-scroll-scene-progress";
 import { categoryCopy, categorySharedCopy, type CategorySlug } from "@/lib/category-content";
@@ -19,6 +20,14 @@ export function LocalizedCategoryStage({ locale, slug }: Props) {
     <div ref={rootRef} className={styles.category}>
       <section className={`${styles.scene} ${styles.heroScene}`} data-category-scene aria-label={`${shared.sceneLabels[0]}: ${copy.title}`}>
         <div className={styles.frame}>
+          <CinematicBreadcrumb
+            label={locale === "ar" ? "مسار التنقل" : "Breadcrumb"}
+            items={[
+              { label: shared.breadcrumbHome, href: localizePath(locale, "/") },
+              { label: shared.breadcrumbShop, href: localizePath(locale, "/shop") },
+              { label: copy.title },
+            ]}
+          />
           <div className={styles.heroGrid} aria-hidden="true"><span>01</span><span>{copy.eyebrow.split(" · ")[0]}</span><span>ÉLORÉ</span></div>
           <div className={styles.heroMedia} data-category-motion-layer="hero"><Image src={copy.image} alt={copy.imageAlt} fill priority sizes="(max-width: 900px) 100vw, 48vw" /></div>
           <div className={styles.heroCopy}><p>{copy.eyebrow}</p><h1>{copy.title}</h1><span>{copy.description}</span><TrackedLink href="#principles" onFocus={keepFocusVisible} className={styles.primaryAction} analyticsLabel={`${slug}_category_begin`} analyticsSurface="category_block_motion">{shared.heroCta}</TrackedLink><small>{shared.conceptNotice}</small></div>

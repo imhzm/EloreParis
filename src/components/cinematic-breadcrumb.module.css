@@ -1,0 +1,72 @@
+/* Wayfinding trail for the dark cinematic heroes. Absolutely seated at the
+   top-inline-start of the sticky frame; the scene counter moves to the
+   inline-end so the two never collide. Light-on-burgundy, champagne current. */
+
+.breadcrumb {
+  position: absolute;
+  z-index: 9;
+  top: clamp(4%, 4.5vh, 5.5%);
+  inset-inline-start: clamp(1.25rem, 5vw, 7%);
+  max-inline-size: min(82vw, 40rem);
+}
+
+.list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem 0.5rem;
+}
+
+.link,
+.current {
+  font: 600 0.72rem/1 var(--font-sans);
+  letter-spacing: 0.08em;
+}
+
+.link {
+  color: rgba(243, 240, 234, 0.62);
+  text-decoration: none;
+  padding-block: 0.15rem;
+  transition: color var(--motion-control);
+}
+
+.current {
+  color: var(--champagne);
+}
+
+/* A chevron drawn from two fixed (physical) borders. Rotated 45° the top+right
+   pair points right (›) for LTR; the RTL rule adds a half-turn so the same pair
+   points left (‹), following the reading order. Rotation-only keeps the shape
+   unambiguous — logical borders would flip with direction and fight the angle. */
+.separator {
+  inline-size: 6px;
+  block-size: 6px;
+  border-top: 1.4px solid rgba(243, 240, 234, 0.4);
+  border-right: 1.4px solid rgba(243, 240, 234, 0.4);
+  transform: rotate(45deg);
+}
+
+[dir="rtl"] .separator {
+  transform: rotate(225deg);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .link:hover {
+    color: #ffffff;
+  }
+}
+
+.link:focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: var(--focus-ring-offset);
+  box-shadow: var(--focus-ring);
+}

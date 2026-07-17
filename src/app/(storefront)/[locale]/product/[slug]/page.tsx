@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CinematicProductExperience } from "@/components/cinematic-product-experience";
 import { StorefrontShell } from "@/components/storefront-shell";
+import { categoryCopy, categorySharedCopy, isCategorySlug } from "@/lib/category-content";
 import { isLocale, localeConfig } from "@/lib/i18n";
 import { getPublicCatalogSnapshot } from "@/lib/public-catalog";
 import { getPublicRichPreviewRobots } from "@/lib/seo";
@@ -56,6 +57,32 @@ export default async function LocalizedProductPage({ params }: PageProps) {
   const product = getProduct(candidate, slug);
   if (!product) notFound();
   const path = `/${candidate}/product/${product.slug}`;
+
+  // Home › Collection › Product — the reference wayfinding. The collection hop
+  // links to its /shop/<slug> page when that page exists, otherwise to /shop.
+  const shared = categorySharedCopy[candidate];
+  const collectionSlug = product.collection;
+  const collectionLabel = isCategorySlug(collectionSlug)
+    ? categoryCopy[candidate][collectionSlug].title
+    : shared.breadcrumbShop;
+  const collectionHref = isCategorySlug(collectionSlug)
+    ? `/${candidate}/shop/${collectionSlug}`
+    : `/${candidate}/shop`;
+  const breadcrumbItems = [
+    { label: shared.breadcrumbHome, href: `/${candidate}` },
+    { label: collectionLabel, href: collectionHref },
+    { label: product.name },
+  ];
+  const breadcrumbData = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: breadcrumbItems.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.label,
+      ...(item.href ? { item: absoluteUrl(item.href) } : {}),
+    })),
+  };
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -80,12 +107,13 @@ export default async function LocalizedProductPage({ params }: PageProps) {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(structuredData) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(breadcrumbData) }} />
       <StorefrontShell
         activeHref={`/shop/${product.collection}`}
         locale={candidate}
         languageHref={`/${candidate === "ar" ? "en" : "ar"}/product/${product.slug}`}
       >
-        <CinematicProductExperience product={product} locale={candidate} />
+        <CinematicProductExperience product={product} locale={candidate} breadcrumb={breadcrumbItems} />
       </StorefrontShell>
     </>
   );
