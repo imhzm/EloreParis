@@ -3,6 +3,7 @@ import "server-only";
 import { getAuthorityDatabase } from "@/lib/authority-database";
 import { getActiveCatalogAuthority } from "@/lib/catalog-authority";
 import { isPublicCatalogApproved } from "@/lib/release-controls";
+import { safePublicMediaUrl } from "@/lib/public-media-url";
 import type {
   PublicCatalogLocale,
   PublicCatalogProduct,
@@ -13,20 +14,6 @@ type InventoryBalanceRow = {
   sku: string;
   available_units: number;
 };
-
-function safePublicMediaUrl(value: string) {
-  const normalized = value.trim();
-  if (
-    normalized.startsWith("/") &&
-    !normalized.startsWith("//") &&
-    !normalized.includes("\\") &&
-    !normalized.split("/").includes("..") &&
-    /^\/[A-Za-z0-9._~!$&'()*+,;=:@%/-]+$/.test(normalized)
-  ) {
-    return normalized;
-  }
-  return null;
-}
 
 function unavailableSnapshot(locale: PublicCatalogLocale): PublicCatalogSnapshot {
   return {

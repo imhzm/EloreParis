@@ -1,3 +1,5 @@
+import { safePublicMediaUrl } from "@/lib/public-media-url";
+
 export const catalogCollections = [
   "skincare",
   "makeup",
@@ -299,6 +301,22 @@ function parseProduct(
         const rightsEvidenceRef = stringValue(item.rightsEvidenceRef, 1_000);
         if (!url || !altAr || !altEn || !rightsEvidenceRef) {
           issues.push(`${path}.media[${mediaIndex}] is incomplete.`);
+          return null;
+        }
+        // Refuse here what the public projection would drop silently.
+        // getPublicCatalogSnapshot runs every media URL through this same rule
+        // and discards the ones that fail, then discards any product left with
+        // no media. The authority used to accept any 2,000-character string, so
+        // an ordinary CDN URL passed import, passed readiness, published — and
+        // the product then vanished from the storefront with nothing said. A
+        // gate that reports ready for a catalogue that cannot render is worse
+        // than no gate.
+        if (!safePublicMediaUrl(url)) {
+          issues.push(
+            `${path}.media[${mediaIndex}] url must be a site-relative path under /public ` +
+              `(for example /elore-assets/bottle.avif). "${url}" cannot be served, so this ` +
+              `product would publish and then not appear.`,
+          );
           return null;
         }
         return { url, altAr, altEn, rightsEvidenceRef };
