@@ -1,0 +1,105 @@
+/* §7.7 Trust / service strip — burgundy band above the footer, five service
+   promises with gold line-icons, thin gold dividers between them. Logical
+   properties throughout so it mirrors cleanly in RTL/LTR. */
+
+.strip {
+  background: var(--elore-burgundy);
+  color: var(--elore-warm-white);
+  padding: clamp(1.4rem, 2.8vw, 2.3rem) clamp(1rem, 4vw, 3.5rem);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  max-width: 1600px;
+  margin-inline: auto;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.55rem, 1vw, 1rem);
+  padding: clamp(0.3rem, 1vw, 0.8rem) clamp(0.8rem, 1.8vw, 1.7rem);
+  text-align: start;
+}
+
+/* A hairline gold divider before every item but the first in its row. */
+.item:not(:first-child)::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  inset-block: 16%;
+  border-inline-start: 1px solid color-mix(in srgb, var(--elore-champagne) 32%, transparent);
+}
+
+.icon {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  inline-size: clamp(30px, 2.6vw, 40px);
+  block-size: clamp(30px, 2.6vw, 40px);
+  color: var(--elore-champagne);
+}
+
+.icon svg {
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+.label {
+  display: grid;
+  gap: 0.15rem;
+  min-inline-size: 0;
+}
+
+.label b {
+  font-weight: 600;
+  font-size: clamp(0.82rem, 1vw, 0.96rem);
+  line-height: 1.3;
+  color: var(--elore-warm-white);
+}
+
+.label small {
+  font-size: clamp(0.7rem, 0.85vw, 0.8rem);
+  line-height: 1.35;
+  color: color-mix(in srgb, var(--elore-warm-white) 70%, transparent);
+}
+
+/* Latin labels read better with a touch of tracking on the eyebrow line; Arabic
+   keeps its natural spacing. */
+:lang(en) .label b {
+  letter-spacing: 0.01em;
+}
+
+/* ---- tablet: three across, dividers only within a row ------------------- */
+@media (max-width: 1023px) {
+  .row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    row-gap: clamp(1rem, 2vw, 1.5rem);
+  }
+  .item::before {
+    display: none;
+  }
+}
+
+/* ---- mobile: two across, stacked icon over label ----------------------- */
+@media (max-width: 600px) {
+  .row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: 1.4rem;
+  }
+  .item {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.5rem;
+  }
+  /* Five items over two columns leaves the last alone — centre it. */
+  .item:last-child {
+    grid-column: 1 / -1;
+  }
+}

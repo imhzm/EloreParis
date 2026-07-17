@@ -303,6 +303,16 @@ export const shellCopy = {
     nav: [["/", "الرئيسية"], ["/shop", "المتجر"], ["/shop/perfumes", "العطور"], ["/concerns", "حسب المشكلة"], ["/routines", "الروتينات"], ["/journal", "المجلة"], ["/trust", "الثقة"]],
     policies: [["/terms", "الشروط والأحكام"], ["/trust/verification", "بيانات المنشأة"], ["/trust/privacy", "الخصوصية"], ["/trust/shipping", "الشحن والتوصيل"], ["/trust/returns", "الاستبدال والاسترجاع"]],
     support: [["/contact", "تواصلي معنا"], ["/faq", "الأسئلة الشائعة"], ["/track-order", "تتبع الطلب"], ["/cart", "السلة"], ["/search", "البحث داخل المتجر"]],
+    // §7.7 Trust / Service strip — the five service promises the reference board
+    // seats on the burgundy band above the footer. [iconKey, line1, line2].
+    serviceStripTitle: "لماذا ÉLORÉ",
+    serviceStrip: [
+      ["delivery", "توصيل راقٍ وسريع", "إلى باب منزلك"],
+      ["samples", "عيّنات مجانية", "مع كل طلب"],
+      ["packaging", "تغليف فاخر", "لأن التفاصيل تصنع الفارق"],
+      ["ingredients", "مكوّنات مختارة بعناية", "من مصادر مسؤولة"],
+      ["returns", "إرجاع سهل", "خدمة عملاء راقية"],
+    ],
   },
   en: {
     skip: "Skip to content", market: "A Saudi beauty experience", tagline: "Beauty, composed with intention", trackOrder: "Track your order →",
@@ -313,5 +323,13 @@ export const shellCopy = {
     nav: [["/", "Home"], ["/shop", "Shop"], ["/shop/perfumes", "Perfumes"], ["/concerns", "By concern"], ["/routines", "Rituals"], ["/journal", "Journal"], ["/trust", "Trust"]],
     policies: [["/terms", "Terms and conditions"], ["/trust/verification", "Business information"], ["/trust/privacy", "Privacy"], ["/trust/shipping", "Shipping and delivery"], ["/trust/returns", "Returns and refunds"]],
     support: [["/contact", "Contact us"], ["/faq", "Frequently asked questions"], ["/track-order", "Track order"], ["/cart", "Cart"], ["/search", "Search the store"]],
+    serviceStripTitle: "Why ÉLORÉ",
+    serviceStrip: [
+      ["delivery", "Refined, fast delivery", "to your door"],
+      ["samples", "Complimentary samples", "with every order"],
+      ["packaging", "Luxury packaging", "because details make the difference"],
+      ["ingredients", "Carefully selected ingredients", "from responsible sources"],
+      ["returns", "Easy returns", "refined customer care"],
+    ],
   },
 } as const;

@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { CartStatusLink } from "@/components/cart-status-link";
 import { MobileNavDrawer } from "@/components/mobile-nav-drawer";
 import { TrackedLink } from "@/components/tracked-link";
+import { TrustServiceStrip } from "@/components/trust-service-strip";
 import { localizePath, resolveActiveNavHref, shellCopy, type Locale } from "@/lib/i18n";
 import styles from "./storefront-shell.module.css";
 
@@ -112,6 +113,8 @@ export function StorefrontShell({
       </header>
 
       <main className={styles.main} id="main-content">{children}</main>
+
+      <TrustServiceStrip locale={locale} />
 
       <footer className={styles.footer}>
         <div className={styles.footerBrand}>
