@@ -4,3 +4,29 @@
 .hero .frame{gap:clamp(2rem,5vw,6rem)}.motionMark{position:relative;align-self:center;width:min(42vw,620px);height:min(72vh,720px);overflow:hidden;border:1px solid rgba(212, 175, 55,.32);display:block;isolation:isolate}.motionMark::after{content:"";position:absolute;z-index:1;inset:0;background:linear-gradient(180deg,transparent 38%,rgba(42, 13, 20,.78))}.motionMark>img{object-fit:cover;filter:saturate(.72) contrast(1.04)}.motionMark span,.motionMark i{position:absolute;z-index:2}.motionMark span{inset-inline-start:6%;bottom:2%;font-size:clamp(8rem,18vw,16rem)}.motionMark i{inset-inline-end:6%;bottom:6%}
 @media(max-width:900px){.motionMark{order:2;width:100%;height:auto;aspect-ratio:4/5;margin-top:1rem}.motionMark span{font-size:10rem}}
 .hero .heroCopy,.hero .motionMark{opacity:1}.hero .heroCopy{transform:translateY(calc(var(--progress)*-12px))}
+
+/* Reachability tier (no height gate): the directory/section pillar grids sit in the
+   wide column beside the heading and are dense enough to exceed the frame on nearly
+   any laptop, so overflow:hidden hides the lower pillars. Cap each grid to the
+   frame's content height (frame minus its top pad) and let it scroll. Self-adapts:
+   max-height tracks the frame, so a monitor tall enough to fit the grid gets no
+   scroll. Off phones (min-width:901px) and off reduced-motion (frame is already
+   height:auto/overflow:visible there, so a nested scroll would be redundant). */
+@media (min-width: 901px) and (prefers-reduced-motion: no-preference) {
+  .directoryGrid,
+  .sectionGrid {
+    max-height: calc(100svh - var(--header-offset) - 8rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+/* Very short viewports: shrink the oversized display headings so the copy column is
+   calmer on small laptops. */
+@media (min-width: 901px) and (max-height: 800px) and (prefers-reduced-motion: no-preference) {
+  .heroCopy h1,
+  .heading h2,
+  .statement h2,
+  .closeCopy h2 {
+    font-size: clamp(2.8rem, 5vw, 5rem);
+  }
+}

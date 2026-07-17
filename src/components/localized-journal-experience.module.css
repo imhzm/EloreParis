@@ -2,3 +2,47 @@
 @media(max-width:900px){.experience{--header-offset:64px}.scene{min-height:auto}.frame{position:relative;top:auto;height:auto;min-height:auto;overflow:visible;padding:4rem 1.25rem;display:block!important}.hero .frame,.articleHero .frame,.featured .frame{padding:0}.heroMedia,.articleMedia,.featuredMedia{height:48svh}.heroMedia:after,.articleMedia:after,.featuredMedia:after{background:linear-gradient(0deg,#2a0d14,transparent 60%)}.heroCopy,.articleHeroCopy,.featuredCopy{padding:2rem 1.25rem 4rem;transform:none;opacity:1}.heroCopy h1,.articleHeroCopy h1,.featuredCopy h2,.heading h2,.closeCopy h2{font-size:clamp(3rem,14vw,5.3rem)}.heading,.closeCopy{transform:none;opacity:1}.laneGrid{grid-template-columns:1fr;margin-top:2.5rem}.laneGrid a{min-height:12rem;border-inline-start:0;border-top:1px solid rgba(59, 15, 26,.22)}.directoryList,.relatedGrid{grid-template-columns:1fr;margin-top:2.5rem}.directoryList a:nth-child(odd),.directoryList a:nth-child(even){padding-inline:0;border-inline-start:0}.close .frame{min-height:82svh!important;display:grid!important;grid-template-columns:minmax(0,1fr)}.closeCopy{width:100%}.closeMark{font-size:75vw}.takeaways,.chapterList,.relatedGrid,.faqList{margin-top:2.5rem}.toc{margin-top:1.5rem}.heroCopy,.articleHeroCopy,.featuredCopy,.laneGrid a,.directoryList a,.takeaways li,.chapterList section,.relatedGrid a{transform:none;opacity:1}}
 @media(prefers-reduced-motion:reduce){.scene{min-height:auto}.frame{position:relative;top:auto;height:auto;min-height:auto;overflow:visible}.heroCopy,.articleHeroCopy,.featuredCopy,.heading,.closeCopy,.laneGrid a,.directoryList a,.takeaways li,.chapterList section,.relatedGrid a{transform:none;opacity:1}.heroMedia img,.articleMedia img,.featuredMedia img,.closeMark,.directoryThumb img{transform:none}.directoryList a:hover .directoryThumb img{transform:none}}
 .closeCopy{min-width:0;overflow-wrap:anywhere}
+
+/* Short-laptop guard (~720px tall). The journal's bottom-anchored hero/article-hero
+   copy and the answer/chapters/related grids overflow the short sticky frame under
+   overflow:hidden, hiding content at the edges. Shrink the display headings and let
+   the tall panels scroll internally. Off phones/tall/reduced-motion (in reduced
+   motion the frame is already height:auto/overflow:visible, so it must not fire). */
+/* Reachability tier (no height gate): the bottom-anchored hero/article-hero/featured
+   copy, the answer/chapters/related grids, and the directory list are dense enough to
+   exceed the sticky frame on small and mid laptops, and overflow:hidden then hides
+   content. Cap each to its available space and let it scroll. max-height tracks the
+   frame, so a panel that already fits never scrolls (tall viewports untouched). Off
+   phones and off reduced-motion (frame is already height:auto/overflow:visible). */
+@media (min-width: 901px) and (prefers-reduced-motion: no-preference) {
+  .heroCopy,
+  .articleHeroCopy,
+  .featuredCopy {
+    max-height: calc(100svh - var(--header-offset) - 28px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .answer .heading,
+  .chapterList,
+  .relatedGrid {
+    max-height: calc(100svh - var(--header-offset) - 7rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .directoryList {
+    max-height: calc(100svh - var(--header-offset) - 11rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+/* Very short viewports: shrink the oversized display headings and trim the directory
+   scene's big top pad so there is far less to scroll on small laptops. */
+@media (min-width: 901px) and (max-height: 800px) and (prefers-reduced-motion: no-preference) {
+  .heroCopy h1,
+  .articleHeroCopy h1 { font-size: clamp(3rem, 5.2vw, 5rem); margin: .55rem 0 1rem; }
+  .featuredCopy h2,
+  .heading h2,
+  .closeCopy h2 { font-size: clamp(2.4rem, 4.2vw, 4.2rem); }
+  .answer .heading h2 { font-size: clamp(1.9rem, 3.2vw, 3rem); }
+  .directory .frame { padding-top: clamp(1.5rem, 4vh, 2.5rem); }
+}

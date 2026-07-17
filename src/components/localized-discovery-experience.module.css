@@ -18,3 +18,16 @@
 @media(max-width:620px){.frame{padding-inline:20px}.counter{top:24px}.heroCopy h1,.sectionHeading h2,.decisionCopy h2,.closingCopy h2,.detailHeroCopy h1,.watchCopy h2,.relatedCopy h2,.faqCopy h2{font-size:clamp(2.75rem,12vw,4.35rem)}.heroIndex,.directoryGrid,.signalGrid,.chapterGrid{grid-template-columns:1fr}.heroIndex span{min-height:110px}.directoryGrid a,.signalGrid article,.chapterGrid article{min-height:190px}.experience[data-discovery-kind="routine"] .directoryGrid p{display:block;overflow:visible;-webkit-line-clamp:unset}.watchList li{grid-template-columns:38px 1fr;padding:20px}.relatedGrid a{min-height:170px}.primaryAction{width:100%}}
 @media(prefers-reduced-motion:reduce){.scene,.closingScene,.faqScene{height:auto}.frame{position:relative;top:0;height:auto;min-height:100svh;overflow:visible}.motionGrid,.closingRule{transform:none}.heroCopy,.decisionCopy,.watchCopy{transform:translateY(-50%)}.detailMark{transform:translateY(-50%) rotate(-1deg)}.closingCopy{transform:translate(-50%,-50%)}[dir="rtl"] .closingCopy{transform:translate(50%,-50%)}}
 @media(max-width:900px) and (prefers-reduced-motion:reduce){.heroCopy,.decisionCopy,.watchCopy,.detailMark,.closingCopy,[dir="rtl"] .closingCopy{transform:none}}
+
+/* Reachability tier (no height gate): the ingredient hub's .signalGrid overflows the
+   sticky frame on small and mid laptops and the last signal lines of the bottom card
+   fall under overflow:hidden. Cap it to the frame and let it scroll. max-height
+   tracks the frame, so it self-adapts and never scrolls when it already fits. Off
+   phones and off reduced-motion (frame already expanded there). */
+@media (min-width: 901px) and (prefers-reduced-motion: no-preference) {
+  .signalGrid {
+    max-height: calc(100svh - var(--header-offset) - 28px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
