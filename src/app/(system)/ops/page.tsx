@@ -48,6 +48,32 @@ function formatCurrency(value: number) {
   return `${value.toLocaleString("ar-SA")} ر.س`;
 }
 
+// Gold line-icons for the KPI overview row (clean business-overview cards, the one
+// genuinely useful idea from the ksa-pharmacy dashboard, rebuilt for ÉLORÉ's data).
+const KPI_ICONS: Record<string, React.ReactElement> = {
+  today: (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="8.2" stroke="currentColor" strokeWidth="1.4" /><path d="M12 7.5v9M9.6 9.4c0-1 1-1.7 2.4-1.7s2.4.7 2.4 1.6c0 2.2-4.8 1.2-4.8 3.4 0 1 1 1.6 2.4 1.6s2.4-.6 2.4-1.6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" /></svg>
+  ),
+  month: (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 20h16" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /><rect x="5.5" y="12" width="3" height="6" rx="1" stroke="currentColor" strokeWidth="1.3" /><rect x="10.5" y="8" width="3" height="10" rx="1" stroke="currentColor" strokeWidth="1.3" /><rect x="15.5" y="5" width="3" height="13" rx="1" stroke="currentColor" strokeWidth="1.3" /></svg>
+  ),
+  orders: (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 7h12l-1 12H7L6 7Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" /><path d="M9 8V6.5a3 3 0 0 1 6 0V8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>
+  ),
+  aov: (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12.5 4H19a1 1 0 0 1 1 1v6.5a1 1 0 0 1-.3.7l-8 8a1 1 0 0 1-1.4 0l-6.5-6.5a1 1 0 0 1 0-1.4l8-8a1 1 0 0 1 .7-.3Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" /><circle cx="16" cy="8" r="1.3" fill="currentColor" /></svg>
+  ),
+  pending: (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="8.2" stroke="currentColor" strokeWidth="1.4" /><path d="M12 7.5V12l3 1.8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
+  ),
+  lowstock: (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 8.5 12 5l8 3.5v7L12 19l-8-3.5v-7Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" /><path d="M12 12v3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /><circle cx="12" cy="9.6" r="0.5" fill="currentColor" stroke="currentColor" strokeWidth="0.6" /></svg>
+  ),
+  repeat: (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 9a7 7 0 0 1 12-3.2M19 15a7 7 0 0 1-12 3.2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /><path d="M17 3v3h-3M7 21v-3h3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
+  ),
+};
+
 function buildCustomerKey(order: StoredOrder) {
   const phone = order.customer.phone.replace(/\D/g, "");
   const email = order.customer.email.trim().toLowerCase();
@@ -189,6 +215,16 @@ export default async function OpsDashboardPage() {
 
   const urgentCustomers = customers.filter((customer) => customer.priority <= 2);
 
+  const kpiCards = [
+    { key: "today", label: "مبيعات اليوم", value: formatCurrency(dashboard.todaySales) },
+    { key: "month", label: "مبيعات الشهر", value: formatCurrency(dashboard.monthSales) },
+    { key: "orders", label: "إجمالي الطلبات", value: dashboard.orderCount.toLocaleString("ar-SA") },
+    { key: "aov", label: "متوسط قيمة الطلب", value: formatCurrency(dashboard.averageOrderValue) },
+    { key: "pending", label: "طلبات معلّقة", value: dashboard.pendingOrders.toLocaleString("ar-SA") },
+    { key: "lowstock", label: "مخزون منخفض", value: dashboard.lowStockCount.toLocaleString("ar-SA") },
+    { key: "repeat", label: "عملاء متكرّرون", value: dashboard.repeatCustomerCount.toLocaleString("ar-SA") },
+  ];
+
   return (
     <StorefrontShell activeHref="/ops">
       <div className={`${styles.page} ${styles.opsDashboard}`}>
@@ -233,6 +269,19 @@ export default async function OpsDashboardPage() {
                 تغيّر صلاحيات الوصول أو APIs أو إجراءات تحديث الطلبات.
               </p>
             </div>
+          </div>
+        </section>
+
+        <section className={styles.kpiOverview} aria-label="نظرة عامة">
+          <p className={styles.kpiOverviewTitle}>نظرة عامة</p>
+          <div className={styles.kpiGrid}>
+            {kpiCards.map((card) => (
+              <article key={card.key} className={styles.kpiCard}>
+                <span className={styles.kpiIcon} aria-hidden="true">{KPI_ICONS[card.key]}</span>
+                <p className={styles.kpiLabel}>{card.label}</p>
+                <strong className={styles.kpiValue}>{card.value}</strong>
+              </article>
+            ))}
           </div>
         </section>
 

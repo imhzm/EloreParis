@@ -1582,3 +1582,57 @@
   .statusSummaryCard,
   .linkList a { transition: none; }
 }
+
+/* KPI overview row for the /ops landing — the clean business-overview cards adapted
+   from the ksa-pharmacy dashboard, rebuilt for ÉLORÉ's real data + dark ops theme. */
+.opsDashboard .kpiOverview {
+  padding: 0 max(24px, calc((100vw - 1180px) / 2)) clamp(28px, 4vw, 44px);
+}
+.opsDashboard .kpiOverviewTitle {
+  margin: 0 0 16px;
+  color: var(--ops-accent);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+.opsDashboard .kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+.opsDashboard .kpiCard {
+  display: grid;
+  gap: 10px;
+  padding: 20px;
+  border-radius: 22px;
+  border: 1px solid var(--ops-border);
+  background:
+    radial-gradient(circle at 88% 8%, rgba(var(--ops-accent-rgb), 0.16), transparent 50%),
+    var(--ops-panel);
+  box-shadow: 0 22px 56px rgba(42, 13, 20, 0.26);
+}
+.opsDashboard .kpiIcon {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 34px;
+  block-size: 34px;
+  color: var(--ops-accent);
+}
+.opsDashboard .kpiIcon svg { inline-size: 26px; block-size: 26px; }
+.opsDashboard .kpiLabel {
+  color: rgba(255, 250, 245, 0.66);
+  font-size: 0.82rem;
+}
+.opsDashboard .kpiValue {
+  font-size: clamp(1.4rem, 2vw, 1.9rem);
+  font-weight: 700;
+  color: #fff8f3;
+  letter-spacing: -0.01em;
+  unicode-bidi: plaintext;
+}
+@media (max-width: 900px) {
+  .opsDashboard .kpiGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 520px) {
+  .opsDashboard .kpiGrid { grid-template-columns: 1fr; }
+}
