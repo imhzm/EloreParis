@@ -1,0 +1,204 @@
+/* Product card — the reference's commerce card: airy image, brand eyebrow,
+   display name, subtitle, price, and a burgundy add-to-bag. Ivory surface, soft
+   border, gentle hover lift (nothing harsh). Logical properties throughout. */
+
+.card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--radius-card);
+  background: var(--elore-ivory);
+  border: 1px solid rgba(59, 15, 26, 0.08);
+  transition: transform var(--motion-card), box-shadow var(--motion-card);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 26px 60px rgba(42, 13, 20, 0.12);
+  }
+}
+
+.media {
+  position: relative;
+  display: block;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  background: var(--elore-blush);
+}
+
+.media img {
+  object-fit: cover;
+  transition: transform var(--motion-reveal);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .card:hover .media img {
+    transform: scale(1.04);
+  }
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: clamp(0.9rem, 1.4vw, 1.4rem);
+  text-align: start;
+}
+
+.brand {
+  font-family: var(--font-body-latin), sans-serif;
+  font-size: 0.64rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--elore-rosewood);
+}
+
+:lang(ar) .brand {
+  font-family: var(--font-body);
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.15rem, 1.5vw, 1.5rem);
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.name a {
+  color: var(--elore-ink);
+  text-decoration: none;
+}
+
+/* The name link is the card's primary target — stretch its hit area over the
+   whole card so the tall image and padding are clickable too. */
+.name a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.card {
+  position: relative;
+}
+
+.subtitle {
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--elore-cocoa);
+}
+
+.priceRow {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-block-start: 0.15rem;
+}
+
+.price {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--elore-ink);
+}
+
+.from {
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: var(--elore-cocoa);
+}
+
+.compareAt {
+  font-size: 0.82rem;
+  color: var(--elore-cocoa);
+  text-decoration-color: color-mix(in srgb, var(--elore-cocoa) 60%, transparent);
+}
+
+/* Actions sit above the stretched card link (z-index) so they stay clickable. */
+.addButton,
+.chooseLink,
+.soldOut {
+  position: relative;
+  z-index: 1;
+  margin-block-start: 0.7rem;
+}
+
+.addButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  min-height: 44px;
+  padding-inline: 1.1rem;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--elore-burgundy);
+  color: var(--elore-warm-white);
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--motion-control), transform var(--motion-control);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .addButton:hover {
+    background: color-mix(in srgb, var(--elore-burgundy) 88%, #000);
+    transform: translateY(-1px);
+  }
+}
+
+.chooseLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding-inline: 1.1rem;
+  border: 1px solid rgba(59, 15, 26, 0.28);
+  border-radius: var(--radius-pill);
+  color: var(--elore-burgundy);
+  font-size: 0.86rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: border-color var(--motion-control), background-color var(--motion-control);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .chooseLink:hover {
+    border-color: var(--elore-burgundy);
+    background: rgba(59, 15, 26, 0.04);
+  }
+}
+
+.soldOut {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--elore-cocoa);
+  font-size: 0.84rem;
+}
+
+.addButton:focus-visible,
+.chooseLink:focus-visible,
+.name a:focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: var(--focus-ring-offset);
+  box-shadow: var(--focus-ring);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .media img,
+  .addButton {
+    transition: none;
+  }
+  .card:hover {
+    transform: none;
+  }
+  .card:hover .media img {
+    transform: none;
+  }
+}

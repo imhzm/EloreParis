@@ -1,0 +1,249 @@
+/* Conventional collection page (reference board 4): a compact hero band, a
+   toolbar (count + sort), a responsive product grid, and pagination. Logical
+   properties throughout so it mirrors in RTL/LTR. */
+
+.page {
+  background: var(--elore-warm-white);
+  color: var(--elore-ink);
+}
+
+/* ---- hero band --------------------------------------------------------- */
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  min-block-size: clamp(300px, 42vh, 460px);
+  background: var(--elore-burgundy);
+}
+
+.heroMedia {
+  position: relative;
+  overflow: hidden;
+}
+
+.heroMedia img {
+  object-fit: cover;
+  filter: saturate(0.78) contrast(1.02);
+}
+
+/* Soft fade from the image into the burgundy copy panel — mirrors by direction. */
+.heroMedia::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 62%, var(--elore-burgundy));
+}
+
+[dir="rtl"] .heroMedia::after {
+  background: linear-gradient(270deg, transparent 62%, var(--elore-burgundy));
+}
+
+.heroCopy {
+  display: grid;
+  align-content: center;
+  gap: 1rem;
+  padding: clamp(2rem, 5vw, 5rem);
+  color: var(--elore-warm-white);
+}
+
+.eyebrow {
+  font-family: var(--font-body-latin), sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--elore-champagne);
+}
+
+.heroCopy h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(2.8rem, 5.5vw, 5.5rem);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.heroBody {
+  max-inline-size: 34rem;
+  font-size: clamp(1rem, 1.2vw, 1.15rem);
+  line-height: 1.75;
+  color: color-mix(in srgb, var(--elore-warm-white) 82%, transparent);
+}
+
+/* ---- listing ----------------------------------------------------------- */
+
+.listing {
+  max-width: 1600px;
+  margin-inline: auto;
+  padding: clamp(2rem, 4vw, 3.5rem) clamp(1rem, 4vw, 3.5rem) clamp(3rem, 6vw, 5rem);
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-block-end: clamp(1.2rem, 2vw, 1.8rem);
+  border-block-end: 1px solid rgba(59, 15, 26, 0.12);
+}
+
+.resultCount {
+  font-size: 0.9rem;
+  color: var(--elore-cocoa);
+}
+
+.sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.86rem;
+  color: var(--elore-cocoa);
+}
+
+.sort select {
+  min-height: 44px;
+  padding-inline: 0.9rem;
+  border: 1px solid rgba(59, 15, 26, 0.2);
+  border-radius: var(--radius-control);
+  background: var(--elore-ivory);
+  color: var(--elore-ink);
+  font: inherit;
+  font-size: 0.86rem;
+  cursor: pointer;
+}
+
+.sort select:focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: var(--focus-ring-offset);
+  box-shadow: var(--focus-ring);
+}
+
+/* ---- grid -------------------------------------------------------------- */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(0.8rem, 1.6vw, 1.4rem);
+  margin-block-start: clamp(1.5rem, 3vw, 2.4rem);
+}
+
+@media (max-width: 1023px) {
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ---- pagination -------------------------------------------------------- */
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  margin-block-start: clamp(2rem, 4vw, 3.2rem);
+}
+
+.moreButton {
+  min-height: 48px;
+  padding-inline: 2rem;
+  border: 1px solid rgba(59, 15, 26, 0.28);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--elore-burgundy);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--motion-control), border-color var(--motion-control);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .moreButton:hover {
+    background: rgba(59, 15, 26, 0.05);
+    border-color: var(--elore-burgundy);
+  }
+}
+
+.moreButton:focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: var(--focus-ring-offset);
+  box-shadow: var(--focus-ring);
+}
+
+/* ---- empty state ------------------------------------------------------- */
+
+.empty {
+  max-width: 44rem;
+  margin-inline: auto;
+  padding: clamp(3rem, 8vw, 6rem) clamp(1.5rem, 4vw, 3rem);
+  text-align: center;
+}
+
+.empty h2 {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 3vw, 2.8rem);
+  font-weight: 500;
+  color: var(--elore-ink);
+}
+
+.empty p {
+  margin-block: 1rem 1.8rem;
+  font-size: 1.02rem;
+  line-height: 1.75;
+  color: var(--elore-cocoa);
+}
+
+.emptyCta {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  padding-inline: 1.6rem;
+  border-radius: var(--radius-pill);
+  background: var(--elore-burgundy);
+  color: var(--elore-warm-white);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.emptyCta:focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: var(--focus-ring-offset);
+  box-shadow: var(--focus-ring);
+}
+
+.srStatus {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---- mobile hero stack ------------------------------------------------- */
+
+@media (max-width: 900px) {
+  .hero {
+    grid-template-columns: 1fr;
+  }
+  .heroMedia {
+    min-block-size: 42svh;
+  }
+  .heroMedia::after {
+    background: linear-gradient(0deg, var(--elore-burgundy), transparent 65%);
+  }
+  [dir="rtl"] .heroMedia::after {
+    background: linear-gradient(0deg, var(--elore-burgundy), transparent 65%);
+  }
+  .heroCopy {
+    padding-block: clamp(1.5rem, 5vw, 2.5rem) clamp(2.5rem, 7vw, 3.5rem);
+  }
+}

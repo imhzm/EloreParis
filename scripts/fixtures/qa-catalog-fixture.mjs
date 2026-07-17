@@ -63,7 +63,7 @@ const product = {
     approvedPolicyVersion: "qa-return-v1",
   },
   media: [{
-    url: "/elore-assets/ritual-still-life.webp",
+    url: "/elore-assets/editorial-skin-light-concept-1122w.avif",
     altAr: "صورة تحقق داخلية",
     altEn: "Internal verification image",
     rightsEvidenceRef: "evidence://qa/image-rights",

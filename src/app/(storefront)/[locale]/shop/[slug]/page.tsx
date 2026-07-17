@@ -1,13 +1,20 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { LocalizedCategoryStage } from "@/components/localized-category-stage";
+import { CollectionGridExperience } from "@/components/collection-grid-experience";
 import { StorefrontShell } from "@/components/storefront-shell";
 import { categoryCopy, categorySharedCopy, categorySlugs, isCategorySlug } from "@/lib/category-content";
 import { isLocale, localeConfig, locales } from "@/lib/i18n";
+import { getPublicCatalogSnapshot } from "@/lib/public-catalog";
 import { getPublicRichPreviewRobots } from "@/lib/seo";
 import { absoluteUrl, siteName } from "@/lib/site-content";
 
 type PageProps = { params: Promise<{ locale: string; slug: string }> };
+
+// The collection grid reads the live approved catalogue, so it must render at
+// request time, not be baked at build (when the catalogue gate is shut and the
+// grid would prerender its empty state). generateStaticParams still whitelists
+// the seven category slugs for the layout's dynamicParams:false.
+export const dynamic = "force-dynamic";
 
 export function generateStaticParams() {
   return locales.flatMap((locale) => categorySlugs.map((slug) => ({ locale, slug })));
@@ -54,6 +61,13 @@ export default async function LocalizedCategoryPage({ params }: PageProps) {
   const copy = categoryCopy[candidate][slug];
   const shared = categorySharedCopy[candidate];
   const path = `/${candidate}/shop/${slug}`;
+  // The reference collection page is a product grid. Pull the approved catalogue
+  // and keep the items whose collection matches this category. Perfumes is an
+  // editorial-only category (no CatalogCollection), so it resolves to an empty
+  // grid — the component renders an honest awaiting-catalogue state.
+  const products = getPublicCatalogSnapshot(candidate).products.filter(
+    (product) => product.collection === slug,
+  );
   const structuredData = {
     "@context": "https://schema.org",
     "@graph": [
@@ -83,7 +97,12 @@ export default async function LocalizedCategoryPage({ params }: PageProps) {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
       <StorefrontShell activeHref={`/shop/${slug}`} locale={candidate} languageHref={`/${candidate === "ar" ? "en" : "ar"}/shop/${slug}`}>
-        <LocalizedCategoryStage locale={candidate} slug={slug} />
+        <CollectionGridExperience
+          locale={candidate}
+          slug={slug}
+          hero={{ title: copy.title, eyebrow: copy.eyebrow, description: copy.description, image: copy.image, imageAlt: copy.imageAlt }}
+          products={products}
+        />
       </StorefrontShell>
     </>
   );
