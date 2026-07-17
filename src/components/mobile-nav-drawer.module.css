@@ -6,7 +6,7 @@
   height: 44px;
   padding: 0;
   border: 1px solid rgba(59, 15, 26, 0.26);
-  border-radius: 4px;
+  border-radius: var(--radius-control);
   background: transparent;
   cursor: pointer;
   flex-direction: column;
@@ -112,7 +112,7 @@
   height: 38px;
   padding: 0;
   border: 1px solid rgba(255, 253, 252, 0.22);
-  border-radius: 4px;
+  border-radius: var(--radius-control);
   background: rgba(255, 255, 255, 0.08);
   color: var(--elore-warm-white);
   cursor: pointer;
@@ -135,7 +135,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 14px 16px;
-  border-radius: 2px;
+  border-radius: var(--radius-control);
   color: var(--elore-warm-white);
   text-decoration: none;
   border: 1px solid transparent;

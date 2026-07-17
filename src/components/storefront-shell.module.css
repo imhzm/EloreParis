@@ -23,7 +23,7 @@
   z-index: 220;
   padding: 12px 18px;
   border: 1px solid var(--elore-champagne);
-  border-radius: 2px;
+  border-radius: var(--radius-control);
   color: var(--elore-warm-white);
   background: var(--elore-burgundy);
   box-shadow: 0 18px 44px rgba(42, 13, 20, 0.22);
@@ -66,20 +66,39 @@
   z-index: 130;
   display: flex;
   flex-direction: column;
+  --header-pad: max(24px, calc((100vw - 1380px) / 2));
   padding-block: 10px 0;
-  padding-inline: max(24px, calc((100vw - 1380px) / 2));
+  padding-inline: var(--header-pad);
   /* No ruled line. The reference ends the ivory in a shape, not a border: it
      curves down around the nav and lets the scene come up on either side. The
-     .nav tab below draws that; a 1px rule across the full width fought it. */
-  /* Slightly translucent with a blur, so the ivory reads as a surface over the
-     scene rather than a slab. Opaque fallback first for browsers without
-     backdrop-filter. */
+     .nav tab below draws that; a 1px rule across the full width fought it.
+
+     No background and no backdrop-filter HERE either, and that part is not a
+     style choice. An element with a backdrop-filter becomes a backdrop root: a
+     descendant's own backdrop-filter then samples that root instead of the page
+     behind it. With the surface on this element, the nav tab's blur silently did
+     nothing — and because the tab is 14% transparent, the scene sliding under
+     its overhang showed through SHARP. A product card's "٧ أيام" read straight
+     through the tab.
+
+     So the bar and the tab each carry their own surface, as siblings. Neither
+     nests inside the other's root, and both blur what is actually behind them. */
+}
+
+/* The bar's surface, bled out to the viewport edges. It lives on a pseudo rather
+   than on .header so that .nav stays a sibling of it rather than a descendant. */
+.headerBar::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset-block: -10px 0;
+  inset-inline: calc(-1 * var(--header-pad));
   background: rgba(255, 253, 252, 0.98);
   box-shadow: 0 8px 26px rgba(42, 13, 20, 0.08);
 }
 
 @supports (backdrop-filter: blur(1px)) {
-  .header {
+  .headerBar::before {
     background: rgba(255, 253, 252, 0.86);
     backdrop-filter: blur(14px) saturate(1.1);
   }
@@ -89,6 +108,7 @@
    sized equally so the wordmark lands on the true centre of the header rather
    than the centre of the space left over. */
 .headerBar {
+  position: relative;
   min-height: 68px;
   display: grid;
   grid-template-columns: 1fr auto 1fr;
@@ -215,7 +235,7 @@
   align-items: center;
   justify-content: center;
   border: 1px solid rgba(59, 15, 26, 0.26);
-  border-radius: 4px;
+  border-radius: var(--radius-control);
   color: var(--elore-burgundy);
   background: transparent;
   transition: color var(--motion-control), border-color var(--motion-control), background var(--motion-control), transform var(--motion-control);
@@ -343,7 +363,10 @@
   .topRibbon span:nth-child(2) { display: none; }
   .topRibbon { justify-content: flex-start; padding-inline: 14px; }
   .topRibbon a { margin-inline-start: auto; }
-  .header { padding-block: 7px 0; padding-inline: 14px; }
+  /* --header-pad drives both the padding and the bar surface's bleed, so they
+     cannot drift apart. inset-block on the pseudo tracks the padding-block. */
+  .header { --header-pad: 14px; padding-block: 7px 0; }
+  .headerBar::before { inset-block: -7px 0; }
   .headerBar { min-height: 58px; }
   .brand { width: 132px; }
   /* The market control loses the currency chip before it loses the language

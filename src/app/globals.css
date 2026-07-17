@@ -93,6 +93,19 @@
   --shadow: 0 20px 60px rgba(42, 13, 20, 0.1);
   --shadow-soft: 0 24px 54px rgba(42, 13, 20, 0.08);
   --shadow-lift: 0 24px 48px rgba(42, 13, 20, 0.14);
+
+  /* Corner scale — the pack's §8.4 values, which the code never actually held;
+     it carried 34 ad-hoc radii instead, several of them 2–4px hard corners on
+     buttons and cards. The owner asked for a softer, calmer surface with nothing
+     sharp, and a shared scale is how that stays consistent rather than drifting
+     back. Controls and inputs take --radius-control, cards --radius-card, large
+     panels --radius-panel; genuine pills (icon buttons, badges) keep 999px, and
+     hairline details (a 2px scrollbar thumb, a thin rule) are not corners and
+     are left alone. */
+  --radius-control: 12px;
+  --radius-card: 20px;
+  --radius-panel: 32px;
+  --radius-pill: 999px;
   /* FOCUS INDICATOR — two rings, and the measurement is what forces that.
      WCAG 2.1 SC 1.4.11 asks for 3:1 against the adjacent colour, and this site
      seats controls on warm ivory AND on burgundy. No single brand colour clears

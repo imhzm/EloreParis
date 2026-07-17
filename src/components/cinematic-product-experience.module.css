@@ -22,9 +22,9 @@
    .productHalo, .usageVisual and .purchaseVisual kept ringing a burgundy brand
    in #65DBC9 mint. The literals are gone now, so the colour half of this block
    went with them. */
-.primaryAction,.secondaryAction,.variantList button,.purchaseActions>button{border-radius:3px}
+.primaryAction,.secondaryAction,.variantList button,.purchaseActions>button{border-radius:var(--radius-control)}
 .primaryAction,.variantList button[aria-pressed="true"],.purchaseActions>button{color:var(--ink)}
-.fitOrbit article,.ingredientStack article{border-radius:4px;backdrop-filter:none}
+.fitOrbit article,.ingredientStack article{border-radius:var(--radius-card);backdrop-filter:none}
 .purchaseActions>button:disabled{cursor:not-allowed;opacity:.48}
 
 /* The mirror axis. RTL is the composition as authored, so it is 1 there and

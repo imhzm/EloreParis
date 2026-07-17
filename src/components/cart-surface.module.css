@@ -1,16 +1,16 @@
 .page {
-  --commerce-ink: #052f2d;
-  --commerce-deep: #031d1c;
-  --commerce-mint: #75e2c7;
-  --commerce-cream: #fffaf2;
-  --commerce-line: rgba(197, 244, 229, 0.16);
+  --commerce-ink: #2a0d14;
+  --commerce-deep: #1c0a10;
+  --commerce-mint: #d4af37;
+  --commerce-cream: #fbf7f2;
+  --commerce-line: rgba(212, 175, 55, 0.18);
   display: grid;
   gap: 0;
   margin-inline: calc(50% - 50vw);
   color: var(--commerce-cream);
   background:
-    radial-gradient(circle at 78% 8%, rgba(117, 226, 199, 0.2), transparent 28rem),
-    linear-gradient(180deg, var(--commerce-deep), #073b37 48%, #f2eee7 100%);
+    radial-gradient(circle at 78% 8%, rgba(212, 175, 55, 0.2), transparent 28rem),
+    linear-gradient(180deg, var(--commerce-deep), #3b0f1a 48%, #f2eee7 100%);
 }
 
 .hero,
@@ -119,7 +119,7 @@
   gap: 18px;
   padding: clamp(56px, 8vw, 112px) max(24px, calc((100vw - 1180px) / 2));
   background:
-    radial-gradient(circle at 12% 28%, rgba(117, 226, 199, 0.13), transparent 25rem),
+    radial-gradient(circle at 12% 28%, rgba(212, 175, 55, 0.13), transparent 25rem),
     var(--commerce-ink);
 }
 
@@ -288,7 +288,7 @@
   border-radius: 0;
   padding-inline: max(24px, calc((100vw - 1180px) / 2));
   background:
-    radial-gradient(circle at 78% 18%, rgba(117, 226, 199, 0.2), transparent 28rem),
+    radial-gradient(circle at 78% 18%, rgba(212, 175, 55, 0.2), transparent 28rem),
     var(--commerce-deep);
   box-shadow: none;
 }
@@ -307,7 +307,7 @@
 }
 
 .noticeCard {
-  border-color: rgba(117, 226, 199, 0.2);
+  border-color: rgba(212, 175, 55, 0.2);
   background: rgba(3, 29, 28, 0.72);
   box-shadow: 0 24px 70px rgba(0, 12, 12, 0.3);
 }
@@ -315,9 +315,9 @@
 .noticeCard h2 { color: var(--commerce-cream); }
 
 .metricCard {
-  border: 1px solid rgba(117, 226, 199, 0.25);
+  border: 1px solid rgba(212, 175, 55, 0.25);
   background:
-    radial-gradient(circle at 85% 15%, rgba(117, 226, 199, 0.25), transparent 45%),
+    radial-gradient(circle at 85% 15%, rgba(212, 175, 55, 0.25), transparent 45%),
     rgba(2, 23, 22, 0.9);
 }
 

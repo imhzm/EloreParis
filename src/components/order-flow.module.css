@@ -1,36 +1,36 @@
 .page {
-  --commerce-ink: #052f2d;
-  --commerce-deep: #031d1c;
-  --commerce-mint: #75e2c7;
-  --commerce-cream: #fffaf2;
-  --commerce-line: rgba(197, 244, 229, 0.16);
+  --commerce-ink: #2a0d14;
+  --commerce-deep: #1c0a10;
+  --commerce-mint: #d4af37;
+  --commerce-cream: #fbf7f2;
+  --commerce-line: rgba(212, 175, 55, 0.18);
   display: grid;
   gap: 0;
   margin-inline: calc(50% - 50vw);
   color: var(--commerce-cream);
   background:
-    radial-gradient(circle at 76% 8%, rgba(117, 226, 199, 0.2), transparent 28rem),
-    linear-gradient(180deg, var(--commerce-deep), #073b37 48%, #f2eee7 100%);
+    radial-gradient(circle at 76% 8%, rgba(212, 175, 55, 0.2), transparent 28rem),
+    linear-gradient(180deg, var(--commerce-deep), #3b0f1a 48%, #f2eee7 100%);
 }
 
 .opsDashboard {
   --ops-panel: rgba(2, 24, 23, 0.72);
   --ops-panel-strong: rgba(2, 18, 18, 0.88);
-  --ops-border: rgba(117, 226, 199, 0.18);
+  --ops-border: rgba(212, 175, 55, 0.18);
   --ops-accent: var(--commerce-mint);
-  --ops-accent-rgb: 117, 226, 199;
+  --ops-accent-rgb: 212, 175, 55;
   --ops-text-soft: rgba(255, 250, 242, 0.72);
   isolation: isolate;
   min-height: 100svh;
   background:
-    radial-gradient(circle at 12% 8%, rgba(117, 226, 199, 0.18), transparent 28rem),
+    radial-gradient(circle at 12% 8%, rgba(212, 175, 55, 0.18), transparent 28rem),
     radial-gradient(circle at 84% 18%, rgba(222, 177, 132, 0.12), transparent 32rem),
-    linear-gradient(180deg, #021514 0%, #052f2d 44%, #031d1c 100%);
+    linear-gradient(180deg, #1a0810 0%, #2a0d14 44%, #1c0a10 100%);
 }
 
 .opsOrders {
-  --ops-accent: #75e2c7;
-  --ops-accent-rgb: 117, 226, 199;
+  --ops-accent: #d4af37;
+  --ops-accent-rgb: 212, 175, 55;
 }
 
 .opsCatalog {
@@ -49,8 +49,8 @@
 }
 
 .opsAdmin {
-  --ops-accent: #75e2c7;
-  --ops-accent-rgb: 117, 226, 199;
+  --ops-accent: #d4af37;
+  --ops-accent-rgb: 212, 175, 55;
 }
 
 .opsDashboard::before {
@@ -111,7 +111,7 @@
   top: 0;
   z-index: 20;
   padding: 12px max(24px, calc((100vw - 1180px) / 2));
-  border-bottom: 1px solid rgba(117, 226, 199, 0.12);
+  border-bottom: 1px solid rgba(212, 175, 55, 0.12);
   background: rgba(3, 29, 28, 0.78);
   backdrop-filter: blur(22px);
 }
@@ -652,7 +652,7 @@
   place-items: center;
   border-radius: 12px;
   color: #071412;
-  background: linear-gradient(135deg, #7de4c4, #d9b879);
+  background: linear-gradient(135deg, #d4af37, #d9b879);
   font-weight: 950;
 }
 
@@ -827,7 +827,7 @@
   gap: 18px;
   padding: clamp(56px, 8vw, 112px) max(24px, calc((100vw - 1180px) / 2));
   background:
-    radial-gradient(circle at 12% 28%, rgba(117, 226, 199, 0.13), transparent 25rem),
+    radial-gradient(circle at 12% 28%, rgba(212, 175, 55, 0.13), transparent 25rem),
     var(--commerce-ink);
 }
 
@@ -1196,7 +1196,7 @@
   border: 1px solid rgba(var(--ops-accent-rgb), 0.26);
   background:
     radial-gradient(circle at 80% 12%, rgba(255, 250, 242, 0.18), transparent 44%),
-    linear-gradient(135deg, #0fb79d, #052f2d);
+    linear-gradient(135deg, #6b1d2a, #2a0d14);
   color: var(--commerce-cream);
 }
 
@@ -1219,8 +1219,8 @@
   border-radius: 0;
   padding-inline: max(24px, calc((100vw - 1180px) / 2));
   background:
-    radial-gradient(circle at 78% 18%, rgba(117, 226, 199, 0.2), transparent 28rem),
-    #031d1c;
+    radial-gradient(circle at 78% 18%, rgba(212, 175, 55, 0.2), transparent 28rem),
+    #1c0a10;
   box-shadow: none;
 }
 
@@ -1229,7 +1229,7 @@
 
 .emptyCard p { color: rgba(255, 250, 242, 0.7); }
 
-.emptyCard .eyebrow { color: #75e2c7; }
+.emptyCard .eyebrow { color: #d4af37; }
 
 .emptyCard .secondaryLink {
   border-color: rgba(255, 250, 242, 0.22);
