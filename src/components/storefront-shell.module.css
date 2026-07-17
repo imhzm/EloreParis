@@ -93,6 +93,11 @@
   z-index: -1;
   inset-block: -10px 0;
   inset-inline: calc(-1 * var(--header-pad));
+  /* Soft bottom corners, so the ivory does not meet the scene in a hard
+     horizontal line on either side of the nav tab. The top stays edge-to-edge;
+     only the bottom, where it borders the hero, is rounded. */
+  border-end-start-radius: 24px;
+  border-end-end-radius: 24px;
   background: rgba(255, 253, 252, 0.98);
   box-shadow: 0 8px 26px rgba(42, 13, 20, 0.08);
 }
@@ -171,7 +176,7 @@
    downstream shifts, which matters because §7.1's Definition of Done is "لا يوجد
    Layout shift عند تثبيت الـ Header". */
 .nav {
-  --nav-tab-drop: clamp(14px, 1.6vw, 22px);
+  --nav-tab-drop: clamp(14px, 1.6vw, 20px);
   position: relative;
   min-width: 0;
   align-self: center;
@@ -181,10 +186,13 @@
   gap: 4px;
   margin-block-end: calc(-1 * var(--nav-tab-drop));
   padding-block: 0 var(--nav-tab-drop);
-  padding-inline: clamp(14px, 2vw, 34px);
+  /* Wide and gently curved, so the tab reads as a soft extension of the ivory
+     rather than a pill notched into it — the reference dips the nav in a broad,
+     shallow scoop, not a tight tab. */
+  padding-inline: clamp(28px, 3.4vw, 52px);
   background: rgba(255, 253, 252, 0.98);
-  border-end-start-radius: clamp(18px, 2.2vw, 30px);
-  border-end-end-radius: clamp(18px, 2.2vw, 30px);
+  border-end-start-radius: clamp(30px, 3.4vw, 44px);
+  border-end-end-radius: clamp(30px, 3.4vw, 44px);
 }
 
 @supports (backdrop-filter: blur(1px)) {
