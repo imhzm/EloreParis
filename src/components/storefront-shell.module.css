@@ -309,9 +309,17 @@
   transition: color var(--motion-control), transform var(--motion-control);
 }
 
+/* The nudge travels the way the reader does: left is onward in Arabic, right in
+   English. Physical translateX pointed it backwards on one locale or the other —
+   bento-commerce-grid already branches its arrow nudge exactly like this, so
+   this footer was the last directional hover in the repo that did not. */
 .footerLinks a:hover {
   color: var(--elore-warm-white);
   transform: translateX(-3px);
+}
+
+[dir="ltr"] .footerLinks a:hover {
+  transform: translateX(3px);
 }
 
 .footerBottom {
