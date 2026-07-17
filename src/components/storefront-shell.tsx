@@ -123,6 +123,12 @@ export function StorefrontShell({
           <span>{copy.footerStatus}</span>
         </div>
         <div className={styles.footerPanel}>
+          <h2>{copy.shopTitle}</h2>
+          <div className={styles.footerLinks}>
+            {copy.shopLinks.map(([itemHref, label]) => <TrackedLink key={itemHref} href={localizePath(locale, itemHref)} analyticsEvent="navigation_click" analyticsLabel={`footer_shop_${itemHref.replaceAll("/", "_").replace(/^_+/, "")}`} analyticsSurface="footer_shop">{label}</TrackedLink>)}
+          </div>
+        </div>
+        <div className={styles.footerPanel}>
           <h2>{copy.policyTitle}</h2>
           <div className={styles.footerLinks}>
             {copy.policies.map(([itemHref, label]) => <TrackedLink key={itemHref} href={localizePath(locale, itemHref)} analyticsEvent="navigation_click" analyticsLabel={`footer_${itemHref.replaceAll("/", "_")}`} analyticsSurface="footer_policies">{label}</TrackedLink>)}

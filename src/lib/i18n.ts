@@ -313,6 +313,8 @@ export const shellCopy = {
       ["ingredients", "مكوّنات مختارة بعناية", "من مصادر مسؤولة"],
       ["returns", "إرجاع سهل", "خدمة عملاء راقية"],
     ],
+    shopTitle: "المتجر",
+    shopLinks: [["/shop/perfumes", "العطور"], ["/shop/skincare", "العناية بالبشرة"], ["/shop/makeup", "المكياج"], ["/shop/beauty-sets", "الهدايا والمجموعات"], ["/shop", "كل المنتجات"]],
   },
   en: {
     skip: "Skip to content", market: "A Saudi beauty experience", tagline: "Beauty, composed with intention", trackOrder: "Track your order →",
@@ -331,5 +333,7 @@ export const shellCopy = {
       ["ingredients", "Carefully selected ingredients", "from responsible sources"],
       ["returns", "Easy returns", "refined customer care"],
     ],
+    shopTitle: "Shop",
+    shopLinks: [["/shop/perfumes", "Perfumes"], ["/shop/skincare", "Skincare"], ["/shop/makeup", "Makeup"], ["/shop/beauty-sets", "Gifts & sets"], ["/shop", "All products"]],
   },
 } as const;

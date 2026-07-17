@@ -289,7 +289,7 @@
 
 .footer {
   display: grid;
-  grid-template-columns: 1.4fr 1fr 1fr;
+  grid-template-columns: 1.5fr repeat(3, 1fr);
   gap: 44px;
   padding: 80px max(24px, calc((100vw - 1240px) / 2)) 28px;
   color: rgba(255, 253, 252, 0.78);
