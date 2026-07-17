@@ -4,7 +4,32 @@
 .ingredientScene .frame{background:radial-gradient(circle at 22% 50%,rgb(var(--mint-rgb) / .25),transparent 30%),linear-gradient(135deg,#2a0d14,#3b0f1a)}.ingredientWord{position:absolute;left:50%;top:50%;color:rgba(255,255,255,.035);font-size:clamp(9rem,23vw,27rem);font-weight:900;white-space:nowrap;transform:translate(-50%,-50%) translateX(calc((.5 - var(--progress))*18vw))}.ingredientCopy{inset-inline-end:7%;top:50%;width:min(42rem,43vw);transform:translateY(-50%);opacity:calc(1 - var(--exit)*.5)}.ingredientCopy>a{width:fit-content;border-bottom:1px solid var(--mint);color:var(--mint);font-weight:800}.ingredientStack{position:absolute;inset-inline-start:5%;top:50%;width:min(44vw,620px);height:68vh;transform:translateY(-50%)}.ingredientStack article{--index:0;position:absolute;inset:0;display:grid;align-content:center;gap:15px;padding:42px;border:1px solid rgba(255,255,255,.13);border-radius:34px;background:#3b0f1a;box-shadow:0 30px 80px rgba(42,13,20,.3);transform:translateX(calc((var(--index) - var(--progress)*2.4)*32px)) translateY(calc((var(--index) - var(--progress)*2.4)*28px)) rotate(calc((var(--index) - 1)*2deg));opacity:calc(1 - var(--exit)*.7)}.ingredientStack b{color:var(--mint)}.ingredientStack p{font-size:clamp(1.25rem,2.2vw,2.2rem);line-height:1.55}
 .usageScene .frame{background:radial-gradient(circle at 29% 50%,rgb(var(--mint-rgb) / .23),transparent 30%),linear-gradient(135deg,#fbf7f2,#fbf7f2);color:var(--ink)}.usageScene .counter{color:rgb(var(--ink-rgb) / .45)}.usageVisual{position:absolute;inset-inline-end:28%;top:50%;width:min(42vw,590px);aspect-ratio:1;overflow:hidden;border:1px solid rgb(var(--teal-rgb) / .25);border-radius:50%;box-shadow:0 0 90px rgb(var(--teal-rgb) / .15);transform:translate(calc(-50% * var(--mirror)),-50%) rotate(calc(-8deg + var(--progress)*16deg)) scale(calc(.76 + var(--enter)*.24))}.usageCopy{inset-inline-start:7%;top:50%;width:min(45rem,46vw);transform:translateY(-50%);opacity:calc(1 - var(--exit)*.5)}.usageCopy>p{color:var(--teal)}.usageCopy h2{font-size:clamp(3.6rem,6.3vw,7rem)}.usageCopy>div{display:grid;gap:10px}.usageCopy article{display:grid;grid-template-columns:auto 1fr;gap:14px;padding:13px 0;border-bottom:1px solid rgb(var(--ink-rgb) / .12)}.usageCopy article b{color:var(--teal)}.usageCopy article span{line-height:1.6}
 .purchaseScene{height:285svh}.purchaseScene .frame{background:radial-gradient(circle at 27% 50%,rgb(var(--mint-rgb) / .28),transparent 30%),linear-gradient(135deg,#2a0d14,#3b0f1a 56%,#2d171f)}.purchaseVisual{position:absolute;inset-inline-end:27%;top:50%;width:min(39vw,550px);aspect-ratio:1;overflow:hidden;border:1px solid rgb(var(--mint-rgb) / .4);border-radius:50%;box-shadow:0 0 100px rgb(var(--mint-rgb) / .18);transform:translate(calc(-50% * var(--mirror)),-50%) rotate(calc(-7deg + var(--progress)*14deg)) scale(calc(.76 + var(--enter)*.24))}.purchasePanel{inset-inline-start:6%;top:50%;width:min(47vw,690px);transform:translateY(-50%);opacity:calc(1 - var(--exit)*.4)}.purchasePanel h2{font-size:clamp(3.2rem,5.5vw,6rem)}.variantList{display:flex;flex-wrap:wrap;gap:9px}.variantList button{display:grid;gap:4px;min-width:145px;padding:13px 15px;border:1px solid rgba(255,255,255,.22);border-radius:18px;color:#fbf7f2;text-align:start;background:rgba(255,255,255,.06);cursor:pointer}.variantList button[aria-pressed="true"]{color:#2a0d14;background:var(--mint);border-color:var(--mint)}.variantList span,.variantList small{font-size:.74rem}.quantity{display:flex;align-items:center;gap:14px}.quantity button{display:grid;place-items:center;width:36px;height:36px;border:1px solid rgba(255,255,255,.28);border-radius:50%;color:#fbf7f2;background:transparent;cursor:pointer}.quantity span{font-weight:800}.purchaseActions{display:flex;align-items:center;gap:12px}.purchaseActions>button{padding:15px 23px;border:0;border-radius:999px;color:#2a0d14;background:var(--mint);font-weight:900;cursor:pointer}.purchaseActions>a{padding-bottom:4px;border-bottom:1px solid #fbf7f2;font-weight:800}.shipping{color:rgba(255,255,255,.65);font-size:.82rem;line-height:1.6}.status{min-height:1.4em;color:var(--mint);font-weight:800}
-@media(max-width:900px){.scene{height:230svh}.heroCopy,.sceneCopy,.ingredientCopy,.usageCopy,.purchasePanel{right:24px;left:auto;width:calc(100% - 48px)}.heroCopy{top:18%;transform:none}.heroCopy h1,.sceneCopy h2,.ingredientCopy h2,.usageCopy h2{font-size:clamp(3.1rem,12vw,5.5rem)}.productHalo{inset-inline-end:auto;left:50%;top:70%;width:88vw}.heroVisual{inset-inline-end:auto;left:50%;top:71%;width:70vw}.sceneCopy{top:7%}.fitOrbit article{width:175px;transform:translate(-50%,-50%) rotate(calc(var(--index)*90deg + var(--progress)*30deg)) translateX(36vw) rotate(calc((var(--index)*90deg + var(--progress)*30deg)*-1)) scale(calc(.72 + var(--enter)*.28))}.ingredientCopy{top:15%;transform:none}.ingredientStack{inset-inline-start:auto;right:20px;top:67%;width:calc(100% - 40px);height:48vh}.usageVisual{inset-inline-end:auto;left:50%;top:70%;width:80vw}.usageCopy{top:16%;transform:none}.purchaseVisual{inset-inline-end:auto;left:50%;top:76%;width:60vw}.purchasePanel{top:11%;transform:none}.purchasePanel h2{font-size:3.1rem}}
+/* On phones the sticky rig is retired entirely: the scene flows, the frame is no
+   longer sticky, and every progress-driven transform is neutralised. §13 forbids
+   heavy parallax on mobile — and the fitOrbit cards, which orbit on --progress at
+   a 36vw radius, were being flung off the screen edge. This is the same static
+   layout the reduced-motion path uses (the proven flat fallback), with mobile
+   type sizes on top, matching what every sibling scroll component does at 900px. */
+@media(max-width:900px){
+  .scene,.purchaseScene{height:auto}
+  .frame{position:relative;top:0;height:auto;min-height:100svh;overflow:visible}
+  .productHalo,.heroVisual,.heroCopy,.sceneCopy,.fitOrbit article,.ingredientCopy,.ingredientStack article,.usageVisual,.usageCopy,.purchaseVisual,.purchasePanel{opacity:1;transform:none}
+  .productHalo{inset-inline-end:auto;left:3%;top:40%}
+  .heroVisual{inset-inline-end:auto;left:6%;top:45%}
+  .heroCopy,.sceneCopy,.ingredientCopy,.usageCopy{inset-inline:auto;right:24px;left:24px;width:auto}
+  .heroCopy{top:16%}
+  .sceneCopy{top:7%}
+  .heroCopy h1,.sceneCopy h2,.ingredientCopy h2,.usageCopy h2{font-size:clamp(3.1rem,12vw,5.5rem)}
+  .fitOrbit{position:absolute;inset:46% 20px auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;white-space:normal;padding:0}
+  .fitOrbit article{position:relative;left:auto;top:auto;display:grid;width:auto;margin:0}
+  .ingredientCopy{top:15%}
+  .ingredientStack{inset-inline-start:auto;right:20px;left:20px;top:64%;width:auto;height:auto}
+  .usageVisual{inset-inline-end:auto;left:4%;top:45%}
+  .usageCopy{inset-inline:auto;right:24px;left:24px;width:auto;top:16%}
+  .purchaseVisual{display:none}
+  .purchasePanel{inset-inline:auto;right:24px;left:24px;width:auto;top:10%}
+  .purchasePanel h2{font-size:3.1rem}
+}
 @media(max-width:620px){.scene{height:215svh}.counter{top:3%}.fitOrbit{position:absolute;inset:44% 18px auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.fitOrbit article{position:relative;left:auto;top:auto;width:auto;padding:14px;transform:translateY(calc((1 - var(--enter))*40px));opacity:calc(1 - var(--exit)*.8)}.fitOrbit h3{font-size:.92rem}.ingredientStack article{padding:26px}.usageCopy h2{font-size:3rem}.usageCopy article{font-size:.82rem}.purchasePanel{top:7%;gap:10px;max-height:60vh;overflow:auto;padding-left:4px}.purchasePanel h2{font-size:2.35rem}.variantList{gap:7px}.variantList button{min-width:0;flex:1 1 calc(50% - 7px);padding:10px}.quantity{gap:10px}.purchaseActions{align-items:flex-start;flex-direction:column;gap:8px}.purchaseActions>button{width:100%;padding:13px 18px}.purchaseVisual{top:82%;width:52vw}.shipping{font-size:.76rem}.status{font-size:.78rem}}
 @media(prefers-reduced-motion:reduce){.scene,.purchaseScene{height:auto}.frame{position:relative;min-height:100svh}.productHalo,.heroVisual,.heroCopy,.sceneCopy,.fitOrbit article,.ingredientCopy,.ingredientStack article,.usageVisual,.usageCopy,.purchaseVisual,.purchasePanel{opacity:1;transform:none}.productHalo{inset-inline-end:auto;left:3%;top:40%}.heroVisual{inset-inline-end:auto;left:6%;top:45%}.fitOrbit{position:absolute;inset:44% 20px auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;white-space:normal;padding:0}.fitOrbit article{position:relative;left:auto;top:auto;display:grid;width:auto;margin:0}.ingredientCopy{inset-inline-end:auto;left:4%;top:25%}.ingredientStack{top:62%}.usageVisual{inset-inline-end:auto;left:4%;top:45%}.purchaseVisual{display:none}}
 
@@ -13,6 +38,26 @@
 @media(max-width:620px){.purchasePanel{top:5%;max-height:none;overflow:visible;padding-left:0}.purchaseVisual{display:none}}
 
 .scene{scroll-margin-top:var(--cinematic-header-offset)}
+
+/* Short desktop heights (still wide enough that the mobile flow does not apply).
+   The sticky frame is 100svh minus the header and clips its overflow, while the
+   purchase panel — variants, quantity, add-to-bag, shipping, status — is sized by
+   its content. On a 1280x700 laptop the panel is ~640px in a ~620px frame, so its
+   tail clips and Add to Bag can sit under the fold with no way to reach it. The
+   home hero/finale got this guard already; the panel is the product page's tall
+   content, so it gets one too: cap it to the frame and let it scroll, and trim the
+   headline so it needs less room to begin with. */
+@media (min-width: 901px) and (max-height: 780px) {
+  .purchasePanel {
+    max-height: calc(100svh - var(--cinematic-header-offset) - 28px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .purchasePanel h2 { font-size: clamp(2.6rem, 4.4vw, 4rem); }
+  .heroCopy h1, .sceneCopy h2, .ingredientCopy h2, .usageCopy h2 {
+    font-size: clamp(3.2rem, 5.6vw, 6rem);
+  }
+}
 
 /* ÉLORÉ shape and state, on top of the brand palette the rules above now carry
    natively. This block used to re-declare the colours too — it was bolted on
