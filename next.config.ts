@@ -3,9 +3,9 @@ import type { NextConfig } from "next";
 const isDevelopment = process.env.NODE_ENV === "development";
 
 // Report-only for now: it is emitted so violations surface during QA, but it
-// enforces nothing and so cannot break a page. Flip the header key to
-// "Content-Security-Policy" only once the storefront, checkout and operations
-// surfaces have been walked with a clean console.
+// enforces nothing and so cannot break a page. Flip this to false — and walk the
+// storefront, checkout and operations surfaces again — to enforce.
+const cspIsReportOnly = true;
 //
 // Deliberately hash/allowlist-based rather than nonce-based. A fresh nonce per
 // request would force every route to render dynamically, which would undo the
@@ -24,7 +24,16 @@ const contentSecurityPolicy = [
   "base-uri 'self'",
   "form-action 'self'",
   "frame-ancestors 'none'",
-  "upgrade-insecure-requests",
+  // Only in an enforcing policy. The spec has the browser IGNORE
+  // upgrade-insecure-requests when it arrives report-only, and Chrome logs an
+  // error saying so — one per navigation, on every route. That error was the
+  // only thing on the console, which made this directive quietly self-defeating:
+  // the note above says to enforce once the surfaces walk with a clean console,
+  // and the directive itself was the sole reason the console was never clean.
+  // Measured: 17 routes, 17 identical errors, nothing else. It also does no work
+  // here — a policy that is ignored upgrades nothing — so this loses no security
+  // and buys back a console where a real violation would stand out.
+  ...(cspIsReportOnly ? [] : ["upgrade-insecure-requests"]),
 ].join("; ");
 
 const nextConfig: NextConfig = {
@@ -44,7 +53,9 @@ const nextConfig: NextConfig = {
         source: "/:path*",
         headers: [
           {
-            key: "Content-Security-Policy-Report-Only",
+            key: cspIsReportOnly
+              ? "Content-Security-Policy-Report-Only"
+              : "Content-Security-Policy",
             value: contentSecurityPolicy,
           },
           {
