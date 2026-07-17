@@ -68,7 +68,9 @@
   flex-direction: column;
   padding-block: 10px 0;
   padding-inline: max(24px, calc((100vw - 1380px) / 2));
-  border-bottom: 1px solid rgba(59, 15, 26, 0.14);
+  /* No ruled line. The reference ends the ivory in a shape, not a border: it
+     curves down around the nav and lets the scene come up on either side. The
+     .nav tab below draws that; a 1px rule across the full width fought it. */
   /* Slightly translucent with a blur, so the ivory reads as a surface over the
      scene rather than a slab. Opaque fallback first for browsers without
      backdrop-filter. */
@@ -138,13 +140,38 @@
   object-fit: contain;
 }
 
+/* The nav rides a tab that hangs below the bar and dips into the scene, which is
+   how the reference ends the header — the ivory curves down around the links and
+   the hero comes up on either side of it.
+
+   Same fill and blur as the header, so the part still inside the bar is
+   invisible and only the overhang reads as a shape. The negative block-end
+   margin is the overhang itself: the tab keeps its own padding, then pulls the
+   header's box back up by the same amount so it costs no header height. Nothing
+   downstream shifts, which matters because §7.1's Definition of Done is "لا يوجد
+   Layout shift عند تثبيت الـ Header". */
 .nav {
+  --nav-tab-drop: clamp(14px, 1.6vw, 22px);
+  position: relative;
   min-width: 0;
+  align-self: center;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 4px;
-  padding-block-end: 2px;
+  margin-block-end: calc(-1 * var(--nav-tab-drop));
+  padding-block: 0 var(--nav-tab-drop);
+  padding-inline: clamp(14px, 2vw, 34px);
+  background: rgba(255, 253, 252, 0.98);
+  border-end-start-radius: clamp(18px, 2.2vw, 30px);
+  border-end-end-radius: clamp(18px, 2.2vw, 30px);
+}
+
+@supports (backdrop-filter: blur(1px)) {
+  .nav {
+    background: rgba(255, 253, 252, 0.86);
+    backdrop-filter: blur(14px) saturate(1.1);
+  }
 }
 
 .navLink {
