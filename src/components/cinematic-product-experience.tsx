@@ -89,7 +89,7 @@ export function CinematicProductExperience({ product, locale }: Props) {
         <div className={styles.productHalo} aria-hidden="true"><i /><i /></div>
         <div className={styles.heroVisual}><Image src={productImage.url} alt={productImage.alt} fill sizes="(max-width: 800px) 78vw, 42vw" priority /></div>
         <div className={styles.heroCopy}><p>{product.brand}</p><h1>{product.name}</h1><span>{product.subtitle}</span><div><TrackedLink href="#purchase" className={styles.primaryAction} analyticsLabel={`${product.slug}_buy`} analyticsSurface="product_cinematic">{formatPrice(Math.min(...product.variants.map((variant) => variant.price)), locale)}</TrackedLink><TrackedLink href={collectionHref} className={styles.secondaryAction} analyticsLabel={`${product.slug}_collection`} analyticsSurface="product_cinematic">{text.collection}</TrackedLink></div></div>
-        <div className={styles.counter}>01 — 05</div>
+        <div className={styles.counter} aria-hidden="true">01 — 05</div>
       </div>
     </section>
 
@@ -97,7 +97,7 @@ export function CinematicProductExperience({ product, locale }: Props) {
       <div className={styles.frame}>
         <div className={styles.sceneCopy}><p lang="en">PRODUCT TRUTH</p><h2>{text.fitTitle.split("\n").map((line, index) => <span key={line}>{index ? <br /> : null}{line}</span>)}</h2><span>{product.subtitle}</span></div>
         <div className={styles.fitOrbit}>{fitSignals.map(([label, value], index) => <article key={label} style={{ "--index": index } as CSSProperties}><b>0{index + 1}</b><small>{label}</small><h3>{value}</h3></article>)}</div>
-        <div className={styles.counter}>02 — 05</div>
+        <div className={styles.counter} aria-hidden="true">02 — 05</div>
       </div>
     </section>
 
@@ -106,7 +106,7 @@ export function CinematicProductExperience({ product, locale }: Props) {
         <div className={styles.ingredientWord} aria-hidden="true">FORMULA</div>
         <div className={styles.ingredientCopy}><p lang="en">APPROVED FORMULA</p><h2>{text.formulaTitle}</h2><span>{text.formulaBody}</span></div>
         <div className={styles.ingredientStack}>{[product.ingredientsInci ?? "—", ...(product.approvedClaims.length ? product.approvedClaims : [text.noClaims])].slice(0, 3).map((item, index) => <article key={`${index}-${item}`} style={{ "--index": index } as CSSProperties}><b>0{index + 1}</b><p>{item}</p></article>)}</div>
-        <div className={styles.counter}>03 — 05</div>
+        <div className={styles.counter} aria-hidden="true">03 — 05</div>
       </div>
     </section>
 
@@ -114,7 +114,7 @@ export function CinematicProductExperience({ product, locale }: Props) {
       <div className={styles.frame}>
         <div className={styles.usageVisual}><Image src={productImage.url} alt="" fill sizes="38vw" /></div>
         <div className={styles.usageCopy}><p lang="en">HOW TO USE</p><h2>{text.usageTitle.split("\n").map((line, index) => <span key={line}>{index ? <br /> : null}{line}</span>)}</h2><div>{usageSignals.slice(0, 4).map(([label, value], index) => <article key={`${label}-${index}`}><b>0{index + 1}</b><span><strong>{label}</strong><br />{value}</span></article>)}</div></div>
-        <div className={styles.counter}>04 — 05</div>
+        <div className={styles.counter} aria-hidden="true">04 — 05</div>
       </div>
     </section>
 
@@ -122,7 +122,7 @@ export function CinematicProductExperience({ product, locale }: Props) {
       <div className={styles.frame}>
         <div className={styles.purchaseVisual}><Image src={productImage.url} alt={productImage.alt} fill sizes="40vw" /></div>
         <div className={styles.purchasePanel}><p lang="en">READY TO CHOOSE</p><h2>{text.choose}</h2><div className={styles.variantList}>{product.variants.map((variant) => <button key={variant.sku} type="button" aria-pressed={variant.sku === selectedVariant?.sku} onClick={() => setSelectedSku(variant.sku)}><strong>{variant.label}</strong><span>{variant.size}</span><b>{formatPrice(variant.price, locale)}</b><small>{variant.availability === "InStock" ? text.available : text.unavailable}</small></button>)}</div><div className={styles.quantity}><button type="button" onClick={() => setQuantity(Math.max(1, quantity - 1))} aria-label="Decrease quantity">−</button><span>{quantity}</span><button type="button" onClick={() => setQuantity(Math.min(10, quantity + 1))} aria-label="Increase quantity">+</button></div><div className={styles.purchaseActions}><button type="button" onClick={addToCart} disabled={!isAvailable}>{text.add} · {formatPrice((selectedVariant?.price ?? 0) * quantity, locale)}</button><TrackedLink href={`/${locale}/cart`} analyticsLabel={`product_to_cart_${product.slug}`} analyticsSurface="product_purchase" analyticsDestinationType="cart">{text.cart}</TrackedLink></div>{selectedVariant && !isAvailable ? <BackInStock productSlug={product.slug} productName={product.name} sku={selectedVariant.sku} locale={locale} /> : null}<span className={styles.shipping}>{product.shippingNote}</span><p className={styles.status} aria-live="polite">{status}</p></div>
-        <div className={styles.counter}>05 — 05</div>
+        <div className={styles.counter} aria-hidden="true">05 — 05</div>
       </div>
     </section>
   </div>;
