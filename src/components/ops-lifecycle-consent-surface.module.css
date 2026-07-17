@@ -34,7 +34,7 @@
 }
 
 .reloadButton:disabled { cursor: wait; opacity: 0.62; }
-.reloadButton:focus-visible, .error button:focus-visible, .controls select:focus-visible { outline: 3px solid #b68a66; outline-offset: 3px; }
+.reloadButton:focus-visible, .error button:focus-visible, .controls select:focus-visible {outline: 2px solid transparent;outline-offset: var(--focus-ring-offset);box-shadow: var(--focus-ring)}
 
 .metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.75rem; }
 .metrics article { display: grid; gap: 0.35rem; min-height: 8rem; padding: 1rem; border-top: 2px solid #7b2538; background: #fff; }

@@ -277,8 +277,9 @@
 
 .category:focus-visible,
 .textAction:focus-visible {
-  outline: 3px solid var(--elore-champagne);
-  outline-offset: 3px;
+  outline: 2px solid transparent;
+  outline-offset: var(--focus-ring-offset);
+  box-shadow: var(--focus-ring);
 }
 
 /* ---- tablet ------------------------------------------------------------ */

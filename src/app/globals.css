@@ -93,6 +93,34 @@
   --shadow: 0 20px 60px rgba(42, 13, 20, 0.1);
   --shadow-soft: 0 24px 54px rgba(42, 13, 20, 0.08);
   --shadow-lift: 0 24px 48px rgba(42, 13, 20, 0.14);
+  /* FOCUS INDICATOR — two rings, and the measurement is what forces that.
+     WCAG 2.1 SC 1.4.11 asks for 3:1 against the adjacent colour, and this site
+     seats controls on warm ivory AND on burgundy. No single brand colour clears
+     3:1 on both surfaces:
+
+       soft gold #D4AF37 -> 1.97:1 on ivory  (fails)   7.87:1 on burgundy
+       burgundy #3B0F1A  -> 15.51:1 on ivory           1.00:1 on burgundy (gone)
+
+     A gold ring is what this site had, so on every ivory page the focus
+     indicator was failing at 1.97:1 — the old champagne measured 2.00:1, so it
+     has never passed.
+
+     Two concentric rings fix it, because gold and ink contrast 8.56:1 with EACH
+     OTHER: whatever the ring lands on, one of the two separates from it and the
+     pair still reads as a ring. Gold inside against the control, ink outside
+     against the page. This is the same answer GOV.UK and USWDS reached from the
+     same constraint.
+
+     Pair it with `outline: 2px solid transparent`: forced-colors mode drops
+     box-shadow entirely, and the transparent outline is what it repaints as a
+     real ring there. */
+  --focus-ring: 0 0 0 2px var(--elore-champagne), 0 0 0 5px var(--elore-ink);
+  --focus-ring-offset: 2px;
+  /* The same ring turned inward, for controls whose own container clips —
+     a full-width row inside an `overflow: hidden` panel would have the outer
+     ring shaved off at the sides. */
+  --focus-ring-inset: inset 0 0 0 2px var(--elore-champagne), inset 0 0 0 5px var(--elore-ink);
+
   --motion-micro: 160ms cubic-bezier(0.22, 1, 0.36, 1);
   --motion-control: 220ms cubic-bezier(0.22, 1, 0.36, 1);
   --motion-reveal: 360ms cubic-bezier(0.22, 1, 0.36, 1);
@@ -191,6 +219,29 @@ body::after {
 a {
   color: inherit;
   text-decoration: none;
+}
+
+/* The ring is declared once, here, for everything that can take focus.
+   Measured on the home page before this existed: of 43 focusable elements, 21
+   had no focus rule of their own — including the skip link, the language
+   switcher and BOTH hero calls to action. They fell through to the browser's
+   default ring. Chrome's default happens to be a dual-tone ring that survives
+   any background, so this looked fine while being entirely unowned: the site
+   styled its nav and left its primary actions to whatever the engine chose.
+
+   The doubled pseudo-class is deliberate and load-bearing. `:focus-visible` on
+   its own scores (0,1,0) — the same as any class — and module CSS loads after
+   this file, so a component that sets box-shadow on its base class silently
+   wins and never shows a ring at all. The skip link did exactly that. Doubling
+   it to (0,2,0) beats a bare class while still losing to a module's own
+   `.control:focus-visible`, which is the layering we want.
+
+   Modules override this where a control needs an inset ring or has to keep a
+   resting shadow; see --focus-ring-inset. */
+:focus-visible:focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: var(--focus-ring-offset);
+  box-shadow: var(--focus-ring);
 }
 
 h1,

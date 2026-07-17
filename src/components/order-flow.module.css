@@ -561,8 +561,9 @@
 }
 
 .orderDisclosureSummary:focus-visible {
-  outline: 2px solid var(--ops-accent);
-  outline-offset: -4px;
+  outline: 2px solid transparent;
+  outline-offset: var(--focus-ring-offset);
+  box-shadow: var(--focus-ring);
 }
 
 .orderDisclosureHint {
@@ -1285,8 +1286,9 @@
 .textInput:focus-visible,
 .textArea:focus-visible,
 .optionCard:focus-within {
-  outline: 3px solid var(--commerce-mint);
-  outline-offset: 3px;
+  outline: 2px solid transparent;
+  outline-offset: var(--focus-ring-offset);
+  box-shadow: var(--focus-ring);
 }
 
 @supports (animation-timeline: view()) {

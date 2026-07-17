@@ -11,7 +11,7 @@
 .secondaryAction{color:inherit;background:transparent}
 .primaryAction:hover{background:var(--warm);border-color:var(--warm)}
 .secondaryAction:hover{color:var(--ink);background:var(--champagne)}
-.primaryAction:focus-visible,.secondaryAction:focus-visible,.collectionCard:focus-visible,.productCard a:focus-visible,.routeCard:focus-visible,.productCopy>a:focus-visible{outline:3px solid var(--champagne);outline-offset:4px}
+.primaryAction:focus-visible,.secondaryAction:focus-visible,.collectionCard:focus-visible,.productCard a:focus-visible,.routeCard:focus-visible,.productCopy>a:focus-visible{outline: 2px solid transparent;outline-offset: var(--focus-ring-offset);box-shadow: var(--focus-ring)}
 
 .atlasScene .frame{background:linear-gradient(118deg,#2a0d14 0%,#3b0f1a 58%,#2c1720 100%)}
 .atlasScene .frame::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent 49.8%,rgba(212, 175, 55,.16) 50%,transparent 50.2%),linear-gradient(0deg,transparent 49.8%,rgba(212, 175, 55,.12) 50%,transparent 50.2%);transform:translateY(calc((var(--progress) - .5)*24px));pointer-events:none}

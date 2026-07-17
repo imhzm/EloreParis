@@ -222,8 +222,9 @@
 .navLink:focus-visible,
 .searchLink:focus-visible,
 .cartLink:focus-visible {
-  outline: 2px solid var(--elore-burgundy);
-  outline-offset: 3px;
+  outline: 2px solid transparent;
+  outline-offset: var(--focus-ring-offset);
+  box-shadow: var(--focus-ring);
 }
 
 .main { min-height: 60vh; }

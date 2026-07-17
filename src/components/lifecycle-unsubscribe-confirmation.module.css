@@ -69,8 +69,9 @@
 }
 
 .action:focus-visible {
-  outline: 3px solid var(--elore-champagne);
-  outline-offset: 4px;
+  outline: 2px solid transparent;
+  outline-offset: var(--focus-ring-offset);
+  box-shadow: var(--focus-ring);
 }
 
 .action:disabled {

@@ -40,8 +40,9 @@
 }
 
 .title:focus-visible {
-  outline: 3px solid var(--boundary-wine);
-  outline-offset: 0.5rem;
+  outline: 2px solid transparent;
+  outline-offset: var(--focus-ring-offset);
+  box-shadow: var(--focus-ring);
 }
 
 .body {
@@ -86,8 +87,9 @@
 
 .primary:focus-visible,
 .secondary:focus-visible {
-  outline: 3px solid #b68a66;
-  outline-offset: 3px;
+  outline: 2px solid transparent;
+  outline-offset: var(--focus-ring-offset);
+  box-shadow: var(--focus-ring);
 }
 
 .loadingGrid {

@@ -44,7 +44,7 @@
 .reloadButton:disabled { cursor: wait; opacity: 0.62; }
 .reloadButton:focus-visible,
 .error button:focus-visible,
-.controls select:focus-visible { outline: 3px solid #b68a66; outline-offset: 3px; }
+.controls select:focus-visible {outline: 2px solid transparent;outline-offset: var(--focus-ring-offset);box-shadow: var(--focus-ring)}
 
 .readiness { display: grid; gap: 0.85rem; padding: 1rem; border: 1px solid rgba(59, 15, 26, 0.18); background: #fff; }
 .readinessHead { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
