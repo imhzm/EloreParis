@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { localeConfig, type Locale } from "@/lib/i18n";
-import { getSiteUrl } from "@/lib/site-content";
+import { defaultSocialCard, getSiteUrl } from "@/lib/site-content";
 
 export const searchPageCopy = {
   ar: {
@@ -72,8 +72,11 @@ export function buildSearchMetadata(locale: Locale): Metadata {
     description: copy.intro,
     alternates: { canonical: url },
     robots: { index: false, follow: true },
-    openGraph: { title: copy.title.replace("\n", " "), description: copy.intro, url, locale: localeConfig[locale].ogLocale, type: "website" },
-    twitter: { card: "summary_large_image", title: copy.title.replace("\n", " "), description: copy.intro },
+    // noindex above keeps this out of search results; it does not stop anyone
+    // pasting the link into a chat, which is what the card is for. A route's
+    // openGraph replaces the layout's, so naming no image shipped a bare link.
+    openGraph: { title: copy.title.replace("\n", " "), description: copy.intro, url, locale: localeConfig[locale].ogLocale, type: "website", images: defaultSocialCard(copy.title.replace("\n", " ")).openGraph },
+    twitter: { card: "summary_large_image", title: copy.title.replace("\n", " "), description: copy.intro, images: defaultSocialCard(copy.title.replace("\n", " ")).twitter },
   };
 }
 

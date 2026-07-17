@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { localeConfig, type Locale } from "./i18n";
 import type { JournalRecord } from "./journal-content";
-import { getSiteUrl } from "./site-content";
+import { defaultSocialCard, getSiteUrl } from "./site-content";
 
 function languageAlternates(path: string) {
   const siteUrl = getSiteUrl();
@@ -13,7 +13,10 @@ export function buildJournalMetadata(locale: Locale, record?: JournalRecord): Me
   const title = record?.title.replace("\n", " ") ?? (locale === "ar" ? "مجلة الجمال" : "The beauty journal");
   const description = record?.summary ?? (locale === "ar" ? "أدلة مختصرة لفهم القوام والمكونات والروتين من دون وعود مبالغ فيها." : "Concise guides to texture, ingredients and rituals without overstated promises.");
   const url = `${getSiteUrl()}/${locale}${path}`;
-  return { title, description, alternates: { canonical: url, languages: languageAlternates(path) }, openGraph: { title, description, url, locale: localeConfig[locale].ogLocale, type: "website" }, twitter: { card: "summary_large_image", title, description } };
+  // A route's openGraph REPLACES the layout's, so naming no image here shipped
+  // the journal and every article with no share card at all.
+  const card = defaultSocialCard(title);
+  return { title, description, alternates: { canonical: url, languages: languageAlternates(path) }, openGraph: { title, description, url, locale: localeConfig[locale].ogLocale, type: "website", images: card.openGraph }, twitter: { card: "summary_large_image", title, description, images: card.twitter } };
 }
 
 export function buildJournalSchema(locale: Locale, records: JournalRecord[], record?: JournalRecord) {

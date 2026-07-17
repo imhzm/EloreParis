@@ -71,6 +71,27 @@ export function absoluteUrl(path = "/") {
   return new URL(path, getSiteUrl()).toString();
 }
 
+/**
+ * The share card every route falls back to.
+ *
+ * Next does not merge `openGraph` — a route that returns one REPLACES the
+ * layout's outright, images and all. So a builder that set title/description/url
+ * and nothing else silently dropped the site's card, and the route shared as a
+ * bare link. Measured: 8 of 16 routes had no og:image at all — search, about,
+ * contact, faq, terms, trust, trust/shipping, journal. The pages that worked
+ * (discovery) only worked because they happened to name an image of their own.
+ *
+ * app/opengraph-image.tsx renders this at request time, so it is always the
+ * current wordmark and tagline rather than a file to keep in step.
+ */
+export function defaultSocialCard(title: string) {
+  const url = absoluteUrl("/opengraph-image");
+  return {
+    openGraph: [{ url, width: 1200, height: 630, alt: `${siteName} — ${title}` }],
+    twitter: [url],
+  };
+}
+
 export const footerPolicyLinks = [
   { href: "/terms", label: "الشروط والأحكام" },
   { href: "/trust/verification", label: "بيانات المنشأة" },

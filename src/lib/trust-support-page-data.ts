@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { localeConfig, type Locale } from "./i18n";
-import { getSiteUrl } from "./site-content";
+import { defaultSocialCard, getSiteUrl } from "./site-content";
 import type { TrustSupportRecord } from "./trust-support-content";
 
 function alternates(locale: Locale, path: string) {
@@ -24,8 +24,10 @@ export function buildTrustSupportMetadata(locale: Locale, path: string, record?:
     title,
     description,
     alternates: alternates(locale, path),
-    openGraph: { title, description, url, locale: localeConfig[locale].ogLocale, type: "website" },
-    twitter: { card: "summary_large_image", title, description },
+    // A route's openGraph REPLACES the layout's, so naming no image here shipped
+    // these pages with no share card at all.
+    openGraph: { title, description, url, locale: localeConfig[locale].ogLocale, type: "website", images: defaultSocialCard(title).openGraph },
+    twitter: { card: "summary_large_image", title, description, images: defaultSocialCard(title).twitter },
   };
 }
 
