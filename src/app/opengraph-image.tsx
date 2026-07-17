@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const alt = "ÉLORÉ PARIS | Beauty, considered.";
+export const alt = "ÉLORÉ PARIS | Beauty, composed with intention.";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -29,7 +29,7 @@ export default function OpenGraphImage() {
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 18, maxWidth: 900 }}>
-          <div style={{ display: "flex", fontSize: 96, lineHeight: 0.9, letterSpacing: -4 }}>Beauty, considered.</div>
+          <div style={{ display: "flex", fontSize: 96, lineHeight: 0.9, letterSpacing: -4 }}>Beauty, composed with intention.</div>
           <div style={{ display: "flex", maxWidth: 760, fontFamily: "sans-serif", fontSize: 28, lineHeight: 1.45, color: "rgba(255,253,252,.76)" }}>
             Parisian ritual. Saudi relevance. Clearer texture, shade and routine guidance before you choose.
           </div>

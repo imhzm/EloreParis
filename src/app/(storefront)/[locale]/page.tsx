@@ -9,12 +9,12 @@ type PageProps = { params: Promise<{ locale: string }> };
 
 const metadataCopy: Record<Locale, { title: string; description: string }> = {
   ar: {
-    title: "جمال باختيار مدروس",
+    title: "جمالٌ يُروى كتجربة",
     description:
       "تجربة جمال سعودية راقية تجمع الحس الباريسي مع وضوح القوام والدرجة والروتين.",
   },
   en: {
-    title: "Beauty, considered",
+    title: "Beauty, composed with intention",
     description:
       "A refined Saudi beauty experience pairing Parisian sensibility with clearer textures, shades and rituals.",
   },

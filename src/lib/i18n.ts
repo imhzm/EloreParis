@@ -144,8 +144,15 @@ export const homeCopy = {
   ar: {
     hero: {
       eyebrow: "PARISIAN RITUAL · SAUDI RELEVANCE",
-      title: "جمال باختيار مدروس.",
-      body: "تجربة جمال هادئة تجمع الإحساس الباريسي مع وضوح يناسب روتينك اليومي. اكتشفي القوام والدرجة والتفاصيل قبل أن تختاري.",
+      // The brand's own line, not ours. All nine concept boards head the hero with
+      // "جمالٌ يُروى كتجربة." and the identity sheet's footer lockup reads
+      // "جمال يُصاغ بنية. ويُروى كتجربة." — the same verb. The site had been
+      // shipping "جمال باختيار مدروس.", which appears in none of the owner's
+      // material. Transcribing the owner's copy is not the invention §19 forbids;
+      // writing our own would be. CLAUDE.md §10 gives an earlier draft
+      // ("جمالٌ يروي تجربة.") that the sheet and the boards both supersede.
+      title: "جمالٌ يُروى كتجربة.",
+      body: "نحوّل لحظاتك اليومية إلى طقوس فاخرة من الجمال والحنين. اكتشفي فنّ العناية، كما تليق بك.",
       primary: "اكتشفي المجموعة",
       secondary: "ابني روتينك",
       assetStatus: "مشهد تحريري مفاهيمي · لا يعرض منتجًا للبيع.",
@@ -212,8 +219,11 @@ export const homeCopy = {
   en: {
     hero: {
       eyebrow: "PARISIAN RITUAL · SAUDI RELEVANCE",
-      title: "Beauty, considered.",
-      body: "A quieter beauty experience, pairing Parisian sensibility with the clarity your daily ritual deserves. Discover texture, shade and detail before you choose.",
+      // The identity sheet's English line, carried on the brand rail and the
+      // footer lockup. Not a translation of the Arabic — the sheet sets them as a
+      // pair, and English is the secondary voice here.
+      title: "Beauty, composed with intention.",
+      body: "We turn your daily moments into rituals worth keeping. Discover the craft of care, made to suit you.",
       primary: "Explore the collection",
       secondary: "Build your ritual",
       assetStatus: "Conceptual editorial scene · no product offered for sale.",
@@ -281,11 +291,11 @@ export const homeCopy = {
 
 export const shellCopy = {
   ar: {
-    skip: "تخطي إلى المحتوى", market: "تجربة عربية للسوق السعودي", tagline: "جمال باختيار مدروس", trackOrder: "تتبّع طلبك ←",
+    skip: "تخطي إلى المحتوى", market: "تجربة عربية للسوق السعودي", tagline: "جمالٌ يُروى كتجربة", trackOrder: "تتبّع طلبك ←",
     navLabel: "التنقل الرئيسي", searchLabel: "البحث داخل المتجر", cart: "السلة", cartCountLabel: "عناصر في السلة",
     menuOpen: "فتح القائمة", menuClose: "إغلاق القائمة", footerBody: "بيت جمال رقمي فاخر يجمع الحس الباريسي مع وضوح يناسب روتينك في السعودية.",
     footerStatus: "نعرض معلومات المنتجات والسياسات من مصادر موثقة وبوضوح قبل اتخاذ القرار.", policyTitle: "الثقة والسياسات", supportTitle: "خدمة الطلب",
-    footerTagline: "جمال باختيار مدروس.", languageLabel: "English", languageHref: "/en",
+    footerTagline: "جمال يُصاغ بنية. ويُروى كتجربة.", languageLabel: "English", languageHref: "/en",
     // The reference concept leads its navigation with the categories. Perfumes
     // joins them here. Search is not a nav entry: the header already carries a
     // search control beside it, and two routes to the same page is the kind of
@@ -295,11 +305,11 @@ export const shellCopy = {
     support: [["/contact", "تواصلي معنا"], ["/faq", "الأسئلة الشائعة"], ["/track-order", "تتبع الطلب"], ["/cart", "السلة"], ["/search", "البحث داخل المتجر"]],
   },
   en: {
-    skip: "Skip to content", market: "A Saudi beauty experience", tagline: "Beauty, considered", trackOrder: "Track your order →",
+    skip: "Skip to content", market: "A Saudi beauty experience", tagline: "Beauty, composed with intention", trackOrder: "Track your order →",
     navLabel: "Primary navigation", searchLabel: "Search the store", cart: "Cart", cartCountLabel: "items in cart",
     menuOpen: "Open menu", menuClose: "Close menu", footerBody: "A premium digital beauty house pairing Parisian sensibility with clarity made for life in Saudi Arabia.",
     footerStatus: "Product and policy information is presented from verified sources, with clarity before every decision.", policyTitle: "Trust and policies", supportTitle: "Order support",
-    footerTagline: "Beauty, considered.", languageLabel: "العربية", languageHref: "/ar",
+    footerTagline: "Beauty. Composed with intention.", languageLabel: "العربية", languageHref: "/ar",
     nav: [["/", "Home"], ["/shop", "Shop"], ["/shop/perfumes", "Perfumes"], ["/concerns", "By concern"], ["/routines", "Rituals"], ["/journal", "Journal"], ["/trust", "Trust"]],
     policies: [["/terms", "Terms and conditions"], ["/trust/verification", "Business information"], ["/trust/privacy", "Privacy"], ["/trust/shipping", "Shipping and delivery"], ["/trust/returns", "Returns and refunds"]],
     support: [["/contact", "Contact us"], ["/faq", "Frequently asked questions"], ["/track-order", "Track order"], ["/cart", "Cart"], ["/search", "Search the store"]],

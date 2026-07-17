@@ -63,7 +63,7 @@ export function getSiteUrl() {
 }
 
 export const siteName = "ÉLORÉ PARIS";
-export const siteTagline = "جمال باختيار مدروس";
+export const siteTagline = "جمالٌ يُروى كتجربة";
 export const defaultDescription =
   "تجربة جمال فاخرة وهادئة للسوق السعودي، تجمع الإحساس الباريسي مع معلومات أوضح عن القوام والدرجة والروتين قبل الاختيار.";
 
