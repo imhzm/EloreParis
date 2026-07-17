@@ -49,6 +49,15 @@
   text-transform: uppercase;
 }
 
+/* The cart's Arabic labels — سعر موثوق, عناصر السلة, ملخص أولي — must not be
+   letter-spaced; tracking breaks the joins between Arabic letters. Latin keeps
+   its tracking. */
+:lang(ar) .eyebrow,
+:lang(ar) .sectionTitle {
+  letter-spacing: normal;
+  text-transform: none;
+}
+
 .hero h1,
 .mainCard h2,
 .summaryCard h2,

@@ -142,6 +142,13 @@
   text-shadow: 0 1px 12px rgba(42, 13, 20, 0.45);
 }
 
+/* This label is set in the display face (Cairo for Arabic), and the h1–h6
+   leading guard does not reach a span. 1.2 pinches the tops and tails of an
+   Arabic word; the display leading gives them room. */
+:lang(ar) .categoryLabel {
+  line-height: var(--leading-display);
+}
+
 /* ---- editorial --------------------------------------------------------- */
 
 .editorial {
