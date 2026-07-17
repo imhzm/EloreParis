@@ -72,8 +72,8 @@
   width: clamp(180px, 19vw, 360px);
   aspect-ratio: 0.72;
   border: 1px solid rgba(255, 253, 252, 0.28);
-  background: linear-gradient(145deg, rgba(255, 253, 252, 0.14), rgba(201, 166, 127, 0.02));
-  box-shadow: 0 42px 80px rgba(33, 21, 26, 0.18);
+  background: linear-gradient(145deg, rgba(255, 253, 252, 0.14), rgba(212, 175, 55, 0.02));
+  box-shadow: 0 42px 80px rgba(42, 13, 20, 0.18);
   backdrop-filter: blur(2px);
 }
 
@@ -97,7 +97,7 @@
   width: clamp(120px, 15vw, 250px);
   height: auto;
   opacity: 0.82;
-  filter: drop-shadow(0 28px 34px rgba(33, 21, 26, 0.3));
+  filter: drop-shadow(0 28px 34px rgba(42, 13, 20, 0.3));
   transform: translate3d(0, calc(-50% + (0.5 - var(--progress)) * 24px), 150px) rotateY(-10deg) scale(calc(0.96 + var(--enter) * 0.04));
 }
 
@@ -116,8 +116,8 @@
 .heroShade {
   z-index: -2;
   background:
-    linear-gradient(90deg, rgba(33, 21, 26, 0.78), rgba(73, 23, 35, 0.28) 58%, rgba(33, 21, 26, 0.18)),
-    linear-gradient(0deg, rgba(33, 21, 26, 0.52), transparent 45%);
+    linear-gradient(90deg, rgba(42, 13, 20, 0.78), rgba(59, 15, 26, 0.28) 58%, rgba(42, 13, 20, 0.18)),
+    linear-gradient(0deg, rgba(42, 13, 20, 0.52), transparent 45%);
 }
 
 .heroContent {
@@ -225,7 +225,7 @@
 
 .secondaryAction {
   color: var(--elore-warm-white);
-  background: rgba(33, 21, 26, 0.18);
+  background: rgba(42, 13, 20, 0.18);
 }
 
 .primaryAction:hover,
@@ -248,7 +248,7 @@
   color: rgba(255, 253, 252, 0.92);
   font-size: max(0.78rem, 12.5px);
   font-weight: 500;
-  text-shadow: 0 1px 3px rgba(33, 21, 26, 0.55);
+  text-shadow: 0 1px 3px rgba(42, 13, 20, 0.55);
 }
 
 .productTruth {
@@ -308,7 +308,7 @@
   place-items: center;
   align-content: center;
   gap: 28px;
-  border: 1px solid rgba(73, 23, 35, 0.18);
+  border: 1px solid rgba(59, 15, 26, 0.18);
   background: var(--elore-warm-white);
   perspective: 1000px;
   transform-style: preserve-3d;
@@ -320,7 +320,7 @@
   width: min(72%, 430px);
   aspect-ratio: 1;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(201, 166, 127, 0.34), rgba(201, 166, 127, 0.06) 46%, transparent 70%);
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.34), rgba(212, 175, 55, 0.06) 46%, transparent 70%);
   filter: blur(8px);
   transform: translate3d(0, calc((0.5 - var(--progress)) * 24px), -40px) scale(calc(1 + var(--enter) * 0.035));
 }
@@ -340,7 +340,7 @@
   content: "";
   position: absolute;
   inset: 12%;
-  border: 1px solid rgba(201, 166, 127, 0.34);
+  border: 1px solid rgba(212, 175, 55, 0.34);
   border-radius: inherit;
 }
 
@@ -352,7 +352,7 @@
   aspect-ratio: 1;
   border-radius: 50%;
   background: var(--elore-burgundy);
-  box-shadow: 0 0 18px rgba(73, 23, 35, 0.38);
+  box-shadow: 0 0 18px rgba(59, 15, 26, 0.38);
 }
 
 .productOrbit i:nth-child(1) { inset-inline-start: 7%; top: 48%; }
@@ -366,7 +366,7 @@
   height: clamp(300px, 31vw, 440px);
   transform-style: preserve-3d;
   transform: rotateX(calc(-1deg + var(--progress) * 2deg)) rotateY(calc(-1.5deg + var(--progress) * 3deg)) translateY(calc((0.5 - var(--progress)) * 24px)) scale(calc(1 + var(--enter) * 0.035));
-  filter: drop-shadow(0 34px 30px rgba(73, 23, 35, 0.2));
+  filter: drop-shadow(0 34px 30px rgba(59, 15, 26, 0.2));
   will-change: transform;
 }
 
@@ -379,15 +379,15 @@
   border-radius: 12px 12px 4px 4px;
   border: 1px solid rgba(255, 252, 235, 0.5);
   background: linear-gradient(90deg, #8f6335, #f3d59a 28%, #b88648 58%, #71502d);
-  box-shadow: inset 8px 0 16px rgba(255,255,255,.2), inset -10px 0 16px rgba(73,23,35,.2);
+  box-shadow: inset 8px 0 16px rgba(255,255,255,.2), inset -10px 0 16px rgba(59, 15, 26,.2);
   transform: translateZ(14px);
 }
 
 .productCap span {
   position: absolute;
   inset: 12% 18%;
-  border-inline: 1px solid rgba(73, 23, 35, 0.26);
-  background: repeating-linear-gradient(90deg, transparent 0 4px, rgba(73,23,35,.12) 4px 5px);
+  border-inline: 1px solid rgba(59, 15, 26, 0.26);
+  background: repeating-linear-gradient(90deg, transparent 0 4px, rgba(59, 15, 26,.12) 4px 5px);
 }
 
 .productShoulder {
@@ -429,7 +429,7 @@
   border: 1px solid rgba(231, 199, 157, .58);
   background: rgba(255, 248, 238, .88);
   color: var(--elore-burgundy);
-  box-shadow: 0 10px 24px rgba(33, 21, 26, .16);
+  box-shadow: 0 10px 24px rgba(42, 13, 20, .16);
 }
 
 .productLabel img { width: 45%; height: auto; }
@@ -452,14 +452,14 @@
   height: 72px;
   border-radius: 50%;
   background: linear-gradient(180deg, #f5ede4, #cdb7a4);
-  box-shadow: 0 28px 42px rgba(73, 23, 35, .18), inset 0 7px 10px rgba(255,255,255,.78);
+  box-shadow: 0 28px 42px rgba(59, 15, 26, .18), inset 0 7px 10px rgba(255,255,255,.78);
   transform: translate3d(0, calc(var(--progress) * 8px), -5px) rotateX(66deg);
 }
 
 .productPedestal span {
   position: absolute;
   inset: 18% 10%;
-  border: 1px solid rgba(73, 23, 35, .14);
+  border: 1px solid rgba(59, 15, 26, .14);
   border-radius: inherit;
 }
 
@@ -488,7 +488,7 @@
   position: absolute;
   inset: 0;
   z-index: -2;
-  background: linear-gradient(90deg, rgba(73, 23, 35, 0.93) 0 42%, rgba(73, 23, 35, 0.48) 64%, rgba(73, 23, 35, 0.08));
+  background: linear-gradient(90deg, rgba(59, 15, 26, 0.93) 0 42%, rgba(59, 15, 26, 0.48) 64%, rgba(59, 15, 26, 0.08));
   clip-path: inset(0 calc((1 - var(--enter)) * 12%) 0 0);
 }
 
@@ -545,7 +545,7 @@
   position: absolute;
   inset: 0;
   z-index: -2;
-  background: linear-gradient(90deg, rgba(33, 21, 26, 0.82), rgba(73, 23, 35, 0.18));
+  background: linear-gradient(90deg, rgba(42, 13, 20, 0.82), rgba(59, 15, 26, 0.18));
 }
 
 .intentionBand:hover img {
@@ -653,7 +653,7 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, rgba(33, 21, 26, 0.92), rgba(73, 23, 35, 0.56));
+  background: linear-gradient(90deg, rgba(42, 13, 20, 0.92), rgba(59, 15, 26, 0.56));
 }
 
 .shadePanel {
@@ -717,7 +717,7 @@
   margin-inline: auto;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  border-top: 1px solid rgba(73, 23, 35, 0.22);
+  border-top: 1px solid rgba(59, 15, 26, 0.22);
 }
 
 .proofGrid article {
@@ -726,8 +726,8 @@
   display: grid;
   align-content: space-between;
   gap: 24px;
-  border-inline-end: 1px solid rgba(73, 23, 35, 0.16);
-  border-bottom: 1px solid rgba(73, 23, 35, 0.16);
+  border-inline-end: 1px solid rgba(59, 15, 26, 0.16);
+  border-bottom: 1px solid rgba(59, 15, 26, 0.16);
   transform: translateY(calc((1 - var(--enter)) * 24px));
   opacity: 1;
 }
@@ -763,7 +763,7 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, rgba(73, 23, 35, 0.92), rgba(73, 23, 35, 0.25) 70%);
+  background: linear-gradient(90deg, rgba(59, 15, 26, 0.92), rgba(59, 15, 26, 0.25) 70%);
 }
 
 .giftingCopy {
@@ -785,7 +785,7 @@
 .lightAction {
   margin-top: 12px;
   color: var(--elore-warm-white);
-  background: rgba(33, 21, 26, 0.18);
+  background: rgba(42, 13, 20, 0.18);
 }
 
 .edit {
@@ -806,7 +806,7 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: rgba(73, 23, 35, 0.62);
+  background: rgba(59, 15, 26, 0.62);
 }
 
 .editContent {
@@ -917,7 +917,7 @@
   .storyMedia,
   .giftingMedia,
   .editTexture { transform: none; }
-  .textureReveal { clip-path: none; background: linear-gradient(0deg, rgba(73, 23, 35, 0.9), rgba(73, 23, 35, 0.2)); }
+  .textureReveal { clip-path: none; background: linear-gradient(0deg, rgba(59, 15, 26, 0.9), rgba(59, 15, 26, 0.2)); }
   .textureCopy { align-self: end; padding-bottom: 100px; }
   .routineSteps { grid-template-columns: 1fr; }
   .routineSteps article { min-height: 220px; border-inline-end: 0; border-bottom: 1px solid rgba(255, 253, 252, 0.2); }
@@ -931,7 +931,7 @@
   .hero { min-height: calc(100svh - var(--header-offset)); align-items: end; }
   .heroMedia { animation: none; }
   .heroMedia img { object-position: 62% center; }
-  .heroShade { background: linear-gradient(0deg, rgba(33, 21, 26, 0.92), rgba(73, 23, 35, 0.18) 75%); }
+  .heroShade { background: linear-gradient(0deg, rgba(42, 13, 20, 0.92), rgba(59, 15, 26, 0.18) 75%); }
   .heroContent { padding-block: 64px; gap: 14px; }
   .heroContent { animation: none; opacity: 1; align-self: end; padding-bottom: 80px; }
   .heroWorld { transform: none; }
@@ -1023,4 +1023,65 @@
   max-width: 1600px;
   margin-inline: auto;
   padding-inline: clamp(1rem, 4vw, 3.5rem);
+}
+
+/* SHORT VIEWPORTS.
+   The cinematic frames are `100svh - header` with `overflow: clip`, but the
+   content inside them is sized off viewport WIDTH — 8vw headlines, a 30vw
+   logo. Shrink the window vertically and the content keeps its full height
+   while the frame shrinks around it, so the frame simply cuts the bottom off.
+   It is sticky and clipped, so nothing scrolls the lost part back: it is gone.
+
+   Measured on a 1440x768 laptop, the most common desktop height there is:
+   content 864px in a 690px frame. The hero lost BOTH call-to-action buttons
+   ("اكتشفي المجموعة" and "ابني روتينك", 97px under the cut) and the finale lost
+   its headline (98px) and its entire supporting paragraph (175px). The two
+   worst scenes are the two that carry the most stacked content.
+
+   Only the sticky desktop layout needs this. Under 901px wide the frame is
+   already `position: relative` and grows with its content, and every media
+   query in this file until now was max-width — which is exactly how a design
+   pinned to 100svh ended up with no height handling at all.
+
+   1010px is derived, not picked. The finale is the tallest stack at 928px, and
+   the frame is 100svh minus the 78px header, so the content stops fitting below
+   1006px of viewport — 1010 is that number with a few pixels of slack. Above
+   it nothing here applies and the composition is bit-for-bit the original: hero
+   h1 at 115.2px, logo at 430px, 100px of padding. Below it, compressing is not
+   a downgrade, it is the only way the content exists on the screen at all. */
+@media (min-width: 901px) and (max-height: 1010px) {
+  .heroContent {
+    padding-block: clamp(32px, 5vh, 72px);
+    gap: 14px;
+  }
+
+  .heroLogo {
+    width: clamp(200px, 24vw, 340px);
+    margin-bottom: clamp(16px, 3vh, 40px);
+  }
+
+  .hero h1,
+  .editContent h2 {
+    font-size: clamp(2.75rem, 6.2vw, 6rem);
+  }
+
+  .editContent {
+    gap: clamp(20px, 3vw, 52px);
+  }
+
+}
+
+/* The finale needs one more thing than the tier above can give it. Its row
+   height is set by the newsletter panel — not by the type — so shrinking the
+   headline barely moved it: 835px of content in a 690px frame, with the copy
+   still 82px under the cut.
+   Trimmed down, the panel is ~650px, and the wordmark above it costs 107px plus
+   its 43px gap. That fits any frame down to ~880px of viewport; below that the
+   wordmark is what has to give, and it is the same wordmark the site header is
+   already showing 78px above it. Losing a second copy of the logo beats losing
+   the headline and the paragraph. */
+@media (min-width: 901px) and (max-height: 880px) {
+  .editContent > img {
+    display: none;
+  }
 }

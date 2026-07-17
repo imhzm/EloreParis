@@ -32,7 +32,14 @@ def desktop_checks(page: Page, base_url: str, output: Path) -> dict:
 
     scenes = page.locator("[data-home-scene]")
     viewports = page.locator("[data-home-cinematic-viewport]")
-    assert_true(scenes.count() == 10, "The home page must expose exactly ten scroll scenes")
+    # Nine, not ten. The tenth was a three-band "intention" list; efe5473
+    # replaced it with the bento commerce grid from the approved reference,
+    # which is a static bordered container rather than a scroll scene and so
+    # carries no data-home-scene. This assertion still guards what it was
+    # written to guard — that the scroll machinery in useScrollSceneProgress
+    # keeps finding every scene it drives — and it stayed red from that commit
+    # until 2026-07-17 because it was counting the old composition.
+    assert_true(scenes.count() == 9, "The home page must expose exactly nine scroll scenes")
     assert_true(viewports.count() == 6, "Six home scenes must use a full-screen cinematic viewport")
 
     hero = scenes.first
@@ -70,7 +77,10 @@ def desktop_checks(page: Page, base_url: str, output: Path) -> dict:
     assert_true(product_rotation_y <= 3.1, "Product motion must stay within the approved 2-3 degree range")
     page.screenshot(path=str(output / "home-3d-desktop-product.png"))
 
-    scene_midpoint(page, 9)
+    # The finale scene, wherever it lands — the newsletter lives in the last
+    # one. Indexed off the live count rather than pinned, because a pinned 9 is
+    # what broke when the composition changed underneath this script.
+    scene_midpoint(page, scenes.count() - 1)
     newsletter = page.locator("#newsletter")
     newsletter.wait_for(state="visible")
     finale = newsletter.evaluate(
