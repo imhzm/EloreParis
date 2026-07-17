@@ -671,7 +671,7 @@
   min-height: 40px;
   padding: 0 14px;
   border-radius: 999px;
-  border: 1px solid rgba(33, 21, 26, 0.12);
+  border: 1px solid rgba(42, 13, 20, 0.12);
   background: rgba(255, 255, 255, 0.78);
   color: var(--aubergine-ink);
   text-decoration: none;
@@ -680,7 +680,7 @@
 
 .opsNavLinkActive {
   background: rgba(151, 160, 149, 0.18);
-  border-color: rgba(33, 21, 26, 0.22);
+  border-color: rgba(42, 13, 20, 0.22);
 }
 
 .opsNavActions {
@@ -711,7 +711,7 @@
   min-height: 40px;
   padding: 0 14px;
   border-radius: 999px;
-  border: 1px solid rgba(33, 21, 26, 0.12);
+  border: 1px solid rgba(42, 13, 20, 0.12);
   background: rgba(255, 255, 255, 0.78);
   color: var(--aubergine-ink);
   font: inherit;
@@ -803,7 +803,7 @@
 .metricCard {
   padding: 22px;
   border-radius: 24px;
-  background: rgba(33, 21, 26, 0.94);
+  background: rgba(42, 13, 20, 0.94);
   color: #fff8f3;
 }
 
@@ -845,7 +845,7 @@
   gap: 12px;
   padding: 22px;
   border-radius: 24px;
-  border: 1px solid rgba(33, 21, 26, 0.08);
+  border: 1px solid rgba(42, 13, 20, 0.08);
   background: rgba(255, 255, 255, 0.58);
   box-shadow: var(--shadow);
 }
@@ -876,12 +876,12 @@
   gap: 16px;
   padding: 22px;
   border-radius: 24px;
-  border: 1px solid rgba(33, 21, 26, 0.08);
+  border: 1px solid rgba(42, 13, 20, 0.08);
   background: rgba(255, 255, 255, 0.58);
 }
 
 .authMethodCardPrimary {
-  border-color: rgba(33, 21, 26, 0.18);
+  border-color: rgba(42, 13, 20, 0.18);
   background: rgba(215, 177, 142, 0.1);
 }
 
@@ -917,7 +917,7 @@
 .referenceCard {
   padding: 20px;
   border-radius: 24px;
-  border: 1px solid rgba(33, 21, 26, 0.08);
+  border: 1px solid rgba(42, 13, 20, 0.08);
   background: rgba(255, 255, 255, 0.58);
   display: grid;
   gap: 14px;
@@ -964,7 +964,7 @@
   padding: 8px 12px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.68);
-  border: 1px solid rgba(33, 21, 26, 0.08);
+  border: 1px solid rgba(42, 13, 20, 0.08);
   color: var(--aubergine-ink);
   font-size: 0.88rem;
 }
@@ -1000,7 +1000,7 @@
   min-height: 40px;
   padding: 0 14px;
   border-radius: 999px;
-  border: 1px solid rgba(33, 21, 26, 0.12);
+  border: 1px solid rgba(42, 13, 20, 0.12);
   background: rgba(255, 255, 255, 0.8);
   color: var(--aubergine-ink);
   font: inherit;
@@ -1012,7 +1012,7 @@
 
 .filterChipActive {
   background: rgba(151, 160, 149, 0.16);
-  border-color: rgba(33, 21, 26, 0.24);
+  border-color: rgba(42, 13, 20, 0.24);
 }
 
 .field,
@@ -1028,7 +1028,7 @@
 .textInput,
 .textArea {
   width: 100%;
-  border: 1px solid rgba(33, 21, 26, 0.12);
+  border: 1px solid rgba(42, 13, 20, 0.12);
   background: rgba(255, 255, 255, 0.8);
   color: var(--aubergine-ink);
   border-radius: 18px;
@@ -1060,7 +1060,7 @@
 }
 
 .optionCardActive {
-  border-color: rgba(33, 21, 26, 0.24);
+  border-color: rgba(42, 13, 20, 0.24);
   background: rgba(151, 160, 149, 0.16);
 }
 
@@ -1312,7 +1312,7 @@
 
 .summaryRow {
   padding-top: 12px;
-  border-top: 1px solid rgba(33, 21, 26, 0.08);
+  border-top: 1px solid rgba(42, 13, 20, 0.08);
 }
 
 .summaryRow:first-child {
@@ -1343,7 +1343,7 @@
 
 .secondaryButton,
 .secondaryLink {
-  border: 1px solid rgba(33, 21, 26, 0.12);
+  border: 1px solid rgba(42, 13, 20, 0.12);
   background: rgba(255, 255, 255, 0.58);
   color: var(--aubergine-ink);
 }
@@ -1371,7 +1371,7 @@
   gap: 12px;
   padding: 14px 16px;
   border-radius: 20px;
-  border: 1px solid rgba(33, 21, 26, 0.08);
+  border: 1px solid rgba(42, 13, 20, 0.08);
   background: rgba(255, 255, 255, 0.58);
   color: var(--aubergine-ink);
   text-decoration: none;
@@ -1385,7 +1385,7 @@
 .infoBullet {
   padding: 16px 18px;
   border-radius: 20px;
-  border: 1px solid rgba(33, 21, 26, 0.08);
+  border: 1px solid rgba(42, 13, 20, 0.08);
   background: rgba(255, 255, 255, 0.58);
   color: var(--aubergine-ink);
   line-height: 1.8;
@@ -1397,7 +1397,7 @@
 }
 
 .timelineCurrent {
-  border-color: rgba(33, 21, 26, 0.24);
+  border-color: rgba(42, 13, 20, 0.24);
   background: rgba(215, 177, 142, 0.12);
 }
 
@@ -1422,14 +1422,14 @@
   min-height: 34px;
   padding: 0 12px;
   border-radius: 999px;
-  border: 1px solid rgba(33, 21, 26, 0.08);
+  border: 1px solid rgba(42, 13, 20, 0.08);
   background: rgba(255, 255, 255, 0.68);
   color: var(--mauve-stone);
   font-size: 0.84rem;
 }
 
 .timelineCompactCurrent {
-  border-color: rgba(33, 21, 26, 0.24);
+  border-color: rgba(42, 13, 20, 0.24);
   color: var(--aubergine-ink);
   background: rgba(215, 177, 142, 0.16);
 }

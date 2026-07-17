@@ -23,7 +23,7 @@
   border-radius: 2px;
   color: var(--elore-warm-white);
   background: var(--elore-burgundy);
-  box-shadow: 0 18px 44px rgba(33, 21, 26, 0.22);
+  box-shadow: 0 18px 44px rgba(42, 13, 20, 0.22);
 }
 
 .skipLink:focus { top: 12px; }
@@ -65,12 +65,12 @@
   flex-direction: column;
   padding-block: 10px 0;
   padding-inline: max(24px, calc((100vw - 1380px) / 2));
-  border-bottom: 1px solid rgba(73, 23, 35, 0.14);
+  border-bottom: 1px solid rgba(59, 15, 26, 0.14);
   /* Slightly translucent with a blur, so the ivory reads as a surface over the
      scene rather than a slab. Opaque fallback first for browsers without
      backdrop-filter. */
   background: rgba(255, 253, 252, 0.98);
-  box-shadow: 0 8px 26px rgba(33, 21, 26, 0.08);
+  box-shadow: 0 8px 26px rgba(42, 13, 20, 0.08);
 }
 
 @supports (backdrop-filter: blur(1px)) {
@@ -109,7 +109,7 @@
 .marketDivider {
   inline-size: 1px;
   block-size: 12px;
-  background: rgba(73, 23, 35, 0.3);
+  background: rgba(59, 15, 26, 0.3);
 }
 
 .languageLink {
@@ -184,7 +184,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(73, 23, 35, 0.26);
+  border: 1px solid rgba(59, 15, 26, 0.26);
   border-radius: 4px;
   color: var(--elore-burgundy);
   background: transparent;

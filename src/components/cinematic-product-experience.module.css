@@ -15,12 +15,12 @@
 .scene{scroll-margin-top:var(--cinematic-header-offset)}
 
 /* Public authority product surface: ÉLORÉ brand overrides. */
-.product{--ink:#21151a;--teal:#85484f;--mint:#c9a67f;--cream:#f3f0ea}
-.heroScene .frame{background:radial-gradient(circle at calc(29% + var(--progress)*15%) 50%,rgba(201,166,127,.24),transparent 29%),linear-gradient(135deg,#21151a,#491723 58%,#2d171f)}
+.product{--ink:#2a0d14;--teal:#6b1d2a;--mint:#d4af37;--cream:#fbf7f2}
+.heroScene .frame{background:radial-gradient(circle at calc(29% + var(--progress)*15%) 50%,rgba(212, 175, 55,.24),transparent 29%),linear-gradient(135deg,#2a0d14,#3b0f1a 58%,#2d171f)}
 .primaryAction,.secondaryAction,.variantList button,.purchaseActions>button{border-radius:3px}
 .primaryAction,.variantList button[aria-pressed="true"],.purchaseActions>button{color:var(--ink)}
 .fitOrbit article,.ingredientStack article{border-radius:4px;backdrop-filter:none}
-.ingredientScene .frame{background:radial-gradient(circle at 22% 50%,rgba(201,166,127,.22),transparent 30%),linear-gradient(135deg,#21151a,#491723)}
-.ingredientStack article{background:#491723}
-.purchaseScene .frame{background:radial-gradient(circle at 27% 50%,rgba(201,166,127,.25),transparent 30%),linear-gradient(135deg,#21151a,#491723 56%,#2d171f)}
+.ingredientScene .frame{background:radial-gradient(circle at 22% 50%,rgba(212, 175, 55,.22),transparent 30%),linear-gradient(135deg,#2a0d14,#3b0f1a)}
+.ingredientStack article{background:#3b0f1a}
+.purchaseScene .frame{background:radial-gradient(circle at 27% 50%,rgba(212, 175, 55,.25),transparent 30%),linear-gradient(135deg,#2a0d14,#3b0f1a 56%,#2d171f)}
 .purchaseActions>button:disabled{cursor:not-allowed;opacity:.48}

@@ -18,7 +18,7 @@
   padding: var(--bento-gap);
   border-radius: var(--bento-radius);
   background: var(--elore-warm-white);
-  border: 1px solid rgba(73, 23, 35, 0.1);
+  border: 1px solid rgba(59, 15, 26, 0.1);
   /* Desktop: the reference's two bands — six across, then the editorial row. */
   grid-template-columns: repeat(6, minmax(0, 1fr));
 }
@@ -93,8 +93,8 @@
   z-index: -1;
   background: linear-gradient(
     to top,
-    rgba(33, 21, 26, 0.72) 0%,
-    rgba(33, 21, 26, 0.24) 42%,
+    rgba(42, 13, 20, 0.72) 0%,
+    rgba(42, 13, 20, 0.24) 42%,
     transparent 72%
   );
 }
@@ -139,7 +139,7 @@
   font-family: var(--font-display);
   font-size: clamp(1rem, 1.4vw, 1.4rem);
   line-height: 1.2;
-  text-shadow: 0 1px 12px rgba(33, 21, 26, 0.45);
+  text-shadow: 0 1px 12px rgba(42, 13, 20, 0.45);
 }
 
 /* ---- editorial --------------------------------------------------------- */
@@ -155,7 +155,7 @@
 
 .ivory {
   background: var(--elore-warm-white);
-  border: 1px solid rgba(73, 23, 35, 0.12);
+  border: 1px solid rgba(59, 15, 26, 0.12);
 }
 
 .sand {
@@ -183,7 +183,7 @@
   gap: 0.9rem;
   margin: 0;
   background: var(--elore-warm-white);
-  border: 1px solid rgba(73, 23, 35, 0.12);
+  border: 1px solid rgba(59, 15, 26, 0.12);
   text-align: start;
 }
 

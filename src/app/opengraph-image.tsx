@@ -17,14 +17,14 @@ export default function OpenGraphImage() {
           justifyContent: "space-between",
           padding: "64px 72px",
           overflow: "hidden",
-          color: "#FFFDFC",
-          background: "linear-gradient(132deg, #491723 0%, #611f2e 58%, #21151A 100%)",
+          color: "#ffffff",
+          background: "linear-gradient(132deg, #3b0f1a 0%, #611f2e 58%, #2a0d14 100%)",
           fontFamily: "serif",
         }}
       >
-        <div style={{ position: "absolute", inset: "0 auto 0 56%", width: 1, background: "rgba(201,166,127,.35)" }} />
+        <div style={{ position: "absolute", inset: "0 auto 0 56%", width: 1, background: "rgba(212, 175, 55,.35)" }} />
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", fontFamily: "sans-serif", fontSize: 18, letterSpacing: 6, color: "#C9A67F" }}>ÉLORÉ PARIS</div>
+          <div style={{ display: "flex", fontFamily: "sans-serif", fontSize: 18, letterSpacing: 6, color: "#d4af37" }}>ÉLORÉ PARIS</div>
           <div style={{ display: "flex", fontFamily: "sans-serif", fontSize: 16, letterSpacing: 3, color: "rgba(255,253,252,.68)" }}>SAUDI ARABIA</div>
         </div>
 
@@ -35,7 +35,7 @@ export default function OpenGraphImage() {
           </div>
         </div>
 
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontFamily: "sans-serif", fontSize: 17, letterSpacing: 2, color: "#DCC4B9" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontFamily: "sans-serif", fontSize: 17, letterSpacing: 2, color: "#e8c8bd" }}>
           <span>SKINCARE · MAKEUP · GIFTING</span>
           <span>elore-paris.com</span>
         </div>

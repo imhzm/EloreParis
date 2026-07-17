@@ -2,42 +2,78 @@
   /* Type roles, never font names — a token called --font-cormorant is how a
      face survives a swap it should have been part of.
 
-     Arabic first, then Latin. CSS resolves fallback per glyph, and the Arabic
-     faces are subset to Arabic blocks only — no Latin letters, no Western
-     digits — so this order sorts the two scripts by itself: Arabic finds its
-     face immediately, while "ÉLORÉ PARIS" and every price find nothing there
-     and fall through to the Latin voice. No per-lang font override needed, and
-     the borrowed Latin bundled inside an Arabic face is unreachable.
+     These name real families instead of the --font-*-* variables ON PURPOSE.
+     Every next/font variable expands to a PAIR: `"Cairo", "Cairo Fallback"`.
+     That second family is generated, is a bare local() — Arial or Times New
+     Roman — and carries NO unicode-range, so it matches every glyph in every
+     script. A range-less family ends the cascade: nothing after it is ever
+     reached. So a stack built from two variables can only ever render the FIRST
+     font, and both orderings have shipped here as bugs:
 
-     Do not "fix" this to Latin-first. next/font/google ignores
-     adjustFontFallback, so --font-en-* always drags a generated fallback family
-     that resolves to a local serif with Arabic coverage; ahead of the Arabic
-     face it swallows every Arabic glyph and the site renders in Times. */
-  --stack-display: var(--font-ar-display), var(--font-en-display), Georgia, serif;
-  --stack-body: var(--font-ar-body), var(--font-en-body), "Segoe UI", Tahoma, sans-serif;
+       var(--font-ar-*) first -> Cairo also ships a basic-Latin face (subsets
+         does NOT fence a family; it only picks what is preloaded), so Cairo
+         renders the wordmark and Playfair downloads and never inks a glyph.
+       var(--font-en-*) first -> "Playfair Display Fallback" is
+         local(Times New Roman), which has Arabic, so it swallows every Arabic
+         glyph and the whole site renders in Times.
+
+     adjustFontFallback: false does not rescue this — it is typed, but verified
+     ignored on a clean build in 16.2.10. Naming the real families is the only
+     way to get exactly one range-less family into the stack and put it LAST.
+     Keep "Cairo Fallback" as that one: it is metric-matched to the primary
+     script, so it is the right shape to hold the page during the swap.
+
+     The one cost of Latin-first: U+0020 is a Latin codepoint, so Arabic word
+     spaces come from Playfair (9.76px at 40px) rather than Cairo (8.8px) —
+     Arabic sets about 1px per space wider than Cairo intends. Measured, and
+     accepted: the alternative orderings break the wordmark or the whole site.
+     Cairo's Latin faces are emitted but never fetched, since Playfair and
+     Public Sans cover every Latin glyph the pages use — verified on a cold
+     load, which requests three font files and no more.
+
+     The names must match the @font-face families next/font emits.
+     `npm run test:font-stack` fails the build if they ever drift. */
+  --stack-display: "Playfair Display", "Cairo", "Cairo Fallback", Georgia, serif;
+  --stack-body: "Public Sans", "Cairo", "Cairo Fallback", "Segoe UI", Tahoma, sans-serif;
 
   --font-display: var(--stack-display);
   --font-body: var(--stack-body);
   --font-sans: var(--stack-body);
   /* Explicitly Latin, for eyebrows, counters and labels that are Latin text in
-     both locales. */
-  --font-display-latin: var(--font-en-display);
-  --font-body-latin: var(--font-en-body);
+     both locales. One family only, no fallback: every call site appends its own
+     generic, and two of them prepend this to the full stack
+     (`var(--font-body-latin), var(--font-body)`) to set a bilingual eyebrow.
+     Carrying the generated "Public Sans Fallback" here would put a range-less
+     Arial in front of --font-body and render those Arabic eyebrows in Arial. */
+  --font-display-latin: "Playfair Display";
+  --font-body-latin: "Public Sans";
 
-  /* Size is handled by size-adjust on the Arabic faces themselves. Leading and
-     tracking are not, so they are reset per locale below. */
+  /* Leading and tracking are reset per locale below. */
   --leading-body: 1.6;
   --leading-display: 0.98;
   --tracking-display: -0.03em;
 
-  --elore-ivory: #f3f0ea;
-  --elore-warm-white: #fffdfc;
-  --elore-burgundy: #491723;
-  --elore-rosewood: #85484f;
-  --elore-champagne: #c9a67f;
-  --elore-blush: #dcc4b9;
-  --elore-ink: #21151a;
-  --elore-cocoa: #725b60;
+  /* The 2026-07-17 brand identity sheet. It supersedes the 2026-07-14 handoff
+     palette and the pack's design-tokens.json, both of which named different
+     values for the same roles. Owner-confirmed.
+
+       BURGUNDY #3B0F1A   WINE #6B1D2A     WARM IVORY #FBF7F2
+       BEIGE STONE #E6D9C9  BLUSH ROSE #E8C8BD  SOFT GOLD #D4AF37
+
+     Role names are kept so the ~200 call sites across the modules do not churn:
+     the sheet renamed champagne to soft gold and porcelain to warm ivory, but
+     they are the same slots. Ink and cocoa are not on the sheet; they are
+     derived from burgundy so text and muted copy stay in the family. */
+  --elore-ivory: #fbf7f2;
+  --elore-warm-white: #ffffff;
+  --elore-burgundy: #3b0f1a;
+  --elore-wine: #6b1d2a;
+  --elore-rosewood: #6b1d2a;
+  --elore-champagne: #d4af37;
+  --elore-blush: #e8c8bd;
+  --elore-stone: #e6d9c9;
+  --elore-ink: #2a0d14;
+  --elore-cocoa: #6f5a52;
   --liquid-pearl: var(--elore-ivory);
   --rose-sand: var(--elore-blush);
   --sage-mist: #b8aaa6;
@@ -49,14 +85,14 @@
   --surface: rgba(255, 252, 249, 0.7);
   --surface-strong: rgba(255, 250, 245, 0.9);
   --surface-pearl: rgba(255, 252, 248, 0.86);
-  --surface-rose: rgba(216, 181, 174, 0.18);
+  --surface-rose: rgba(232, 200, 189, 0.18);
   --surface-sage: rgba(151, 160, 149, 0.16);
-  --surface-ink: rgba(33, 21, 26, 0.96);
-  --line: rgba(33, 21, 26, 0.1);
-  --line-soft: rgba(33, 21, 26, 0.08);
-  --shadow: 0 20px 60px rgba(33, 21, 26, 0.1);
-  --shadow-soft: 0 24px 54px rgba(33, 21, 26, 0.08);
-  --shadow-lift: 0 24px 48px rgba(33, 21, 26, 0.14);
+  --surface-ink: rgba(42, 13, 20, 0.96);
+  --line: rgba(42, 13, 20, 0.1);
+  --line-soft: rgba(42, 13, 20, 0.08);
+  --shadow: 0 20px 60px rgba(42, 13, 20, 0.1);
+  --shadow-soft: 0 24px 54px rgba(42, 13, 20, 0.08);
+  --shadow-lift: 0 24px 48px rgba(42, 13, 20, 0.14);
   --motion-micro: 160ms cubic-bezier(0.22, 1, 0.36, 1);
   --motion-control: 220ms cubic-bezier(0.22, 1, 0.36, 1);
   --motion-reveal: 360ms cubic-bezier(0.22, 1, 0.36, 1);
@@ -73,9 +109,12 @@
      Tracking goes to zero because letter-spacing an Arabic run breaks the
      joins between letters — it is not a stylistic preference. */
   --leading-body: 1.75;
-  /* Measured, not chosen: an Arabic display line inks at ~1.22x font-size in
-     Alyamama at size-adjust 106%. This is the floor that stops clipping, with a
-     little headroom for the vowelled tagline. */
+  /* Measured on Cairo, not chosen: an unvowelled Arabic display line inks at
+     0.97x font-size, while the font's own line box is 1.87x. 1.28 sits between
+     them — clear of the ink so nothing is clipped, well under the font box so
+     headings do not sprawl. Raise it toward 1.37 only if harakat are ever
+     authored; there are none in the content today, and they are what pushes the
+     ink past 1.0. */
   --leading-display: 1.28;
   --tracking-display: 0;
 }
@@ -127,7 +166,7 @@ body::before {
   inset: 0;
   z-index: -2;
   pointer-events: none;
-  background-image: linear-gradient(90deg, transparent 0 49.9%, rgba(73, 23, 35, 0.035) 50%, transparent 50.1%);
+  background-image: linear-gradient(90deg, transparent 0 49.9%, rgba(59, 15, 26, 0.035) 50%, transparent 50.1%);
   opacity: 0.45;
 }
 
@@ -137,7 +176,7 @@ body::after {
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background: radial-gradient(circle at 18% 8%, rgba(201, 166, 127, 0.12), transparent 32%);
+  background: radial-gradient(circle at 18% 8%, rgba(212, 175, 55, 0.12), transparent 32%);
   opacity: 1;
 }
 
@@ -165,12 +204,6 @@ h6 {
   line-height: var(--leading-display);
   letter-spacing: var(--tracking-display);
   text-wrap: balance;
-  /* Newsreader's optical-size axis is the reason it was chosen over a static
-     Didone: it keeps hairlines above one device pixel at mobile headline sizes
-     and opens the contrast back up at hero sizes. This is the default, but
-     resets kill it — and never set font-variation-settings: "opsz" by hand,
-     which overrides it and re-breaks exactly that. */
-  font-optical-sizing: auto;
 }
 
 /* Two correctness guards for Arabic headings, not style preferences — which is
@@ -225,7 +258,7 @@ body::-webkit-scrollbar-track {
 body::-webkit-scrollbar-thumb {
   border: 2px solid rgba(255, 252, 249, 0.8);
   border-radius: 999px;
-  background: linear-gradient(180deg, rgba(122, 95, 108, 0.78), rgba(33, 21, 26, 0.9));
+  background: linear-gradient(180deg, rgba(122, 95, 108, 0.78), rgba(42, 13, 20, 0.9));
 }
 
 @keyframes soft-reveal {

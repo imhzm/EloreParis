@@ -53,11 +53,11 @@ export class LifecycleEmailTemplateError extends Error {
 }
 
 const BRAND = {
-  burgundy: "#491723",
-  champagne: "#c9a67f",
-  ivory: "#fffdfc",
-  ink: "#21151a",
-  muted: "#725b60",
+  burgundy: "#3b0f1a",
+  champagne: "#d4af37",
+  ivory: "#ffffff",
+  ink: "#2a0d14",
+  muted: "#6f5a52",
 } as const;
 
 const copy = {
@@ -289,7 +289,7 @@ export function renderLifecycleEmail(
           <a href="${safeActionUrl}" style="display:inline-block;padding:13px 20px;background:${BRAND.burgundy};color:${BRAND.ivory};font-weight:700;text-decoration:none;">${escapeHtml(message.action)}</a>
         </p>
       </main>
-      <footer style="padding:24px 28px;border-top:3px solid ${BRAND.champagne};background:#f3f0ea;color:${BRAND.muted};text-align:${isArabic ? "right" : "left"};font-family:Arial,sans-serif;font-size:13px;line-height:1.7;">
+      <footer style="padding:24px 28px;border-top:3px solid ${BRAND.champagne};background:#fbf7f2;color:${BRAND.muted};text-align:${isArabic ? "right" : "left"};font-family:Arial,sans-serif;font-size:13px;line-height:1.7;">
         <p style="margin:0 0 8px;">${escapeHtml(localeCopy.unsubscribeLead)} <a href="${safeUnsubscribeUrl}" style="color:${BRAND.burgundy};font-weight:700;">${escapeHtml(localeCopy.unsubscribeAction)}</a></p>
         <p style="margin:0 0 8px;">${escapeHtml(localeCopy.unsubscribeNote)}</p>
         <p style="margin:0;">${escapeHtml(localeCopy.footer)}</p>

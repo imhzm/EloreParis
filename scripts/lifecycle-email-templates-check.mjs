@@ -16,6 +16,27 @@ const source = readFileSync("src/lib/lifecycle-email-templates.ts", "utf8");
 const templates = await compileModule(source.replace('import "server-only";', ""));
 const token = "signed-unsubscribe-token-1234567890";
 
+/**
+ * Mail clients strip <style> and do not resolve CSS custom properties, so the
+ * email templates cannot use the site's tokens — they inline raw hex. That is
+ * the whole reason this check exists: a palette change lands in globals.css and
+ * the mail silently keeps the old brand.
+ *
+ * Read the expected values OUT of globals.css rather than pinning them here.
+ * Pinned literals are what let this rot: it asserted #491723 and #c9a67f for
+ * however long the site had already moved on.
+ */
+function brandTokenFromGlobals(token) {
+  const css = readFileSync("src/app/globals.css", "utf8");
+  const value = new RegExp(`--elore-${token}:\\s*(#[0-9a-fA-F]{3,8})`).exec(css)?.[1];
+  assert.ok(value, `--elore-${token} is not defined in src/app/globals.css`);
+  return value;
+}
+
+const siteBurgundy = brandTokenFromGlobals("burgundy");
+const siteChampagne = brandTokenFromGlobals("champagne");
+const siteCocoa = brandTokenFromGlobals("cocoa");
+
 const cases = [
   {
     input: {
@@ -87,8 +108,20 @@ for (const { input, snapshot } of cases) {
   );
   assert.match(rendered.html, /^<!doctype html>/u);
   assert.match(rendered.html, /<(?:header|main|footer)\b/gu);
-  assert.match(rendered.html, /#491723/iu);
-  assert.match(rendered.html, /#c9a67f/iu);
+  for (const [role, value] of [
+    ["burgundy", siteBurgundy],
+    ["champagne", siteChampagne],
+    ["cocoa", siteCocoa],
+  ]) {
+    assert.ok(
+      new RegExp(value, "iu").test(rendered.html),
+      `The ${role} in this email does not match the site. globals.css says ` +
+        `--elore-${role} is ${value}, and the rendered mail never uses it. ` +
+        `Update BRAND in src/lib/lifecycle-email-templates.ts — mail clients ` +
+        `cannot read CSS variables, so the value has to be inlined by hand and ` +
+        `will not follow a palette change on its own.`,
+    );
+  }
   assert.ok(rendered.text.includes(input.unsubscribeUrl));
   assert.ok(rendered.text.includes(input.productUrl ?? input.siteUrl));
 
