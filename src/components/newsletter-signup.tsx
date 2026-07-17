@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import type { Locale } from "@/lib/i18n";
 import styles from "./newsletter-signup.module.css";
@@ -42,10 +42,18 @@ export function NewsletterSignup({ locale }: { locale: Locale }) {
   const [email, setEmail] = useState("");
   const [consent, setConsent] = useState(false);
   const [state, setState] = useState<"idle" | "submitting" | "success" | "error">("idle");
-  const [dismissed, setDismissed] = useState(() => {
-    if (typeof window === "undefined") return false;
-    try { return localStorage.getItem(STORAGE_KEY) === "true"; } catch { return false; }
-  });
+  // Starts false so the server render and the first client render agree — a lazy
+  // initialiser that read localStorage returned false on the server and true for
+  // a returning visitor, which is a hydration mismatch (console error) and a
+  // one-frame flash of the panel before it vanished. The stored preference is
+  // read once after mount instead, which only ever hides the panel a beat later,
+  // never mis-renders it.
+  const [dismissed, setDismissed] = useState(false);
+  useEffect(() => {
+    try {
+      if (localStorage.getItem(STORAGE_KEY) === "true") setDismissed(true);
+    } catch { /* Storage is optional. */ }
+  }, []);
 
   const handleSubmit = useCallback(async (event: React.FormEvent) => {
     event.preventDefault();
