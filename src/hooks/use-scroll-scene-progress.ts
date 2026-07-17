@@ -57,21 +57,36 @@ export function useScrollSceneProgress<T extends HTMLElement>({
       const headerOffset = readHeaderOffset(root);
       const frameHeight = Math.max(viewportHeight - headerOffset, 1);
 
-      for (const scene of scenes) {
-        const bounds = scene.getBoundingClientRect();
-        const stickyTravel = bounds.height - frameHeight;
+      // Two passes, and the split is the whole point. This loop used to read a
+      // scene's geometry and then write that scene's --progress/--enter/--exit
+      // in the same iteration. Each write invalidates style, so the NEXT
+      // scene's getBoundingClientRect had to flush it — a synchronous reflow per
+      // scene, every scroll frame. The home page has nine scenes and each
+      // cinematic page five to nine, so a single scroll frame forced five to
+      // nine full layout recalcs. That was the largest scroll-jank source on the
+      // site.
+      //
+      // Pass one reads every rect up front, so the frame pays one layout flush.
+      // Pass two only writes; nothing reads again until the next frame, so no
+      // write triggers a reflow.
+      const bounds = scenes.map((scene) => scene.getBoundingClientRect());
+
+      for (let index = 0; index < scenes.length; index += 1) {
+        const scene = scenes[index];
+        const rect = bounds[index];
+        const stickyTravel = rect.height - frameHeight;
         const progress =
           stickyTravel > 1
-            ? clamp((headerOffset - bounds.top) / stickyTravel)
+            ? clamp((headerOffset - rect.top) / stickyTravel)
             : clamp(
-                (frameHeight - (bounds.top - headerOffset)) /
-                  Math.max(frameHeight + bounds.height, 1),
+                (frameHeight - (rect.top - headerOffset)) /
+                  Math.max(frameHeight + rect.height, 1),
               );
 
         scene.dataset.sceneState =
-          bounds.top > headerOffset
+          rect.top > headerOffset
             ? "before"
-            : bounds.bottom <= viewportHeight
+            : rect.bottom <= viewportHeight
               ? "after"
               : "active";
         scene.style.setProperty("--progress", progress.toFixed(5));

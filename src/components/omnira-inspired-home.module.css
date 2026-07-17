@@ -193,7 +193,11 @@
   display: grid;
   justify-items: start;
   gap: 18px;
-  animation: content-reveal var(--motion-hero) 120ms both;
+  /* backwards, not both: the reveal plays in, then hands control back to the
+     scroll-driven opacity/transform below. `both` kept the to-state forever and
+     the hero copy's scroll-exit fade never fired. The keyframe end now equals
+     this resting transform at --exit 0, so the handoff does not pop. */
+  animation: content-reveal var(--motion-hero) 120ms backwards;
   opacity: calc(1 - var(--exit));
   transform: translate3d(0, calc(var(--exit) * -24px), 70px);
 }
@@ -932,14 +936,22 @@
   .editEditorial h2 { max-width: 12ch; }
 }
 
+/* The `to` states below MUST equal each element's resting transform. These
+   keyframes fill forwards/backwards, so their end state is what the element
+   holds once the intro finishes — and if it disagrees with the resting rule it
+   silently overrides it forever. hero-unfold used to end at `scale(1)`, wiping
+   .heroMedia's resting `translateZ(-90px) scale(1.09)` and flattening the hero's
+   depth after ~800ms. content-reveal ended at `translateY(0)` with no Z, so the
+   handoff to .heroContent's own translate3d(...70px) popped. Matching the
+   end states makes both handoffs seamless. */
 @keyframes hero-unfold {
-  from { opacity: 0.7; clip-path: inset(0 48% 0 48%); transform: scale(1.02); }
-  to { opacity: 1; clip-path: inset(0); transform: scale(1); }
+  from { opacity: 0.7; clip-path: inset(0 48% 0 48%); transform: translateZ(-90px) scale(1.02); }
+  to { opacity: 1; clip-path: inset(0); transform: translateZ(-90px) scale(1.09); }
 }
 
 @keyframes content-reveal {
-  from { opacity: 0; transform: translateY(24px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translate3d(0, 24px, 70px); }
+  to { opacity: 1; transform: translate3d(0, 0, 70px); }
 }
 
 @media (max-width: 900px) {

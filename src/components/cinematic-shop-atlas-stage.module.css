@@ -1,5 +1,5 @@
 .shop{--ivory:#fbf7f2;--warm:#fffdfa;--burgundy:#3b0f1a;--rosewood:#6b1d2a;--champagne:#d4af37;--ink:#2a0d14;--cocoa:#6f5a52;--header-offset:78px;background:var(--ink);color:var(--ivory)}
-.scene{--progress:0;--enter:0;--exit:0;position:relative;width:100vw;height:230vh;margin-inline:calc(50% - 50vw);scroll-margin-top:var(--header-offset)}
+.scene{--progress:0;--enter:0;--exit:0;position:relative;width:100vw;height:230svh;margin-inline:calc(50% - 50vw);scroll-margin-top:var(--header-offset)}
 .frame{position:sticky;z-index:1;top:var(--header-offset);height:calc(100svh - var(--header-offset));overflow:hidden;isolation:isolate}
 .sceneCounter{position:absolute;z-index:8;top:6%;inset-inline-start:5%;direction:ltr;color:color-mix(in srgb,currentColor 45%,transparent);font-size:.72rem;letter-spacing:.2em}
 .heroCopy,.heading,.productCopy,.routeCenter,.finalCopy{position:absolute;z-index:5;display:grid;gap:18px}
@@ -42,7 +42,7 @@
 .routeCard{--index:0;display:grid;min-height:210px;align-content:end;gap:8px;padding:25px;background:rgba(255,253,250,.92);transform:translateY(calc((1 - var(--enter))*min(24px,(var(--index) + 1)*6px)));transition:background-color .2s}
 .routeCard:hover{background:var(--warm)}.routeCard b{color:var(--rosewood);font:700 .72rem/1 var(--font-sans);letter-spacing:.16em}.routeCard h3{font-size:1.45rem;font-weight:500}.routeCard span{color:var(--cocoa);font-size:.9rem;line-height:1.65}
 
-.finalScene{height:245vh}.finalScene .frame{background:linear-gradient(112deg,#2a0d14,#3b0f1a 62%,#321720)}
+.finalScene{height:245svh}.finalScene .frame{background:linear-gradient(112deg,#2a0d14,#3b0f1a 62%,#321720)}
 .finalRule{position:absolute;inset-inline-start:5%;top:9%;bottom:9%;width:1px;background:linear-gradient(transparent,var(--champagne),transparent);transform:translateY(calc((var(--progress) - .5)*24px))}
 .finalProducts>div{--index:0;position:absolute;inset-inline-start:25%;top:52%;width:min(16vw,220px);aspect-ratio:4/5;overflow:hidden;border:1px solid rgba(212, 175, 55,.3);border-radius:var(--radius-card);box-shadow:0 25px 65px rgba(0,0,0,.27);transform:translate(-50%,-50%) translateX(calc((var(--index) - 1)*145px)) translateY(calc((var(--index) - 1)*-12px)) rotate(calc((var(--index) - 1)*2deg + var(--progress)*1deg)) scale(calc(.98 + var(--enter)*.02))}
 [dir="rtl"] .finalProducts>div{transform:translate(50%,-50%) translateX(calc((var(--index) - 1)*-145px)) translateY(calc((var(--index) - 1)*-12px)) rotate(calc((var(--index) - 1)*-2deg - var(--progress)*1deg)) scale(calc(.98 + var(--enter)*.02))}
