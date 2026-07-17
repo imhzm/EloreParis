@@ -85,7 +85,7 @@
   transition: transform var(--motion-reveal);
 }
 
-.category::after,
+/* Editorial media cards keep the dark bottom scrim (their label sits low). */
 .mediaCard::after {
   content: "";
   position: absolute;
@@ -96,6 +96,22 @@
     rgba(42, 13, 20, 0.72) 0%,
     rgba(42, 13, 20, 0.24) 42%,
     transparent 72%
+  );
+}
+
+/* Category cards read the other way, matching the reference: the label sits on a
+   soft ivory band at the TOP in dark ink, the photo is airy below it, and a gold
+   arrow anchors the bottom. So this scrim lightens the top, not the bottom. */
+.category::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(
+    to bottom,
+    rgba(251, 247, 242, 0.94) 0%,
+    rgba(251, 247, 242, 0.72) 22%,
+    transparent 46%
   );
 }
 
@@ -131,15 +147,16 @@
 /* ---- category ---------------------------------------------------------- */
 
 .category {
-  justify-content: flex-end;
-  color: var(--elore-warm-white);
+  /* Label to the top, on the ivory band the ::after paints there. */
+  justify-content: flex-start;
+  color: var(--elore-ink);
 }
 
 .categoryLabel {
   font-family: var(--font-display);
   font-size: clamp(1rem, 1.4vw, 1.4rem);
   line-height: 1.2;
-  text-shadow: 0 1px 12px rgba(42, 13, 20, 0.45);
+  color: var(--elore-burgundy);
 }
 
 /* This label is set in the display face (Cairo for Arabic), and the h1–h6
@@ -248,13 +265,21 @@
   transform: scaleX(-1);
 }
 
+/* Anchored at the bottom, centred — the reference seats a prominent gold arrow on
+   the lower edge of each category card. inset-inline:0 + margin-inline:auto centres
+   the fixed-width circle; inset-block-end drops it to the bottom. */
 .category .arrow {
   position: absolute;
-  inset-block-start: clamp(1rem, 1.6vw, 1.65rem);
-  inset-inline-end: clamp(1rem, 1.6vw, 1.65rem);
+  inset-block-start: auto;
+  inset-block-end: clamp(1.1rem, 2vw, 1.9rem);
+  inset-inline: 0;
+  margin-inline: auto;
+  inline-size: clamp(38px, 3vw, 44px);
+  block-size: clamp(38px, 3vw, 44px);
   background: color-mix(in srgb, var(--elore-champagne) 92%, transparent);
   border-color: transparent;
   color: var(--elore-ink);
+  box-shadow: 0 10px 24px rgba(42, 13, 20, 0.18);
 }
 
 .notice {
