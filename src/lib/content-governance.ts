@@ -43,7 +43,13 @@ export const contentGovernanceEntries: ContentGovernanceEntry[] = [
     status: "sample_based",
     owner: "Founder / brand lead",
     approver: "Brand lead",
-    routes: ["/", "/shop", "/shop/haircare", "/shop/bodycare", "/shop/tools", "/shop/beauty-sets"],
+    // This register is exhaustive by construction — /ops/content reports
+    // "named owners across N mapped public routes" and an operator signs off
+    // against it — so a live route that appears in no entry is not merely
+    // unlisted, it is reported green by omission. Perfumes was added as a
+    // first-class category and leads the navigation; it belongs here with the
+    // other editorial-mode collections.
+    routes: ["/", "/shop", "/shop/perfumes", "/shop/haircare", "/shop/bodycare", "/shop/tools", "/shop/beauty-sets"],
     freezeDecision:
       "The IA, promise, copy, visual tokens, and motion direction are grounded in the 2026-07-14 ÉLORÉ PARIS handoff.",
     launchBlocker:
@@ -63,7 +69,10 @@ export const contentGovernanceEntries: ContentGovernanceEntry[] = [
     status: "awaiting_style_samples",
     owner: "Commerce owner",
     approver: "Commerce lead",
-    routes: ["/shop/skincare", "/shop/makeup", "/ar/product/[slug]", "/cart", "/checkout"],
+    // Locale-agnostic, like every other route here: /en/product/[slug] renders
+    // from the same component as /ar and was covered by neither entry while the
+    // path was baked to one locale.
+    routes: ["/shop/skincare", "/shop/makeup", "/product/[slug]", "/cart", "/checkout"],
     freezeDecision:
       "Commerce structure, CRO blocks, and transactional UX are frozen. Product language remains intentionally safe and non-claim-heavy.",
     launchBlocker:
