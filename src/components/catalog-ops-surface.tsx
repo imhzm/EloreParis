@@ -104,6 +104,7 @@ export function CatalogOpsSurface() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [publishCandidate, setPublishCandidate] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
 
   const loadSnapshot = useCallback(async () => {
     const response = await fetch(CATALOG_ENDPOINT, {
@@ -124,8 +125,20 @@ export function CatalogOpsSurface() {
 
   const allImports = useMemo(() => snapshot?.imports ?? [], [snapshot?.imports]);
 
+  const filteredImports = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+    if (!normalizedQuery) return allImports;
+    return allImports.filter(
+      (item) =>
+        item.id.toLowerCase().includes(normalizedQuery) ||
+        item.sourceRef.toLowerCase().includes(normalizedQuery) ||
+        item.status.toLowerCase().includes(normalizedQuery) ||
+        item.createdBy.toLowerCase().includes(normalizedQuery),
+    );
+  }, [allImports, query]);
+
   const { pagination, paginatedItems, goToPage, changePageSize } =
-    useClientPagination(allImports);
+    useClientPagination(filteredImports);
 
   const importPreview = useMemo(() => {
     if (!jsonInput.trim()) return null;
@@ -296,7 +309,17 @@ export function CatalogOpsSurface() {
           <article className={styles.mainCard}>
             <div className={catalogStyles.sectionHeading}>
               <div><p className={styles.sectionTitle}>سجل النسخ</p><h2>الاستيرادات والنسخة المنشورة</h2></div>
-              <button className={styles.secondaryButton} type="button" onClick={() => void loadSnapshot().catch((refreshError: unknown) => setError(refreshError instanceof Error ? refreshError.message : "تعذر التحديث."))} disabled={operation !== null}>تحديث</button>
+              <div className={styles.filterChipRow}>
+                <input
+                  className={styles.searchInput}
+                  type="search"
+                  value={query}
+                  onChange={(event) => setQuery(event.currentTarget.value)}
+                  placeholder="بحث بالمعرف أو المصدر أو الحالة…"
+                  aria-label="بحث في سجل الاستيرادات"
+                />
+                <button className={styles.secondaryButton} type="button" onClick={() => void loadSnapshot().catch((refreshError: unknown) => setError(refreshError instanceof Error ? refreshError.message : "تعذر التحديث."))} disabled={operation !== null}>تحديث</button>
+              </div>
             </div>
 
             <div className={catalogStyles.importList}>

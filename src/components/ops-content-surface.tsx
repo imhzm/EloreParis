@@ -60,6 +60,7 @@ export function OpsContentSurface() {
   const [trustSupportKey, setTrustSupportKey] = useState<TrustSupportKey>("about");
   const [changeSummary, setChangeSummary] = useState("");
   const [approvalRef, setApprovalRef] = useState("");
+  const [revisionQuery, setRevisionQuery] = useState("");
   const [status, setStatus] = useState("جارٍ تحميل سلطة المحتوى…");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -301,8 +302,21 @@ export function OpsContentSurface() {
   }
 
   const allRevisions = useMemo(() => workspace?.revisions ?? [], [workspace?.revisions]);
+
+  const filteredRevisions = useMemo(() => {
+    const normalizedQuery = revisionQuery.trim().toLowerCase();
+    if (!normalizedQuery) return allRevisions;
+    return allRevisions.filter(
+      (revision) =>
+        revision.changeSummary.toLowerCase().includes(normalizedQuery) ||
+        String(revision.version).includes(normalizedQuery) ||
+        revision.createdBy.toLowerCase().includes(normalizedQuery) ||
+        revision.documentKey.toLowerCase().includes(normalizedQuery),
+    );
+  }, [allRevisions, revisionQuery]);
+
   const { pagination, paginatedItems, goToPage, changePageSize } =
-    useClientPagination(allRevisions);
+    useClientPagination(filteredRevisions);
 
   if (!content || !workspace) {
     return <div className={`${styles.page} ${styles.opsDashboard} ${styles.opsContent}`}><OpsNav activeHref="/ops/content" /><section className={styles.hero}><h1>سلطة محتوى الموقع</h1><p>{error || status}</p></section></div>;
@@ -398,7 +412,7 @@ export function OpsContentSurface() {
             <div className={contentStyles.publishBar}><Field label="ملخص التغيير (إلزامي)" value={changeSummary} onChange={setChangeSummary} /><button className={styles.primaryButton} disabled={busy} type="submit">{busy ? "جارٍ التنفيذ…" : "حفظ نسخة جديدة"}</button></div>
           </form>
 
-          <article className={styles.mainCard}><p className={styles.sectionTitle}>سجل الإصدارات</p><h2>نشر أو Rollback</h2><Field label="مرجع الموافقة / التذكرة" value={approvalRef} onChange={setApprovalRef} /><div className={styles.ordersGrid}>{paginatedItems.map((revision) => <article className={styles.lineItem} key={revision.id}><div className={styles.lineHead}><div><h3>نسخة {revision.version}</h3><p className={styles.lineMeta}>{revision.changeSummary} · {new Date(revision.createdAt).toLocaleString("ar-SA")}</p></div><div className={styles.badgeRow}>{revision.isPublished ? <span>منشورة الآن</span> : <span>محفوظة</span>}</div></div><div className={styles.cardActions}>{!revision.isPublished ? <button className={styles.secondaryButton} type="button" disabled={busy} onClick={() => publish(revision, workspace.publishedVersion !== null && revision.version < workspace.publishedVersion!)}>{workspace.publishedVersion !== null && revision.version < workspace.publishedVersion ? "Rollback لهذه النسخة" : "نشر هذه النسخة"}</button> : null}</div></article>)}
+          <article className={styles.mainCard}><p className={styles.sectionTitle}>سجل الإصدارات</p><h2>نشر أو Rollback</h2><div className={styles.filterChipRow}><input className={styles.searchInput} type="search" value={revisionQuery} onChange={(event) => setRevisionQuery(event.currentTarget.value)} placeholder="بحث بالملخص أو الإصدار أو المنشئ…" aria-label="بحث في سجل الإصدارات" /></div><Field label="مرجع الموافقة / التذكرة" value={approvalRef} onChange={setApprovalRef} /><div className={styles.ordersGrid}>{paginatedItems.map((revision) => <article className={styles.lineItem} key={revision.id}><div className={styles.lineHead}><div><h3>نسخة {revision.version}</h3><p className={styles.lineMeta}>{revision.changeSummary} · {new Date(revision.createdAt).toLocaleString("ar-SA")}</p></div><div className={styles.badgeRow}>{revision.isPublished ? <span>منشورة الآن</span> : <span>محفوظة</span>}</div></div><div className={styles.cardActions}>{!revision.isPublished ? <button className={styles.secondaryButton} type="button" disabled={busy} onClick={() => publish(revision, workspace.publishedVersion !== null && revision.version < workspace.publishedVersion!)}>{workspace.publishedVersion !== null && revision.version < workspace.publishedVersion ? "Rollback لهذه النسخة" : "نشر هذه النسخة"}</button> : null}</div></article>)}
           <div className={contentStyles.publishBar}>
             <PaginationControls
               pagination={pagination}

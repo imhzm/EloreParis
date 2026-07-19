@@ -121,6 +121,7 @@ export function OrdersOpsSurface() {
 
   const handleBulkAdvanceStatus = useCallback(() => {
     if (selectedOrderNumbers.size === 0 || isBulkProcessing) return;
+    if (!window.confirm(`تأكيد نقل ${selectedOrderNumbers.size} طلب إلى الحالة التالية؟`)) return;
     setIsBulkProcessing(true);
     setError(null);
 

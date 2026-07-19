@@ -211,6 +211,7 @@ export function OpsNotificationsSurface() {
   async function handleBulkStatusUpdate(
     status: Extract<NotificationDeliveryStatus, "queued" | "sent">,
   ) {
+    if (!window.confirm(`تأكيد تحديث ${selectedIds.size} إشعار إلى ${status === "sent" ? "مرسل" : "قيد الانتظار"}؟`)) return;
     const results = await Promise.allSettled(
       Array.from(selectedIds).map(async (id) => {
         await updateOpsNotificationStatus(id, status);
