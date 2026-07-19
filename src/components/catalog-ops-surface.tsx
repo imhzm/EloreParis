@@ -3,6 +3,7 @@
 import { type ChangeEvent, type FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { OpsNav } from "@/components/ops-nav";
 import { useClientPagination, PaginationControls } from "@/components/ops-pagination-controls";
+import { DownloadCsvButton } from "@/components/ops-download-csv";
 import styles from "./order-flow.module.css";
 import catalogStyles from "./catalog-authority-ops.module.css";
 
@@ -330,11 +331,29 @@ export function CatalogOpsSurface() {
                 </article>
               )) : <div className={styles.inlineNotice}>لا توجد استيرادات بعد. ابدأ بملف الكتالوج المعتمد.</div>}
             </div>
-            <PaginationControls
-              pagination={pagination}
-              onPageChange={goToPage}
-              onPageSizeChange={changePageSize}
-            />
+            <div className={styles.filterChipRow}>
+              <PaginationControls
+                pagination={pagination}
+                onPageChange={goToPage}
+                onPageSizeChange={changePageSize}
+              />
+              <DownloadCsvButton
+                filename="elore-catalog-imports.csv"
+                rows={snapshot?.imports.map((item) => ({
+                  المعرف: item.id,
+                  المصدر: item.sourceRef,
+                  الحالة: item.status,
+                  المنتجات: item.productCount,
+                  الSKU: item.variantCount,
+                  المنشئ: item.createdBy,
+                  تاريخ_الاستيراد: item.createdAt,
+                  تاريخ_النشر: item.activatedAt ?? "",
+                  جاهز: item.readiness.ready ? "نعم" : "لا",
+                  الموانع: item.readiness.blockers.join("; "),
+                })) ?? []}
+                label="CSV"
+              />
+            </div>
           </article>
         </div>
 

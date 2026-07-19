@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react
 import { OpsNav } from "@/components/ops-nav";
 import { OpsStructuredContentEditor } from "@/components/ops-structured-content-editor";
 import { useClientPagination, PaginationControls } from "@/components/ops-pagination-controls";
+import { DownloadCsvButton } from "@/components/ops-download-csv";
 import type { MediaAsset } from "@/lib/media-authority";
 import type {
   HomeAuthorityContent,
@@ -398,11 +399,27 @@ export function OpsContentSurface() {
           </form>
 
           <article className={styles.mainCard}><p className={styles.sectionTitle}>سجل الإصدارات</p><h2>نشر أو Rollback</h2><Field label="مرجع الموافقة / التذكرة" value={approvalRef} onChange={setApprovalRef} /><div className={styles.ordersGrid}>{paginatedItems.map((revision) => <article className={styles.lineItem} key={revision.id}><div className={styles.lineHead}><div><h3>نسخة {revision.version}</h3><p className={styles.lineMeta}>{revision.changeSummary} · {new Date(revision.createdAt).toLocaleString("ar-SA")}</p></div><div className={styles.badgeRow}>{revision.isPublished ? <span>منشورة الآن</span> : <span>محفوظة</span>}</div></div><div className={styles.cardActions}>{!revision.isPublished ? <button className={styles.secondaryButton} type="button" disabled={busy} onClick={() => publish(revision, workspace.publishedVersion !== null && revision.version < workspace.publishedVersion!)}>{workspace.publishedVersion !== null && revision.version < workspace.publishedVersion ? "Rollback لهذه النسخة" : "نشر هذه النسخة"}</button> : null}</div></article>)}
-          <PaginationControls
-            pagination={pagination}
-            onPageChange={goToPage}
-            onPageSizeChange={changePageSize}
-          /></div></article>
+          <div className={contentStyles.publishBar}>
+            <PaginationControls
+              pagination={pagination}
+              onPageChange={goToPage}
+              onPageSizeChange={changePageSize}
+            />
+            <DownloadCsvButton
+              filename="elore-content-revisions.csv"
+              rows={workspace?.revisions.map((revision) => ({
+                المعرف: revision.id,
+                المفتاح: revision.documentKey,
+                الإصدار: revision.version,
+                ملخص: revision.changeSummary,
+                منشور: revision.isPublished ? "نعم" : "لا",
+                تاريخ_النشر: revision.publishedAt ?? "",
+                المنشئ: revision.createdBy,
+                تاريخ_الإنشاء: revision.createdAt,
+              })) ?? []}
+              label="CSV"
+            />
+          </div></div></article>
         </div>
 
         <aside className={styles.summaryCard}>

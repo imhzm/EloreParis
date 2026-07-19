@@ -6,6 +6,7 @@ import { TrackedLink } from "@/components/tracked-link";
 import { getOrderFulfillmentPlan } from "@/lib/fulfillment";
 import { fetchOpsOrdersFromAuthority } from "@/lib/order-authority-client";
 import { useClientPagination, PaginationControls } from "@/components/ops-pagination-controls";
+import { DownloadCsvButton } from "@/components/ops-download-csv";
 import { type StoredOrder } from "@/lib/orders";
 import styles from "./order-flow.module.css";
 
@@ -367,11 +368,32 @@ export function OpsFulfillmentSurface() {
 
           {error ? <div className={styles.inlineError}>{error}</div> : null}
 
-          <PaginationControls
-            pagination={pagination}
-            onPageChange={goToPage}
-            onPageSizeChange={changePageSize}
-          />
+          <div className={styles.filterChipRow}>
+            <PaginationControls
+              pagination={pagination}
+              onPageChange={goToPage}
+              onPageSizeChange={changePageSize}
+            />
+            <DownloadCsvButton
+              filename="elore-fulfillment.csv"
+              rows={filteredOrders.map(({ order, plan, ownerLane }) => ({
+                رقم_الطلب: order.orderNumber,
+                الحالة: order.status,
+                العميل: order.customer.fullName,
+                المدينة: order.customer.city,
+                الهاتف: order.customer.phone,
+                المبلغ: order.totalEstimate,
+                الناقل: plan.recommendedCarrier,
+                المورد: plan.supplierMode,
+                المسار: ownerLane.label,
+                COD: plan.codEligible ? "نعم" : "لا",
+                شحن_منقسم: plan.splitShipment ? "نعم" : "لا",
+                مراجعة_يدوية: plan.requiresManualReview ? "نعم" : "لا",
+                تاريخ_الإنشاء: order.createdAt,
+              }))}
+              label="CSV"
+            />
+          </div>
 
           <div className={styles.ordersGrid}>
             {isLoading ? (
