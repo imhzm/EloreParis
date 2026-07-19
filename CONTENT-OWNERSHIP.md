@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document freezes ownership and launch gates for every public content surface in the current Cozmateks MVP.
+This document freezes ownership and launch gates for every public content surface in the current ÉLORÉ PARIS release candidate.
 
 It does **not** claim that all content is final.
 It makes the opposite explicit:

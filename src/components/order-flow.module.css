@@ -1,35 +1,35 @@
 .page {
-  --commerce-ink: #2a0d14;
+  --commerce-ink: #1c1011;
   --commerce-deep: #1c0a10;
-  --commerce-mint: #d4af37;
-  --commerce-cream: #fbf7f2;
-  --commerce-line: rgba(212, 175, 55, 0.18);
+  --commerce-mint: #c7a36d;
+  --commerce-cream: #f8f5f2;
+  --commerce-line: rgba(199, 163, 109, 0.18);
   display: grid;
   gap: 0;
   margin-inline: calc(50% - 50vw);
   color: var(--commerce-cream);
   background:
-    radial-gradient(circle at 76% 8%, rgba(212, 175, 55, 0.2), transparent 28rem),
-    linear-gradient(180deg, var(--commerce-deep), #3b0f1a 48%, #f2eee7 100%);
+    radial-gradient(circle at 76% 8%, rgba(199, 163, 109, 0.2), transparent 28rem),
+    linear-gradient(180deg, var(--commerce-deep), #25080c 48%, #f2eee7 100%);
 }
 
 .opsDashboard {
   --ops-panel: rgba(2, 24, 23, 0.72);
   --ops-panel-strong: rgba(2, 18, 18, 0.88);
-  --ops-border: rgba(212, 175, 55, 0.18);
+  --ops-border: rgba(199, 163, 109, 0.18);
   --ops-accent: var(--commerce-mint);
   --ops-accent-rgb: 212, 175, 55;
   --ops-text-soft: rgba(255, 250, 242, 0.72);
   isolation: isolate;
   min-height: 100svh;
   background:
-    radial-gradient(circle at 12% 8%, rgba(212, 175, 55, 0.18), transparent 28rem),
+    radial-gradient(circle at 12% 8%, rgba(199, 163, 109, 0.18), transparent 28rem),
     radial-gradient(circle at 84% 18%, rgba(222, 177, 132, 0.12), transparent 32rem),
-    linear-gradient(180deg, #1a0810 0%, #2a0d14 44%, #1c0a10 100%);
+    linear-gradient(180deg, #1a0810 0%, #1c1011 44%, #1c0a10 100%);
 }
 
 .opsOrders {
-  --ops-accent: #d4af37;
+  --ops-accent: #c7a36d;
   --ops-accent-rgb: 212, 175, 55;
 }
 
@@ -49,7 +49,7 @@
 }
 
 .opsAdmin {
-  --ops-accent: #d4af37;
+  --ops-accent: #c7a36d;
   --ops-accent-rgb: 212, 175, 55;
 }
 
@@ -111,7 +111,7 @@
   top: 0;
   z-index: 20;
   padding: 12px max(24px, calc((100vw - 1180px) / 2));
-  border-bottom: 1px solid rgba(212, 175, 55, 0.12);
+  border-bottom: 1px solid rgba(199, 163, 109, 0.12);
   background: rgba(3, 29, 28, 0.78);
   backdrop-filter: blur(22px);
 }
@@ -177,7 +177,7 @@
   border-color: var(--ops-border);
   background:
     radial-gradient(circle at 96% 0%, rgba(var(--ops-accent-rgb), 0.1), transparent 44%),
-    rgba(42, 13, 20, 0.72);
+    rgba(28, 16, 17, 0.72);
   box-shadow: 0 22px 60px rgba(0, 12, 12, 0.22);
 }
 
@@ -652,7 +652,7 @@
   place-items: center;
   border-radius: 12px;
   color: #071412;
-  background: linear-gradient(135deg, #d4af37, #d9b879);
+  background: linear-gradient(135deg, #c7a36d, #d9b879);
   font-weight: 950;
 }
 
@@ -672,7 +672,7 @@
   min-height: 40px;
   padding: 0 14px;
   border-radius: 999px;
-  border: 1px solid rgba(42, 13, 20, 0.12);
+  border: 1px solid rgba(28, 16, 17, 0.12);
   background: rgba(255, 255, 255, 0.78);
   color: var(--aubergine-ink);
   text-decoration: none;
@@ -681,7 +681,7 @@
 
 .opsNavLinkActive {
   background: rgba(151, 160, 149, 0.18);
-  border-color: rgba(42, 13, 20, 0.22);
+  border-color: rgba(28, 16, 17, 0.22);
 }
 
 .opsNavActions {
@@ -712,7 +712,7 @@
   min-height: 40px;
   padding: 0 14px;
   border-radius: 999px;
-  border: 1px solid rgba(42, 13, 20, 0.12);
+  border: 1px solid rgba(28, 16, 17, 0.12);
   background: rgba(255, 255, 255, 0.78);
   color: var(--aubergine-ink);
   font: inherit;
@@ -816,7 +816,7 @@
 .metricCard {
   padding: 22px;
   border-radius: 24px;
-  background: rgba(42, 13, 20, 0.94);
+  background: rgba(28, 16, 17, 0.94);
   color: #fff8f3;
 }
 
@@ -839,7 +839,7 @@
   gap: 18px;
   padding: clamp(56px, 8vw, 112px) max(24px, calc((100vw - 1180px) / 2));
   background:
-    radial-gradient(circle at 12% 28%, rgba(212, 175, 55, 0.13), transparent 25rem),
+    radial-gradient(circle at 12% 28%, rgba(199, 163, 109, 0.13), transparent 25rem),
     var(--commerce-ink);
 }
 
@@ -858,7 +858,7 @@
   gap: 12px;
   padding: 22px;
   border-radius: 24px;
-  border: 1px solid rgba(42, 13, 20, 0.08);
+  border: 1px solid rgba(28, 16, 17, 0.08);
   background: rgba(255, 255, 255, 0.58);
   box-shadow: var(--shadow);
 }
@@ -889,12 +889,12 @@
   gap: 16px;
   padding: 22px;
   border-radius: 24px;
-  border: 1px solid rgba(42, 13, 20, 0.08);
+  border: 1px solid rgba(28, 16, 17, 0.08);
   background: rgba(255, 255, 255, 0.58);
 }
 
 .authMethodCardPrimary {
-  border-color: rgba(42, 13, 20, 0.18);
+  border-color: rgba(28, 16, 17, 0.18);
   background: rgba(215, 177, 142, 0.1);
 }
 
@@ -930,7 +930,7 @@
 .referenceCard {
   padding: 20px;
   border-radius: 24px;
-  border: 1px solid rgba(42, 13, 20, 0.08);
+  border: 1px solid rgba(28, 16, 17, 0.08);
   background: rgba(255, 255, 255, 0.58);
   display: grid;
   gap: 14px;
@@ -977,7 +977,7 @@
   padding: 8px 12px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.68);
-  border: 1px solid rgba(42, 13, 20, 0.08);
+  border: 1px solid rgba(28, 16, 17, 0.08);
   color: var(--aubergine-ink);
   font-size: 0.88rem;
 }
@@ -1013,7 +1013,7 @@
   min-height: 40px;
   padding: 0 14px;
   border-radius: 999px;
-  border: 1px solid rgba(42, 13, 20, 0.12);
+  border: 1px solid rgba(28, 16, 17, 0.12);
   background: rgba(255, 255, 255, 0.8);
   color: var(--aubergine-ink);
   font: inherit;
@@ -1025,7 +1025,7 @@
 
 .filterChipActive {
   background: rgba(151, 160, 149, 0.16);
-  border-color: rgba(42, 13, 20, 0.24);
+  border-color: rgba(28, 16, 17, 0.24);
 }
 
 .field,
@@ -1041,7 +1041,7 @@
 .textInput,
 .textArea {
   width: 100%;
-  border: 1px solid rgba(42, 13, 20, 0.12);
+  border: 1px solid rgba(28, 16, 17, 0.12);
   background: rgba(255, 255, 255, 0.8);
   color: var(--aubergine-ink);
   border-radius: 18px;
@@ -1073,7 +1073,7 @@
 }
 
 .optionCardActive {
-  border-color: rgba(42, 13, 20, 0.24);
+  border-color: rgba(28, 16, 17, 0.24);
   background: rgba(151, 160, 149, 0.16);
 }
 
@@ -1158,6 +1158,23 @@
   color: var(--ops-accent);
 }
 
+.helperLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-block-start: 12px;
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+
+.opsDashboard .helperLink {
+  color: var(--ops-shell-gold, #c7a36d);
+}
+
+.opsDashboard .helperLink:hover {
+  color: #fffaf2;
+}
+
 .opsDashboard :is(.summary, .mainCard p, .summaryCard p, .lineMeta, .helperText, .optionNote, .timelineItem p, .opsSessionSummary span) {
   color: var(--ops-text-soft);
 }
@@ -1208,7 +1225,7 @@
   border: 1px solid rgba(var(--ops-accent-rgb), 0.26);
   background:
     radial-gradient(circle at 80% 12%, rgba(255, 250, 242, 0.18), transparent 44%),
-    linear-gradient(135deg, #6b1d2a, #2a0d14);
+    linear-gradient(135deg, #521a25, #1c1011);
   color: var(--commerce-cream);
 }
 
@@ -1231,7 +1248,7 @@
   border-radius: 0;
   padding-inline: max(24px, calc((100vw - 1180px) / 2));
   background:
-    radial-gradient(circle at 78% 18%, rgba(212, 175, 55, 0.2), transparent 28rem),
+    radial-gradient(circle at 78% 18%, rgba(199, 163, 109, 0.2), transparent 28rem),
     #1c0a10;
   box-shadow: none;
 }
@@ -1241,7 +1258,7 @@
 
 .emptyCard p { color: rgba(255, 250, 242, 0.7); }
 
-.emptyCard .eyebrow { color: #d4af37; }
+.emptyCard .eyebrow { color: #c7a36d; }
 
 .emptyCard .secondaryLink {
   border-color: rgba(255, 250, 242, 0.22);
@@ -1251,8 +1268,8 @@
 
 .noticeCard {
   border-color: rgba(var(--ops-accent-rgb), 0.2);
-  background: rgba(42, 13, 20, 0.72);
-  box-shadow: 0 24px 70px rgba(42, 13, 20, 0.3);
+  background: rgba(28, 16, 17, 0.72);
+  box-shadow: 0 24px 70px rgba(28, 16, 17, 0.3);
 }
 
 .noticeCard h2 { color: var(--commerce-cream); }
@@ -1261,7 +1278,7 @@
   border: 1px solid rgba(var(--ops-accent-rgb), 0.25);
   background:
     radial-gradient(circle at 85% 15%, rgba(var(--ops-accent-rgb), 0.25), transparent 45%),
-    rgba(42, 13, 20, 0.9);
+    rgba(28, 16, 17, 0.9);
 }
 
 .lineItem,
@@ -1277,7 +1294,7 @@
 .statusSummaryCard:hover,
 .linkList a:hover {
   transform: translateY(-3px);
-  border-color: rgba(42, 13, 20, 0.24);
+  border-color: rgba(28, 16, 17, 0.24);
   background: #fff;
 }
 
@@ -1326,7 +1343,7 @@
 
 .summaryRow {
   padding-top: 12px;
-  border-top: 1px solid rgba(42, 13, 20, 0.08);
+  border-top: 1px solid rgba(28, 16, 17, 0.08);
 }
 
 .summaryRow:first-child {
@@ -1357,7 +1374,7 @@
 
 .secondaryButton,
 .secondaryLink {
-  border: 1px solid rgba(42, 13, 20, 0.12);
+  border: 1px solid rgba(28, 16, 17, 0.12);
   background: rgba(255, 255, 255, 0.58);
   color: var(--aubergine-ink);
 }
@@ -1385,7 +1402,7 @@
   gap: 12px;
   padding: 14px 16px;
   border-radius: 20px;
-  border: 1px solid rgba(42, 13, 20, 0.08);
+  border: 1px solid rgba(28, 16, 17, 0.08);
   background: rgba(255, 255, 255, 0.58);
   color: var(--aubergine-ink);
   text-decoration: none;
@@ -1399,7 +1416,7 @@
 .infoBullet {
   padding: 16px 18px;
   border-radius: 20px;
-  border: 1px solid rgba(42, 13, 20, 0.08);
+  border: 1px solid rgba(28, 16, 17, 0.08);
   background: rgba(255, 255, 255, 0.58);
   color: var(--aubergine-ink);
   line-height: 1.8;
@@ -1411,7 +1428,7 @@
 }
 
 .timelineCurrent {
-  border-color: rgba(42, 13, 20, 0.24);
+  border-color: rgba(28, 16, 17, 0.24);
   background: rgba(215, 177, 142, 0.12);
 }
 
@@ -1436,14 +1453,14 @@
   min-height: 34px;
   padding: 0 12px;
   border-radius: 999px;
-  border: 1px solid rgba(42, 13, 20, 0.08);
+  border: 1px solid rgba(28, 16, 17, 0.08);
   background: rgba(255, 255, 255, 0.68);
   color: var(--mauve-stone);
   font-size: 0.84rem;
 }
 
 .timelineCompactCurrent {
-  border-color: rgba(42, 13, 20, 0.24);
+  border-color: rgba(28, 16, 17, 0.24);
   color: var(--aubergine-ink);
   background: rgba(215, 177, 142, 0.16);
 }
@@ -1609,7 +1626,7 @@
   background:
     radial-gradient(circle at 88% 8%, rgba(var(--ops-accent-rgb), 0.16), transparent 50%),
     var(--ops-panel);
-  box-shadow: 0 22px 56px rgba(42, 13, 20, 0.26);
+  box-shadow: 0 22px 56px rgba(28, 16, 17, 0.26);
 }
 .opsDashboard .kpiIcon {
   display: inline-grid;
@@ -1635,4 +1652,620 @@
 }
 @media (max-width: 520px) {
   .opsDashboard .kpiGrid { grid-template-columns: 1fr; }
+}
+
+/* Storefront transaction surfaces only. Ops, tracking and utility consumers of
+   this module intentionally remain on their existing theme. */
+.checkoutPage,
+.confirmationPage {
+  --transaction-canvas: #21070d;
+  --transaction-canvas-deep: #160509;
+  --transaction-panel: #f6eee4;
+  --transaction-panel-soft: #fffaf2;
+  --transaction-wine: #351019;
+  --transaction-wine-soft: #521a25;
+  --transaction-gold: #c7a36d;
+  box-sizing: border-box;
+  min-height: 60svh;
+  gap: 10px;
+  padding: 10px max(10px, calc((100vw - 1320px) / 2)) calc(72px + env(safe-area-inset-bottom));
+  color: var(--aubergine-ink);
+  background:
+    radial-gradient(circle at 84% 3%, rgba(199, 163, 109, 0.2), transparent 28rem),
+    linear-gradient(145deg, var(--transaction-canvas-deep), #351019 54%, var(--transaction-canvas));
+  scroll-padding-block-end: calc(40px + env(safe-area-inset-bottom));
+}
+
+.checkoutPage .hero,
+.confirmationPage .hero {
+  min-height: 0;
+  grid-template-columns: minmax(0, 1.05fr) minmax(360px, 0.95fr);
+  gap: clamp(24px, 4vw, 64px);
+  padding: clamp(30px, 4.5vw, 58px);
+  border: 1px solid rgba(255, 250, 242, 0.74);
+  border-radius: 38px 38px 24px 24px;
+  color: var(--aubergine-ink);
+  background:
+    radial-gradient(circle at 88% 8%, rgba(199, 163, 109, 0.26), transparent 34%),
+    linear-gradient(135deg, #f8f1e8, #eadccf);
+  box-shadow: 0 24px 70px rgba(18, 3, 7, 0.22);
+}
+
+.checkoutPage .hero h1,
+.confirmationPage .hero h1 {
+  max-width: 11ch;
+  margin-block: 0.65rem 0.8rem;
+  color: var(--transaction-wine);
+  font-size: clamp(2.35rem, 4.7vw, 4.8rem);
+  line-height: 1.02;
+}
+
+.checkoutPage .hero .eyebrow,
+.confirmationPage .hero .eyebrow {
+  color: #936f3e;
+}
+
+.checkoutPage .hero .summary,
+.confirmationPage .hero .summary,
+.checkoutPage .hero > div:first-child > p:not(.eyebrow),
+.confirmationPage .hero > div:first-child > p:not(.eyebrow) {
+  max-width: 44rem;
+  color: #675a56;
+  font-size: clamp(0.94rem, 1.35vw, 1.06rem);
+  line-height: 1.75;
+}
+
+.checkoutPage .heroAside,
+.confirmationPage .heroAside {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.checkoutPage :is(.metricCard, .noticeCard),
+.confirmationPage :is(.metricCard, .noticeCard) {
+  min-height: 156px;
+  align-content: space-between;
+  gap: 10px;
+  padding: clamp(18px, 2.4vw, 28px);
+  border: 1px solid rgba(199, 163, 109, 0.3);
+  border-radius: 28px;
+  color: var(--commerce-cream);
+  box-shadow: none;
+}
+
+.checkoutPage .metricCard,
+.confirmationPage .metricCard {
+  background:
+    radial-gradient(circle at 88% 8%, rgba(199, 163, 109, 0.22), transparent 48%),
+    var(--transaction-wine);
+}
+
+.checkoutPage .noticeCard,
+.confirmationPage .noticeCard {
+  background:
+    radial-gradient(circle at 14% 0%, rgba(199, 163, 109, 0.16), transparent 46%),
+    var(--transaction-wine-soft);
+}
+
+.checkoutPage :is(.metricCard, .noticeCard) p,
+.confirmationPage :is(.metricCard, .noticeCard) p {
+  color: rgba(255, 250, 242, 0.72);
+  line-height: 1.65;
+}
+
+.checkoutPage .noticeCard h2,
+.confirmationPage .noticeCard h2 {
+  margin-block: 0;
+  color: var(--commerce-cream);
+}
+
+.confirmationPage .metricCard strong {
+  overflow-wrap: anywhere;
+  font-size: clamp(1.2rem, 2.1vw, 2rem);
+  line-height: 1.15;
+}
+
+.checkoutPage .layout,
+.confirmationPage .layout {
+  grid-template-columns: minmax(0, 1.52fr) minmax(310px, 0.72fr);
+  gap: 10px;
+  padding: 0;
+  background: transparent;
+}
+
+.checkoutPage :is(.mainCard, .summaryCard),
+.confirmationPage :is(.mainCard, .summaryCard) {
+  padding: clamp(22px, 3vw, 36px);
+  border: 1px solid rgba(255, 250, 242, 0.76);
+  border-radius: 26px;
+  color: var(--aubergine-ink);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(199, 163, 109, 0.1), transparent 32%),
+    var(--transaction-panel);
+  box-shadow: 0 24px 62px rgba(18, 3, 7, 0.18);
+}
+
+.checkoutPage :is(.mainCard, .summaryCard) :is(h2, h3, strong),
+.confirmationPage :is(.mainCard, .summaryCard) :is(h2, h3, strong) {
+  color: var(--transaction-wine);
+}
+
+.checkoutPage :is(.mainCard, .summaryCard) > h2,
+.confirmationPage :is(.mainCard, .summaryCard) > h2 {
+  margin-block: 0.55rem 1.1rem;
+  font-size: clamp(1.65rem, 2.6vw, 2.75rem);
+  line-height: 1.12;
+}
+
+.checkoutPage .layout > .summaryList,
+.confirmationPage .layout > .summaryList {
+  position: sticky;
+  top: 104px;
+  gap: 10px;
+}
+
+.checkoutPage .layout > .summaryList > .summaryCard,
+.confirmationPage .layout > .summaryList > .summaryCard {
+  position: static;
+  top: auto;
+}
+
+.checkoutPage .layout > .summaryList > .summaryCard:first-child > h2,
+.confirmationPage .layout > .summaryList > .summaryCard:first-child > h2 {
+  font-size: clamp(2rem, 3.5vw, 3.25rem);
+  font-variant-numeric: tabular-nums;
+}
+
+.checkoutPage .mainCard {
+  display: grid;
+  gap: 18px;
+}
+
+.checkoutPage .formGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-block-start: 0;
+}
+
+.checkoutPage :is(.field, .fieldFull) {
+  gap: 8px;
+}
+
+.checkoutPage :is(.textInput, .textArea) {
+  min-height: 48px;
+  padding: 12px 14px;
+  border: 1px solid rgba(53, 16, 25, 0.18);
+  border-radius: 14px;
+  color: var(--transaction-wine);
+  background: rgba(255, 252, 247, 0.9);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+.checkoutPage .textArea {
+  min-height: 112px;
+}
+
+.checkoutPage :is(.textInput, .textArea)::placeholder {
+  color: #8a7a73;
+  opacity: 1;
+}
+
+.checkoutPage .radioGrid {
+  gap: 8px;
+  margin-block-start: 4px;
+}
+
+.checkoutPage .optionCard {
+  min-height: 76px;
+  padding: 15px 16px;
+  border: 1px solid rgba(53, 16, 25, 0.11);
+  border-radius: 18px;
+  color: var(--transaction-wine);
+  background: rgba(255, 252, 247, 0.72);
+  font: inherit;
+  text-align: start;
+  transform: none;
+}
+
+.checkoutPage .optionCardActive {
+  border-color: rgba(147, 111, 62, 0.58);
+  background: #eadfd2;
+  box-shadow: inset 0 0 0 1px rgba(199, 163, 109, 0.18);
+}
+
+.checkoutPage .optionCard:disabled,
+.checkoutPage .optionCardDisabled {
+  color: #796d68;
+  background: rgba(236, 228, 219, 0.74);
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
+.checkoutPage .checkboxRow {
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid rgba(53, 16, 25, 0.08);
+  border-radius: 14px;
+  color: var(--transaction-wine);
+  background: rgba(255, 252, 247, 0.48);
+}
+
+.checkoutPage .checkboxRow input {
+  flex: 0 0 auto;
+  inline-size: 20px;
+  block-size: 20px;
+  accent-color: var(--transaction-wine);
+}
+
+.checkoutPage :is(.inlineNotice, .inlineError) {
+  padding: 12px 14px;
+  border-radius: 14px;
+  line-height: 1.65;
+}
+
+.checkoutPage .inlineNotice {
+  border-color: rgba(147, 111, 62, 0.22);
+  color: #5f514c;
+  background: rgba(234, 223, 210, 0.72);
+}
+
+.checkoutPage .inlineError,
+.checkoutPage [id$="-error"] {
+  color: #8f3030;
+}
+
+.checkoutPage [data-checkout-invalid="true"] {
+  border-color: rgba(143, 48, 48, 0.62);
+  box-shadow: inset 0 0 0 1px rgba(143, 48, 48, 0.12);
+}
+
+.checkoutPage .summaryRow {
+  gap: 12px;
+  padding-block: 12px;
+  border-top-color: rgba(53, 16, 25, 0.09);
+}
+
+.checkoutPage .summaryRow .field {
+  flex: 1 1 160px;
+}
+
+.checkoutPage :is(.primaryButton, .secondaryButton, .primaryLink, .secondaryLink),
+.confirmationPage :is(.primaryButton, .secondaryButton, .primaryLink, .secondaryLink),
+.confirmationState :is(.primaryButton, .secondaryButton, .primaryLink, .secondaryLink) {
+  min-height: 44px;
+  padding-inline: 18px;
+  border-radius: 999px;
+}
+
+.checkoutPage :is(.primaryButton, .primaryLink),
+.confirmationPage :is(.primaryButton, .primaryLink),
+.confirmationState :is(.primaryButton, .primaryLink) {
+  color: #fffaf2;
+  background: var(--transaction-wine, #351019);
+  cursor: pointer;
+}
+
+.checkoutPage .primaryButton {
+  width: 100%;
+}
+
+.checkoutPage .primaryButton:disabled {
+  color: rgba(255, 250, 242, 0.78);
+  background: rgba(53, 16, 25, 0.58);
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+.checkoutPage .summaryCard .secondaryLink,
+.confirmationPage .summaryCard .secondaryLink {
+  width: 100%;
+}
+
+.confirmationPage .ordersGrid {
+  gap: 10px;
+  margin-block-start: 16px;
+}
+
+.confirmationPage .lineItem {
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid rgba(53, 16, 25, 0.1);
+  border-radius: 20px;
+  color: var(--transaction-wine);
+  background: rgba(255, 252, 247, 0.7);
+  transform: none;
+}
+
+.confirmationPage .badgeRow span {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  padding-inline: 11px;
+  border-color: rgba(53, 16, 25, 0.09);
+  color: var(--transaction-wine);
+  background: rgba(255, 250, 242, 0.86);
+}
+
+.confirmationPage .cardActions {
+  grid-template-columns: repeat(2, minmax(0, max-content));
+  margin-block-start: 18px;
+}
+
+.emptyCard[data-checkout-surface],
+.confirmationState {
+  --transaction-wine: #351019;
+  --transaction-gold: #936f3e;
+  box-sizing: border-box;
+  width: 100vw;
+  max-width: none;
+  min-height: clamp(350px, 55svh, 520px);
+  margin-inline: calc(50% - 50vw);
+  padding: clamp(32px, 6vw, 72px) max(24px, calc((100vw - 1180px) / 2));
+  border: 10px solid #21070d;
+  border-radius: 40px;
+  color: var(--transaction-wine);
+  background:
+    radial-gradient(circle at 84% 8%, rgba(199, 163, 109, 0.24), transparent 34%),
+    linear-gradient(135deg, #f8f1e8, #eadccf);
+  box-shadow: inset 0 0 0 1px rgba(255, 250, 242, 0.7);
+  scroll-margin-block-end: calc(40px + env(safe-area-inset-bottom));
+}
+
+.emptyCard[data-checkout-surface] :is(h1, h2),
+.confirmationState :is(h1, h2) {
+  max-width: 16ch;
+  color: var(--transaction-wine);
+  font-size: clamp(2.35rem, 5vw, 4.8rem);
+  line-height: 1.05;
+}
+
+.emptyCard[data-checkout-surface] .eyebrow,
+.confirmationState .eyebrow {
+  color: var(--transaction-gold);
+}
+
+.emptyCard[data-checkout-surface] > p,
+.confirmationState > p {
+  max-width: 48rem;
+  color: #675a56;
+  line-height: 1.75;
+}
+
+.emptyCard[data-checkout-surface] .secondaryLink,
+.confirmationState .secondaryLink {
+  border-color: rgba(53, 16, 25, 0.2);
+  color: var(--transaction-wine);
+  background: rgba(255, 250, 242, 0.42);
+}
+
+/* The missing/unavailable heading receives programmatic focus so assistive
+   technology announces the state; it is not an interactive control. */
+.confirmationState h1[tabindex="-1"]:focus-visible {
+  outline: 0;
+  box-shadow: none;
+}
+
+.emptyCard[data-checkout-surface] .actionColumn,
+.confirmationState .actionColumn {
+  width: min(100%, 560px);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .checkoutPage .optionCard:not(:disabled):hover,
+  .confirmationPage .lineItem:hover {
+    transform: translateY(-2px);
+    border-color: rgba(199, 163, 109, 0.52);
+    background: rgba(255, 252, 247, 0.96);
+  }
+
+  .checkoutPage :is(.primaryButton, .primaryLink):not(:disabled):hover,
+  .confirmationPage :is(.primaryButton, .primaryLink):hover,
+  .confirmationState :is(.primaryButton, .primaryLink):hover {
+    background: #521a25;
+  }
+}
+
+@media (max-width: 1080px) {
+  .checkoutPage .hero,
+  .confirmationPage .hero,
+  .checkoutPage .layout,
+  .confirmationPage .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .checkoutPage .layout > .summaryList,
+  .confirmationPage .layout > .summaryList {
+    position: static;
+    top: auto;
+  }
+}
+
+@media (max-width: 780px) {
+  .checkoutPage,
+  .confirmationPage {
+    gap: 8px;
+    padding: 8px 8px calc(48px + env(safe-area-inset-bottom));
+  }
+
+  .checkoutPage .hero,
+  .confirmationPage .hero {
+    min-height: auto;
+    gap: 22px;
+    padding: 28px 20px;
+    border-radius: 24px;
+  }
+
+  .checkoutPage .heroAside,
+  .confirmationPage .heroAside {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .checkoutPage :is(.metricCard, .noticeCard),
+  .confirmationPage :is(.metricCard, .noticeCard) {
+    min-height: 128px;
+    border-radius: 20px;
+  }
+
+  .checkoutPage .layout,
+  .confirmationPage .layout {
+    gap: 8px;
+    padding: 0;
+  }
+
+  .checkoutPage :is(.mainCard, .summaryCard),
+  .confirmationPage :is(.mainCard, .summaryCard) {
+    padding: 20px 16px;
+    border-radius: 24px;
+  }
+
+  .checkoutPage .formGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .checkoutPage .optionHead,
+  .checkoutPage .summaryRow,
+  .confirmationPage :is(.lineHead, .summaryRow) {
+    align-items: flex-start;
+  }
+
+  .checkoutPage .summaryRow > .secondaryButton {
+    width: 100%;
+  }
+
+  .confirmationPage .cardActions {
+    grid-template-columns: 1fr;
+  }
+
+  .confirmationPage .cardActions > * {
+    width: 100%;
+  }
+
+  .emptyCard[data-checkout-surface],
+  .confirmationState {
+    min-height: min(480px, 64svh);
+    padding: 32px 20px calc(32px + env(safe-area-inset-bottom));
+    border-width: 8px;
+    border-radius: 26px;
+  }
+
+  .emptyCard[data-checkout-surface] .actionColumn,
+  .confirmationState .actionColumn {
+    grid-template-columns: 1fr;
+  }
+}
+
+.bulkToolbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 0;
+  flex-wrap: wrap;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255, 250, 242, 0.8);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.checkboxLabel input {
+  inline-size: 16px;
+  block-size: 16px;
+  accent-color: var(--commerce-gold, #c7a36d);
+  cursor: pointer;
+}
+
+.bulkActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bulkCount {
+  color: var(--commerce-gold, #c7a36d);
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.checkboxInline {
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  cursor: pointer;
+}
+
+.checkboxInline input {
+  inline-size: 16px;
+  block-size: 16px;
+  accent-color: var(--commerce-gold, #c7a36d);
+  cursor: pointer;
+}
+
+.opsDashboard .checkboxRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.lineItemSelected {
+  border-color: var(--commerce-gold, #c7a36d) !important;
+  background: rgba(199, 163, 109, 0.06) !important;
+}
+
+.opsDashboard .secondaryButton,
+.opsDashboard .csvButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: 36px;
+  padding: 0 16px;
+  border: 1px solid rgba(255, 250, 242, 0.15);
+  border-radius: 8px;
+  background: rgba(255, 250, 242, 0.04);
+  color: rgba(255, 250, 242, 0.7);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.opsDashboard .secondaryButton:hover,
+.opsDashboard .csvButton:hover {
+  background: rgba(255, 250, 242, 0.1);
+  color: #fffaf2;
+}
+
+.opsDashboard .secondaryButton:disabled,
+.opsDashboard .csvButton:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.checkboxCol {
+  display: flex;
+  align-items: center;
+  padding-inline-start: 4px;
+}
+
+.opsDashboard .bannerInfo {
+  grid-column: 1 / -1;
+  padding: 12px 18px;
+  border-radius: 10px;
+  background: rgba(199, 163, 109, 0.12);
+  color: #e8d5a8;
+  font-size: 0.85rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .checkoutPage :is(.mainCard, .summaryCard, .optionCard),
+  .confirmationPage :is(.mainCard, .summaryCard, .lineItem) {
+    animation: none !important;
+    transition: none;
+  }
 }

@@ -57,10 +57,11 @@ export function ProductCard({ product, locale, onQuickAdd, priority }: ProductCa
         <h3 className={styles.name}>
           <TrackedLink
             href={href}
-            analyticsEvent="navigation_click"
+            analyticsEvent="select_item"
             analyticsLabel={`product_card_name_${product.slug}`}
             analyticsSurface="collection_grid"
             analyticsDestinationType="product"
+            analyticsProperties={{ product_slug: product.slug, item_list: "collection_grid" }}
           >
             {product.name}
           </TrackedLink>
@@ -95,10 +96,11 @@ export function ProductCard({ product, locale, onQuickAdd, priority }: ProductCa
           <TrackedLink
             href={href}
             className={styles.chooseLink}
-            analyticsEvent="navigation_click"
+            analyticsEvent="select_item"
             analyticsLabel={`product_card_choose_${product.slug}`}
             analyticsSurface="collection_grid"
             analyticsDestinationType="product"
+            analyticsProperties={{ product_slug: product.slug, item_list: "collection_grid" }}
           >
             {text.choose}
           </TrackedLink>

@@ -23,6 +23,17 @@ const controls = await import(
   "data:text/javascript;base64," + Buffer.from(transpiled).toString("base64")
 );
 
+function transpileToDataUrl(source) {
+  const output = ts.transpileModule(source, {
+    compilerOptions: {
+      module: ts.ModuleKind.ESNext,
+      target: ts.ScriptTarget.ES2022,
+    },
+  }).outputText;
+
+  return "data:text/javascript;base64," + Buffer.from(output).toString("base64");
+}
+
 // Everything except the value under test is satisfied, so the assertion is
 // isolated to the gate being probed.
 const satisfied = {
@@ -123,6 +134,70 @@ for (const template of [".env.example", "deploy/hostinger/elore-paris.env.exampl
   );
 }
 
+const publicSiteUrlModuleUrl = transpileToDataUrl(
+  readFileSync("src/lib/public-site-url.ts", "utf8"),
+);
+const searchVisibilitySource = readFileSync(
+  "src/lib/search-visibility.ts",
+  "utf8",
+)
+  .replace('"./release-controls"', JSON.stringify(
+    "data:text/javascript;base64," + Buffer.from(transpiled).toString("base64"),
+  ))
+  .replace('"./public-site-url"', JSON.stringify(publicSiteUrlModuleUrl));
+const searchVisibility = await import(transpileToDataUrl(searchVisibilitySource));
+
+const indexingReadyEnvironment = {
+  APP_ENV: "production",
+  NEXT_PUBLIC_SITE_URL: "https://elore-paris.com",
+  PUBLIC_RELEASE_APPROVED: "true",
+  PUBLIC_CATALOG_APPROVED: "true",
+  PUBLIC_DISCOVERY_CONTENT_APPROVED: "true",
+  PUBLIC_EDITORIAL_CONTENT_APPROVED: "true",
+  PUBLIC_LEGAL_CONTENT_APPROVED: "true",
+};
+
+assert.equal(
+  searchVisibility.isSearchIndexingEnabled(indexingReadyEnvironment),
+  true,
+  "A fully approved production release on an explicit hosted HTTPS URL may enable indexing",
+);
+
+for (const siteUrl of [
+  undefined,
+  "",
+  "elore-paris.com",
+  "http://elore-paris.com",
+  "https://localhost",
+  "https://shop.localhost",
+  "https://0.0.0.0",
+  "https://127.0.0.1",
+  "https://127.42.0.9",
+  "https://[::]",
+  "https://[::1]",
+  "https://[::ffff:127.0.0.1]",
+  "https://10.0.0.8",
+  "https://172.16.4.2",
+  "https://192.168.1.10",
+  "https://169.254.4.8",
+  "https://100.64.0.1",
+  "https://[fd00::1]",
+  "https://[fe80::1]",
+  "https://preview.internal",
+  "https://brand.test",
+  "https://single-label-host",
+  "https://user:password@elore-paris.com",
+]) {
+  assert.equal(
+    searchVisibility.isSearchIndexingEnabled({
+      ...indexingReadyEnvironment,
+      NEXT_PUBLIC_SITE_URL: siteUrl,
+    }),
+    false,
+    `NEXT_PUBLIC_SITE_URL=${JSON.stringify(siteUrl)} must keep indexing fail-closed`,
+  );
+}
+
 console.log(
-  "Release control checks passed: template values cannot satisfy the commerce, policy, or auth gates.",
+  "Release control checks passed: template values cannot satisfy release gates and indexing requires an explicit hosted HTTPS site URL.",
 );

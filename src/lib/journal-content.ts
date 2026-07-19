@@ -38,6 +38,40 @@ export const journalCopy = {
   },
 } as const;
 
+// Interface-only copy that was previously embedded in the presentation
+// component. Keeping it beside the editorial records preserves the approved
+// Arabic/English wording while the compact magazine layout remains data-led.
+export const journalInterfaceCopy = {
+  ar: {
+    lensesEyebrow: "EDITORIAL LENSES",
+    laneBody: "ابدئي من السؤال، ثم ضيّقي القرار.",
+    lanes: [
+      { number: "01", label: "المشكلة", href: "/concerns" },
+      { number: "02", label: "الروتين", href: "/routines" },
+      { number: "03", label: "المكوّن", href: "/ingredients" },
+    ],
+    detail: {
+      guideTitle: "ثلاث نقاط، بترتيب واضح.",
+      relatedTitle: "المعلومة طريق، لا نهاية.",
+      faqTitle: "إجابة بلا وعد زائد.",
+    },
+  },
+  en: {
+    lensesEyebrow: "EDITORIAL LENSES",
+    laneBody: "Begin with the question, then narrow the decision.",
+    lanes: [
+      { number: "01", label: "Concern", href: "/concerns" },
+      { number: "02", label: "Ritual", href: "/routines" },
+      { number: "03", label: "Ingredient", href: "/ingredients" },
+    ],
+    detail: {
+      guideTitle: "Three points, in a clear order.",
+      relatedTitle: "Information is a path, not an end.",
+      faqTitle: "An answer without an extra promise.",
+    },
+  },
+} as const;
+
 export const journalContent: Record<Locale, Record<JournalSlug, JournalRecord>> = {
   ar: {
     "morning-ritual-for-hot-weather": {

@@ -2,6 +2,7 @@
 
 import { type ChangeEvent, type FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { OpsNav } from "@/components/ops-nav";
+import { useClientPagination, PaginationControls } from "@/components/ops-pagination-controls";
 import styles from "./order-flow.module.css";
 import catalogStyles from "./catalog-authority-ops.module.css";
 
@@ -119,6 +120,11 @@ export function CatalogOpsSurface() {
       })
       .finally(() => setIsLoading(false));
   }, [loadSnapshot]);
+
+  const allImports = useMemo(() => snapshot?.imports ?? [], [snapshot?.imports]);
+
+  const { pagination, paginatedItems, goToPage, changePageSize } =
+    useClientPagination(allImports);
 
   const importPreview = useMemo(() => {
     if (!jsonInput.trim()) return null;
@@ -293,7 +299,7 @@ export function CatalogOpsSurface() {
             </div>
 
             <div className={catalogStyles.importList}>
-              {isLoading ? <p>جارٍ تحميل سجل الكتالوج...</p> : snapshot?.imports.length ? snapshot.imports.map((item) => (
+              {isLoading ? <p>جارٍ تحميل سجل الكتالوج...</p> : paginatedItems.length ? paginatedItems.map((item) => (
                 <article key={item.id} className={catalogStyles.importCard}>
                   <div className={catalogStyles.importHeader}>
                     <div><span className={`${catalogStyles.statusBadge} ${catalogStyles[item.status]}`}>{statusLabels[item.status]}</span><h3>{item.sourceRef}</h3><code>{item.id}</code></div>
@@ -324,6 +330,11 @@ export function CatalogOpsSurface() {
                 </article>
               )) : <div className={styles.inlineNotice}>لا توجد استيرادات بعد. ابدأ بملف الكتالوج المعتمد.</div>}
             </div>
+            <PaginationControls
+              pagination={pagination}
+              onPageChange={goToPage}
+              onPageSizeChange={changePageSize}
+            />
           </article>
         </div>
 

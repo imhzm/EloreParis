@@ -1,21 +1,27 @@
 /* §7.7 Trust / service strip — burgundy band above the footer, five service
-   promises with gold line-icons, thin gold dividers between them. Logical
+   status statements with gold line-icons, thin gold dividers between them. Logical
    properties throughout so it mirrors cleanly in RTL/LTR. */
 
 .strip {
-  background: var(--elore-burgundy);
+  position: relative;
+  z-index: 4;
+  margin-block-start: -2px;
+  border-start-start-radius: clamp(34px, 4vw, 64px);
+  border-start-end-radius: clamp(34px, 4vw, 64px);
+  background:
+    radial-gradient(circle at 22% 0%, rgba(107, 38, 50, 0.48), transparent 32%),
+    var(--elore-burgundy);
   color: var(--elore-warm-white);
-  padding: clamp(1.4rem, 2.8vw, 2.3rem) clamp(1rem, 4vw, 3.5rem);
+  padding: clamp(1rem, 1.8vw, 1.4rem) clamp(1rem, 4vw, 3.5rem);
 }
 
 .row {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   max-width: 1600px;
-  margin-inline: auto;
+  margin: 0 auto;
   list-style: none;
   padding: 0;
-  margin: 0;
 }
 
 .item {
@@ -79,9 +85,11 @@
 /* ---- tablet: three across, dividers only within a row ------------------- */
 @media (max-width: 1023px) {
   .row {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     row-gap: clamp(1rem, 2vw, 1.5rem);
   }
+  .item { grid-column: span 2; }
+  .item:nth-last-child(2) { grid-column: 2 / span 2; }
   .item::before {
     display: none;
   }
@@ -94,10 +102,12 @@
     row-gap: 1.4rem;
   }
   .item {
+    grid-column: auto;
     flex-direction: column;
     text-align: center;
     gap: 0.5rem;
   }
+  .item:nth-last-child(2) { grid-column: auto; }
   /* Five items over two columns leaves the last alone — centre it. */
   .item:last-child {
     grid-column: 1 / -1;

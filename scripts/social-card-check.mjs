@@ -18,6 +18,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 const LIB = "src/lib";
+const APP = "src/app";
 
 function stripComments(source) {
   return source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
@@ -54,11 +55,19 @@ function objectBlocks(source, key) {
 
 const failures = [];
 
-for (const file of readdirSync(LIB).filter((name) => name.endsWith("page-data.ts"))) {
-  const path = join(LIB, file);
-  const source = stripComments(readFileSync(path, "utf8"));
+function sourceFiles(directory, fileName) {
+  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const path = join(directory, entry.name);
+    if (entry.isDirectory()) return sourceFiles(path, fileName);
+    return entry.isFile() && entry.name === fileName ? [path] : [];
+  });
+}
 
-  for (const block of objectBlocks(source, "openGraph")) {
+function checkMetadataImages(path, source) {
+  const openGraphBlocks = objectBlocks(source, "openGraph");
+  const twitterBlocks = objectBlocks(source, "twitter");
+
+  for (const block of openGraphBlocks) {
     if (/\bimages\s*:/.test(block)) continue;
     failures.push(
       `${path}\n    An openGraph block names no images. A route's openGraph replaces the ` +
@@ -67,14 +76,74 @@ for (const file of readdirSync(LIB).filter((name) => name.endsWith("page-data.ts
     );
   }
 
-  // twitter:image is separate metadata and is dropped the same way.
-  for (const block of objectBlocks(source, "twitter")) {
+  for (const block of twitterBlocks) {
     if (/\bimages\s*:/.test(block)) continue;
     failures.push(
       `${path}\n    A twitter block names no images. Same replacement rule as ` +
-        `openGraph. Add images: defaultSocialCard(title).twitter.`,
+      `openGraph. Add images: defaultSocialCard(title).twitter.`,
     );
   }
+
+  if (openGraphBlocks.length > 0 && twitterBlocks.length === 0) {
+    failures.push(
+      `${path}\n    This route defines Open Graph metadata but no matching Twitter metadata.`,
+    );
+  }
+}
+
+for (const file of readdirSync(LIB).filter((name) => name.endsWith("page-data.ts"))) {
+  const path = join(LIB, file);
+  const source = stripComments(readFileSync(path, "utf8"));
+  checkMetadataImages(path, source);
+}
+
+// Metadata is also authored directly in route pages, most notably PDPs. Scan
+// those alongside shared builders so a route-local block cannot bypass the gate.
+for (const path of sourceFiles(APP, "page.tsx")) {
+  checkMetadataImages(path, stripComments(readFileSync(path, "utf8")));
+}
+
+const socialCardRoutePath = join(APP, "api", "social-card", "route.tsx");
+const socialCardRoute = stripComments(readFileSync(socialCardRoutePath, "utf8"));
+const socialCardRequirements = [
+  [/searchParams\.get\(["']locale["']\)/, "read the requested locale"],
+  [/\bisLocale\s*\(requestedLocale\)/, "validate the requested locale against the locale allowlist"],
+  [/\bdefaultLocale\b/, "fall back to the configured default locale"],
+  [/\bar\s*:\s*\{/, "provide Arabic card copy"],
+  [/\ben\s*:\s*\{/, "provide English card copy"],
+];
+
+for (const [pattern, requirement] of socialCardRequirements) {
+  if (pattern.test(socialCardRoute)) continue;
+  failures.push(`${socialCardRoutePath}\n    The social-card route must ${requirement}.`);
+}
+
+const localizedFallbackContracts = [
+  [join(LIB, "site-content.ts"), /api\/social-card\?locale=\$\{locale\}/],
+  [join(LIB, "journal-page-data.ts"), /defaultSocialCard\(title, locale\)/],
+  [join(LIB, "search-page-data.ts"), /defaultSocialCard\([\s\S]*?, locale\)/],
+  [join(LIB, "trust-support-page-data.ts"), /defaultSocialCard\(title, locale\)/],
+];
+
+for (const [path, pattern] of localizedFallbackContracts) {
+  const source = stripComments(readFileSync(path, "utf8"));
+  if (pattern.test(source)) continue;
+  failures.push(`${path}\n    Default social cards must preserve the page locale.`);
+}
+
+const productPagePath = join(APP, "(storefront)", "[locale]", "product", "[slug]", "page.tsx");
+const productPage = stripComments(readFileSync(productPagePath, "utf8"));
+const productTwitterBlocks = objectBlocks(productPage, "twitter");
+if (
+  productTwitterBlocks.length !== 1 ||
+  !/card\s*:\s*["']summary_large_image["']/.test(productTwitterBlocks[0]) ||
+  !/title\s*:\s*`\$\{product\.name\} \| \$\{controlledSiteName\}`/.test(productTwitterBlocks[0]) ||
+  !/description\s*:\s*product\.subtitle/.test(productTwitterBlocks[0]) ||
+  !/images\s*:\s*product\.media\.map\(\(media\) => absoluteUrl\(media\.url\)\)/.test(productTwitterBlocks[0])
+) {
+  failures.push(
+    `${productPagePath}\n    PDP Twitter metadata must use a large card and the product media, matching Open Graph.`,
+  );
 }
 
 if (failures.length > 0) {

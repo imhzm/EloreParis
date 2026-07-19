@@ -33,7 +33,14 @@ export type OpsAuditAction =
   | "ops_release_evidence_publish"
   | "ops_release_package_publish"
   | "ops_release_handoff_publish"
-  | "ops_release_decision_publish";
+  | "ops_release_decision_publish"
+  | "ops_promotion_create"
+  | "ops_promotion_update"
+  | "ops_media_upload"
+  | "ops_media_approve"
+  | "ops_site_content_save"
+  | "ops_site_content_publish"
+  | "ops_site_content_rollback";
 
 export type OpsAuditActor = {
   userId: string;
@@ -48,7 +55,7 @@ export type OpsAuditEntry = {
   createdAt: string;
   action: OpsAuditAction;
   actor: OpsAuditActor;
-  entityType: "ops_session" | "order" | "notification" | "release";
+  entityType: "ops_session" | "order" | "notification" | "release" | "promotion" | "media" | "site_content";
   entityId: string;
   summary: string;
   metadata: Record<string, OpsAuditMetadataValue>;

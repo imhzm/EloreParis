@@ -60,8 +60,7 @@ export type BentoCard =
   | BentoQuoteCard;
 
 const images = {
-  // PLACEHOLDER until a dedicated perfume still-life concept asset exists.
-  perfumes: "/elore-assets/transition-burgundy-satin-concept-1672w.avif",
+  perfumes: "/elore-assets/hero-perfume-ritual-desktop-v2.avif",
   skincare: "/elore-assets/texture-skincare-serum-concept-1536w.avif",
   makeup: "/elore-assets/texture-makeup-pigment-concept-1536w.avif",
   bodycare: "/elore-assets/bodycare-stone-ritual-concept-1122x1402.avif",
@@ -84,7 +83,7 @@ export const bentoCopy = {
         cta: "اكتشفي العطور",
         href: "/shop/perfumes",
       },
-      { kind: "category", id: "perfumes", title: "العطور", href: "/shop/perfumes", image: images.perfumes, imageAlt: "مشهد تحريري مفاهيمي لحرير برغندي وإضاءة دافئة" },
+      { kind: "category", id: "perfumes", title: "العطور", href: "/shop/perfumes", image: images.perfumes, imageAlt: "مشهد تحريري مفاهيمي لزجاجة عطر وسط حرير برغندي وإضاءة دافئة" },
       { kind: "category", id: "skincare", title: "العناية بالبشرة", href: "/shop/skincare", image: images.skincare, imageAlt: "دراسة مفاهيمية لقوام العناية بالبشرة" },
       { kind: "category", id: "makeup", title: "المكياج", href: "/shop/makeup", image: images.makeup, imageAlt: "دراسة مفاهيمية لألوان وقوام المكياج" },
       { kind: "category", id: "bodycare", title: "العناية بالجسم", href: "/shop/bodycare", image: images.bodycare, imageAlt: "مشهد تحريري مفاهيمي لطقس العناية بالجسم" },
@@ -139,7 +138,7 @@ export const bentoCopy = {
         cta: "Discover perfume",
         href: "/shop/perfumes",
       },
-      { kind: "category", id: "perfumes", title: "Perfumes", href: "/shop/perfumes", image: images.perfumes, imageAlt: "Conceptual editorial scene of burgundy silk in warm light" },
+      { kind: "category", id: "perfumes", title: "Perfumes", href: "/shop/perfumes", image: images.perfumes, imageAlt: "Conceptual perfume bottle still-life with burgundy silk in warm light" },
       { kind: "category", id: "skincare", title: "Skincare", href: "/shop/skincare", image: images.skincare, imageAlt: "Concept study of skincare texture" },
       { kind: "category", id: "makeup", title: "Makeup", href: "/shop/makeup", image: images.makeup, imageAlt: "Concept study of makeup colour and texture" },
       { kind: "category", id: "bodycare", title: "Bodycare", href: "/shop/bodycare", image: images.bodycare, imageAlt: "Conceptual editorial scene of a bodycare ritual" },

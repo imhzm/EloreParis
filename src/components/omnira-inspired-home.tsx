@@ -100,12 +100,24 @@ export function OmniraInspiredHome({ locale }: Props) {
               <TrackedLink href={href("/routines")} className={styles.secondaryAction} analyticsLabel="home_hero_routine" analyticsSurface="elore_home">{copy.hero.secondary}</TrackedLink>
             </div>
           </div>
+          <div className={styles.sceneIndex} aria-hidden="true">
+            <b>01</b><span /><small>09</small>
+          </div>
+          <TrackedLink
+            href="#product-truth"
+            className={styles.discoverControl}
+            analyticsLabel="home_discover_next_scene"
+            analyticsSurface="elore_home"
+          >
+            <span>{locale === "ar" ? "اكتشفي" : "Discover"}</span>
+            <b aria-hidden="true">↓</b>
+          </TrackedLink>
           <p className={styles.scrollCue} aria-hidden="true"><span />SCROLL TO EXPLORE</p>
           <p className={styles.assetStatus}>{copy.hero.assetStatus}</p>
         </div>
       </section>
 
-      <section className={`${styles.scene} ${styles.productTruth}`} data-home-scene aria-labelledby="product-truth-title">
+      <section id="product-truth" className={`${styles.scene} ${styles.productTruth}`} data-home-scene aria-labelledby="product-truth-title">
         <div className={styles.cinematicViewport} data-home-cinematic-viewport>
           <div className={styles.sectionFrame}>
             <div className={styles.sectionCopy}>

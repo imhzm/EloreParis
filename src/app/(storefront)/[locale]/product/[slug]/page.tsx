@@ -2,11 +2,12 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CinematicProductExperience } from "@/components/cinematic-product-experience";
 import { StorefrontShell } from "@/components/storefront-shell";
-import { categoryCopy, categorySharedCopy, isCategorySlug } from "@/lib/category-content";
+import { isCategorySlug } from "@/lib/category-content";
 import { isLocale, localeConfig } from "@/lib/i18n";
 import { getPublicCatalogSnapshot } from "@/lib/public-catalog";
 import { getPublicRichPreviewRobots } from "@/lib/seo";
-import { absoluteUrl, siteName } from "@/lib/site-content";
+import { absoluteUrl, serializeJsonLd, siteName } from "@/lib/site-content";
+import { getEffectiveCategoryContent, getEffectiveSiteContent } from "@/lib/site-content-authority";
 
 type PageProps = { params: Promise<{ locale: string; slug: string }> };
 
@@ -16,15 +17,12 @@ function getProduct(locale: "ar" | "en", slug: string) {
   );
 }
 
-function safeJson(value: unknown) {
-  return JSON.stringify(value).replaceAll("<", "\\u003c");
-}
-
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { locale: candidate, slug } = await params;
   if (!isLocale(candidate)) return {};
   const product = getProduct(candidate, slug);
   if (!product) return {};
+  const controlledSiteName = getEffectiveSiteContent().identity.siteName || siteName;
   const canonical = `/${candidate}/product/${product.slug}`;
   return {
     title: product.name,
@@ -39,14 +37,20 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     },
     robots: getPublicRichPreviewRobots(),
     openGraph: {
-      title: `${product.name} | ${siteName}`,
+      title: `${product.name} | ${controlledSiteName}`,
       description: product.subtitle,
       url: absoluteUrl(canonical),
-      siteName,
+      siteName: controlledSiteName,
       locale: localeConfig[candidate].ogLocale,
       alternateLocale: [localeConfig[candidate === "ar" ? "en" : "ar"].ogLocale],
       type: "website",
       images: product.media.map((media) => ({ url: absoluteUrl(media.url), alt: media.alt })),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${product.name} | ${controlledSiteName}`,
+      description: product.subtitle,
+      images: product.media.map((media) => absoluteUrl(media.url)),
     },
   };
 }
@@ -60,10 +64,11 @@ export default async function LocalizedProductPage({ params }: PageProps) {
 
   // Home › Collection › Product — the reference wayfinding. The collection hop
   // links to its /shop/<slug> page when that page exists, otherwise to /shop.
-  const shared = categorySharedCopy[candidate];
+  const editorial = getEffectiveSiteContent().editorial;
+  const shared = editorial.categorySharedCopy[candidate];
   const collectionSlug = product.collection;
   const collectionLabel = isCategorySlug(collectionSlug)
-    ? categoryCopy[candidate][collectionSlug].title
+    ? getEffectiveCategoryContent(candidate, collectionSlug).copy.title
     : shared.breadcrumbShop;
   const collectionHref = isCategorySlug(collectionSlug)
     ? `/${candidate}/shop/${collectionSlug}`
@@ -106,8 +111,8 @@ export default async function LocalizedProductPage({ params }: PageProps) {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(structuredData) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(breadcrumbData) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbData) }} />
       <StorefrontShell
         activeHref={`/shop/${product.collection}`}
         locale={candidate}

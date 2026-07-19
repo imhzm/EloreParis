@@ -6,7 +6,7 @@
   overflow: hidden;
   padding: clamp(4rem, 10vw, 8rem) 1.25rem;
   background:
-    radial-gradient(circle at 50% 20%, rgba(212, 175, 55, 0.2), transparent 38%),
+    radial-gradient(circle at 50% 20%, rgba(199, 163, 109, 0.2), transparent 38%),
     linear-gradient(145deg, #f7f1ec, #eee5df);
 }
 
@@ -14,7 +14,7 @@
   position: absolute;
   width: min(62vw, 620px);
   aspect-ratio: 1;
-  border: 1px solid rgba(59, 15, 26, 0.1);
+  border: 1px solid rgba(37, 8, 12, 0.1);
   border-radius: 50%;
   box-shadow: 0 0 100px rgba(133, 72, 79, 0.14);
 }
@@ -23,11 +23,11 @@
   position: relative;
   width: min(100%, 650px);
   padding: clamp(2rem, 6vw, 4.5rem);
-  border: 1px solid rgba(59, 15, 26, 0.12);
+  border: 1px solid rgba(37, 8, 12, 0.12);
   border-radius: 2rem;
   text-align: center;
   background: rgba(255, 253, 252, 0.86);
-  box-shadow: 0 30px 90px rgba(59, 15, 26, 0.12);
+  box-shadow: 0 30px 90px rgba(37, 8, 12, 0.12);
   backdrop-filter: blur(18px);
 }
 

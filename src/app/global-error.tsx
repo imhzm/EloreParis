@@ -35,10 +35,10 @@ export default function GlobalError({
               >
                 إعادة المحاولة
               </button>
-              <Link href="/" className={styles.secondaryAction}>
+              <Link href="/ar" className={styles.secondaryAction}>
                 العودة إلى الرئيسية
               </Link>
-              <Link href="/trust" className={styles.secondaryAction}>
+              <Link href="/ar/trust" className={styles.secondaryAction}>
                 مركز الثقة
               </Link>
             </div>

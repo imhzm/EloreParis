@@ -1,16 +1,15 @@
 "use client";
 
 import Image from "next/image";
-import { type CSSProperties, type FocusEvent } from "react";
-import { TrackedLink } from "@/components/tracked-link";
-import { useScrollSceneProgress } from "@/hooks/use-scroll-scene-progress";
-import { localizePath, type Locale } from "@/lib/i18n";
-import { shopCopy } from "@/lib/shop-content";
-import type { PublicCatalogProduct } from "@/lib/public-catalog-types";
-import styles from "./cinematic-shop-atlas-stage.module.css";
 import { MultilineTitle } from "@/components/scene-primitives";
+import { TrackedLink } from "@/components/tracked-link";
+import { localizePath, type Locale } from "@/lib/i18n";
+import type { PublicCatalogProduct } from "@/lib/public-catalog-types";
+import { shopCopy } from "@/lib/shop-content";
+import type { ShopAuthorityLocale } from "@/lib/site-editorial-authority";
+import styles from "./cinematic-shop-atlas-stage.module.css";
 
-type Props = { locale: Locale; products: PublicCatalogProduct[] };
+type Props = { locale: Locale; products: PublicCatalogProduct[]; content?: ShopAuthorityLocale };
 
 function formatPrice(value: number, locale: Locale) {
   return new Intl.NumberFormat(locale === "ar" ? "ar-SA" : "en-SA", {
@@ -20,107 +19,220 @@ function formatPrice(value: number, locale: Locale) {
   }).format(value);
 }
 
-function keepFocusedLinkVisible(event: FocusEvent<HTMLAnchorElement>) {
-  const target = event.currentTarget;
-  requestAnimationFrame(() => {
-    const root = document.documentElement;
-    const previousScrollBehavior = root.style.scrollBehavior;
-    root.style.scrollBehavior = "auto";
-    target.scrollIntoView({ block: "center", inline: "nearest" });
-    root.style.scrollBehavior = previousScrollBehavior;
-  });
+function getMinimumPrice(product: PublicCatalogProduct) {
+  const prices = product.variants
+    .map((variant) => variant.price)
+    .filter((price) => Number.isFinite(price));
+
+  return prices.length > 0 ? Math.min(...prices) : null;
 }
 
-export function CinematicShopAtlasStage({ locale, products }: Props) {
-  const rootRef = useScrollSceneProgress<HTMLDivElement>({ selector: "[data-shop-scene]" });
-  const copy = shopCopy[locale];
-  const publicProducts = products.slice(0, 4);
+export function CinematicShopAtlasStage({ locale, products, content }: Props) {
+  const sourceCopy = shopCopy[locale];
+  const copy = content ? {
+    ...content,
+    catalog: { ...content.catalog, count: sourceCopy.catalog.count },
+    imageAlt: sourceCopy.imageAlt,
+  } : sourceCopy;
+  const hasPublishedProducts = products.length > 0;
 
   return (
-    <div ref={rootRef} className={styles.shop}>
-      <section className={`${styles.scene} ${styles.atlasScene}`} data-shop-scene aria-label={copy.hero.aria}>
-        <div className={styles.frame}>
-          <div className={styles.atlas} aria-hidden="true">
-            <span>01</span><span>02</span><span>03</span><b lang="en">ÉLORÉ<br />PARIS</b>
+    <div className={styles.shop} data-shop-hub>
+      <section className={styles.hero} aria-label={copy.hero.aria}>
+        <div className={styles.heroCopy}>
+          <p className={styles.eyebrow}>{copy.hero.eyebrow}</p>
+          <h1>
+            <MultilineTitle value={copy.hero.title} />
+          </h1>
+          <p className={styles.lede}>{copy.hero.body}</p>
+          <div className={styles.heroActions}>
+            <TrackedLink
+              href="#collections"
+              className={styles.primaryAction}
+              analyticsLabel="shop_hub_browse_categories"
+              analyticsSurface="shop_hub"
+            >
+              {copy.hero.primary}
+            </TrackedLink>
+            <TrackedLink
+              href={localizePath(locale, "/search")}
+              className={styles.secondaryAction}
+              analyticsLabel="shop_hub_search"
+              analyticsSurface="shop_hub"
+            >
+              {copy.hero.secondary}
+            </TrackedLink>
           </div>
-          <div className={styles.heroCopy}>
-            <p>{copy.hero.eyebrow}</p>
-            <h1><MultilineTitle value={copy.hero.title} /></h1>
-            <span>{copy.hero.body}</span>
-            <TrackedLink href="#collections" className={styles.primaryAction} onFocus={keepFocusedLinkVisible} analyticsLabel="shop_atlas_collections" analyticsSurface="shop_cinematic">{copy.hero.cta}</TrackedLink>
-          </div>
-          <div className={styles.sceneCounter} aria-hidden="true">01 — 05</div>
+        </div>
+
+        <figure className={styles.heroMedia}>
+          <Image
+            src={copy.hero.image}
+            alt={copy.hero.imageAlt}
+            fill
+            priority
+            sizes="(max-width: 900px) 92vw, 49vw"
+          />
+          <figcaption>{copy.hero.conceptNotice}</figcaption>
+        </figure>
+      </section>
+
+      <section className={styles.categories} id="collections" aria-label={copy.categories.aria}>
+        <div className={styles.sectionHeading}>
+          <p className={styles.eyebrow}>{copy.categories.eyebrow}</p>
+          <h2>
+            <MultilineTitle value={copy.categories.title} />
+          </h2>
+          <p>{copy.categories.body}</p>
+        </div>
+
+        <div className={styles.categoryRail}>
+          {copy.collections.map(([title, label, href, image, analyticsLabel]) => (
+            <TrackedLink
+              key={href}
+              href={localizePath(locale, href)}
+              className={styles.categoryCard}
+              analyticsLabel={analyticsLabel}
+              analyticsSurface="shop_hub"
+              analyticsDestinationType="collection"
+            >
+              <span className={styles.categoryImage}>
+                <Image src={image} alt={copy.imageAlt(title)} fill sizes="(max-width: 700px) 72vw, 18vw" />
+              </span>
+              <span className={styles.categoryMeta} lang="en">
+                {label}
+              </span>
+              <h3>{title}</h3>
+            </TrackedLink>
+          ))}
         </div>
       </section>
 
-      <section className={`${styles.scene} ${styles.collectionScene}`} data-shop-scene id="collections" aria-label={copy.categories.aria}>
-        <div className={styles.frame}>
-          <div className={styles.heading}><p>{copy.categories.eyebrow}</p><h2><MultilineTitle value={copy.categories.title} /></h2></div>
-          <div className={styles.collectionTrack}>
-            {copy.collections.map(([title, label, href, image, analyticsLabel], index) => (
-              <TrackedLink key={href} href={localizePath(locale, href)} className={styles.collectionCard} onFocus={keepFocusedLinkVisible} style={{ "--index": index } as CSSProperties} analyticsLabel={analyticsLabel} analyticsSurface="shop_cinematic" analyticsDestinationType="collection">
-                <Image src={image} alt="" fill sizes="(max-width: 700px) 100vw, 19vw" />
-                <span>0{index + 1}</span><small>{label}</small><h3>{title}</h3>
+      <section className={styles.catalog} id="catalog" aria-label={copy.catalog.aria}>
+        <div className={styles.catalogHeading}>
+          <div>
+            <p className={styles.eyebrow}>{copy.catalog.eyebrow}</p>
+            <h2>{hasPublishedProducts ? copy.catalog.availableTitle : copy.catalog.emptyTitle}</h2>
+          </div>
+          <p>{hasPublishedProducts ? copy.catalog.availableBody : copy.catalog.emptyBody}</p>
+        </div>
+
+        {hasPublishedProducts ? (
+          <>
+            <p className={styles.catalogCount}>{copy.catalog.count(products.length)}</p>
+            <div className={styles.productGrid}>
+              {products.map((product) => {
+                const media = product.media[0];
+                const minimumPrice = getMinimumPrice(product);
+
+                return (
+                  <article key={product.slug} className={styles.productCard}>
+                    <TrackedLink
+                      href={`/${locale}/product/${product.slug}`}
+                      className={styles.productMedia}
+                      aria-label={`${copy.catalog.productCta}: ${product.name}`}
+                      analyticsLabel={`shop_product_${product.slug}`}
+                      analyticsSurface="shop_hub"
+                      analyticsDestinationType="product"
+                      analyticsEvent="select_item"
+                      analyticsProperties={{ product_slug: product.slug, item_list: "shop_hub" }}
+                    >
+                      {media ? (
+                        <Image
+                          src={media.url}
+                          alt={media.alt || product.name}
+                          fill
+                          sizes="(max-width: 620px) 92vw, (max-width: 1000px) 45vw, 23vw"
+                        />
+                      ) : (
+                        <span className={styles.productMediaFallback} aria-hidden="true" />
+                      )}
+                    </TrackedLink>
+                    <div className={styles.productDetails}>
+                      {product.brand ? <p>{product.brand}</p> : null}
+                      <h3>{product.name}</h3>
+                      {minimumPrice !== null ? <span>{formatPrice(minimumPrice, locale)}</span> : null}
+                      <TrackedLink
+                        href={`/${locale}/product/${product.slug}`}
+                        analyticsLabel={`shop_product_details_${product.slug}`}
+                        analyticsSurface="shop_hub"
+                        analyticsDestinationType="product"
+                        analyticsEvent="select_item"
+                        analyticsProperties={{ product_slug: product.slug, item_list: "shop_hub" }}
+                      >
+                        {copy.catalog.productCta}
+                      </TrackedLink>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </>
+        ) : (
+          <div className={styles.catalogEmpty}>
+            <span aria-hidden="true" />
+            <div>
+              <TrackedLink
+                href={localizePath(locale, "/journal")}
+                className={styles.primaryAction}
+                analyticsLabel="shop_empty_journal"
+                analyticsSurface="shop_hub"
+              >
+                {copy.catalog.emptyPrimary}
               </TrackedLink>
-            ))}
+              <TrackedLink
+                href={localizePath(locale, "/trust")}
+                className={styles.secondaryAction}
+                analyticsLabel="shop_empty_trust"
+                analyticsSurface="shop_hub"
+              >
+                {copy.catalog.emptySecondary}
+              </TrackedLink>
+            </div>
           </div>
-          <div className={styles.sceneCounter} aria-hidden="true">02 — 05</div>
-        </div>
+        )}
       </section>
 
-      <section className={`${styles.scene} ${styles.productsScene}`} data-shop-scene aria-label={copy.edit.aria}>
-        <div className={styles.frame}>
-          <div className={styles.productCopy}><p>{copy.edit.eyebrow}</p><h2><MultilineTitle value={copy.edit.title} /></h2><TrackedLink href={localizePath(locale, "/journal")} onFocus={keepFocusedLinkVisible} analyticsLabel="shop_products_journal" analyticsSurface="shop_cinematic">{copy.edit.cta}</TrackedLink></div>
-          <div className={styles.productStack}>
-            {publicProducts.length > 0
-              ? publicProducts.map((product, index) => (
-                  <article key={product.slug} className={styles.productCard} style={{ "--index": index } as CSSProperties}>
-                    <div><Image src={product.media[0].url} alt={product.media[0].alt} fill sizes="(max-width: 700px) 68vw, 26vw" /></div>
-                    <small>{product.brand}</small><h3>{product.name}</h3>
-                    <span>{formatPrice(Math.min(...product.variants.map((variant) => variant.price)), locale)}</span>
-                    <TrackedLink href={`/${locale}/product/${product.slug}`} onFocus={keepFocusedLinkVisible} aria-label={`${copy.edit.cardCta}: ${product.name}`} analyticsLabel={`shop_product_${product.slug}`} analyticsSurface="shop_cinematic" analyticsDestinationType="product">{copy.edit.cardCta}</TrackedLink>
-                  </article>
-                ))
-              : copy.studies.map(([name, label, image, href], index) => (
-                  <article key={name} className={styles.productCard} style={{ "--index": index } as CSSProperties}>
-                    <div><Image src={image} alt={name} fill sizes="(max-width: 700px) 68vw, 26vw" /></div>
-                    <small>{label}</small><h3>{name}</h3>
-                    <TrackedLink href={localizePath(locale, href)} onFocus={keepFocusedLinkVisible} aria-label={`${copy.edit.cardCta}: ${name}`} analyticsLabel={`shop_study_${index}`} analyticsSurface="shop_cinematic">{copy.edit.cardCta}</TrackedLink>
-                  </article>
-                ))}
-          </div>
-          <div className={styles.sceneCounter} aria-hidden="true">03 — 05</div>
-        </div>
-      </section>
+      <section className={styles.editorial} aria-label={copy.editorial.aria}>
+        <figure className={styles.editorialMedia}>
+          <Image
+            src={copy.editorial.image}
+            alt={copy.editorial.imageAlt}
+            fill
+            sizes="(max-width: 900px) 92vw, 43vw"
+          />
+          <figcaption>{copy.editorial.conceptNotice}</figcaption>
+        </figure>
 
-      <section className={`${styles.scene} ${styles.routesScene}`} data-shop-scene aria-label={copy.routesIntro.aria}>
-        <div className={styles.frame}>
-          <div className={styles.routeCenter}><p>{copy.routesIntro.eyebrow}</p><h2><MultilineTitle value={copy.routesIntro.title} /></h2><span>{copy.routesIntro.body}</span></div>
+        <div className={styles.editorialContent}>
+          <p className={styles.eyebrow}>{copy.editorial.eyebrow}</p>
+          <h2>
+            <MultilineTitle value={copy.editorial.title} />
+          </h2>
+          <p className={styles.editorialBody}>{copy.editorial.body}</p>
           <div className={styles.routeGrid}>
-            {copy.routes.map(([number, title, body, href, analyticsLabel], index) => (
-              <TrackedLink key={href} href={localizePath(locale, href)} className={styles.routeCard} onFocus={keepFocusedLinkVisible} style={{ "--index": index } as CSSProperties} analyticsLabel={analyticsLabel} analyticsSurface="shop_cinematic">
-                <b>{number}</b><h3>{title}</h3><span>{body}</span>
+            {copy.routes.map(([number, title, body, href, analyticsLabel]) => (
+              <TrackedLink
+                key={href}
+                href={localizePath(locale, href)}
+                className={styles.routeCard}
+                analyticsLabel={analyticsLabel}
+                analyticsSurface="shop_hub"
+              >
+                <span>{number}</span>
+                <h3>{title}</h3>
+                <p>{body}</p>
               </TrackedLink>
             ))}
           </div>
-          <div className={styles.sceneCounter} aria-hidden="true">04 — 05</div>
-        </div>
-      </section>
-
-      <section className={`${styles.scene} ${styles.finalScene}`} data-shop-scene aria-label={copy.finale.aria}>
-        <div className={styles.frame}>
-          <div className={styles.finalRule} aria-hidden="true" />
-          <div className={styles.finalProducts} aria-hidden="true">
-            {(publicProducts.length > 0
-              ? publicProducts.slice(0, 3).map((product) => product.media[0].url)
-              : copy.studies.slice(0, 3).map(([, , image]) => image)
-            ).map((image, index) => <div key={image} style={{ "--index": index } as CSSProperties}><Image src={image} alt="" fill sizes="240px" /></div>)}
-          </div>
-          <div className={styles.finalCopy}>
-            <p>{copy.finale.eyebrow}</p><h2><MultilineTitle value={copy.finale.title} /></h2><span>{copy.finale.body}</span>
-            <div><TrackedLink href={localizePath(locale, "/journal")} className={styles.primaryAction} onFocus={keepFocusedLinkVisible} analyticsLabel="shop_final_journal" analyticsSurface="shop_cinematic">{copy.finale.primary}</TrackedLink><TrackedLink href={localizePath(locale, "/trust")} className={styles.secondaryAction} onFocus={keepFocusedLinkVisible} analyticsLabel="shop_hub_to_trust" analyticsSurface="shop_cinematic">{copy.finale.secondary}</TrackedLink></div>
-          </div>
-          <div className={styles.sceneCounter} aria-hidden="true">05 — 05</div>
+          <TrackedLink
+            href={localizePath(locale, "/journal")}
+            className={styles.editorialAction}
+            analyticsLabel="shop_editorial_journal"
+            analyticsSurface="shop_hub"
+          >
+            {copy.editorial.cta}
+          </TrackedLink>
         </div>
       </section>
     </div>

@@ -1,10 +1,13 @@
 import Image from "next/image";
 import type { ReactNode } from "react";
-import { CartStatusLink } from "@/components/cart-status-link";
+import { CartDrawer } from "@/components/cart-drawer";
+import { MegaShopMenu } from "@/components/mega-shop-menu";
 import { MobileNavDrawer } from "@/components/mobile-nav-drawer";
+import { SearchDialog } from "@/components/search-dialog";
 import { TrackedLink } from "@/components/tracked-link";
 import { TrustServiceStrip } from "@/components/trust-service-strip";
 import { localizePath, resolveActiveNavHref, shellCopy, type Locale } from "@/lib/i18n";
+import { getEffectiveSiteContent } from "@/lib/site-content-authority";
 import styles from "./storefront-shell.module.css";
 
 type StorefrontShellProps = {
@@ -12,6 +15,7 @@ type StorefrontShellProps = {
   children: ReactNode;
   locale?: Locale;
   languageHref?: string;
+  showServiceStrip?: boolean;
 };
 
 export function StorefrontShell({
@@ -19,8 +23,9 @@ export function StorefrontShell({
   children,
   locale = "ar",
   languageHref,
+  showServiceStrip = true,
 }: StorefrontShellProps) {
-  const copy = shellCopy[locale];
+  const copy = { ...shellCopy[locale], ...getEffectiveSiteContent().shell[locale] };
   const isOperationsSurface =
     activeHref === "/ops-access" || activeHref.startsWith("/ops");
 
@@ -84,17 +89,21 @@ export function StorefrontShell({
           </TrackedLink>
 
           <div className={styles.headerActions}>
-            <TrackedLink href={localizePath(locale, "/search")} className={styles.searchLink} analyticsLabel="header_search" analyticsSurface="header_actions" analyticsDestinationType="search" aria-label={copy.searchLabel}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="6.5" stroke="currentColor" strokeWidth="1.7" /><path d="m16 16 4 4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" /></svg>
+            <SearchDialog locale={locale} className={styles.searchLink} />
+            <TrackedLink href={localizePath(locale, "/account/orders")} className={styles.accountLink} analyticsLabel="header_account" analyticsSurface="header_actions" analyticsDestinationType="account" aria-label={copy.account}>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.25" /><path d="M5.75 19c.65-3.35 2.75-5.25 6.25-5.25S17.6 15.65 18.25 19" /></svg>
             </TrackedLink>
-            <CartStatusLink href={localizePath(locale, "/cart")} className={styles.cartLink} badgeClassName={styles.cartBadge} label={copy.cart} countLabel={copy.cartCountLabel} />
-            <MobileNavDrawer activeHref={activeHref} locale={locale} languageHref={languageHref} />
+            <CartDrawer locale={locale} className={styles.cartLink} badgeClassName={styles.cartBadge} />
+            <MobileNavDrawer activeHref={activeHref} locale={locale} languageHref={languageHref} copy={copy} />
           </div>
         </div>
 
         <nav className={styles.nav} aria-label={copy.navLabel}>
           {copy.nav.map(([itemHref, label]) => {
             const isActive = itemHref === activeNavHref;
+            if (itemHref === "/shop") {
+              return <MegaShopMenu key={itemHref} locale={locale} isActive={isActive} />;
+            }
             return (
               <TrackedLink
                 key={itemHref}
@@ -114,13 +123,14 @@ export function StorefrontShell({
 
       <main className={styles.main} id="main-content">{children}</main>
 
-      <TrustServiceStrip locale={locale} />
+      {showServiceStrip ? <TrustServiceStrip locale={locale} copy={copy} /> : null}
 
       <footer className={styles.footer}>
         <div className={styles.footerBrand}>
           <Image src="/elore-assets/logo-horizontal-ivory.png" alt="ÉLORÉ PARIS" width={260} height={82} />
           <p>{copy.footerBody}</p>
           <span>{copy.footerStatus}</span>
+          <TrackedLink href={localizePath(locale, "/about")} className={styles.footerBrandLink} analyticsEvent="navigation_click" analyticsLabel="footer_about" analyticsSurface="footer_brand">{copy.aboutLabel}</TrackedLink>
         </div>
         <div className={styles.footerPanel}>
           <h2>{copy.shopTitle}</h2>
@@ -140,7 +150,12 @@ export function StorefrontShell({
             {copy.support.map(([itemHref, label]) => <TrackedLink key={itemHref} href={localizePath(locale, itemHref)} analyticsEvent="navigation_click" analyticsLabel={`footer_support_${itemHref.replaceAll("/", "_").replace(/^_+/, "")}`} analyticsSurface="footer_support">{label}</TrackedLink>)}
           </div>
         </div>
-        <div className={styles.footerBottom}><span>© ÉLORÉ PARIS</span><span>{copy.footerTagline}</span></div>
+        <div className={styles.footerBottom}>
+          <span>© ÉLORÉ PARIS</span>
+          <span lang="en">Saudi Arabia · SAR</span>
+          <TrackedLink href={languageHref ?? copy.languageHref} analyticsLabel="footer_language_switch" analyticsSurface="footer_meta" lang={locale === "ar" ? "en" : "ar"}>{copy.languageLabel}</TrackedLink>
+          <span>{copy.footerTagline}</span>
+        </div>
       </footer>
     </div>
   );

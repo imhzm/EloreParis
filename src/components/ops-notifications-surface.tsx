@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { OpsNav } from "@/components/ops-nav";
 import { OpsLifecycleConsentSurface } from "@/components/ops-lifecycle-consent-surface";
 import { OpsLifecycleDeliveryOutboxSurface } from "@/components/ops-lifecycle-delivery-outbox-surface";
 import { TrackedLink } from "@/components/tracked-link";
 import { getPageType, trackAnalyticsEvent } from "@/lib/analytics";
+import { useClientPagination, PaginationControls } from "@/components/ops-pagination-controls";
+import { DownloadCsvButton } from "@/components/ops-download-csv";
 import {
   fetchOpsNotifications,
   updateOpsNotificationStatus,
@@ -76,9 +78,12 @@ export function OpsNotificationsSurface() {
   const [notifications, setNotifications] = useState<StoredNotification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<NotificationFilter>("all");
   const [pendingNotificationId, setPendingNotificationId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const bulkSelectRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     void fetchOpsNotifications()
@@ -157,6 +162,9 @@ export function OpsNotificationsSurface() {
     });
   }, [filter, notifications, query]);
 
+  const { pagination, paginatedItems, goToPage, changePageSize } =
+    useClientPagination(filteredNotifications);
+
   function updateLocalNotification(nextNotification: StoredNotification) {
     setNotifications((currentNotifications) =>
       currentNotifications
@@ -165,6 +173,63 @@ export function OpsNotificationsSurface() {
         )
         .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt)),
     );
+  }
+
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) { next.delete(id); } else { next.add(id); }
+      return next;
+    });
+  }
+
+  const allOnPageSelected = paginatedItems.length > 0 && paginatedItems.every((n) => selectedIds.has(n.id));
+  const someOnPageSelected = paginatedItems.some((n) => selectedIds.has(n.id));
+
+  useEffect(() => {
+    if (bulkSelectRef.current) {
+      bulkSelectRef.current.indeterminate = someOnPageSelected && !allOnPageSelected;
+    }
+  }, [someOnPageSelected, allOnPageSelected]);
+
+  function toggleSelectAllOnPage() {
+    if (allOnPageSelected) {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        for (const n of paginatedItems) next.delete(n.id);
+        return next;
+      });
+    } else {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        for (const n of paginatedItems) next.add(n.id);
+        return next;
+      });
+    }
+  }
+
+  async function handleBulkStatusUpdate(
+    status: Extract<NotificationDeliveryStatus, "queued" | "sent">,
+  ) {
+    const results = await Promise.allSettled(
+      Array.from(selectedIds).map(async (id) => {
+        await updateOpsNotificationStatus(id, status);
+      }),
+    );
+    const succeeded = results.filter((r) => r.status === "fulfilled").length;
+    const failed = results.filter((r) => r.status === "rejected").length;
+    if (failed > 0) {
+      setError(`تم تحديث ${succeeded} إشعار، فشل ${failed}.`);
+    } else {
+      setError(null);
+    }
+    setStatusMessage(
+      `تم تحديث ${succeeded} إشعار إلى ${status === "sent" ? "مرسل" : "قيد الانتظار"}.`,
+    );
+    setSelectedIds(new Set());
+    await fetchOpsNotifications().then(({ notifications: nextNotifications }) => {
+      setNotifications(nextNotifications);
+    });
   }
 
   function handleNotificationStatusUpdate(
@@ -303,6 +368,69 @@ export function OpsNotificationsSurface() {
           </div>
 
           {error ? <div className={styles.inlineError}>{error}</div> : null}
+          {statusMessage ? <div className={styles.bannerInfo} role="status">{statusMessage}</div> : null}
+
+          {selectedIds.size > 0 ? (
+            <div className={styles.bulkActions}>
+              <span>{selectedIds.size} إشعار محدد</span>
+              <button
+                type="button"
+                className={styles.primaryButton}
+                disabled={selectedIds.size === 0}
+                onClick={() => handleBulkStatusUpdate("sent")}
+              >
+                تعليم الكل كمرسل
+              </button>
+              <button
+                type="button"
+                className={styles.secondaryButton}
+                disabled={selectedIds.size === 0}
+                onClick={() => handleBulkStatusUpdate("queued")}
+              >
+                إعادة الكل إلى queue
+              </button>
+              <button
+                type="button"
+                className={styles.secondaryButton}
+                onClick={() => setSelectedIds(new Set())}
+              >
+                إلغاء التحديد
+              </button>
+            </div>
+          ) : null}
+
+          <div className={styles.filterChipRow}>
+            <label className={styles.checkboxLabel}>
+              <input
+                ref={bulkSelectRef}
+                type="checkbox"
+                checked={allOnPageSelected}
+                onChange={toggleSelectAllOnPage}
+                aria-label="تحديد الكل في هذه الصفحة"
+              />
+            </label>
+            <PaginationControls
+              pagination={pagination}
+              onPageChange={goToPage}
+              onPageSizeChange={changePageSize}
+            />
+            <DownloadCsvButton
+              filename="elore-notifications.csv"
+              rows={filteredNotifications.map((n) => ({
+                رقم_الطلب: n.orderNumber,
+                القالب: n.templateKey,
+                القناة: n.channel,
+                الحالة: n.status,
+                عنوان: n.label,
+                ملاحظة: n.note,
+                المستلم: n.recipientHint,
+                تاريخ_الانشاء: n.createdAt,
+                تاريخ_التحديث: n.updatedAt,
+                تاريخ_الإرسال: n.sentAt ?? "",
+              }))}
+              label="CSV"
+            />
+          </div>
 
           <div className={styles.ordersGrid}>
             {isLoading ? (
@@ -311,12 +439,21 @@ export function OpsNotificationsSurface() {
                 <h1>جارٍ تحميل طابور الإشعارات</h1>
                 <p>يتم الآن استعادة queue الإشعارات من authority الحالية.</p>
               </article>
-            ) : filteredNotifications.length ? (
-              filteredNotifications.map((notification) => {
+            ) : paginatedItems.length ? (
+              paginatedItems.map((notification) => {
                 const isPending = pendingNotificationId === notification.id;
+                const isSelected = selectedIds.has(notification.id);
 
                 return (
-                  <article key={notification.id} className={styles.lineItem}>
+                  <article key={notification.id} className={`${styles.lineItem} ${isSelected ? styles.lineItemSelected : ""}`}>
+                    <div className={styles.checkboxCol}>
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleSelect(notification.id)}
+                        aria-label={`تحديد إشعار ${notification.orderNumber}`}
+                      />
+                    </div>
                     <div className={styles.lineHead}>
                       <div>
                         <h3>{getTemplateLabel(notification.templateKey)}</h3>

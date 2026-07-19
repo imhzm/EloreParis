@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 // Bump deliberately when public copy is revised. Kept in one place so the value
 // cannot drift between surfaces, and never derived from `Date.now()` — a
 // sitemap that claims every page changed on every request is not a signal.
-const CONTENT_REVISION_DATE = "2026-07-16";
+const CONTENT_REVISION_DATE = "2026-07-18";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   if (!isSearchIndexingEnabled()) {

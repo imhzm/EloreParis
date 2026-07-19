@@ -54,6 +54,17 @@ export type CheckoutQuoteResponse = {
   }>;
   subtotalGrossHalalas: number;
   subtotalVatHalalas: number;
+  promotion: {
+    promotionId: string;
+    promotionVersion: number;
+    mode: "automatic" | "coupon";
+    code: string | null;
+    titleAr: string;
+    titleEn: string;
+    discountHalalas: number;
+  } | null;
+  discountGrossHalalas: number;
+  discountVatHalalas: number;
   totalGrossHalalas: number;
   totalVatHalalas: number;
 };
@@ -132,6 +143,7 @@ export async function createCheckoutQuoteThroughAuthority(input: {
   items: StoredCartItem[];
   shippingMethodId: "standard" | "express";
   locale: Locale;
+  couponCode?: string | null;
 }, signal?: AbortSignal) {
   const response = await fetch("/api/checkout/quote", {
     method: "POST",

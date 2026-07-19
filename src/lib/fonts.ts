@@ -1,14 +1,21 @@
-import { Cairo, Playfair_Display, Public_Sans } from "next/font/google";
+import {
+  Cairo,
+  Noto_Naskh_Arabic,
+  Playfair_Display,
+  Public_Sans,
+} from "next/font/google";
 
 /**
- * The type system, per the 2026-07-17 brand identity sheet.
+ * The type system follows the approved compact-commerce reference and the
+ * implementation pack's role split.
  *
- *   ARABIC — PRIMARY    Cairo Display / Bold
+ *   ARABIC — DISPLAY    Noto Naskh Arabic
+ *   ARABIC — UI/BODY    Cairo
  *   ENGLISH — SECONDARY Playfair Display / Regular
  *
- * The sheet is the authority and supersedes the measured pairing that stood
- * here before (Alyamama + Fustat + Newsreader + Public Sans), which the owner
- * confirmed on 2026-07-17.
+ * The user's latest direction makes the supplied reference the visual
+ * authority. Noto Naskh provides its editorial headline silhouette while Cairo
+ * remains the clearer UI face.
  *
  * HOW THE TWO SCRIPTS ARE KEPT APART — NOT HERE.
  *
@@ -35,10 +42,9 @@ import { Cairo, Playfair_Display, Public_Sans } from "next/font/google";
  */
 
 /**
- * AR — Cairo, the whole Arabic voice. One family for display and body,
- * separated by weight, which is what the sheet shows and what the pack's "no
- * more than two faces per language" rule asks for. Arabic has no native
- * serif/sans split to import.
+ * AR body/control — Cairo. Keeping it separate from display preserves compact,
+ * legible navigation and form labels while the more calligraphic face remains
+ * limited to headings.
  *
  * One call, not two. Display and body were separate exports with identical
  * options, which emitted every Cairo @font-face twice for two variables that
@@ -46,6 +52,21 @@ import { Cairo, Playfair_Display, Public_Sans } from "next/font/google";
  */
 export const arabic = Cairo({
   variable: "--font-ar",
+  subsets: ["arabic"],
+  weight: "variable",
+  display: "swap",
+});
+
+/**
+ * AR display — Noto Naskh Arabic.
+ *
+ * The compact commerce reference uses a calligraphic editorial silhouette for
+ * display copy while the UI remains deliberately clean. Cairo therefore stays
+ * the body/control face and Noto Naskh is limited to headings. This is also the
+ * explicit Arabic display recommendation in the implementation pack.
+ */
+export const arabicDisplay = Noto_Naskh_Arabic({
+  variable: "--font-ar-display",
   subsets: ["arabic"],
   weight: "variable",
   display: "swap",
@@ -81,6 +102,7 @@ export const enBody = Public_Sans({
 
 export const fontVariables = [
   arabic.variable,
+  arabicDisplay.variable,
   enDisplay.variable,
   enBody.variable,
 ].join(" ");

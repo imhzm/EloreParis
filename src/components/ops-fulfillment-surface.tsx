@@ -5,6 +5,7 @@ import { OpsNav } from "@/components/ops-nav";
 import { TrackedLink } from "@/components/tracked-link";
 import { getOrderFulfillmentPlan } from "@/lib/fulfillment";
 import { fetchOpsOrdersFromAuthority } from "@/lib/order-authority-client";
+import { useClientPagination, PaginationControls } from "@/components/ops-pagination-controls";
 import { type StoredOrder } from "@/lib/orders";
 import styles from "./order-flow.module.css";
 
@@ -216,6 +217,9 @@ export function OpsFulfillmentSurface() {
     });
   }, [filter, fulfillmentOrders, query]);
 
+  const { pagination, paginatedItems, goToPage, changePageSize } =
+    useClientPagination(filteredOrders);
+
   const filterCounts = useMemo(
     () =>
       fulfillmentFilters.reduce<Record<FulfillmentFilter, number>>(
@@ -363,6 +367,12 @@ export function OpsFulfillmentSurface() {
 
           {error ? <div className={styles.inlineError}>{error}</div> : null}
 
+          <PaginationControls
+            pagination={pagination}
+            onPageChange={goToPage}
+            onPageSizeChange={changePageSize}
+          />
+
           <div className={styles.ordersGrid}>
             {isLoading ? (
               <article className={styles.emptyCard}>
@@ -370,8 +380,8 @@ export function OpsFulfillmentSurface() {
                 <h1>جاري تحميل قرارات التشغيل الحالية</h1>
                 <p>يتم الآن استعادة الطلبات من authority الحالية وتحويلها إلى queue قابلة للمراجعة.</p>
               </article>
-            ) : filteredOrders.length ? (
-              filteredOrders.map(({ order, plan, ownerLane }) => (
+            ) : paginatedItems.length ? (
+              paginatedItems.map(({ order, plan, ownerLane }) => (
                 <article key={order.orderNumber} className={styles.lineItem}>
                   <div className={styles.lineHead}>
                     <div>

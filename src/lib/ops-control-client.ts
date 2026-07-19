@@ -183,6 +183,19 @@ export async function fetchOpsReleaseHandoffs() {
   };
 }
 
+export async function fetchOpsCounts() {
+  const response = await fetch("/api/ops/counts");
+  if (!response.ok) throw new Error("Failed to fetch ops counts");
+  return response.json() as Promise<{
+    pendingOrders: number;
+    activeFulfillment: number;
+    queuedNotifications: number;
+    totalOrders: number;
+    auditEvents: number;
+    blockedNotifications: number;
+  }>;
+}
+
 export async function fetchOpsReleasePacket() {
   const response = await fetch("/api/ops/release/packet", {
     cache: "no-store",

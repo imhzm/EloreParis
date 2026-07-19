@@ -1,0 +1,25 @@
+.editor { display: grid; gap: 20px; }
+.toolbar { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; padding: 16px; border-radius: 20px; background: rgba(255,255,255,.06); }
+.toolbar label, .field { display: grid; gap: 8px; min-width: 0; }
+.toolbar span, .field > span, .lockedField > span { color: #c6a966; font-size: .76rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+.toolbar select, .field input, .field textarea, .field select { width: 100%; min-height: 46px; padding: 12px 14px; border: 1px solid rgba(255,250,242,.15); border-radius: 14px; background: rgba(255,255,255,.08); color: #fffaf2; font: inherit; }
+.toolbar option, .field option { color: #1c1011; }
+.field textarea { min-height: 112px; resize: vertical; }
+.targetHeader { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-bottom: 14px; border-bottom: 1px solid rgba(255,250,242,.12); }
+.targetHeader h4 { margin: 4px 0 0; color: #fffaf2; font-size: 1.15rem; }
+.targetHeader small, .targetHeader > span { color: rgba(255,250,242,.62); }
+.objectGrid, .arrayGroup { display: grid; gap: 14px; }
+.objectGrid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); }
+.objectFieldset .objectGrid, .arrayItem .objectGrid { grid-template-columns: 1fr; }
+.objectFieldset, .arrayItem { min-width: 0; padding: 14px; border: 1px solid rgba(255,250,242,.1); border-radius: 18px; background: rgba(4,35,33,.38); }
+.objectFieldset legend, .objectFieldset summary, .arrayItem summary { padding: 0 8px; color: #fffaf2; font-weight: 700; cursor: pointer; }
+.objectFieldset summary, .arrayItem summary { margin: -2px 0; padding-block: 4px; }
+.objectFieldset[open] > summary, .arrayItem[open] > summary { margin-block-end: 14px; }
+.arrayItem { display: grid; gap: 12px; }
+.lockedField { display: grid; gap: 6px; }
+.lockedField code { overflow-wrap: anywhere; color: #fffaf2; }
+.lockedField small { color: rgba(255,250,242,.52); }
+.checkField { display: flex; align-items: center; gap: 10px; color: #fffaf2; }
+.imagePreview { display: block; overflow: hidden; width: min(100%, 320px); border-radius: 12px; }
+.imagePreview img { display: block; width: 100%; height: auto; aspect-ratio: 16/9; object-fit: cover; }
+@media (max-width: 760px) { .objectGrid { grid-template-columns: 1fr; } .toolbar { grid-template-columns: 1fr; } }

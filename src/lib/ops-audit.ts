@@ -22,6 +22,9 @@ const OPS_AUDIT_RETENTION_LIMITS: Record<OpsAuditEntry["entityType"], number> = 
   release: 2000,
   order: 2000,
   notification: 2000,
+  promotion: 2000,
+  media: 2000,
+  site_content: 2000,
   ops_session: 1000,
 };
 

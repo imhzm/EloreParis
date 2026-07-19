@@ -1,12 +1,17 @@
-"use client";
-
 import Image from "next/image";
 import { TrackedLink } from "@/components/tracked-link";
-import { useScrollSceneProgress } from "@/hooks/use-scroll-scene-progress";
 import { localizePath, type Locale } from "@/lib/i18n";
-import { supportContent, trustContent, trustHubCopy, trustSlugs, type TrustSupportRecord } from "@/lib/trust-support-content";
+import {
+  getTrustSupportVariant,
+  supportContent,
+  trustContent,
+  trustHubCopy,
+  trustSlugs,
+  trustSupportUiCopy,
+  type TrustSupportRecord,
+  type TrustSupportVariant,
+} from "@/lib/trust-support-content";
 import styles from "./localized-trust-support-experience.module.css";
-import { MultilineTitle, keepFocusVisible } from "@/components/scene-primitives";
 
 const visualBySlug: Record<string, string> = {
   verification: "/elore-assets/ingredient-botanical-lab-concept-1536x1024.avif",
@@ -20,60 +25,248 @@ const visualBySlug: Record<string, string> = {
   terms: "/elore-assets/transition-burgundy-satin-concept-1672w.avif",
 };
 
-export function LocalizedTrustHub({ locale }: { locale: Locale }) {
-  const rootRef = useScrollSceneProgress<HTMLDivElement>({ selector: "[data-trust-scene]" });
-  const copy = trustHubCopy[locale];
-  const records = trustSlugs.map((slug) => trustContent[locale][slug]);
+function DetailActions({
+  locale,
+  parentHref,
+  record,
+  variant,
+}: {
+  locale: Locale;
+  parentHref: string;
+  record: TrustSupportRecord;
+  variant: TrustSupportVariant;
+}) {
+  const copy = trustSupportUiCopy[locale];
+  const primary = variant === "brand"
+    ? { href: localizePath(locale, "/shop"), label: copy.explore }
+    : variant === "support"
+      ? { href: localizePath(locale, "/faq"), label: copy.support }
+      : variant === "faq"
+        ? { href: localizePath(locale, "/trust"), label: copy.openTrust }
+        : { href: localizePath(locale, parentHref), label: copy.backTrust };
+  const secondary = variant === "support"
+    ? { href: localizePath(locale, "/trust"), label: copy.openTrust }
+    : variant === "faq"
+      ? null
+      : { href: localizePath(locale, "/faq"), label: copy.faq };
 
-  return <div ref={rootRef} className={styles.experience} data-trust-experience>
-    <section className={`${styles.scene} ${styles.hero}`} data-trust-scene aria-labelledby="trust-title"><div className={styles.frame}>
-      <div className={styles.motionMark} aria-hidden="true"><Image src="/elore-assets/editorial-skin-light-concept-1122w.avif" alt="" fill priority sizes="(max-width: 900px) 90vw, 42vw" /><span>É</span><i lang="en">TRUST / 01</i></div>
-      <div className={styles.heroCopy}><p>{copy.eyebrow}</p><h1 id="trust-title"><MultilineTitle value={copy.title} /></h1><span>{copy.intro}</span><TrackedLink className={styles.action} href="#trust-directory" onFocus={keepFocusVisible} analyticsLabel="trust_directory_begin" analyticsSurface="trust_block_motion">{copy.directory}</TrackedLink><small>{copy.notice}</small></div>
-      <b className={styles.counter}>01 — 04</b>
-    </div></section>
-    <section className={`${styles.scene} ${styles.directory}`} data-trust-scene id="trust-directory" aria-label={copy.directory}><div className={styles.frame}>
-      <div className={styles.heading}><p>{copy.directory}</p><h2><MultilineTitle value={copy.principlesTitle} /></h2></div>
-      <nav className={styles.directoryGrid}>{records.map((record, index) => <TrackedLink key={record.slug} href={`/${locale}/trust/${record.slug}`} onFocus={keepFocusVisible} analyticsLabel={`trust_${record.slug}`} analyticsSurface="trust_block_motion"><b>0{index + 1}</b><small>{record.eyebrow}</small><h3>{record.title.replace("\n", " ")}</h3><span>{record.summary}</span><strong>{copy.open}</strong></TrackedLink>)}</nav>
-      <b className={styles.counter}>02 — 04</b>
-    </div></section>
-    <section className={`${styles.scene} ${styles.principles}`} data-trust-scene aria-label={copy.principlesTitle}><div className={styles.frame}>
-      <div className={styles.statement}><p lang="en">PROOF BEFORE PROMISE</p><h2><MultilineTitle value={copy.principlesTitle} /></h2><span>{copy.notice}</span></div>
-      <ol className={styles.rules}>{records.slice(0, 4).map((record, index) => <li key={record.slug}><b>0{index + 1}</b><span>{record.sections[0].title}</span><small>{record.sections[0].body}</small></li>)}</ol>
-      <b className={styles.counter}>03 — 04</b>
-    </div></section>
-    <section className={`${styles.scene} ${styles.close}`} data-trust-scene aria-label={copy.closeTitle}><div className={styles.frame}>
-      <div className={styles.closeCopy}><p lang="en">CLARITY BEFORE COMMERCE</p><h2><MultilineTitle value={copy.closeTitle} /></h2><span>{copy.intro}</span><TrackedLink className={styles.action} href={`/${locale}/faq`} onFocus={keepFocusVisible} analyticsLabel="trust_to_faq" analyticsSurface="trust_block_motion">{copy.support}</TrackedLink></div>
-      <b className={styles.counter}>04 — 04</b>
-    </div></section>
-  </div>;
+  return (
+    <div className={styles.actions}>
+      <TrackedLink
+        className={styles.action}
+        href={primary.href}
+        analyticsLabel={`${record.slug}_primary`}
+        analyticsSurface="trust_compact"
+      >
+        {primary.label}
+      </TrackedLink>
+      {secondary ? (
+        <TrackedLink
+          className={styles.textAction}
+          href={secondary.href}
+          analyticsLabel={`${record.slug}_secondary`}
+          analyticsSurface="trust_compact"
+        >
+          {secondary.label}
+        </TrackedLink>
+      ) : null}
+    </div>
+  );
 }
 
-export function LocalizedTrustSupportDetail({ locale, record, parentHref }: { locale: Locale; record: TrustSupportRecord; parentHref: string }) {
-  const rootRef = useScrollSceneProgress<HTMLDivElement>({ selector: "[data-trust-detail-scene]" });
-  const isAr = locale === "ar";
-  const faqHref = localizePath(locale, "/faq");
+export function LocalizedTrustHub({ locale }: { locale: Locale }) {
+  const copy = trustHubCopy[locale];
+  const ui = trustSupportUiCopy[locale];
+  const records = trustSlugs.map((slug) => trustContent[locale][slug]);
 
-  return <div ref={rootRef} className={styles.experience} data-trust-experience>
-    <section className={`${styles.scene} ${styles.hero}`} data-trust-detail-scene aria-labelledby="policy-title"><div className={styles.frame}>
-      <div className={styles.motionMark} aria-hidden="true"><Image src={visualBySlug[record.slug] ?? visualBySlug.verification} alt="" fill priority sizes="(max-width: 900px) 90vw, 42vw" /><span>É</span><i>{record.eyebrow}</i></div>
-      <div className={styles.heroCopy}><p>{record.eyebrow}</p><h1 id="policy-title"><MultilineTitle value={record.title} /></h1><span>{record.summary}</span><TrackedLink className={styles.action} href="#policy-sections" onFocus={keepFocusVisible} analyticsLabel={`${record.slug}_begin`} analyticsSurface="trust_block_motion">{isAr ? "اقرئي التفاصيل" : "Read the detail"}</TrackedLink><small>{record.status}</small></div>
-      <b className={styles.counter}>01 — 04</b>
-    </div></section>
-    <section className={`${styles.scene} ${styles.detail}`} data-trust-detail-scene id="policy-sections" aria-label={isAr ? "التفاصيل" : "Details"}><div className={styles.frame}>
-      <div className={styles.heading}><p>{isAr ? "التفاصيل" : "THE DETAIL"}</p><h2>{isAr ? "معلومة يمكن مراجعتها." : "Information you can review."}</h2></div>
-      <div className={styles.sectionGrid}>{record.sections.map((section, index) => <article key={section.title}><b>0{index + 1}</b><h3>{section.title}</h3><p>{section.body}</p>{section.points && <ul>{section.points.map((point) => <li key={point}>{point}</li>)}</ul>}</article>)}</div>
-      <b className={styles.counter}>02 — 04</b>
-    </div></section>
-    <section className={`${styles.scene} ${styles.questions}`} data-trust-detail-scene aria-label={isAr ? "أسئلة واضحة" : "Clear questions"}><div className={styles.frame}>
-      <div className={styles.statement}><p lang="en">QUESTIONS / ANSWERS</p><h2>{isAr ? "لا إجابة مخترعة." : "No invented answer."}</h2><span>{record.status}</span></div>
-      <div className={styles.faqList}>{record.faqs.map(([question, answer]) => <details key={question}><summary>{question}</summary><p>{answer}</p></details>)}</div>
-      <b className={styles.counter}>03 — 04</b>
-    </div></section>
-    <section className={`${styles.scene} ${styles.close}`} data-trust-detail-scene aria-label={isAr ? "الخطوة التالية" : "Next step"}><div className={styles.frame}>
-      <div className={styles.closeCopy}><p>ÉLORÉ / CONSIDERED</p><h2>{isAr ? "اعرفي قبل أن تختاري." : "Know before you choose."}</h2><span>{record.status}</span><div className={styles.actions}><TrackedLink className={styles.action} href={`/${locale}${parentHref}`} onFocus={keepFocusVisible} analyticsLabel={`${record.slug}_back`} analyticsSurface="trust_block_motion">{isAr ? "العودة إلى الدليل" : "Back to the directory"}</TrackedLink>{record.slug !== "faq" && <TrackedLink className={styles.textAction} href={faqHref} onFocus={keepFocusVisible} analyticsLabel={`${record.slug}_faq`} analyticsSurface="trust_block_motion">{isAr ? "الأسئلة الشائعة" : "Frequently asked questions"}</TrackedLink>}</div></div>
-      <b className={styles.counter}>04 — 04</b>
-    </div></section>
-  </div>;
+  return (
+    <div
+      className={`${styles.experience} ${styles.policy}`}
+      data-trust-experience
+      data-trust-variant="policy"
+    >
+      <header className={`${styles.shell} ${styles.hero}`} aria-labelledby="trust-title">
+        <div className={styles.heroCopy}>
+          <p className={styles.eyebrow}>{copy.eyebrow}</p>
+          <h1 id="trust-title">{copy.title}</h1>
+          <p className={styles.lead}>{copy.intro}</p>
+          <aside className={styles.statusNote} aria-label={ui.statusLabel}>
+            <strong>{ui.statusLabel}</strong>
+            <span>{copy.notice}</span>
+          </aside>
+          <TrackedLink
+            className={styles.action}
+            href="#trust-directory"
+            analyticsLabel="trust_directory_begin"
+            analyticsSurface="trust_compact"
+          >
+            {copy.directory}
+          </TrackedLink>
+        </div>
+        <div className={styles.heroVisual} aria-hidden="true">
+          <Image
+            src="/elore-assets/editorial-skin-light-concept-1122w.avif"
+            alt=""
+            fill
+            priority
+            sizes="(max-width: 820px) 92vw, 38vw"
+          />
+          <span>É</span>
+        </div>
+      </header>
+
+      <section className={`${styles.shell} ${styles.directorySection}`} id="trust-directory" aria-labelledby="trust-directory-title">
+        <div className={styles.sectionHeading}>
+          <div>
+            <p className={styles.eyebrow}>{copy.directory}</p>
+            <h2 id="trust-directory-title">{copy.principlesTitle}</h2>
+          </div>
+          <p>{ui.directoryIntro}</p>
+        </div>
+        <nav aria-label={copy.directory}>
+          <ol className={styles.directoryGrid}>
+            {records.map((record, index) => (
+              <li key={record.slug}>
+                <TrackedLink
+                  href={localizePath(locale, `/trust/${record.slug}`)}
+                  analyticsLabel={`trust_${record.slug}`}
+                  analyticsSurface="trust_compact"
+                >
+                  <span className={styles.cardNumber} aria-hidden="true">0{index + 1}</span>
+                  <small>{record.eyebrow}</small>
+                  <h3>{record.title.replace("\n", " ")}</h3>
+                  <p>{record.summary}</p>
+                  <strong>{copy.open}</strong>
+                </TrackedLink>
+              </li>
+            ))}
+          </ol>
+        </nav>
+      </section>
+
+      <section className={styles.closingBand} aria-labelledby="trust-next-title">
+        <div className={`${styles.shell} ${styles.closingInner}`}>
+          <div>
+            <p className={styles.eyebrow}>{copy.principlesTitle.replace("\n", " ")}</p>
+            <h2 id="trust-next-title">{copy.closeTitle}</h2>
+            <p>{copy.intro}</p>
+          </div>
+          <TrackedLink
+            className={styles.lightAction}
+            href={localizePath(locale, "/faq")}
+            analyticsLabel="trust_to_faq"
+            analyticsSurface="trust_compact"
+          >
+            {copy.support}
+          </TrackedLink>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+export function LocalizedTrustSupportDetail({
+  locale,
+  record,
+  parentHref,
+}: {
+  locale: Locale;
+  record: TrustSupportRecord;
+  parentHref: string;
+}) {
+  const copy = trustSupportUiCopy[locale];
+  const variant = getTrustSupportVariant(record.slug);
+
+  return (
+    <div
+      className={`${styles.experience} ${styles[variant]}`}
+      data-trust-experience
+      data-trust-variant={variant}
+    >
+      <header className={`${styles.shell} ${styles.hero}`} aria-labelledby="trust-detail-title">
+        <div className={styles.heroCopy}>
+          <p className={styles.eyebrow}>{record.eyebrow}</p>
+          <h1 id="trust-detail-title">{record.title}</h1>
+          <p className={styles.lead}>{record.summary}</p>
+          <aside className={styles.statusNote} aria-label={copy.statusLabel}>
+            <strong>{copy.statusLabel}</strong>
+            <span>{record.status}</span>
+          </aside>
+          <TrackedLink
+            className={styles.action}
+            href="#trust-detail-sections"
+            analyticsLabel={`${record.slug}_begin`}
+            analyticsSurface="trust_compact"
+          >
+            {copy.readDetail}
+          </TrackedLink>
+        </div>
+        <div className={styles.heroVisual} aria-hidden="true">
+          <Image
+            src={visualBySlug[record.slug] ?? visualBySlug.verification}
+            alt=""
+            fill
+            priority
+            sizes="(max-width: 820px) 92vw, 38vw"
+          />
+          <span>É</span>
+        </div>
+      </header>
+
+      <section className={`${styles.shell} ${styles.detailSection}`} id="trust-detail-sections" aria-labelledby="trust-detail-sections-title">
+        <div className={styles.sectionHeading}>
+          <div>
+            <p className={styles.eyebrow}>{record.eyebrow}</p>
+            <h2 id="trust-detail-sections-title">{copy.sectionHeading[variant]}</h2>
+          </div>
+          <p>{record.status}</p>
+        </div>
+        <div className={styles.sectionGrid}>
+          {record.sections.map((section, index) => (
+            <article key={section.title}>
+              <span className={styles.cardNumber} aria-hidden="true">0{index + 1}</span>
+              <h3>{section.title}</h3>
+              <p>{section.body}</p>
+              {section.points ? (
+                <ul>
+                  {section.points.map((point) => <li key={point}>{point}</li>)}
+                </ul>
+              ) : null}
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className={`${styles.shell} ${styles.questionsSection}`} aria-labelledby="trust-questions-title">
+        <div className={styles.sectionHeading}>
+          <div>
+            <p className={styles.eyebrow}>{copy.questionsEyebrow}</p>
+            <h2 id="trust-questions-title">{copy.questionsTitle}</h2>
+          </div>
+          <p>{record.status}</p>
+        </div>
+        <div className={styles.faqList}>
+          {record.faqs.map(([question, answer]) => (
+            <details key={question}>
+              <summary>{question}</summary>
+              <p>{answer}</p>
+            </details>
+          ))}
+        </div>
+      </section>
+
+      <section className={styles.nextStep} aria-labelledby="trust-next-step-title">
+        <div className={`${styles.shell} ${styles.nextStepInner}`}>
+          <div>
+            <p className={styles.eyebrow}>{copy.nextEyebrow}</p>
+            <h2 id="trust-next-step-title">{copy.nextTitle[variant]}</h2>
+            <p>{record.status}</p>
+          </div>
+          <DetailActions locale={locale} parentHref={parentHref} record={record} variant={variant} />
+        </div>
+      </section>
+    </div>
+  );
 }
 
 export const localizedSupportDirectory = supportContent;

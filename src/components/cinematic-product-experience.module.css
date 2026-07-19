@@ -1,80 +1,657 @@
-.product{--mirror:1;--ink:var(--elore-ink);--teal:var(--elore-wine);--mint:var(--elore-champagne);--cream:var(--elore-ivory);--ink-rgb:42 13 20;--teal-rgb:107 29 42;--mint-rgb:212 175 55;--cinematic-header-offset:78px;background:var(--ink);color:var(--elore-warm-white)}.scene{--progress:0;--enter:0;--exit:0;position:relative;width:100vw;height:265svh;margin-inline:calc(50% - 50vw)}.frame{position:sticky;z-index:1;top:var(--cinematic-header-offset);height:calc(100svh - var(--cinematic-header-offset));overflow:hidden;isolation:isolate}.counter{position:absolute;z-index:8;top:7%;inset-inline-end:5%;unicode-bidi:plaintext;color:rgba(255,255,255,.5);font-size:.75rem;letter-spacing:.18em}
-.heroScene .frame{background:radial-gradient(circle at calc(29% + var(--progress)*15%) 50%,rgb(var(--mint-rgb) / .28),transparent 29%),linear-gradient(135deg,#2a0d14,#3b0f1a 58%,#2d171f)}.productHalo{position:absolute;inset-inline-end:29%;top:51%;width:min(49vw,680px);aspect-ratio:1;border:1px solid rgb(var(--mint-rgb) / .42);border-radius:50%;box-shadow:0 0 100px rgb(var(--mint-rgb) / .18);transform:translate(calc(-50% * var(--mirror)),-50%) rotate(calc(var(--progress)*45deg)) scale(calc(.72 + var(--progress)*.3))}.productHalo i{position:absolute;inset:15%;border:1px dashed rgb(var(--mint-rgb) / .34);border-radius:50%}.productHalo i:last-child{inset:34%;border-style:solid}.heroVisual{position:absolute;inset-inline-end:29%;top:52%;width:min(35vw,490px);aspect-ratio:1;overflow:hidden;border-radius:46% 54% 49% 51%;background:#e6d9c9;box-shadow:0 35px 90px rgba(42,13,20,.32);transform:translate(calc(-50% * var(--mirror)),-50%) rotate(calc(-7deg + var(--progress)*14deg)) scale(calc(.82 + var(--enter)*.18));opacity:calc(1 - var(--exit)*.7)}.heroVisual img,.usageVisual img,.purchaseVisual img{object-fit:cover}.heroCopy,.sceneCopy,.ingredientCopy,.usageCopy,.purchasePanel{position:absolute;z-index:5;display:grid;gap:19px}.heroCopy{inset-inline-start:8%;top:50%;width:min(45rem,47vw);transform:translateY(-50%);opacity:calc(1 - var(--exit))}.heroCopy>p,.sceneCopy>p,.ingredientCopy>p,.usageCopy>p,.purchasePanel>p{color:var(--mint);font-size:.76rem;font-weight:800;letter-spacing:.22em}.heroCopy h1,.sceneCopy h2,.ingredientCopy h2,.usageCopy h2,.purchasePanel h2{font-size:clamp(4rem,7.2vw,8.3rem);line-height:.84;letter-spacing:-.055em}.heroCopy>span,.sceneCopy>span,.ingredientCopy>span{color:rgba(255,255,255,.72);font-size:1.08rem;line-height:1.8}.heroCopy>div{display:flex;gap:11px}.primaryAction,.secondaryAction{width:fit-content;padding:14px 23px;border-radius:999px;font-weight:800}.primaryAction{color:#2a0d14;background:var(--mint)}.secondaryAction{border:1px solid rgba(255,255,255,.4)}
-.fitScene .frame{color:var(--ink);background:radial-gradient(circle at center,rgb(var(--mint-rgb) / .25),transparent 34%),var(--cream)}.fitScene .counter{color:rgb(var(--ink-rgb) / .45)}.sceneCopy{inset-inline-start:6%;top:8%;width:45vw;opacity:calc(1 - var(--exit))}.sceneCopy>p{color:var(--teal)}.sceneCopy h2{font-size:clamp(3.4rem,6vw,6.8rem)}.sceneCopy>span{color:#6f5a52}.fitOrbit{position:absolute;inset:0}.fitOrbit article{--index:0;position:absolute;left:47%;top:60%;display:grid;gap:8px;width:min(250px,21vw);padding:24px;border:1px solid rgb(var(--ink-rgb) / .12);border-radius:26px;background:rgba(255,255,255,.84);box-shadow:0 24px 65px rgb(var(--ink-rgb) / .13);backdrop-filter:blur(12px);transform:translate(-50%,-50%) rotate(calc(var(--index)*90deg + var(--progress)*30deg)) translateX(min(35vw,490px)) rotate(calc((var(--index)*90deg + var(--progress)*30deg)*-1)) scale(calc(.72 + var(--enter)*.28));opacity:calc(1 - var(--exit)*.8)}.fitOrbit b{color:var(--teal)}.fitOrbit small{color:#6f5a52}.fitOrbit h3{font-size:1.25rem}
-.ingredientScene .frame{background:radial-gradient(circle at 22% 50%,rgb(var(--mint-rgb) / .25),transparent 30%),linear-gradient(135deg,#2a0d14,#3b0f1a)}.ingredientWord{position:absolute;left:50%;top:50%;color:rgba(255,255,255,.035);font-size:clamp(9rem,23vw,27rem);font-weight:900;white-space:nowrap;transform:translate(-50%,-50%) translateX(calc((.5 - var(--progress))*18vw))}.ingredientCopy{inset-inline-end:7%;top:50%;width:min(42rem,43vw);transform:translateY(-50%);opacity:calc(1 - var(--exit)*.5)}.ingredientCopy>a{width:fit-content;border-bottom:1px solid var(--mint);color:var(--mint);font-weight:800}.ingredientStack{position:absolute;inset-inline-start:5%;top:50%;width:min(44vw,620px);height:68vh;transform:translateY(-50%)}.ingredientStack article{--index:0;position:absolute;inset:0;display:grid;align-content:center;gap:15px;padding:42px;border:1px solid rgba(255,255,255,.13);border-radius:34px;background:#3b0f1a;box-shadow:0 30px 80px rgba(42,13,20,.3);transform:translateX(calc((var(--index) - var(--progress)*2.4)*32px)) translateY(calc((var(--index) - var(--progress)*2.4)*28px)) rotate(calc((var(--index) - 1)*2deg));opacity:calc(1 - var(--exit)*.7)}.ingredientStack b{color:var(--mint)}.ingredientStack p{font-size:clamp(1.25rem,2.2vw,2.2rem);line-height:1.55}
-.usageScene .frame{background:radial-gradient(circle at 29% 50%,rgb(var(--mint-rgb) / .23),transparent 30%),linear-gradient(135deg,#fbf7f2,#fbf7f2);color:var(--ink)}.usageScene .counter{color:rgb(var(--ink-rgb) / .45)}.usageVisual{position:absolute;inset-inline-end:28%;top:50%;width:min(42vw,590px);aspect-ratio:1;overflow:hidden;border:1px solid rgb(var(--teal-rgb) / .25);border-radius:50%;box-shadow:0 0 90px rgb(var(--teal-rgb) / .15);transform:translate(calc(-50% * var(--mirror)),-50%) rotate(calc(-8deg + var(--progress)*16deg)) scale(calc(.76 + var(--enter)*.24))}.usageCopy{inset-inline-start:7%;top:50%;width:min(45rem,46vw);transform:translateY(-50%);opacity:calc(1 - var(--exit)*.5)}.usageCopy>p{color:var(--teal)}.usageCopy h2{font-size:clamp(3.6rem,6.3vw,7rem)}.usageCopy>div{display:grid;gap:10px}.usageCopy article{display:grid;grid-template-columns:auto 1fr;gap:14px;padding:13px 0;border-bottom:1px solid rgb(var(--ink-rgb) / .12)}.usageCopy article b{color:var(--teal)}.usageCopy article span{line-height:1.6}
-.purchaseScene{height:285svh}.purchaseScene .frame{background:radial-gradient(circle at 27% 50%,rgb(var(--mint-rgb) / .28),transparent 30%),linear-gradient(135deg,#2a0d14,#3b0f1a 56%,#2d171f)}.purchaseVisual{position:absolute;inset-inline-end:27%;top:50%;width:min(39vw,550px);aspect-ratio:1;overflow:hidden;border:1px solid rgb(var(--mint-rgb) / .4);border-radius:50%;box-shadow:0 0 100px rgb(var(--mint-rgb) / .18);transform:translate(calc(-50% * var(--mirror)),-50%) rotate(calc(-7deg + var(--progress)*14deg)) scale(calc(.76 + var(--enter)*.24))}.purchasePanel{inset-inline-start:6%;top:50%;width:min(47vw,690px);transform:translateY(-50%);opacity:calc(1 - var(--exit)*.4)}.purchasePanel h2{font-size:clamp(3.2rem,5.5vw,6rem)}.variantList{display:flex;flex-wrap:wrap;gap:9px}.variantList button{display:grid;gap:4px;min-width:145px;padding:13px 15px;border:1px solid rgba(255,255,255,.22);border-radius:18px;color:#fbf7f2;text-align:start;background:rgba(255,255,255,.06);cursor:pointer}.variantList button[aria-pressed="true"]{color:#2a0d14;background:var(--mint);border-color:var(--mint)}.variantList span,.variantList small{font-size:.74rem}.quantity{display:flex;align-items:center;gap:14px}.quantity button{display:grid;place-items:center;width:36px;height:36px;border:1px solid rgba(255,255,255,.28);border-radius:50%;color:#fbf7f2;background:transparent;cursor:pointer}.quantity span{font-weight:800}.purchaseActions{display:flex;align-items:center;gap:12px}.purchaseActions>button{padding:15px 23px;border:0;border-radius:999px;color:#2a0d14;background:var(--mint);font-weight:900;cursor:pointer}.purchaseActions>a{padding-bottom:4px;border-bottom:1px solid #fbf7f2;font-weight:800}.shipping{color:rgba(255,255,255,.65);font-size:.82rem;line-height:1.6}.status{min-height:1.4em;color:var(--mint);font-weight:800}
-/* On phones the sticky rig is retired entirely: the scene flows, the frame is no
-   longer sticky, and every progress-driven transform is neutralised. §13 forbids
-   heavy parallax on mobile — and the fitOrbit cards, which orbit on --progress at
-   a 36vw radius, were being flung off the screen edge. This is the same static
-   layout the reduced-motion path uses (the proven flat fallback), with mobile
-   type sizes on top, matching what every sibling scroll component does at 900px. */
-@media(max-width:900px){
-  .scene,.purchaseScene{height:auto}
-  .frame{position:relative;top:0;height:auto;min-height:100svh;overflow:visible}
-  .productHalo,.heroVisual,.heroCopy,.sceneCopy,.fitOrbit article,.ingredientCopy,.ingredientStack article,.usageVisual,.usageCopy,.purchaseVisual,.purchasePanel{opacity:1;transform:none}
-  .productHalo{inset-inline-end:auto;left:3%;top:40%}
-  .heroVisual{inset-inline-end:auto;left:6%;top:45%}
-  .heroCopy,.sceneCopy,.ingredientCopy,.usageCopy{inset-inline:auto;right:24px;left:24px;width:auto}
-  .heroCopy{top:16%}
-  .sceneCopy{top:7%}
-  .heroCopy h1,.sceneCopy h2,.ingredientCopy h2,.usageCopy h2{font-size:clamp(3.1rem,12vw,5.5rem)}
-  .fitOrbit{position:absolute;inset:46% 20px auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;white-space:normal;padding:0}
-  .fitOrbit article{position:relative;left:auto;top:auto;display:grid;width:auto;margin:0}
-  .ingredientCopy{top:15%}
-  .ingredientStack{inset-inline-start:auto;right:20px;left:20px;top:64%;width:auto;height:auto}
-  .usageVisual{inset-inline-end:auto;left:4%;top:45%}
-  .usageCopy{inset-inline:auto;right:24px;left:24px;width:auto;top:16%}
-  .purchaseVisual{display:none}
-  .purchasePanel{inset-inline:auto;right:24px;left:24px;width:auto;top:10%}
-  .purchasePanel h2{font-size:3.1rem}
-}
-@media(max-width:620px){.scene{height:215svh}.counter{top:3%}.fitOrbit{position:absolute;inset:44% 18px auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.fitOrbit article{position:relative;left:auto;top:auto;width:auto;padding:14px;transform:translateY(calc((1 - var(--enter))*40px));opacity:calc(1 - var(--exit)*.8)}.fitOrbit h3{font-size:.92rem}.ingredientStack article{padding:26px}.usageCopy h2{font-size:3rem}.usageCopy article{font-size:.82rem}.purchasePanel{top:7%;gap:10px;max-height:60vh;overflow:auto;padding-left:4px}.purchasePanel h2{font-size:2.35rem}.variantList{gap:7px}.variantList button{min-width:0;flex:1 1 calc(50% - 7px);padding:10px}.quantity{gap:10px}.purchaseActions{align-items:flex-start;flex-direction:column;gap:8px}.purchaseActions>button{width:100%;padding:13px 18px}.purchaseVisual{top:82%;width:52vw}.shipping{font-size:.76rem}.status{font-size:.78rem}}
-@media(prefers-reduced-motion:reduce){.scene,.purchaseScene{height:auto}.frame{position:relative;min-height:100svh}.productHalo,.heroVisual,.heroCopy,.sceneCopy,.fitOrbit article,.ingredientCopy,.ingredientStack article,.usageVisual,.usageCopy,.purchaseVisual,.purchasePanel{opacity:1;transform:none}.productHalo{inset-inline-end:auto;left:3%;top:40%}.heroVisual{inset-inline-end:auto;left:6%;top:45%}.fitOrbit{position:absolute;inset:44% 20px auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;white-space:normal;padding:0}.fitOrbit article{position:relative;left:auto;top:auto;display:grid;width:auto;margin:0}.ingredientCopy{inset-inline-end:auto;left:4%;top:25%}.ingredientStack{top:62%}.usageVisual{inset-inline-end:auto;left:4%;top:45%}.purchaseVisual{display:none}}
-
-@media(max-width:900px){.product{--cinematic-header-offset:64px}}
-@media(prefers-reduced-motion:reduce){.product{--cinematic-header-offset:0px}}
-@media(max-width:620px){.purchasePanel{top:5%;max-height:none;overflow:visible;padding-left:0}.purchaseVisual{display:none}}
-
-.scene{scroll-margin-top:var(--cinematic-header-offset)}
-
-/* Short desktop heights (still wide enough that the mobile flow does not apply).
-   The sticky frame is 100svh minus the header and clips its overflow, while the
-   purchase panel — variants, quantity, add-to-bag, shipping, status — is sized by
-   its content. On a 1280x700 laptop the panel is ~640px in a ~620px frame, so its
-   tail clips and Add to Bag can sit under the fold with no way to reach it. The
-   home hero/finale got this guard already; the panel is the product page's tall
-   content, so it gets one too: cap it to the frame and let it scroll, and trim the
-   headline so it needs less room to begin with. */
-@media (min-width: 901px) and (max-height: 780px) {
-  .purchasePanel {
-    max-height: calc(100svh - var(--cinematic-header-offset) - 28px);
-    overflow-y: auto;
-    overscroll-behavior: contain;
-  }
-  .purchasePanel h2 { font-size: clamp(2.6rem, 4.4vw, 4rem); }
-  .heroCopy h1, .sceneCopy h2, .ingredientCopy h2, .usageCopy h2 {
-    font-size: clamp(3.2rem, 5.6vw, 6rem);
-  }
+.product {
+  padding-block-end: 0.5rem;
+  background: var(--wine-950);
+  color: var(--elore-ink);
 }
 
-/* ÉLORÉ shape and state, on top of the brand palette the rules above now carry
-   natively. This block used to re-declare the colours too — it was bolted on
-   because the file was forked from a teal template and only the four tokens were
-   swapped. That fixed the tokens and missed every literal: the mint and teal
-   tints were written into the gradients, borders and shadows by hand, so
-   .productHalo, .usageVisual and .purchaseVisual kept ringing a burgundy brand
-   in #65DBC9 mint. The literals are gone now, so the colour half of this block
-   went with them. */
-.primaryAction,.secondaryAction,.variantList button,.purchaseActions>button{border-radius:var(--radius-control)}
-.primaryAction,.variantList button[aria-pressed="true"],.purchaseActions>button{color:var(--ink)}
-.fitOrbit article,.ingredientStack article{border-radius:var(--radius-card);backdrop-filter:none}
-.purchaseActions>button:disabled{cursor:not-allowed;opacity:.48}
+.breadcrumbBand {
+  position: relative;
+  min-height: 64px;
+  border-block-end: 1px solid rgba(199, 163, 109, 0.18);
+  color: var(--elore-warm-white);
+  background: var(--elore-burgundy);
+}
 
-/* The mirror axis. RTL is the composition as authored, so it is 1 there and
-   calc(-50% * 1) is byte-identical to the translate(-50%) it replaced — Arabic does
-   not move. LTR flips it, which is the only way a translate-centred element can
-   mirror: right:29% with translateX(-50%) lands the centre at 71% MINUS the width,
-   not at 71%. The sign has to travel with the inset. */
-[dir="ltr"] .product{--mirror:-1}
+.overview {
+  width: min(calc(100% - 1rem), var(--container-max));
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 0.5rem;
+  align-items: start;
+  margin: 0.5rem auto clamp(3rem, 5vw, 5rem);
+  padding: 0.5rem;
+  overflow: hidden;
+  border-radius: var(--radius-panel);
+  background: var(--ivory-50);
+  box-shadow: 0 30px 84px rgba(18, 3, 5, 0.24);
+}
+
+.gallery {
+  min-width: 0;
+  grid-column: span 7;
+  align-self: stretch;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.5rem;
+}
+
+.mainMedia {
+  position: relative;
+  grid-column: 1;
+  height: 100%;
+  min-height: clamp(360px, 42vw, 520px);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(37, 8, 12, 0.08);
+  border-radius: calc(var(--radius-panel) - 0.5rem);
+  background:
+    radial-gradient(circle at 50% 28%, rgba(255, 255, 255, 0.88), transparent 34%),
+    linear-gradient(145deg, var(--sand-100), var(--ivory-100));
+}
+
+.mainMedia img {
+  object-fit: contain;
+  object-position: center;
+}
+
+.mainMedia p {
+  max-width: 28rem;
+  padding: 2rem;
+  color: var(--muted-500);
+  text-align: center;
+}
+
+.thumbnails {
+  grid-column: 2;
+  grid-row: 1;
+  width: 82px;
+  display: grid;
+  grid-auto-rows: 82px;
+  gap: 0.5rem;
+  align-content: start;
+  margin: 0;
+}
+
+.thumbnails button {
+  position: relative;
+  min-width: 82px;
+  min-height: 82px;
+  overflow: hidden;
+  border: 1px solid rgba(37, 8, 12, 0.14);
+  border-radius: var(--radius-control);
+  background: var(--ivory-100);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    transform var(--motion-control),
+    border-color var(--motion-control),
+    box-shadow var(--motion-control);
+}
+
+.thumbnails button[aria-pressed="true"] {
+  border-color: var(--gold-500);
+  box-shadow: 0 0 0 2px rgba(199, 163, 109, 0.22);
+}
+
+.thumbnails img {
+  object-fit: cover;
+}
+
+.purchase {
+  position: relative;
+  top: 0;
+  grid-column: span 5;
+  align-self: start;
+  display: grid;
+  gap: 0.82rem;
+  padding: clamp(1.5rem, 2.6vw, 2.5rem);
+  border-radius: calc(var(--radius-panel) - 0.5rem);
+  background: var(--sand-100);
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--gold-600);
+  font-family: var(--font-body-latin), sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+}
+
+.brand {
+  margin: 0;
+  color: var(--wine-700);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.purchase h1 {
+  max-width: 13ch;
+  margin: 0;
+  color: var(--wine-900);
+  font-size: clamp(2.35rem, 3.75vw, 4.45rem);
+  font-weight: 500;
+  line-height: 0.96;
+  text-wrap: balance;
+}
+
+.subtitle {
+  margin: 0;
+  color: var(--muted-500);
+  font-size: 1rem;
+  line-height: 1.65;
+}
+
+.price {
+  color: var(--wine-900);
+  font-family: var(--font-body-latin), sans-serif;
+  font-size: clamp(1.35rem, 1.8vw, 1.9rem);
+}
+
+.variantGroup {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0;
+  border: 0;
+}
+
+.variantGroup legend {
+  margin-block-end: 0.5rem;
+  font-weight: 700;
+}
+
+.variantList {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.variantList button {
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid rgba(37, 8, 12, 0.14);
+  border-radius: var(--radius-control);
+  color: var(--elore-ink);
+  text-align: start;
+  background: var(--elore-warm-white);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    transform var(--motion-control),
+    border-color var(--motion-control),
+    background var(--motion-control);
+}
+
+.variantList button[aria-pressed="true"] {
+  border-color: var(--gold-500);
+  background: rgba(199, 163, 109, 0.16);
+  box-shadow: inset 3px 0 0 var(--gold-500);
+}
+
+[dir="rtl"] .variantList button[aria-pressed="true"] {
+  box-shadow: inset -3px 0 0 var(--gold-500);
+}
+
+.variantList button > span {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.variantList button > span:last-child {
+  justify-items: end;
+}
+
+.variantList small {
+  color: var(--muted-500);
+}
+
+.quantityRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.quantity {
+  display: inline-grid;
+  grid-template-columns: 44px 2.5rem 44px;
+  align-items: center;
+  text-align: center;
+}
+
+.quantity button {
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid rgba(37, 8, 12, 0.2);
+  color: var(--wine-900);
+  background: transparent;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform var(--motion-control), background var(--motion-control);
+}
+
+.quantity button:first-child {
+  border-start-start-radius: var(--radius-control);
+  border-end-start-radius: var(--radius-control);
+}
+
+.quantity button:last-child {
+  border-start-end-radius: var(--radius-control);
+  border-end-end-radius: var(--radius-control);
+}
+
+.quantity output {
+  font-weight: 700;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.5rem;
+}
+
+.addButton,
+.cartLink,
+.collectionLink,
+.mobileBar button {
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding-inline: 1.1rem;
+  border-radius: var(--radius-control);
+  font: inherit;
+  font-weight: 700;
+  touch-action: manipulation;
+  transition:
+    transform var(--motion-control),
+    color var(--motion-control),
+    border-color var(--motion-control),
+    background var(--motion-control);
+}
+
+.addButton,
+.mobileBar button {
+  border: 0;
+  color: var(--ivory-50);
+  background: var(--wine-900);
+  cursor: pointer;
+}
+
+.addButton:disabled,
+.mobileBar button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.cartLink {
+  border: 1px solid rgba(37, 8, 12, 0.22);
+  color: var(--wine-900);
+}
+
+.collectionLink {
+  width: fit-content;
+  min-height: 44px;
+  padding-inline: 0;
+  color: var(--wine-700);
+  text-decoration: underline;
+  text-underline-offset: 0.3em;
+}
+
+.shipping {
+  margin: 0;
+  padding-block-start: 0.8rem;
+  border-block-start: 1px solid rgba(37, 8, 12, 0.12);
+  color: var(--muted-500);
+  font-size: 0.82rem;
+  line-height: 1.58;
+}
+
+.status {
+  min-height: 1.4em;
+  margin: 0;
+  color: var(--wine-700);
+  font-weight: 700;
+}
+
+.facts,
+.details {
+  width: min(calc(100% - 1rem), var(--container-max));
+  margin-inline: auto;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 0.5rem;
+  padding: 0.5rem;
+  overflow: hidden;
+  border-radius: var(--radius-panel);
+  background: var(--ivory-50);
+}
+
+.facts header {
+  grid-column: span 4;
+  display: grid;
+  align-content: center;
+  gap: 0.9rem;
+  padding: clamp(2rem, 4vw, 4rem);
+  border-radius: calc(var(--radius-panel) - 0.5rem);
+  color: var(--ivory-50);
+  background:
+    radial-gradient(circle at 20% 18%, rgba(199, 163, 109, 0.16), transparent 20rem),
+    var(--wine-900);
+}
+
+.facts h2 {
+  margin: 0;
+  font-size: clamp(2.2rem, 3.6vw, 4rem);
+  font-weight: 500;
+  line-height: 0.98;
+}
+
+.factGrid {
+  grid-column: span 8;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  background: var(--ivory-50);
+}
+
+.factGrid article {
+  min-height: 148px;
+  display: grid;
+  gap: 0.55rem;
+  align-content: end;
+  padding: 1.4rem;
+  border-radius: calc(var(--radius-card) - 0.375rem);
+  color: var(--ivory-50);
+  background: var(--wine-900);
+}
+
+.factGrid article span {
+  color: var(--gold-400);
+  font-family: var(--font-body-latin), sans-serif;
+}
+
+.factGrid article small {
+  color: rgba(248, 245, 242, 0.66);
+}
+
+.details {
+  margin-block-start: 0.5rem;
+  padding: clamp(2rem, 4vw, 4rem);
+  overflow: hidden;
+  border-radius: var(--radius-panel);
+  background: var(--elore-warm-white);
+}
+
+.details details {
+  border-block-end: 1px solid rgba(37, 8, 12, 0.14);
+}
+
+.details details:first-child {
+  border-block-start: 1px solid rgba(37, 8, 12, 0.14);
+}
+
+.details summary {
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  padding-block: 0.9rem;
+  color: var(--wine-900);
+  font-size: clamp(1.12rem, 1.7vw, 1.42rem);
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.details details > div {
+  padding: 0 0 2rem;
+  color: var(--muted-500);
+  line-height: 1.75;
+}
+
+.inci {
+  margin-block-start: 1rem;
+  padding: 1rem;
+  border-radius: var(--radius-control);
+  background: var(--sand-100);
+  overflow-wrap: anywhere;
+}
+
+.detailGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.detailGrid article,
+.questionList article {
+  padding: 1.25rem;
+  border: 1px solid rgba(37, 8, 12, 0.1);
+  border-radius: var(--radius-control);
+  background: var(--ivory-100);
+}
+
+.detailGrid ul,
+.details details ul {
+  padding-inline-start: 1.2rem;
+}
+
+.questionList {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.questionList article {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.mobileBar {
+  display: none;
+}
+
+.product button:focus-visible,
+.product a:focus-visible,
+.details summary:focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: var(--focus-ring-offset);
+  box-shadow: var(--focus-ring);
+}
+
+.thumbnails button:active,
+.variantList button:active,
+.quantity button:active,
+.addButton:not(:disabled):active,
+.cartLink:active,
+.collectionLink:active,
+.mobileBar button:not(:disabled):active {
+  transform: scale(0.98);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .addButton:not(:disabled):hover,
+  .mobileBar button:not(:disabled):hover {
+    background: var(--wine-700);
+  }
+
+  .cartLink:hover,
+  .variantList button:hover,
+  .thumbnails button:hover {
+    border-color: var(--gold-500);
+  }
+
+  .quantity button:hover {
+    background: rgba(199, 163, 109, 0.16);
+  }
+}
+
+@media (min-width: 901px) and (min-height: 980px) {
+  .purchase {
+    position: sticky;
+    top: 116px;
+  }
+}
+
+@media (max-width: 900px) {
+  .gallery,
+  .purchase {
+    grid-column: 1 / -1;
+  }
+
+  .purchase {
+    position: relative;
+    top: 0;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .facts header,
+  .factGrid {
+    grid-column: 1 / -1;
+  }
+
+  .detailGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 680px) {
+  .product {
+    padding-block-end: calc(6.75rem + env(safe-area-inset-bottom));
+  }
+
+  .breadcrumbBand {
+    min-height: 60px;
+  }
+
+  .overview,
+  .facts,
+  .details {
+    width: calc(100% - 0.75rem);
+    border-radius: 1.75rem;
+  }
+
+  .overview {
+    gap: 0.375rem;
+    margin: 0.375rem auto 3rem;
+    padding: 0.375rem;
+  }
+
+  .gallery {
+    grid-template-columns: 1fr;
+    gap: 0.375rem;
+  }
+
+  .mainMedia {
+    grid-column: 1;
+    min-height: clamp(320px, 92vw, 480px);
+    border-radius: 1.4rem;
+  }
+
+  .thumbnails {
+    grid-column: 1;
+    grid-row: 2;
+    width: 100%;
+    display: flex;
+    gap: 0.375rem;
+    overflow-x: auto;
+    padding-block-end: 0.125rem;
+    scrollbar-width: thin;
+  }
+
+  .thumbnails button {
+    min-width: 72px;
+    min-height: 72px;
+  }
+
+  .purchase {
+    gap: 0.75rem;
+    padding: 1.5rem 1.25rem 2rem;
+    border-radius: 1.4rem;
+  }
+
+  .purchase h1 {
+    font-size: clamp(2.5rem, 12vw, 4rem);
+  }
+
+  .actions {
+    grid-template-columns: 1fr;
+  }
+
+  .facts {
+    gap: 0.375rem;
+    padding: 0.375rem;
+  }
+
+  .facts header {
+    padding: 2.25rem 1.25rem;
+    border-radius: 1.4rem;
+  }
+
+  .factGrid {
+    grid-template-columns: 1fr;
+    gap: 0.375rem;
+  }
+
+  .factGrid article {
+    min-height: 116px;
+    border-radius: 1.4rem;
+  }
+
+  .details {
+    margin-block-start: 0.375rem;
+    padding: 2rem 1.25rem;
+  }
+
+  .mobileBar {
+    position: fixed;
+    z-index: 60;
+    right: max(0.5rem, env(safe-area-inset-right));
+    left: max(0.5rem, env(safe-area-inset-left));
+    inset-block-end: max(0.5rem, env(safe-area-inset-bottom));
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    border: 1px solid rgba(37, 8, 12, 0.14);
+    border-radius: 1.35rem;
+    background: rgba(248, 245, 242, 0.96);
+    box-shadow: var(--shadow-lift);
+    backdrop-filter: blur(18px);
+  }
+
+  .mobileBar > span {
+    min-width: 0;
+    display: grid;
+    align-content: center;
+    padding-inline: 0.35rem;
+  }
+
+  .mobileBar small {
+    color: var(--muted-500);
+  }
+
+  .mobileBar button {
+    min-height: 48px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .thumbnails button,
+  .variantList button,
+  .quantity button,
+  .addButton,
+  .cartLink,
+  .collectionLink,
+  .mobileBar button {
+    transition: none;
+  }
+}

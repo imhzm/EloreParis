@@ -1,8 +1,8 @@
 "use client";
 
 import Image from "next/image";
+import { MultilineTitle } from "@/components/scene-primitives";
 import { TrackedLink } from "@/components/tracked-link";
-import { useScrollSceneProgress } from "@/hooks/use-scroll-scene-progress";
 import {
   discoveryDetailCopy,
   discoveryHubCopy,
@@ -11,8 +11,8 @@ import {
   type DiscoveryRecord,
 } from "@/lib/discovery-content";
 import { localizePath, type Locale } from "@/lib/i18n";
+import type { EditorialAuthorityContent } from "@/lib/site-editorial-authority";
 import styles from "./localized-discovery-experience.module.css";
-import { MultilineTitle, keepFocusVisible } from "@/components/scene-primitives";
 
 const visualByKind: Record<DiscoveryKind, string> = {
   concern: "/elore-assets/editorial-skin-light-concept-1122w.avif",
@@ -20,104 +20,246 @@ const visualByKind: Record<DiscoveryKind, string> = {
   ingredient: "/elore-assets/ingredient-botanical-lab-concept-1536x1024.avif",
 };
 
-type HubProps = { locale: Locale; kind: DiscoveryKind; items: DiscoveryRecord[] };
+function formatIndex(index: number) {
+  return String(index + 1).padStart(2, "0");
+}
 
-export function LocalizedDiscoveryHub({ locale, kind, items }: HubProps) {
-  const rootRef = useScrollSceneProgress<HTMLDivElement>({ selector: "[data-discovery-scene]" });
-  const shared = discoveryHubCopy[locale];
+type HubProps = {
+  locale: Locale;
+  kind: DiscoveryKind;
+  items: DiscoveryRecord[];
+  hubCopy?: EditorialAuthorityContent["discoveryHubCopy"][Locale];
+  visual?: string;
+};
+
+export function LocalizedDiscoveryHub({ locale, kind, items, hubCopy, visual }: HubProps) {
+  const shared = hubCopy ?? discoveryHubCopy[locale];
   const copy = shared[kind];
   const baseHref = `/${discoveryPaths[kind]}`;
 
   return (
-    <div ref={rootRef} className={styles.experience} data-discovery-experience data-discovery-kind={kind}>
-      <section className={`${styles.scene} ${styles.hubHero}`} data-discovery-scene aria-labelledby="discovery-title">
-        <div className={styles.frame}>
-          <div className={styles.motionGrid} data-discovery-motion aria-hidden="true"><span>01</span><span>{copy.eyebrow}</span><span>ÉLORÉ</span></div>
-          <div className={styles.heroVisual} data-discovery-motion aria-hidden="true">
-            <Image src={visualByKind[kind]} alt="" fill priority sizes="(max-width: 900px) 88vw, 39vw" />
-            <div className={styles.heroIndex}>{items.map((item, index) => <span key={item.slug}>0{index + 1}<b>{item.title}</b></span>)}</div>
-          </div>
-          <div className={styles.heroCopy}><p>{copy.eyebrow}</p><h1 id="discovery-title"><MultilineTitle value={copy.title} /></h1><span>{copy.intro}</span><TrackedLink href="#directory" onFocus={keepFocusVisible} className={styles.primaryAction} analyticsLabel={`${kind}_directory_begin`} analyticsSurface="discovery_block_motion">{shared.openLabel}</TrackedLink><small>{shared.conceptNotice}</small></div>
-          <div className={styles.counter} aria-hidden="true">01 — 04</div>
+    <div className={styles.experience} data-discovery-experience data-discovery-kind={kind}>
+      <section className={styles.hubHero} aria-labelledby="discovery-title">
+        <div className={styles.heroCopy}>
+          <p className={styles.eyebrow} lang="en">{copy.eyebrow}</p>
+          <h1 id="discovery-title">
+            <MultilineTitle value={copy.title} />
+          </h1>
+          <p className={styles.lede}>{copy.intro}</p>
+          <TrackedLink
+            href="#directory"
+            className={styles.primaryAction}
+            analyticsLabel={`${kind}_directory_begin`}
+            analyticsSurface="discovery_index"
+          >
+            {shared.openLabel}
+          </TrackedLink>
+          <small className={styles.guidanceNote}>{shared.conceptNotice}</small>
         </div>
+
+        <figure className={styles.heroMedia}>
+          <Image
+            src={visual ?? visualByKind[kind]}
+            alt={copy.visualAlt}
+            fill
+            priority
+            sizes="(max-width: 820px) 92vw, 46vw"
+          />
+          <figcaption>{copy.visualCaption}</figcaption>
+        </figure>
       </section>
 
-      <section className={`${styles.scene} ${styles.directoryScene}`} data-discovery-scene id="directory" aria-label={shared.directory}>
-        <div className={styles.frame}>
-          <div className={styles.sectionHeading}><p>{shared.directory}</p><h2><MultilineTitle value={shared.directoryTitle} /></h2></div>
-          <div className={styles.directoryGrid}>{items.map((item, index) => <TrackedLink key={item.slug} href={`/${locale}${baseHref}/${item.slug}`} onFocus={keepFocusVisible} analyticsLabel={`${kind}_directory_${item.slug}`} analyticsSurface="discovery_block_motion"><b>0{index + 1}</b><small>{item.subtitle}</small><h3>{item.title}</h3><p>{item.summary}</p><strong>{shared.openLabel}</strong></TrackedLink>)}</div>
-          <div className={styles.counter} aria-hidden="true">02 — 04</div>
+      <section className={styles.indexSection} id="directory" aria-labelledby="directory-title">
+        <div className={styles.sectionHeading}>
+          <p className={styles.eyebrow} lang="en">{shared.directory}</p>
+          <h2 id="directory-title">
+            <MultilineTitle value={shared.directoryTitle} />
+          </h2>
+          <p>{copy.decisionBody}</p>
         </div>
+
+        <nav aria-label={shared.directoryAria}>
+          <ol className={styles.indexGrid}>
+            {items.map((item, index) => (
+              <li key={item.slug}>
+                <TrackedLink
+                  href={`/${locale}${baseHref}/${item.slug}`}
+                  className={styles.indexCard}
+                  analyticsLabel={`${kind}_directory_${item.slug}`}
+                  analyticsSurface="discovery_index"
+                >
+                  <span className={styles.indexNumber} aria-hidden="true">{formatIndex(index)}</span>
+                  <small lang="en">{item.subtitle}</small>
+                  <h3>{item.title}</h3>
+                  <p>{item.summary}</p>
+                  <div className={styles.signalBlock}>
+                    <strong>{shared.signalLabel}</strong>
+                    <ul>
+                      {item.signals.map((signal) => <li key={signal}>{signal}</li>)}
+                    </ul>
+                  </div>
+                  <span className={styles.textAction}>{shared.openLabel}</span>
+                </TrackedLink>
+              </li>
+            ))}
+          </ol>
+        </nav>
       </section>
 
-      <section className={`${styles.scene} ${styles.decisionScene}`} data-discovery-scene aria-label={copy.decisionTitle}>
-        <div className={styles.frame}>
-          <div className={styles.decisionCopy} data-discovery-column="copy"><p lang="en">DECISION BEFORE PRODUCT</p><h2>{copy.decisionTitle}</h2><span>{copy.decisionBody}</span></div>
-          <div className={styles.signalGrid} data-discovery-column="panel">{items.map((item, index) => <article key={item.slug}><b>0{index + 1}</b><h3>{item.title}</h3><small>{shared.signalLabel}</small><ul>{item.signals.slice(0,3).map((signal) => <li key={signal}>{signal}</li>)}</ul></article>)}</div>
-          <div className={styles.counter} aria-hidden="true">03 — 04</div>
+      <section className={styles.decisionPanel} aria-labelledby="decision-title">
+        <div className={styles.decisionCopy}>
+          <p className={styles.eyebrow} lang="en">{shared.closingEyebrow}</p>
+          <h2 id="decision-title">{copy.decisionTitle}</h2>
+          <p>{copy.decisionBody}</p>
         </div>
-      </section>
-
-      <section className={`${styles.scene} ${styles.closingScene}`} data-discovery-scene aria-label={shared.closingEyebrow}>
-        <div className={styles.frame}>
-          <div className={styles.closingRule} aria-hidden="true" />
-          <div className={styles.closingCopy}><p>{shared.closingEyebrow}</p><h2><MultilineTitle value={shared.closingTitle} /></h2><span>{copy.decisionBody}</span><TrackedLink href={localizePath(locale, copy.nextHref)} onFocus={keepFocusVisible} className={styles.primaryAction} analyticsLabel={`${kind}_directory_next`} analyticsSurface="discovery_block_motion">{copy.nextLabel}</TrackedLink></div>
-          <div className={styles.counter} aria-hidden="true">04 — 04</div>
+        <div className={styles.decisionNext}>
+          <p><MultilineTitle value={shared.closingTitle} /></p>
+          <TrackedLink
+            href={localizePath(locale, copy.nextHref)}
+            className={styles.lightAction}
+            analyticsLabel={`${kind}_directory_next`}
+            analyticsSurface="discovery_index"
+          >
+            {copy.nextLabel}
+          </TrackedLink>
         </div>
       </section>
     </div>
   );
 }
 
-type DetailProps = { locale: Locale; kind: DiscoveryKind; record: DiscoveryRecord };
+type DetailProps = {
+  locale: Locale;
+  kind: DiscoveryKind;
+  record: DiscoveryRecord;
+  detailCopy?: EditorialAuthorityContent["discoveryDetailCopy"][Locale];
+  hubCopy?: EditorialAuthorityContent["discoveryHubCopy"][Locale];
+  visual?: string;
+};
 
-export function LocalizedDiscoveryDetail({ locale, kind, record }: DetailProps) {
-  const rootRef = useScrollSceneProgress<HTMLDivElement>({ selector: "[data-knowledge-scene]" });
-  const copy = discoveryDetailCopy[locale];
+export function LocalizedDiscoveryDetail({ locale, kind, record, detailCopy, hubCopy, visual }: DetailProps) {
+  const copy = detailCopy ?? discoveryDetailCopy[locale];
+  const kindCopy = (hubCopy ?? discoveryHubCopy[locale])[kind];
   const baseHref = `/${discoveryPaths[kind]}`;
-  const relatedLinks = record.related;
 
   return (
-    <div ref={rootRef} className={styles.experience} data-discovery-experience>
-      <section className={`${styles.scene} ${styles.detailHero}`} data-knowledge-scene aria-labelledby="knowledge-title">
-        <div className={styles.frame}>
-          <div className={styles.detailMark} data-discovery-motion aria-hidden="true"><Image src={visualByKind[kind]} alt="" fill priority sizes="(max-width: 900px) 88vw, 40vw" /><span>{record.subtitle}</span><b lang="en">ÉLORÉ<br />PARIS</b></div>
-          <div className={styles.detailHeroCopy}><p>{record.subtitle}</p><h1 id="knowledge-title">{record.title}</h1><span>{record.summary}</span><TrackedLink href="#chapters" onFocus={keepFocusVisible} className={styles.primaryAction} analyticsLabel={`${kind}_${record.slug}_begin`} analyticsSurface="knowledge_block_motion">{copy.chaptersEyebrow}</TrackedLink><small>{copy.disclaimer}</small></div>
-          <div className={styles.counter} aria-hidden="true">01 — 05</div>
+    <article className={styles.experience} data-discovery-experience data-discovery-detail={kind}>
+      <header className={styles.detailHero} aria-labelledby="knowledge-title">
+        <div className={styles.detailHeroCopy}>
+          <p className={styles.eyebrow} lang="en">{record.subtitle}</p>
+          <h1 id="knowledge-title">{record.title}</h1>
+          <p className={styles.lede}>{record.summary}</p>
+          <TrackedLink
+            href="#chapters"
+            className={styles.primaryAction}
+            analyticsLabel={`${kind}_${record.slug}_begin`}
+            analyticsSurface="discovery_detail"
+          >
+            {copy.chaptersCta}
+          </TrackedLink>
+          <small className={styles.guidanceNote}>{copy.disclaimer}</small>
         </div>
+
+        <figure className={styles.heroMedia}>
+          <Image
+            src={visual ?? visualByKind[kind]}
+            alt={kindCopy.visualAlt}
+            fill
+            priority
+            sizes="(max-width: 820px) 92vw, 46vw"
+          />
+          <figcaption>{kindCopy.visualCaption}</figcaption>
+        </figure>
+      </header>
+
+      <section className={styles.contentSection} id="chapters" aria-labelledby="chapters-title">
+        <div className={styles.sectionHeading}>
+          <p className={styles.eyebrow} lang="en">{copy.chaptersEyebrow}</p>
+          <h2 id="chapters-title">
+            <MultilineTitle value={copy.chaptersTitle} />
+          </h2>
+          <p>{record.summary}</p>
+        </div>
+
+        <ol className={styles.chapterGrid}>
+          {record.chapters.map(([title, body], index) => (
+            <li key={title} className={styles.chapterCard}>
+              <span aria-hidden="true">{formatIndex(index)}</span>
+              <h3>{title}</h3>
+              <p>{body}</p>
+            </li>
+          ))}
+        </ol>
+
+        <aside className={styles.watchPanel} aria-labelledby="watch-title">
+          <div className={styles.watchCopy} data-discovery-column="copy">
+            <p className={styles.eyebrow} lang="en">{copy.watchEyebrow}</p>
+            <h2 id="watch-title">
+              <MultilineTitle value={copy.watchTitle} />
+            </h2>
+            <p>{copy.disclaimer}</p>
+          </div>
+          <ol className={styles.watchList} data-discovery-column="panel">
+            {record.watchouts.map((item, index) => (
+              <li key={item}>
+                <span aria-hidden="true">{formatIndex(index)}</span>
+                <p>{item}</p>
+              </li>
+            ))}
+          </ol>
+        </aside>
       </section>
 
-      <section className={`${styles.scene} ${styles.chaptersScene}`} data-knowledge-scene id="chapters" aria-label={copy.chaptersEyebrow}>
-        <div className={styles.frame}>
-          <div className={styles.sectionHeading}><p>{copy.chaptersEyebrow}</p><h2><MultilineTitle value={copy.chaptersTitle} /></h2></div>
-          <div className={styles.chapterGrid}>{record.chapters.map(([title, body], index) => <article key={title}><b>0{index + 1}</b><h3>{title}</h3><p>{body}</p></article>)}</div>
-          <div className={styles.counter} aria-hidden="true">02 — 05</div>
+      <section className={styles.relatedSection} aria-labelledby="related-title">
+        <div className={styles.sectionHeading}>
+          <p className={styles.eyebrow} lang="en">{copy.relatedEyebrow}</p>
+          <h2 id="related-title">
+            <MultilineTitle value={copy.relatedTitle} />
+          </h2>
         </div>
+        <nav className={styles.relatedGrid} data-discovery-related aria-label={copy.relatedAria}>
+          {record.related.map(([title, body, href], index) => (
+            <TrackedLink
+              key={`${title}-${href}`}
+              href={localizePath(locale, href)}
+              className={styles.relatedCard}
+              analyticsLabel={`${kind}_${record.slug}_related_${index}`}
+              analyticsSurface="discovery_detail"
+            >
+              <span aria-hidden="true">{formatIndex(index)}</span>
+              <h3>{title}</h3>
+              <p>{body}</p>
+            </TrackedLink>
+          ))}
+        </nav>
       </section>
 
-      <section className={`${styles.scene} ${styles.watchScene}`} data-knowledge-scene aria-label={copy.watchEyebrow}>
-        <div className={styles.frame}>
-          <div className={styles.watchCopy} data-discovery-column="copy"><p>{copy.watchEyebrow}</p><h2><MultilineTitle value={copy.watchTitle} /></h2><span>{copy.disclaimer}</span></div>
-          <ol className={styles.watchList} data-discovery-column="panel">{record.watchouts.map((item, index) => <li key={item}><b>0{index + 1}</b><span>{item}</span></li>)}</ol>
-          <div className={styles.counter} aria-hidden="true">03 — 05</div>
+      <section className={styles.faqSection} aria-labelledby="faq-title">
+        <div className={styles.faqLayout}>
+          <div className={styles.faqCopy} data-discovery-column="copy">
+            <p className={styles.eyebrow} lang="en">{copy.faqEyebrow}</p>
+            <h2 id="faq-title">
+              <MultilineTitle value={copy.faqTitle} />
+            </h2>
+            <TrackedLink
+              href={`/${locale}${baseHref}`}
+              className={styles.primaryAction}
+              analyticsLabel={`${kind}_${record.slug}_back`}
+              analyticsSurface="discovery_detail"
+            >
+              {copy.back}
+            </TrackedLink>
+          </div>
+          <div className={styles.faqList} data-discovery-column="panel" data-discovery-faq>
+            {record.faqs.map(([question, answer]) => (
+              <details key={question}>
+                <summary>{question}</summary>
+                <p>{answer}</p>
+              </details>
+            ))}
+          </div>
         </div>
       </section>
-
-      <section className={`${styles.scene} ${styles.relatedScene}`} data-knowledge-scene aria-label={copy.relatedEyebrow}>
-        <div className={styles.frame}>
-          <div className={styles.relatedCopy}><p>{copy.relatedEyebrow}</p><h2><MultilineTitle value={copy.relatedTitle} /></h2></div>
-          <nav className={styles.relatedGrid} data-discovery-related aria-label={copy.relatedEyebrow}>{relatedLinks.map(([title, body, href], index) => <TrackedLink key={`${title}-${href}`} href={localizePath(locale, href)} onFocus={keepFocusVisible} analyticsLabel={`${kind}_${record.slug}_related_${index}`} analyticsSurface="knowledge_block_motion"><b>0{index + 1}</b><h3>{title}</h3><span>{body}</span></TrackedLink>)}</nav>
-          <div className={styles.counter} aria-hidden="true">04 — 05</div>
-        </div>
-      </section>
-
-      <section className={`${styles.scene} ${styles.faqScene}`} data-knowledge-scene aria-label={copy.faqEyebrow}>
-        <div className={styles.frame}>
-          <div className={styles.faqCopy} data-discovery-column="copy"><p>{copy.faqEyebrow}</p><h2><MultilineTitle value={copy.faqTitle} /></h2><TrackedLink href={`/${locale}${baseHref}`} onFocus={keepFocusVisible} className={styles.primaryAction} analyticsLabel={`${kind}_${record.slug}_back`} analyticsSurface="knowledge_block_motion">{copy.back}</TrackedLink></div>
-          <div className={styles.faqList} data-discovery-column="panel" data-discovery-faq>{record.faqs.map(([question, answer]) => <details key={question}><summary>{question}</summary><p>{answer}</p></details>)}</div>
-          <div className={styles.counter} aria-hidden="true">05 — 05</div>
-        </div>
-      </section>
-    </div>
+    </article>
   );
 }

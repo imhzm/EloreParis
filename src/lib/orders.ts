@@ -132,6 +132,17 @@ export type OrderPricingSnapshot = {
   roundingPolicy: "line_nearest_halalah";
   subtotalGrossHalalas: number;
   subtotalVatHalalas: number;
+  discountGrossHalalas?: number;
+  discountVatHalalas?: number;
+  promotion?: {
+    promotionId: string;
+    promotionVersion: number;
+    mode: "automatic" | "coupon";
+    code: string | null;
+    titleAr: string;
+    titleEn: string;
+    discountHalalas: number;
+  } | null;
   shippingGrossHalalas: number;
   shippingVatHalalas: number;
   totalGrossHalalas: number;
@@ -730,6 +741,42 @@ function normalizeOrderPricingSnapshot(value: unknown): OrderPricingSnapshot | u
   });
   if (lines.some((line) => line === null)) return undefined;
 
+  const promotionValue = value.promotion;
+  const promotion = promotionValue === undefined || promotionValue === null
+    ? null
+    : isRecord(promotionValue) &&
+        typeof promotionValue.promotionId === "string" &&
+        Number.isSafeInteger(promotionValue.promotionVersion) &&
+        Number(promotionValue.promotionVersion) >= 1 &&
+        (promotionValue.mode === "automatic" || promotionValue.mode === "coupon") &&
+        (promotionValue.code === null || typeof promotionValue.code === "string") &&
+        typeof promotionValue.titleAr === "string" &&
+        typeof promotionValue.titleEn === "string" &&
+        Number.isSafeInteger(promotionValue.discountHalalas) &&
+        Number(promotionValue.discountHalalas) > 0
+      ? {
+          promotionId: promotionValue.promotionId,
+          promotionVersion: Number(promotionValue.promotionVersion),
+          mode: promotionValue.mode as "automatic" | "coupon",
+          code: promotionValue.code,
+          titleAr: promotionValue.titleAr,
+          titleEn: promotionValue.titleEn,
+          discountHalalas: Number(promotionValue.discountHalalas),
+        }
+      : undefined;
+  if (promotionValue !== undefined && promotionValue !== null && !promotion) return undefined;
+  const discountGrossHalalas = value.discountGrossHalalas === undefined
+    ? 0
+    : Number(value.discountGrossHalalas);
+  const discountVatHalalas = value.discountVatHalalas === undefined
+    ? 0
+    : Number(value.discountVatHalalas);
+  if (
+    !Number.isSafeInteger(discountGrossHalalas) || discountGrossHalalas < 0 ||
+    !Number.isSafeInteger(discountVatHalalas) || discountVatHalalas < 0 ||
+    (promotion ? promotion.discountHalalas !== discountGrossHalalas : discountGrossHalalas !== 0)
+  ) return undefined;
+
   return {
     quoteId: value.quoteId as string,
     locale: value.locale === "en" ? "en" : "ar",
@@ -741,6 +788,9 @@ function normalizeOrderPricingSnapshot(value: unknown): OrderPricingSnapshot | u
     roundingPolicy: "line_nearest_halalah",
     subtotalGrossHalalas: Number(value.subtotalGrossHalalas),
     subtotalVatHalalas: Number(value.subtotalVatHalalas),
+    discountGrossHalalas,
+    discountVatHalalas,
+    promotion,
     shippingGrossHalalas: Number(value.shippingGrossHalalas),
     shippingVatHalalas: Number(value.shippingVatHalalas),
     totalGrossHalalas: Number(value.totalGrossHalalas),

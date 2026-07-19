@@ -10,10 +10,23 @@ type MobileNavDrawerProps = {
   activeHref: string;
   locale?: Locale;
   languageHref?: string;
+  copy?: {
+    nav: Array<[string, string]> | ReadonlyArray<readonly [string, string]>;
+    navLabel: string;
+    menuOpen: string;
+    menuClose: string;
+    languageHref: string;
+    languageLabel: string;
+  };
 };
 
-export function MobileNavDrawer({ activeHref, locale = "ar", languageHref }: MobileNavDrawerProps) {
-  const copy = shellCopy[locale];
+const mobileShopLinks = {
+  ar: [["كل المتجر", "/shop"], ["العطور", "/shop/perfumes"], ["العناية بالبشرة", "/shop/skincare"], ["المكياج", "/shop/makeup"], ["العناية بالشعر", "/shop/haircare"], ["العناية بالجسم", "/shop/bodycare"], ["الهدايا والمجموعات", "/shop/beauty-sets"]],
+  en: [["All products", "/shop"], ["Perfumes", "/shop/perfumes"], ["Skincare", "/shop/skincare"], ["Makeup", "/shop/makeup"], ["Haircare", "/shop/haircare"], ["Body care", "/shop/bodycare"], ["Gifts & sets", "/shop/beauty-sets"]],
+} as const;
+
+export function MobileNavDrawer({ activeHref, locale = "ar", languageHref, copy: controlledCopy }: MobileNavDrawerProps) {
+  const copy = controlledCopy ?? shellCopy[locale];
   const activeNavHref = resolveActiveNavHref(copy.nav, activeHref);
   const [isOpen, setIsOpen] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
@@ -122,6 +135,22 @@ export function MobileNavDrawer({ activeHref, locale = "ar", languageHref }: Mob
         <nav className={styles.drawerNav} aria-label={copy.navLabel}>
           {copy.nav.map(([itemHref, label], index) => {
             const isActive = itemHref === activeNavHref;
+
+            if (itemHref === "/shop") {
+              return (
+                <details key={itemHref} className={styles.shopAccordion} open={isActive}>
+                  <summary className={`${styles.drawerLink} ${isActive ? styles.drawerLinkActive : ""}`}>
+                    <span className={styles.drawerLinkLabel}>{label}</span>
+                    <svg className={styles.accordionChevron} viewBox="0 0 12 8" aria-hidden="true"><path d="m1 1 5 5 5-5" /></svg>
+                  </summary>
+                  <div className={styles.shopSubmenu}>
+                    {mobileShopLinks[locale].map(([shopLabel, href]) => (
+                      <TrackedLink key={href} href={localizePath(locale, href)} analyticsLabel={`mobile_shop_${href.replaceAll("/", "_")}`} analyticsSurface="mobile_nav_drawer" onClick={close}>{shopLabel}</TrackedLink>
+                    ))}
+                  </div>
+                </details>
+              );
+            }
 
             return (
               <TrackedLink

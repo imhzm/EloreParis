@@ -40,6 +40,10 @@ import {
   getExternalAuthProviderConfig,
 } from "@/lib/live-provider-config";
 import {
+  PromotionAuthorityError,
+  redeemPromotionForOrder,
+} from "@/lib/promotion-authority";
+import {
   getAuthProviderRuntimeConfig,
   getPaymentProviderRuntimeConfig,
   getShippingProviderRuntimeConfig,
@@ -709,6 +713,9 @@ function buildQuotedStoredOrder(
       roundingPolicy: quote.roundingPolicy,
       subtotalGrossHalalas: quote.subtotalGrossHalalas,
       subtotalVatHalalas: quote.subtotalVatHalalas,
+      discountGrossHalalas: quote.discountGrossHalalas,
+      discountVatHalalas: quote.discountVatHalalas,
+      promotion: quote.promotion,
       shippingGrossHalalas: quote.shipping.grossHalalas,
       shippingVatHalalas: quote.shipping.vatHalalas,
       totalGrossHalalas: quote.totalGrossHalalas,
@@ -875,6 +882,25 @@ export async function createAuthorityOrderFromQuote({
     }
 
     insertAuthorityOrder(order);
+    if (quoteRecord.quote.promotion) {
+      const customerKeyHash = createHash("sha256")
+        .update(checkout.phone.replace(/\D/g, ""))
+        .digest("hex");
+      try {
+        redeemPromotionForOrder(database, {
+          promotion: quoteRecord.quote.promotion,
+          quoteId,
+          orderNumber: order.orderNumber,
+          customerKeyHash,
+          now,
+        });
+      } catch (error) {
+        if (error instanceof PromotionAuthorityError) {
+          throw new OrderAuthorityError(error.message, error.statusCode, error.code);
+        }
+        throw error;
+      }
+    }
     const insertReservation = database.prepare(`
       INSERT INTO authority_inventory_reservations (
         id, reservation_key, quote_id, order_number, catalog_import_id,
@@ -1575,14 +1601,14 @@ export async function initiateAuthorityPaymentLink(orderNumber: string) {
 
   if (!order) {
     throw new OrderAuthorityError(
-      "Ø§Ù„Ø·Ù„Ø¨ Ø§Ù„Ù…Ø·Ù„ÙˆØ¨ ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯ Ø¯Ø§Ø®Ù„ authority Ø§Ù„Ø­Ø§Ù„ÙŠØ©.",
+      "الطلب المطلوب غير موجود في سجل الطلبات الحالي.",
       404,
     );
   }
 
   if (order.paymentMethodId !== "payment_link") {
     throw new OrderAuthorityError(
-      "Ù‡Ø°Ø§ Ø§Ù„Ø·Ù„Ø¨ Ù„Ø§ ÙŠØ­ØªØ§Ø¬ payment-link handoff.",
+      "هذا الطلب لا يحتاج إلى إنشاء رابط دفع.",
       409,
     );
   }
@@ -1614,7 +1640,7 @@ export async function initiateAuthorityShipmentBooking(orderNumber: string) {
 
   if (!order) {
     throw new OrderAuthorityError(
-      "Ø§Ù„Ø·Ù„Ø¨ Ø§Ù„Ù…Ø·Ù„ÙˆØ¨ ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯ Ø¯Ø§Ø®Ù„ authority Ø§Ù„Ø­Ø§Ù„ÙŠØ©.",
+      "الطلب المطلوب غير موجود في سجل الطلبات الحالي.",
       404,
     );
   }

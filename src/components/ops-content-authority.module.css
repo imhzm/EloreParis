@@ -1,0 +1,104 @@
+.editorHeader,
+.publishBar {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.sectionBlock {
+  display: grid;
+  gap: 4px;
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(255, 250, 242, 0.14);
+}
+
+.sectionBlock h3 {
+  margin: 0;
+  color: #fffaf2;
+}
+
+.stepGrid {
+  display: grid;
+  grid-template-columns: 0.35fr 1fr 2fr;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.linkEditor {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.recordBlock {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 250, 242, 0.1);
+}
+
+.linkEditorRow {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.8fr) minmax(180px, 1.2fr);
+  gap: 12px;
+}
+
+.publishBar {
+  margin-top: 28px;
+  padding: 20px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.publishBar > :first-child {
+  flex: 1 1 320px;
+}
+
+.mediaGrid {
+  display: grid;
+  gap: 14px;
+  margin-top: 24px;
+}
+
+.mediaCard {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(255, 250, 242, 0.14);
+  border-radius: 18px;
+  color: rgba(255, 250, 242, 0.72);
+}
+
+.mediaCard img,
+.pendingMedia {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.pendingMedia {
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  text-align: center;
+}
+
+.mediaCard strong {
+  color: #fffaf2;
+}
+
+@media (max-width: 780px) {
+  .stepGrid,
+  .linkEditorRow { grid-template-columns: 1fr; }
+  .publishBar { align-items: stretch; }
+}

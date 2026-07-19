@@ -9,9 +9,13 @@ import styles from "./order-flow.module.css";
 
 type OpsSessionActionsProps = {
   session: OpsSessionSummary | null;
+  showMeta?: boolean;
 };
 
-export function OpsSessionActions({ session }: OpsSessionActionsProps) {
+export function OpsSessionActions({
+  session,
+  showMeta = true,
+}: OpsSessionActionsProps) {
   const pathname = usePathname() ?? "/ops";
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +49,7 @@ export function OpsSessionActions({ session }: OpsSessionActionsProps) {
 
   return (
     <div className={styles.opsNavActions}>
-      {session ? (
+      {session && showMeta ? (
         <span className={styles.opsNavMeta}>
           Session: {session.role} · {session.username ?? session.userId} ·{" "}
           {getOpsAuthMethodLabel(session.authMethod)}

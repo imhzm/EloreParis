@@ -11,11 +11,18 @@
     "start": "node scripts/start-standalone.mjs",
     "lint": "eslint .",
     "test:home-3d": "python scripts/home-3d-regression.py",
+    "test:category-cinematic": "python scripts/category-cinematic-regression.py",
+    "test:full-browser": "python scripts/full-reference-browser-regression.py",
+    "test:live-commerce": "python scripts/live-commerce-browser-qa.py",
     "test:smoke": "node scripts/smoke-check.mjs",
     "test:production-fence": "node scripts/production-fence-check.mjs",
     "test:release-controls": "node scripts/release-controls-check.mjs",
     "test:content-governance": "node scripts/content-governance-coverage-check.mjs",
     "test:catalog-authority": "node scripts/catalog-authority-check.mjs",
+    "test:promotion-authority": "node scripts/promotion-authority-check.mjs",
+    "test:site-content-authority": "node scripts/site-content-authority-check.mjs",
+    "test:jsonld-security": "node scripts/jsonld-security-check.mjs",
+    "test:hostinger-release": "node scripts/hostinger-release-contract-check.mjs",
     "test:provider-auth-security": "node scripts/provider-auth-security-check.mjs",
     "test:ops-lifecycle-source": "node scripts/ops-lifecycle-source-check.mjs",
     "test:provider-callback-security": "node scripts/provider-callback-security-check.mjs",
@@ -30,6 +37,7 @@
     "ops:hash-password": "node scripts/generate-ops-password-hash.mjs",
     "test:font-stack": "node scripts/font-stack-check.mjs",
     "test:scroll-reveal": "node scripts/scroll-reveal-check.mjs",
+    "test:web-vitals": "node scripts/web-vitals-source-check.mjs",
     "test:social-card": "node scripts/social-card-check.mjs",
     "dev:seed-demo": "node scripts/dev-seed-demo-catalog.mjs"
   },
@@ -37,7 +45,8 @@
     "@aws-sdk/client-sesv2": "^3.1087.0",
     "next": "16.2.10",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "sharp": "^0.34.5"
   },
   "devDependencies": {
     "@types/node": "^20",

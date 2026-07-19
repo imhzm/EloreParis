@@ -8,6 +8,11 @@ import {
 import { getActiveCatalogAuthority } from "@/lib/catalog-authority";
 import type { Locale } from "@/lib/i18n";
 import { getLivePaymentProviderConfig } from "@/lib/live-provider-config";
+import {
+  evaluatePromotionForQuote,
+  PromotionAuthorityError,
+  type PromotionQuoteSnapshot,
+} from "@/lib/promotion-authority";
 
 export const CHECKOUT_SESSION_COOKIE = "elore-checkout-session";
 export const CHECKOUT_SESSION_MAX_AGE_SECONDS = 60 * 60 * 24;
@@ -23,6 +28,7 @@ type CreateQuoteInput = {
   items: QuoteItem[];
   shippingMethodId: "standard" | "express";
   locale: Locale;
+  couponCode: string | null;
 };
 
 export type CheckoutQuote = {
@@ -72,6 +78,9 @@ export type CheckoutQuote = {
   }>;
   subtotalGrossHalalas: number;
   subtotalVatHalalas: number;
+  promotion: PromotionQuoteSnapshot | null;
+  discountGrossHalalas: number;
+  discountVatHalalas: number;
   totalGrossHalalas: number;
   totalVatHalalas: number;
 };
@@ -96,24 +105,22 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function parseCreateQuoteInput(value: unknown): CreateQuoteInput {
   const inputKeys = isRecord(value) ? Object.keys(value) : [];
-  const hasLegacyShape =
-    inputKeys.length === 2 &&
-    inputKeys.every((key) => ["items", "shippingMethodId"].includes(key));
-  const hasLocalizedShape =
-    inputKeys.length === 3 &&
-    inputKeys.every((key) => ["items", "shippingMethodId", "locale"].includes(key));
+  const allowedKeys = ["items", "shippingMethodId", "locale", "couponCode"];
   if (
     !isRecord(value) ||
-    (!hasLegacyShape && !hasLocalizedShape) ||
+    inputKeys.some((key) => !allowedKeys.includes(key)) ||
+    !inputKeys.includes("items") ||
+    !inputKeys.includes("shippingMethodId") ||
     !Array.isArray(value.items) ||
     value.items.length < 1 ||
     value.items.length > CHECKOUT_QUOTE_MAX_ITEMS ||
     !["standard", "express"].includes(String(value.shippingMethodId)) ||
-    (hasLocalizedShape && value.locale !== "ar" && value.locale !== "en")
+    (value.locale !== undefined && value.locale !== "ar" && value.locale !== "en") ||
+    (value.couponCode !== undefined && value.couponCode !== null && typeof value.couponCode !== "string")
   ) {
     throw new CatalogQuoteError(
       "quote_payload_invalid",
-      "Quote requests require items, one supported shippingMethodId, and an optional supported locale.",
+      "Quote requests require items, one supported shippingMethodId, and optional locale and couponCode values.",
       400,
     );
   }
@@ -158,6 +165,10 @@ function parseCreateQuoteInput(value: unknown): CreateQuoteInput {
     items,
     shippingMethodId: value.shippingMethodId as "standard" | "express",
     locale: value.locale === "en" ? "en" : "ar",
+    couponCode:
+      typeof value.couponCode === "string" && value.couponCode.trim()
+        ? value.couponCode.trim()
+        : null,
   };
 }
 
@@ -298,6 +309,24 @@ export function createCheckoutQuote(value: unknown, rawCheckoutSessionId: string
     shippingMethod.grossHalalas,
     catalog.payload.taxProfile.rateBps,
   );
+  let promotion: PromotionQuoteSnapshot | null;
+  try {
+    promotion = evaluatePromotionForQuote({
+      lines,
+      subtotalGrossHalalas,
+      couponCode: input.couponCode,
+    });
+  } catch (error) {
+    if (error instanceof PromotionAuthorityError) {
+      throw new CatalogQuoteError(error.code, error.message, error.statusCode, error.issues);
+    }
+    throw error;
+  }
+  const discountGrossHalalas = promotion?.discountHalalas ?? 0;
+  const discountVatHalalas = vatFromInclusiveGross(
+    discountGrossHalalas,
+    catalog.payload.taxProfile.rateBps,
+  );
   const now = Date.now();
   const policySet = getApprovedCheckoutPolicySet();
   const paymentProvider = getLivePaymentProviderConfig();
@@ -339,8 +368,12 @@ export function createCheckoutQuote(value: unknown, rawCheckoutSessionId: string
     ],
     subtotalGrossHalalas,
     subtotalVatHalalas,
-    totalGrossHalalas: subtotalGrossHalalas + shippingMethod.grossHalalas,
-    totalVatHalalas: subtotalVatHalalas + shippingVatHalalas,
+    promotion,
+    discountGrossHalalas,
+    discountVatHalalas,
+    totalGrossHalalas:
+      subtotalGrossHalalas - discountGrossHalalas + shippingMethod.grossHalalas,
+    totalVatHalalas: subtotalVatHalalas - discountVatHalalas + shippingVatHalalas,
   };
 
   const requestHash = createHash("sha256")
@@ -453,6 +486,9 @@ export function getCheckoutQuoteForSession(
   const quote: CheckoutQuote = {
     ...storedQuote,
     locale: storedQuote.locale === "en" ? "en" : "ar",
+    promotion: storedQuote.promotion ?? null,
+    discountGrossHalalas: Number(storedQuote.discountGrossHalalas ?? 0),
+    discountVatHalalas: Number(storedQuote.discountVatHalalas ?? 0),
   };
   return { quote, status: row.status, expiresAt: row.expires_at };
 }

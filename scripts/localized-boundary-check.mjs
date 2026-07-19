@@ -9,6 +9,12 @@ const root = process.cwd();
 const localeRoot = "src/app/(storefront)/[locale]";
 const loading = readFileSync(path.join(root, localeRoot, "localized-loading.tsx"), "utf8");
 const errorBoundary = readFileSync(path.join(root, localeRoot, "error.tsx"), "utf8");
+const notFoundBoundary = readFileSync(path.join(root, localeRoot, "not-found.tsx"), "utf8");
+const globalError = readFileSync(path.join(root, "src/app/global-error.tsx"), "utf8");
+const orderConfirmation = readFileSync(
+  path.join(root, "src/components/order-confirmation.tsx"),
+  "utf8",
+);
 const styles = readFileSync(
   path.join(root, localeRoot, "localized-boundary.module.css"),
   "utf8",
@@ -22,7 +28,17 @@ assert.match(errorBoundary, /aria-live="assertive"/);
 assert.match(errorBoundary, /headingRef\.current\?\.focus\(\)/);
 assert.match(errorBoundary, /onClick=\{reset\}/);
 assert.match(errorBoundary, /\`\/\$\{locale\}\/track-order\`/);
-assert.doesNotMatch(`${loading}\n${errorBoundary}`, /<main\b/i);
+assert.match(notFoundBoundary, /usePathname\(\)/);
+assert.match(notFoundBoundary, /headingRef\.current\?\.focus\(\)/);
+assert.match(notFoundBoundary, /\`\/\$\{locale\}\/search\`/);
+assert.doesNotMatch(`${loading}\n${errorBoundary}\n${notFoundBoundary}`, /<main\b/i);
+assert.match(globalError, /href="\/ar\/trust"/);
+assert.doesNotMatch(globalError, /href="\/trust"/);
+assert.match(orderConfirmation, /error instanceof AuthorityApiError && error\.statusCode === 404/);
+assert.match(orderConfirmation, /setLoadState\(\{ kind: "missing", requestKey: orderNumber \}\)/);
+assert.match(orderConfirmation, /setLoadState\(\{ kind: "unavailable", requestKey: orderNumber \}\)/);
+assert.match(orderConfirmation, /role="alert" aria-live="assertive"/);
+assert.match(orderConfirmation, /setRequestVersion\(\(version\) => version \+ 1\)/);
 assert.doesNotMatch(errorBoundary, /error\.(?:message|stack|digest)/);
 assert.match(styles, /prefers-reduced-motion:\s*reduce/);
 assert.match(styles, /\.loadingBlock\s*\{\s*animation:\s*none/);

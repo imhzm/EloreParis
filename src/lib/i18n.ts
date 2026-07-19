@@ -292,9 +292,9 @@ export const homeCopy = {
 export const shellCopy = {
   ar: {
     skip: "تخطي إلى المحتوى", market: "تجربة عربية للسوق السعودي", tagline: "جمالٌ يُروى كتجربة", trackOrder: "تتبّع طلبك ←",
-    navLabel: "التنقل الرئيسي", searchLabel: "البحث داخل المتجر", cart: "السلة", cartCountLabel: "عناصر في السلة",
+    navLabel: "التنقل الرئيسي", searchLabel: "البحث داخل المتجر", account: "حسابي", cart: "السلة", cartCountLabel: "عناصر في السلة",
     menuOpen: "فتح القائمة", menuClose: "إغلاق القائمة", footerBody: "بيت جمال رقمي فاخر يجمع الحس الباريسي مع وضوح يناسب روتينك في السعودية.",
-    footerStatus: "نعرض معلومات المنتجات والسياسات من مصادر موثقة وبوضوح قبل اتخاذ القرار.", policyTitle: "الثقة والسياسات", supportTitle: "خدمة الطلب",
+    footerStatus: "نعرض معلومات المنتجات والسياسات من مصادر موثقة وبوضوح قبل اتخاذ القرار.", aboutLabel: "اعرفي قصتنا", policyTitle: "الثقة والسياسات", supportTitle: "خدمة الطلب",
     footerTagline: "جمال يُصاغ بنية. ويُروى كتجربة.", languageLabel: "English", languageHref: "/en",
     // The reference concept leads its navigation with the categories. Perfumes
     // joins them here. Search is not a nav entry: the header already carries a
@@ -303,35 +303,36 @@ export const shellCopy = {
     nav: [["/", "الرئيسية"], ["/shop", "المتجر"], ["/shop/perfumes", "العطور"], ["/concerns", "حسب المشكلة"], ["/routines", "الروتينات"], ["/journal", "المجلة"], ["/trust", "الثقة"]],
     policies: [["/terms", "الشروط والأحكام"], ["/trust/verification", "بيانات المنشأة"], ["/trust/privacy", "الخصوصية"], ["/trust/shipping", "الشحن والتوصيل"], ["/trust/returns", "الاستبدال والاسترجاع"]],
     support: [["/contact", "تواصلي معنا"], ["/faq", "الأسئلة الشائعة"], ["/track-order", "تتبع الطلب"], ["/cart", "السلة"], ["/search", "البحث داخل المتجر"]],
-    // §7.7 Trust / Service strip — the five service promises the reference board
-    // seats on the burgundy band above the footer. [iconKey, line1, line2].
-    serviceStripTitle: "لماذا ÉLORÉ",
+    // §7.7 Trust / Service strip. These are deliberately status statements,
+    // not commercial promises: shipping, samples, packaging and returns remain
+    // owner/provider approval gates in the current authority files.
+    serviceStripTitle: "وضوح قبل الشراء",
     serviceStrip: [
-      ["delivery", "توصيل راقٍ وسريع", "إلى باب منزلك"],
-      ["samples", "عيّنات مجانية", "مع كل طلب"],
-      ["packaging", "تغليف فاخر", "لأن التفاصيل تصنع الفارق"],
-      ["ingredients", "مكوّنات مختارة بعناية", "من مصادر مسؤولة"],
-      ["returns", "إرجاع سهل", "خدمة عملاء راقية"],
+      ["delivery", "تفاصيل الشحن", "تُنشر بعد اعتماد مزوّد الخدمة"],
+      ["samples", "العيّنات والهدايا", "لا نعد بها قبل اعتمادها"],
+      ["packaging", "تجربة التغليف", "تصميم مفاهيمي حتى الاعتماد"],
+      ["ingredients", "بيانات المنتجات", "تظهر من مصادر موثقة فقط"],
+      ["returns", "سياسة الإرجاع", "تُنشر قبل تفعيل البيع"],
     ],
     shopTitle: "المتجر",
     shopLinks: [["/shop/perfumes", "العطور"], ["/shop/skincare", "العناية بالبشرة"], ["/shop/makeup", "المكياج"], ["/shop/beauty-sets", "الهدايا والمجموعات"], ["/shop", "كل المنتجات"]],
   },
   en: {
     skip: "Skip to content", market: "A Saudi beauty experience", tagline: "Beauty, composed with intention", trackOrder: "Track your order →",
-    navLabel: "Primary navigation", searchLabel: "Search the store", cart: "Cart", cartCountLabel: "items in cart",
+    navLabel: "Primary navigation", searchLabel: "Search the store", account: "Account", cart: "Cart", cartCountLabel: "items in cart",
     menuOpen: "Open menu", menuClose: "Close menu", footerBody: "A premium digital beauty house pairing Parisian sensibility with clarity made for life in Saudi Arabia.",
-    footerStatus: "Product and policy information is presented from verified sources, with clarity before every decision.", policyTitle: "Trust and policies", supportTitle: "Order support",
+    footerStatus: "Product and policy information is presented from verified sources, with clarity before every decision.", aboutLabel: "Discover our story", policyTitle: "Trust and policies", supportTitle: "Order support",
     footerTagline: "Beauty. Composed with intention.", languageLabel: "العربية", languageHref: "/ar",
     nav: [["/", "Home"], ["/shop", "Shop"], ["/shop/perfumes", "Perfumes"], ["/concerns", "By concern"], ["/routines", "Rituals"], ["/journal", "Journal"], ["/trust", "Trust"]],
     policies: [["/terms", "Terms and conditions"], ["/trust/verification", "Business information"], ["/trust/privacy", "Privacy"], ["/trust/shipping", "Shipping and delivery"], ["/trust/returns", "Returns and refunds"]],
     support: [["/contact", "Contact us"], ["/faq", "Frequently asked questions"], ["/track-order", "Track order"], ["/cart", "Cart"], ["/search", "Search the store"]],
-    serviceStripTitle: "Why ÉLORÉ",
+    serviceStripTitle: "Clarity before purchase",
     serviceStrip: [
-      ["delivery", "Refined, fast delivery", "to your door"],
-      ["samples", "Complimentary samples", "with every order"],
-      ["packaging", "Luxury packaging", "because details make the difference"],
-      ["ingredients", "Carefully selected ingredients", "from responsible sources"],
-      ["returns", "Easy returns", "refined customer care"],
+      ["delivery", "Shipping details", "published after carrier approval"],
+      ["samples", "Samples and gifts", "never promised before approval"],
+      ["packaging", "Packaging experience", "conceptual until approved"],
+      ["ingredients", "Product information", "shown only from verified sources"],
+      ["returns", "Returns policy", "published before sales are enabled"],
     ],
     shopTitle: "Shop",
     shopLinks: [["/shop/perfumes", "Perfumes"], ["/shop/skincare", "Skincare"], ["/shop/makeup", "Makeup"], ["/shop/beauty-sets", "Gifts & sets"], ["/shop", "All products"]],

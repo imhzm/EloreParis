@@ -10,7 +10,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   // This file sits at the app root, above both route groups, so it inherits no
   // metadataBase from a layout and has to declare its own — otherwise the
-  // sibling opengraph-image.tsx resolves against Next's localhost default.
+  // this page must resolve its own absolute metadata URLs.
   metadataBase: new URL(getSiteUrl()),
   title: "الصفحة غير موجودة | ÉLORÉ PARIS",
   robots: previewNoindexRobots,

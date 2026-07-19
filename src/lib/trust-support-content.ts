@@ -2,6 +2,7 @@ import type { Locale } from "./i18n";
 
 export type TrustSlug = "verification" | "privacy" | "shipping" | "returns" | "authenticity";
 export type SupportSlug = "about" | "contact" | "faq" | "terms";
+export type TrustSupportVariant = "brand" | "support" | "faq" | "policy";
 
 export type ContentSection = {
   title: string;
@@ -62,6 +63,77 @@ export const supportContent: Record<Locale, Record<SupportSlug, TrustSupportReco
 export const trustHubCopy = {
   ar: { eyebrow: "TRUST DIRECTORY", title: "الثقة ليست\nشارة.", intro: "هي بيانات وسياسات وأدلة يمكن فهمها ومراجعتها قبل أن نطلب منك قرارًا.", directory: "دليل الثقة", principlesTitle: "ما نعرفه.\nوما ينتظر الاعتماد.", closeTitle: "الوضوح قبل\nالتجارة.", open: "افتحي الملف", support: "الأسئلة الشائعة", notice: provisional.ar },
   en: { eyebrow: "TRUST DIRECTORY", title: "Trust is not\na badge.", intro: "It is information, policy and evidence you can understand and review before we ask for a decision.", directory: "Trust directory", principlesTitle: "What we know.\nWhat awaits approval.", closeTitle: "Clarity before\ncommerce.", open: "Open record", support: "Frequently asked questions", notice: provisional.en },
+} as const;
+
+const variantBySlug: Record<TrustSlug | SupportSlug, TrustSupportVariant> = {
+  about: "brand",
+  contact: "support",
+  faq: "faq",
+  terms: "policy",
+  verification: "policy",
+  privacy: "policy",
+  shipping: "policy",
+  returns: "policy",
+  authenticity: "policy",
+};
+
+export function getTrustSupportVariant(
+  slug: TrustSlug | SupportSlug,
+): TrustSupportVariant {
+  return variantBySlug[slug];
+}
+
+export const trustSupportUiCopy = {
+  ar: {
+    statusLabel: "حالة الاعتماد",
+    readDetail: "قراءة التفاصيل",
+    directoryIntro: "ملفات قصيرة توضّح ما هو معتمد وما ينتظر مصدرًا رسميًا.",
+    questionsEyebrow: "أسئلة وإجابات",
+    questionsTitle: "إجابة مباشرة، أو حدود واضحة للمعلومة.",
+    nextEyebrow: "الخطوة التالية",
+    backTrust: "العودة إلى دليل الثقة",
+    faq: "الأسئلة الشائعة",
+    explore: "استكشاف المتجر",
+    support: "ابدئي بالأسئلة الشائعة",
+    openTrust: "فتح دليل الثقة",
+    sectionHeading: {
+      brand: "البيت، في سطور واضحة.",
+      support: "المسارات المتاحة الآن.",
+      faq: "السياق الذي يساعدك على الاختيار.",
+      policy: "ما يغطيه هذا الملف.",
+    },
+    nextTitle: {
+      brand: "شاهدي كيف تتحول الفكرة إلى تجربة.",
+      support: "اختاري أقرب مسار لسؤالك.",
+      faq: "تحتاجين إلى تفاصيل السياسات؟",
+      policy: "راجعي المعلومة قبل اتخاذ القرار.",
+    },
+  },
+  en: {
+    statusLabel: "Approval status",
+    readDetail: "Read the details",
+    directoryIntro: "Concise records that separate approved information from details awaiting an official source.",
+    questionsEyebrow: "Questions and answers",
+    questionsTitle: "A direct answer, or a clear boundary around the information.",
+    nextEyebrow: "Next step",
+    backTrust: "Back to the trust directory",
+    faq: "Frequently asked questions",
+    explore: "Explore the shop",
+    support: "Start with frequently asked questions",
+    openTrust: "Open the trust directory",
+    sectionHeading: {
+      brand: "The house, in a few clear lines.",
+      support: "Routes available now.",
+      faq: "Context that helps you choose.",
+      policy: "What this record covers.",
+    },
+    nextTitle: {
+      brand: "See how the idea becomes an experience.",
+      support: "Choose the route closest to your question.",
+      faq: "Looking for policy detail?",
+      policy: "Review the information before deciding.",
+    },
+  },
 } as const;
 
 export function getTrustRecord(locale: Locale, slug: string) {

@@ -1,7 +1,7 @@
 .boundary {
-  --boundary-ink: #2a0d14;
+  --boundary-ink: #1c1011;
   --boundary-muted: #75656d;
-  --boundary-wine: #3b0f1a;
+  --boundary-wine: #25080c;
   --boundary-ivory: #fbf7f1;
   min-height: min(72rem, 100svh);
   display: grid;
@@ -9,13 +9,13 @@
   padding: clamp(2rem, 7vw, 7rem) clamp(1rem, 5vw, 4rem);
   color: var(--boundary-ink);
   background:
-    linear-gradient(120deg, rgba(59, 15, 26, 0.06), transparent 45%),
+    linear-gradient(120deg, rgba(37, 8, 12, 0.06), transparent 45%),
     var(--boundary-ivory);
 }
 
 .panel {
   width: min(100%, 58rem);
-  border-block: 1px solid rgba(59, 15, 26, 0.24);
+  border-block: 1px solid rgba(37, 8, 12, 0.24);
   padding-block: clamp(2rem, 6vw, 5rem);
 }
 
@@ -101,9 +101,9 @@
 
 .loadingBlock {
   min-height: 13rem;
-  border: 1px solid rgba(59, 15, 26, 0.12);
+  border: 1px solid rgba(37, 8, 12, 0.12);
   border-radius: 4px;
-  background: linear-gradient(100deg, rgba(59, 15, 26, 0.04) 30%, rgba(182, 138, 102, 0.16) 50%, rgba(59, 15, 26, 0.04) 70%);
+  background: linear-gradient(100deg, rgba(37, 8, 12, 0.04) 30%, rgba(182, 138, 102, 0.16) 50%, rgba(37, 8, 12, 0.04) 70%);
   background-size: 220% 100%;
   animation: boundary-shimmer 1.8s ease-in-out infinite;
 }

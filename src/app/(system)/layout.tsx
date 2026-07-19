@@ -23,16 +23,13 @@ export const metadata: Metadata = {
   // Nothing under this root is ever a public search result. Pages may narrow
   // this further, but none may widen it.
   robots: previewNoindexRobots,
-  // app/opengraph-image.tsx is a root-segment metadata file, so it is inherited
-  // here as well as by the storefront. It is a public brand asset and these
-  // surfaces are internal, so drop it rather than advertise a social preview
-  // for the operations dashboard.
+  // Operations surfaces never advertise a social preview.
   openGraph: { images: [] },
 };
 
 export const viewport: Viewport = {
   colorScheme: "light",
-  themeColor: "#3b0f1a",
+  themeColor: "#25080c",
 };
 
 /**

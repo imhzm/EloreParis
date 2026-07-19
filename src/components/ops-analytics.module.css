@@ -1,0 +1,490 @@
+.page {
+  min-block-size: calc(100vh - 74px);
+  padding: clamp(24px, 4vw, 48px);
+  background:
+    radial-gradient(circle at 14% 0%, rgba(201, 166, 127, 0.14), transparent 26rem),
+    #f7f4ef;
+  color: #24161b;
+}
+
+.hero,
+.metrics,
+.trendCard,
+.insightsGrid,
+.truthNote {
+  max-inline-size: 1480px;
+  margin-inline: auto;
+}
+
+.hero {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+  padding-block-end: 26px;
+}
+
+.hero > div {
+  max-inline-size: 720px;
+}
+
+.heroActions {
+  display: flex;
+  align-items: end;
+  gap: 12px;
+}
+
+.hero > div > span,
+.cardHeading span {
+  color: #7c3d4a;
+  font-size: 0.66rem;
+  font-weight: 850;
+  letter-spacing: 0.15em;
+}
+
+.hero h1,
+.cardHeading h2 {
+  margin: 0;
+  font-family: var(--font-editorial), Georgia, serif;
+}
+
+.hero h1 {
+  margin-block: 7px 9px;
+  font-size: clamp(2rem, 4vw, 3.4rem);
+  line-height: 1;
+}
+
+.hero p,
+.metrics p,
+.cardHeading p,
+.truthNote p {
+  margin: 0;
+  color: #75646a;
+  line-height: 1.7;
+}
+
+.periodForm {
+  display: flex;
+  align-items: end;
+  gap: 7px;
+}
+
+.periodForm label {
+  align-self: center;
+  color: #665159;
+  font-size: 0.72rem;
+  font-weight: 750;
+}
+
+.periodForm select,
+.periodForm button {
+  min-block-size: 44px;
+  border-radius: 12px;
+  font: inherit;
+}
+
+.periodForm select {
+  padding-inline: 12px 38px;
+  border: 1px solid rgba(73, 23, 35, 0.16);
+  background: #fff;
+  color: #24161b;
+}
+
+.periodForm button,
+.heroActions button {
+  padding-inline: 17px;
+  border: 0;
+  border-radius: 12px;
+  background: #491723;
+  color: #fffaf6;
+  font-size: 0.76rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.heroActions button {
+  background: transparent;
+  border: 1px solid rgba(73, 23, 35, 0.18);
+  color: #491723;
+  white-space: nowrap;
+}
+
+.heroActions button:hover {
+  background: rgba(73, 23, 35, 0.06);
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.metrics article,
+.trendCard,
+.listCard,
+.truthNote {
+  border: 1px solid rgba(73, 23, 35, 0.1);
+  border-radius: 19px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 16px 40px rgba(73, 23, 35, 0.055);
+}
+
+.metrics article {
+  padding: 20px;
+}
+
+.metrics article > span {
+  color: #725d65;
+  font-size: 0.74rem;
+  font-weight: 750;
+}
+
+.metrics strong {
+  display: block;
+  margin-block: 8px 4px;
+  color: #491723;
+  font-size: clamp(1.4rem, 2.5vw, 2rem);
+}
+
+.metrics p {
+  font-size: 0.71rem;
+}
+
+.trendCard {
+  margin-block-start: 18px;
+  padding: 22px;
+}
+
+.cardHeading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.cardHeading h2 {
+  margin-block-start: 2px;
+  font-size: 1.35rem;
+}
+
+.cardHeading p {
+  font-size: 0.72rem;
+}
+
+.chart {
+  display: flex;
+  block-size: 310px;
+  gap: clamp(5px, 1vw, 12px);
+  margin-block-start: 22px;
+  overflow-x: auto;
+  padding-block-end: 4px;
+}
+
+.chartPoint {
+  display: grid;
+  min-inline-size: 54px;
+  flex: 1;
+  grid-template-rows: 24px 1fr 34px;
+  gap: 6px;
+  text-align: center;
+}
+
+.chartPoint > span,
+.chartPoint > small {
+  overflow: hidden;
+  color: #78666d;
+  font-size: 0.61rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.barTrack {
+  position: relative;
+  overflow: hidden;
+  border-radius: 9px 9px 4px 4px;
+  background: linear-gradient(180deg, #f5f0eb, #eee8e1);
+}
+
+.barTrack i {
+  position: absolute;
+  inset-block-end: 0;
+  inset-inline: 0;
+  block-size: var(--bar-height);
+  border-radius: 9px 9px 4px 4px;
+  background: linear-gradient(180deg, #c9a67f, #6f2d3b);
+}
+
+.insightsGrid {
+  display: grid;
+  margin-block-start: 18px;
+  grid-template-columns: 1.15fr 0.9fr 0.9fr;
+  gap: 14px;
+}
+
+.listCard {
+  min-inline-size: 0;
+  padding: 20px;
+}
+
+.listCard ul,
+.listCard ol {
+  display: grid;
+  gap: 12px;
+  margin: 18px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.listCard li {
+  position: relative;
+  display: grid;
+  min-inline-size: 0;
+  align-items: center;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 12px;
+  padding-block-end: 12px;
+  border-block-end: 1px solid rgba(73, 23, 35, 0.08);
+}
+
+.listCard li:last-child {
+  padding-block-end: 0;
+  border-block-end: 0;
+}
+
+.listCard li strong,
+.listCard li span,
+.listCard li b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.listCard li strong {
+  display: block;
+  font-size: 0.77rem;
+}
+
+.listCard li span {
+  display: block;
+  margin-block-start: 3px;
+  color: #7a6870;
+  font-size: 0.67rem;
+}
+
+.listCard li b {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  color: #5a2632;
+  font-size: 0.72rem;
+}
+
+.progress {
+  grid-column: 1;
+  block-size: 5px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #eee8e2;
+}
+
+.progress i {
+  display: block;
+  block-size: 100%;
+  border-radius: inherit;
+  background: #8b5863;
+}
+
+.comparisonUp {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: #1f8b4c;
+  font-size: 0.72rem;
+  font-weight: 750;
+}
+
+.comparisonDown {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: #b13e3e;
+  font-size: 0.72rem;
+  font-weight: 750;
+}
+
+.comparisonFlat {
+  color: #75646a;
+  font-size: 0.72rem;
+}
+
+.comparisonCard {
+  max-inline-size: 1480px;
+  margin: 18px auto 0;
+  padding: 22px;
+  border: 1px solid rgba(73, 23, 35, 0.1);
+  border-radius: 19px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 16px 40px rgba(73, 23, 35, 0.055);
+}
+
+.comparisonGrid {
+  display: grid;
+  gap: 16px;
+  margin-block-start: 18px;
+}
+
+.comparisonRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding-block-end: 14px;
+  border-block-end: 1px solid rgba(73, 23, 35, 0.08);
+}
+
+.comparisonRow:last-child {
+  padding-block-end: 0;
+  border-block-end: 0;
+}
+
+.comparisonLabel {
+  color: #4a2c36;
+  font-size: 0.82rem;
+  font-weight: 700;
+  min-inline-size: 120px;
+}
+
+.comparisonValues {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.comparisonValues > span {
+  display: grid;
+  gap: 2px;
+  text-align: center;
+}
+
+.comparisonValues small {
+  color: #8f7982;
+  font-size: 0.62rem;
+}
+
+.comparisonValues strong {
+  color: #491723;
+  font-size: 0.82rem;
+}
+
+.barTrackDual {
+  position: relative;
+  overflow: hidden;
+  border-radius: 9px 9px 4px 4px;
+  background: linear-gradient(180deg, #f5f0eb, #eee8e1);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 2px;
+}
+
+.barPrimary {
+  display: block;
+  block-size: var(--bar-height, 0%);
+  border-radius: 9px 9px 4px 4px;
+  background: linear-gradient(180deg, #6f2d3b, #491723);
+  transition: block-size 0.3s;
+}
+
+.barSecondary {
+  display: block;
+  block-size: var(--bar-height, 0%);
+  border-radius: 9px 9px 4px 4px;
+  background: linear-gradient(180deg, #d4b68a, #c7a36d);
+  transition: block-size 0.3s;
+}
+
+.truthNote {
+  margin-block-start: 18px;
+  padding: 17px 19px;
+  border-inline-start: 3px solid #c9a67f;
+}
+
+.truthNote strong {
+  color: #491723;
+  font-size: 0.79rem;
+}
+
+.truthNote p {
+  margin-block-start: 4px;
+  font-size: 0.72rem;
+}
+
+.emptyState {
+  display: grid;
+  min-block-size: 270px;
+  place-items: center;
+  color: #78666d;
+  font-size: 0.82rem;
+}
+
+.periodForm select:focus-visible,
+.periodForm button:focus-visible,
+.chart:focus-visible {
+  outline: 3px solid rgba(201, 166, 127, 0.58);
+  outline-offset: 2px;
+}
+
+@media (max-width: 1120px) {
+  .insightsGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .insightsGrid > :first-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 800px) {
+  .hero {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .periodForm {
+    inline-size: 100%;
+  }
+
+  .periodForm select {
+    min-inline-size: 0;
+    flex: 1;
+  }
+}
+
+@media (max-width: 620px) {
+  .page {
+    padding: 20px 12px 32px;
+  }
+
+  .metrics,
+  .insightsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .insightsGrid > :first-child {
+    grid-column: auto;
+  }
+
+  .cardHeading {
+    align-items: start;
+    flex-direction: column;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .barTrack i {
+    transition: none;
+  }
+}

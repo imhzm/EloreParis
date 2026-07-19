@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import { OpsNav } from "@/components/ops-nav";
 import { TrackedLink } from "@/components/tracked-link";
 import { getPageType, trackAnalyticsEvent } from "@/lib/analytics";
+import { DownloadCsvButton } from "@/components/ops-download-csv";
+import { useClientPagination, PaginationControls } from "@/components/ops-pagination-controls";
 import {
   getOrderFulfillmentPlan,
   getOrderProviderHandoff,
@@ -113,7 +115,47 @@ export function OrdersOpsSurface() {
   const [statusFilter, setStatusFilter] = useState<OrderStatusFilter>("all");
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<string | null>(null);
+  const [selectedOrderNumbers, setSelectedOrderNumbers] = useState<Set<string>>(new Set());
+  const [isBulkProcessing, setIsBulkProcessing] = useState(false);
   const [activeProviderActionKey, setActiveProviderActionKey] = useState<string | null>(null);
+
+  const handleBulkAdvanceStatus = useCallback(() => {
+    if (selectedOrderNumbers.size === 0 || isBulkProcessing) return;
+    setIsBulkProcessing(true);
+    setError(null);
+
+    const entries = Array.from(selectedOrderNumbers);
+    let successCount = 0;
+    let failCount = 0;
+
+    void Promise.allSettled(
+      entries.map((orderNumber) => advanceOpsOrderFromAuthority(orderNumber)),
+    ).then((results) => {
+      for (const result of results) {
+        if (result.status === "fulfilled") {
+          const { order: updatedOrder, previousStatus, nextStatus } = result.value;
+          setOrders((currentOrders) =>
+            currentOrders.map((candidate) =>
+              candidate.orderNumber === updatedOrder.orderNumber
+                ? updatedOrder
+                : candidate,
+            ),
+          );
+          successCount++;
+          setLastUpdate(
+            `تم نقل ${updatedOrder.orderNumber} من ${getOrderStatusMeta(previousStatus).label} إلى ${getOrderStatusMeta(nextStatus).label}.`,
+          );
+        } else {
+          failCount++;
+        }
+      }
+      setIsBulkProcessing(false);
+      setSelectedOrderNumbers(new Set());
+      if (failCount > 0) {
+        setError(`نجح ${successCount}، فشل ${failCount} من أصل ${entries.length}.`);
+      }
+    });
+  }, [selectedOrderNumbers, isBulkProcessing]);
 
   useEffect(() => {
     void fetchOpsOrdersFromAuthority()
@@ -225,6 +267,34 @@ export function OrdersOpsSurface() {
       return haystack.includes(normalizedQuery);
     });
   }, [authorityOrders, query, statusFilter]);
+
+  const { pagination, paginatedItems, goToPage, changePageSize } =
+    useClientPagination(filteredOrders);
+
+  const toggleOrderSelection = useCallback((orderNumber: string) => {
+    setSelectedOrderNumbers((prev) => {
+      const next = new Set(prev);
+      if (next.has(orderNumber)) next.delete(orderNumber);
+      else next.add(orderNumber);
+      return next;
+    });
+  }, []);
+
+  const selectAllVisible = useCallback(() => {
+    setSelectedOrderNumbers(new Set(paginatedItems.map(({ order }) => order.orderNumber)));
+  }, [paginatedItems]);
+
+  const clearSelection = useCallback(() => {
+    setSelectedOrderNumbers(new Set());
+  }, []);
+
+  const allVisibleSelected = paginatedItems.length > 0 &&
+    paginatedItems.every(({ order }) => selectedOrderNumbers.has(order.orderNumber));
+
+  const toggleSelectAllVisible = useCallback(() => {
+    if (allVisibleSelected) clearSelection();
+    else selectAllVisible();
+  }, [allVisibleSelected, clearSelection, selectAllVisible]);
 
   const statusCounts = useMemo(
     () =>
@@ -372,7 +442,7 @@ export function OrdersOpsSurface() {
               ? "كل الحالات"
               : getOrderStatusMeta(statusFilter).label}
           </strong>
-          <span>{filteredOrders.length} طلبًا يطابق البحث الحالي.</span>
+          <span>{filteredOrders.length} طلبًا يطابق البحث الحالي ({pagination.currentPage}/{Math.max(1, Math.ceil(filteredOrders.length / pagination.pageSize))}).</span>
         </article>
         <article className={styles.statusSummaryCard}>
           <p className={styles.sectionTitle}>Manual review</p>
@@ -415,6 +485,22 @@ export function OrdersOpsSurface() {
                 placeholder="مرجع الطلب أو المدينة أو آخر 4 أرقام"
               />
             </label>
+            <DownloadCsvButton
+              filename="elore-orders.csv"
+              rows={filteredOrders.map(({ order, authorityPlan }) => ({
+                رقم_الطلب: order.orderNumber,
+                الاسم: order.customer.fullName,
+                المدينة: order.customer.city,
+                الحالة: order.status,
+                المبلغ: order.totalEstimate,
+                الشحن: order.shippingMethodId,
+                الدفع: order.paymentMethodId,
+                تاريخ_الإنشاء: order.createdAt,
+                عدد_المنتجات: order.lines.length,
+                carrier: authorityPlan.recommendedCarrier,
+              }))}
+              label="تصدير CSV"
+            />
 
             <div className={styles.filterChipRow}>
               {statusFilters.map((filter) => {
@@ -442,6 +528,47 @@ export function OrdersOpsSurface() {
           {error ? <div className={styles.inlineError}>{error}</div> : null}
           {lastUpdate ? <div className={styles.inlineNotice}>{lastUpdate}</div> : null}
 
+          <div className={styles.bulkToolbar}>
+            <label className={styles.checkboxLabel}>
+              <input
+                type="checkbox"
+                checked={allVisibleSelected}
+                ref={(el) => {
+                  if (el) el.indeterminate = selectedOrderNumbers.size > 0 && !allVisibleSelected;
+                }}
+                onChange={toggleSelectAllVisible}
+                aria-label="تحديد الكل في هذه الصفحة"
+              />
+              <span>تحديد الكل ({paginatedItems.length})</span>
+            </label>
+            {selectedOrderNumbers.size > 0 ? (
+              <div className={styles.bulkActions}>
+                <span className={styles.bulkCount}>{selectedOrderNumbers.size} محدد</span>
+                <button
+                  type="button"
+                  className={styles.primaryButton}
+                  disabled={isBulkProcessing}
+                  onClick={handleBulkAdvanceStatus}
+                >
+                  {isBulkProcessing ? "جارٍ..." : "تحديث حالة الكل"}
+                </button>
+                <button
+                  type="button"
+                  className={styles.secondaryButton}
+                  onClick={clearSelection}
+                >
+                  إلغاء
+                </button>
+              </div>
+            ) : null}
+          </div>
+
+          <PaginationControls
+            pagination={pagination}
+            onPageChange={goToPage}
+            onPageSizeChange={changePageSize}
+          />
+
           <div className={styles.ordersGrid}>
             {isLoading ? (
               <article className={styles.emptyCard}>
@@ -449,23 +576,35 @@ export function OrdersOpsSurface() {
                 <h1>جاري تحميل طبقة الطلبات المركزية</h1>
                 <p>يتم الآن استعادة الطلبات من authority الداخلية الحالية.</p>
               </article>
-            ) : filteredOrders.length ? (
-              filteredOrders.map(({ order, authorityPlan, providerHandoff, ownerLane }) => {
+            ) : paginatedItems.length ? (
+              paginatedItems.map(({ order, authorityPlan, providerHandoff, ownerLane }) => {
                 const shippingMethod = getShippingMethodById(order.shippingMethodId);
                 const paymentMethod = getPaymentMethodById(order.paymentMethodId);
                 const nextStatus = getNextOrderStatus(order);
                 const currentStatus = getOrderStatusMeta(order.status);
 
+                const isSelected = selectedOrderNumbers.has(order.orderNumber);
+
                 return (
-                  <article key={order.orderNumber} className={styles.lineItem}>
-                    <div className={styles.lineHead}>
-                      <div>
-                        <h3>{order.orderNumber}</h3>
-                        <p className={styles.lineMeta}>
-                          {order.customer.fullName} | {formatOrderDate(order.createdAt)}
-                        </p>
+                  <article key={order.orderNumber} className={`${styles.lineItem} ${isSelected ? styles.lineItemSelected : ""}`}>
+                    <div className={styles.checkboxRow}>
+                      <label className={styles.checkboxInline}>
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => toggleOrderSelection(order.orderNumber)}
+                          aria-label={`تحديد الطلب ${order.orderNumber}`}
+                        />
+                      </label>
+                      <div className={styles.lineHead} style={{ flex: 1 }}>
+                        <div>
+                          <h3>{order.orderNumber}</h3>
+                          <p className={styles.lineMeta}>
+                            {order.customer.fullName} | {formatOrderDate(order.createdAt)}
+                          </p>
+                        </div>
+                        <div className={styles.linePrice}>{order.totalEstimate} ر.س</div>
                       </div>
-                      <div className={styles.linePrice}>{order.totalEstimate} ر.س</div>
                     </div>
 
                     <div className={styles.badgeRow}>

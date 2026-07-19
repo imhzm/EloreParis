@@ -85,7 +85,7 @@ Status:
 
 Exit gate:
 
-- the homepage and supporting narrative routes can explain what Cozmateks is, who it is for, why it is different, and how trust is earned
+- the homepage and supporting narrative routes can explain what ÉLORÉ PARIS is, who it is for, why it is different, and how trust is earned
 
 ### Copy Pack B
 

@@ -1,0 +1,38 @@
+.layer { position: fixed; z-index: 230; inset: 0; }
+.backdrop { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; border: 0; background: rgba(18,3,5,.64); backdrop-filter: blur(7px); animation: fade 220ms ease both; }
+.panel { position: absolute; inset-block: 0; inset-inline-end: 0; inline-size: min(470px, 94vw); display: grid; grid-template-rows: auto 1fr auto; color: var(--elore-ink); background: var(--ivory-50); box-shadow: -28px 0 90px rgba(18,3,5,.34); animation: enter 380ms cubic-bezier(.22,1,.36,1) both; }
+[dir="rtl"] .panel { box-shadow: 28px 0 90px rgba(18,3,5,.34); }
+.header { min-block-size: 106px; display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 24px 26px; border-block-end: 1px solid rgba(82,26,37,.13); }
+.header p { color: var(--gold-600); font-size: .66rem; font-weight: 800; letter-spacing: .17em; }
+.header h2 { margin-block-start: 5px; font-family: var(--font-display); font-size: clamp(1.7rem, 5vw, 2.45rem); font-weight: 500; }
+.close { inline-size: 44px; block-size: 44px; display: grid; place-items: center; border: 1px solid rgba(82,26,37,.2); border-radius: 50%; color: var(--wine-900); background: transparent; cursor: pointer; }
+.close svg { inline-size: 20px; fill: none; stroke: currentColor; stroke-width: 1.4; }
+.content { overflow-y: auto; overscroll-behavior: contain; padding: 26px; }
+.status { color: var(--muted); }
+.empty { min-block-size: 100%; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 14px; padding-block: 48px; }
+.empty > span { color: var(--gold-accent); font-size: .7rem; letter-spacing: .2em; }
+.empty h3 { max-inline-size: 360px; font-family: var(--font-display); font-size: clamp(2rem, 7vw, 3.35rem); font-weight: 500; line-height: 1.05; }
+.empty p { max-inline-size: 360px; color: var(--muted); line-height: 1.8; }
+.empty a { margin-block-start: 8px; color: var(--wine-700); font-weight: 800; text-decoration: underline; text-decoration-color: var(--gold-400); text-underline-offset: 6px; }
+.lines { display: grid; gap: 14px; }
+.line { display: grid; grid-template-columns: 84px 1fr; gap: 16px; align-items: center; padding-block-end: 14px; border-block-end: 1px solid rgba(82,26,37,.11); }
+.media { position: relative; aspect-ratio: 1; display: grid; place-items: center; overflow: hidden; border-radius: 16px; color: var(--gold-500); background: var(--ivory-100); font-family: var(--font-display); font-size: 2rem; }
+.media img { object-fit: cover; }
+.line h3 { font-size: .98rem; }
+.line p { margin-block: 5px; color: var(--muted); font-size: .76rem; }
+.line div > span { color: var(--wine-700); font-size: .8rem; font-weight: 800; }
+.more { margin-block-start: 16px; color: var(--muted); font-size: .8rem; }
+.warning { margin-block-start: 18px; padding: 12px; border-inline-start: 2px solid var(--gold-500); color: var(--muted); background: var(--ivory-100); font-size: .8rem; }
+.footer { display: grid; gap: 10px; padding: 22px 26px max(22px, env(safe-area-inset-bottom)); border-block-start: 1px solid rgba(82,26,37,.13); background: var(--ivory-100); }
+.footer > div { display: flex; justify-content: space-between; gap: 20px; margin-block-end: 3px; color: var(--muted); font-size: .82rem; }
+.footer strong { color: var(--wine-900); }
+.primary, .secondary { min-block-size: 48px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--wine-700); border-radius: var(--radius-control); font-weight: 800; }
+.primary { color: var(--elore-warm-white); background: var(--wine-700); }
+.secondary { color: var(--wine-700); background: transparent; }
+.close:focus-visible, .empty a:focus-visible, .primary:focus-visible, .secondary:focus-visible { outline: 2px solid transparent; outline-offset: var(--focus-ring-offset); box-shadow: var(--focus-ring); }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes enter { from { opacity: .7; transform: translateX(100%); } to { opacity: 1; transform: translateX(0); } }
+[dir="rtl"] .panel { animation-name: enter-rtl; }
+@keyframes enter-rtl { from { opacity: .7; transform: translateX(-100%); } to { opacity: 1; transform: translateX(0); } }
+@media (max-width: 520px) { .header, .content, .footer { padding-inline: 20px; } }
+@media (prefers-reduced-motion: reduce) { .backdrop, .panel { animation: none; } }

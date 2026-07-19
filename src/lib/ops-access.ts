@@ -58,8 +58,12 @@ const rolePathMap: Record<OpsRole, string[]> = {
   manager: [
     "/ops",
     "/ops/orders",
+    "/ops/customers",
+    "/ops/analytics",
+    "/ops/settings",
     "/ops/fulfillment",
     "/ops/catalog",
+    "/ops/promotions",
     "/ops/content",
     "/ops/release",
     "/ops/notifications",
@@ -67,7 +71,7 @@ const rolePathMap: Record<OpsRole, string[]> = {
   ],
   catalog_operator: ["/ops/catalog"],
   fulfillment_operator: ["/ops/orders", "/ops/fulfillment", "/ops/notifications"],
-  auditor: ["/ops/content", "/ops/release", "/ops/audit"],
+  auditor: ["/ops/content", "/ops/promotions", "/ops/release", "/ops/audit"],
 };
 
 function normalizeSecret(value: string | undefined) {
@@ -390,6 +394,10 @@ function normalizeOpsAccessPath(pathname: string) {
 
   if (pathname.startsWith("/api/ops/catalog")) {
     return "/ops/catalog";
+  }
+
+  if (pathname.startsWith("/api/ops/promotions")) {
+    return "/ops/promotions";
   }
 
   if (pathname.startsWith("/api/ops/session")) {

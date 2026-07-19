@@ -215,13 +215,16 @@ try {
     assert.equal(shopResponse.status, 200);
     const shopHtml = await shopResponse.text();
     assert.match(shopHtml, new RegExp(`/${locale}/product/${product.slug}`));
-    assert.match(shopHtml, /data-shop-scene/);
+    assert.match(shopHtml, /data-shop-hub/);
+    assert.doesNotMatch(shopHtml, /data-shop-scene/);
 
     const productResponse = await fetch(`${baseUrl}/${locale}/product/${product.slug}`);
     assert.equal(productResponse.status, 200);
     const productHtml = await productResponse.text();
     assert.match(productHtml, /data-public-product/);
-    assert.equal((productHtml.match(/data-product-scene/g) ?? []).length, 5);
+    assert.match(productHtml, /data-reference-product/);
+    assert.doesNotMatch(productHtml, /data-product-scene/);
+    assert.match(productHtml, /id="product-title"/);
     assert.match(productHtml, /"@type":"Product"/);
 
     for (const privateValue of [

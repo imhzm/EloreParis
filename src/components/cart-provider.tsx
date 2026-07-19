@@ -63,6 +63,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [catalogError, setCatalogError] = useState<string | null>(null);
   const [unavailableKeys, setUnavailableKeys] = useState<string[]>([]);
   const locale = pathname === "/en" || pathname.startsWith("/en/") ? "en" : "ar";
+  const catalogLoadError = locale === "en"
+    ? "Unable to load the approved product catalog."
+    : "تعذر تحميل كتالوج المنتجات المعتمد.";
 
   useEffect(() => {
     try {
@@ -95,7 +98,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           | PublicCartResolution
           | null;
         if (!response.ok || !body || !Array.isArray(body.products)) {
-          throw new Error("تعذر تحميل كتالوج المنتجات المعتمد.");
+          throw new Error(catalogLoadError);
         }
 
         setCatalogProducts(body.products);
@@ -108,12 +111,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setCatalogError(
           loadError instanceof Error
             ? loadError.message
-            : "تعذر تحميل كتالوج المنتجات المعتمد.",
+            : catalogLoadError,
         );
       });
 
     return () => controller.abort();
-  }, [isStorageHydrated, items, locale]);
+  }, [catalogLoadError, isStorageHydrated, items, locale]);
 
   const isHydrated = isStorageHydrated && catalogStatus !== "loading";
 

@@ -75,8 +75,8 @@ export function buildSearchMetadata(locale: Locale): Metadata {
     // noindex above keeps this out of search results; it does not stop anyone
     // pasting the link into a chat, which is what the card is for. A route's
     // openGraph replaces the layout's, so naming no image shipped a bare link.
-    openGraph: { title: copy.title.replace("\n", " "), description: copy.intro, url, locale: localeConfig[locale].ogLocale, type: "website", images: defaultSocialCard(copy.title.replace("\n", " ")).openGraph },
-    twitter: { card: "summary_large_image", title: copy.title.replace("\n", " "), description: copy.intro, images: defaultSocialCard(copy.title.replace("\n", " ")).twitter },
+    openGraph: { title: copy.title.replace("\n", " "), description: copy.intro, url, locale: localeConfig[locale].ogLocale, type: "website", images: defaultSocialCard(copy.title.replace("\n", " "), locale).openGraph },
+    twitter: { card: "summary_large_image", title: copy.title.replace("\n", " "), description: copy.intro, images: defaultSocialCard(copy.title.replace("\n", " "), locale).twitter },
   };
 }
 

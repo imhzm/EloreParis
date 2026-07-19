@@ -4,10 +4,15 @@ export type AnalyticsEventName =
   | "page_view"
   | "navigation_click"
   | "cta_click"
+  | "view_item"
+  | "select_item"
+  | "view_cart"
+  | "begin_checkout"
+  | "select_promotion"
+  | "web_vital"
   | "add_to_cart"
   | "cart_update"
   | "checkout_option_change"
-  | "checkout_start"
   | "checkout_complete"
   | "filter_apply"
   | "newsletter_signup"
@@ -24,6 +29,136 @@ export type AnalyticsEventValue = string | number | boolean;
 
 export type AnalyticsProperties = Record<string, AnalyticsEventValue>;
 
+export type WebVitalName = "CLS" | "FCP" | "FID" | "INP" | "LCP" | "TTFB";
+export type WebVitalRating = "good" | "needs-improvement" | "poor";
+export type WebVitalNavigationType =
+  | "navigate"
+  | "reload"
+  | "back-forward"
+  | "back-forward-cache"
+  | "prerender"
+  | "restore";
+
+export type WebVitalMetricInput = {
+  name: string;
+  id: string;
+  value: number;
+  delta: number;
+  rating: string;
+  navigationType?: string;
+};
+
+export type WebVitalEventProperties = {
+  name: WebVitalName;
+  id: string;
+  value: number;
+  delta: number;
+  rating: WebVitalRating;
+  navigationType?: WebVitalNavigationType;
+};
+
+const WEB_VITAL_NAMES = new Set<WebVitalName>([
+  "CLS",
+  "FCP",
+  "FID",
+  "INP",
+  "LCP",
+  "TTFB",
+]);
+const WEB_VITAL_RATINGS = new Set<WebVitalRating>([
+  "good",
+  "needs-improvement",
+  "poor",
+]);
+const WEB_VITAL_NAVIGATION_TYPES = new Set<WebVitalNavigationType>([
+  "navigate",
+  "reload",
+  "back-forward",
+  "back-forward-cache",
+  "prerender",
+  "restore",
+]);
+const WEB_VITAL_PROPERTY_KEYS = new Set([
+  "name",
+  "id",
+  "value",
+  "delta",
+  "rating",
+  "navigationType",
+]);
+
+function isWebVitalName(value: string): value is WebVitalName {
+  return WEB_VITAL_NAMES.has(value as WebVitalName);
+}
+
+function isWebVitalRating(value: string): value is WebVitalRating {
+  return WEB_VITAL_RATINGS.has(value as WebVitalRating);
+}
+
+function isWebVitalNavigationType(
+  value: string,
+): value is WebVitalNavigationType {
+  return WEB_VITAL_NAVIGATION_TYPES.has(value as WebVitalNavigationType);
+}
+
+export function createWebVitalEventProperties(
+  metric: WebVitalMetricInput,
+): WebVitalEventProperties | null {
+  if (
+    !isWebVitalName(metric.name) ||
+    !isWebVitalRating(metric.rating) ||
+    !/^[A-Za-z0-9._-]{1,128}$/.test(metric.id) ||
+    !Number.isFinite(metric.value) ||
+    !Number.isFinite(metric.delta)
+  ) {
+    return null;
+  }
+
+  const properties: WebVitalEventProperties = {
+    name: metric.name,
+    id: metric.id,
+    value: metric.value,
+    delta: metric.delta,
+    rating: metric.rating,
+  };
+
+  if (
+    metric.navigationType &&
+    isWebVitalNavigationType(metric.navigationType)
+  ) {
+    properties.navigationType = metric.navigationType;
+  }
+
+  return properties;
+}
+
+function isWebVitalEventProperties(
+  properties: AnalyticsProperties,
+): properties is WebVitalEventProperties {
+  return (
+    Object.keys(properties).every((key) => WEB_VITAL_PROPERTY_KEYS.has(key)) &&
+    typeof properties.name === "string" &&
+    typeof properties.id === "string" &&
+    typeof properties.value === "number" &&
+    typeof properties.delta === "number" &&
+    typeof properties.rating === "string" &&
+    (properties.navigationType === undefined ||
+      (typeof properties.navigationType === "string" &&
+        isWebVitalNavigationType(properties.navigationType))) &&
+    createWebVitalEventProperties({
+      name: properties.name,
+      id: properties.id,
+      value: properties.value,
+      delta: properties.delta,
+      rating: properties.rating,
+      navigationType: properties.navigationType,
+    }) !== null
+  );
+}
+
+type AnalyticsPropertiesForEvent<EventName extends AnalyticsEventName> =
+  EventName extends "web_vital" ? WebVitalEventProperties : AnalyticsProperties;
+
 declare global {
   interface Window {
     dataLayer?: Array<Record<string, unknown>>;
@@ -32,6 +167,39 @@ declare global {
       eventName: string,
       eventParams?: Record<string, unknown>,
     ) => void;
+  }
+}
+
+export const ANALYTICS_CONSENT_STORAGE_KEY = "elore.analytics.consent.v1";
+export const ANALYTICS_CONSENT_EVENT = "elore:analytics-consent-change";
+
+export function hasAnalyticsConsent() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  try {
+    return window.localStorage.getItem(ANALYTICS_CONSENT_STORAGE_KEY) === "granted";
+  } catch {
+    // Storage can be unavailable in hardened/private browser contexts. Consent
+    // must fail closed rather than silently becoming an analytics opt-in.
+    return false;
+  }
+}
+
+export function setAnalyticsConsent(consent: "granted" | "denied") {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  try {
+    window.localStorage.setItem(ANALYTICS_CONSENT_STORAGE_KEY, consent);
+    window.dispatchEvent(
+      new CustomEvent(ANALYTICS_CONSENT_EVENT, { detail: { consent } }),
+    );
+    return true;
+  } catch {
+    return false;
   }
 }
 
@@ -121,7 +289,7 @@ export function getPageType(pathname: string) {
     return "terms";
   }
 
-  if (pathname === "/track-order") {
+  if (normalizedPathname === "/track-order") {
     return "order_tracking";
   }
 
@@ -166,12 +334,19 @@ export function getPathFromHref(href: LinkProps["href"]) {
   return "/";
 }
 
-export function trackAnalyticsEvent(
-  eventName: AnalyticsEventName,
-  properties: AnalyticsProperties,
+export function trackAnalyticsEvent<EventName extends AnalyticsEventName>(
+  eventName: EventName,
+  properties: AnalyticsPropertiesForEvent<EventName>,
 ) {
-  if (typeof window === "undefined") {
-    return;
+  if (typeof window === "undefined" || !hasAnalyticsConsent()) {
+    return false;
+  }
+
+  if (
+    eventName === "web_vital" &&
+    !isWebVitalEventProperties(properties as AnalyticsProperties)
+  ) {
+    return false;
   }
 
   const payload = {
@@ -185,4 +360,6 @@ export function trackAnalyticsEvent(
   if (typeof window.gtag === "function") {
     window.gtag("event", eventName, properties);
   }
+
+  return true;
 }

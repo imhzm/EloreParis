@@ -1,69 +1,802 @@
-.shop{--ivory:#fbf7f2;--warm:#fffdfa;--burgundy:#3b0f1a;--rosewood:#6b1d2a;--champagne:#d4af37;--ink:#2a0d14;--cocoa:#6f5a52;--header-offset:78px;background:var(--ink);color:var(--ivory)}
-.scene{--progress:0;--enter:0;--exit:0;position:relative;width:100vw;height:230svh;margin-inline:calc(50% - 50vw);scroll-margin-top:var(--header-offset)}
-.frame{position:sticky;z-index:1;top:var(--header-offset);height:calc(100svh - var(--header-offset));overflow:hidden;isolation:isolate}
-.sceneCounter{position:absolute;z-index:8;top:6%;inset-inline-start:5%;direction:ltr;color:color-mix(in srgb,currentColor 45%,transparent);font-size:.72rem;letter-spacing:.2em}
-.heroCopy,.heading,.productCopy,.routeCenter,.finalCopy{position:absolute;z-index:5;display:grid;gap:18px}
-.heroCopy p,.heading p,.productCopy p,.routeCenter p,.finalCopy p{color:var(--champagne);font-family:var(--font-sans);font-size:.72rem;font-weight:700;letter-spacing:.24em}
-.heroCopy h1,.heading h2,.productCopy h2,.routeCenter h2,.finalCopy h2{font-family:var(--font-display);font-size:clamp(3.8rem,7vw,8rem);font-weight:500;line-height:.9;letter-spacing:-.04em;text-wrap:balance}
-.heroCopy>span,.routeCenter>span,.finalCopy>span{max-width:39rem;color:color-mix(in srgb,currentColor 74%,transparent);font-size:clamp(.98rem,1.3vw,1.14rem);line-height:1.8}
-.primaryAction,.secondaryAction{display:inline-flex;width:fit-content;min-height:46px;align-items:center;justify-content:center;padding:12px 22px;border:1px solid var(--champagne);border-radius:var(--radius-control);font-weight:700;transition:background-color .2s,color .2s,border-color .2s}
-.primaryAction{color:var(--ink);background:var(--champagne)}
-.secondaryAction{color:inherit;background:transparent}
-.primaryAction:hover{background:var(--warm);border-color:var(--warm)}
-.secondaryAction:hover{color:var(--ink);background:var(--champagne)}
-.primaryAction:focus-visible,.secondaryAction:focus-visible,.collectionCard:focus-visible,.productCard a:focus-visible,.routeCard:focus-visible,.productCopy>a:focus-visible{outline: 2px solid transparent;outline-offset: var(--focus-ring-offset);box-shadow: var(--focus-ring)}
+.shop {
+  width: 100vw;
+  margin-inline: calc(50% - 50vw);
+  padding-block: clamp(0.5rem, 1.2vw, 1rem) clamp(2.5rem, 5vw, 5rem);
+  overflow: clip;
+  color: var(--elore-ink);
+  background:
+    radial-gradient(circle at 88% 4%, color-mix(in srgb, var(--elore-champagne) 12%, transparent), transparent 28rem),
+    linear-gradient(150deg, color-mix(in srgb, var(--elore-wine) 88%, #050303), var(--elore-ink) 58%, #14090b);
+}
 
-.atlasScene .frame{background:linear-gradient(118deg,#2a0d14 0%,#3b0f1a 58%,#2c1720 100%)}
-.atlasScene .frame::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent 49.8%,rgba(212, 175, 55,.16) 50%,transparent 50.2%),linear-gradient(0deg,transparent 49.8%,rgba(212, 175, 55,.12) 50%,transparent 50.2%);transform:translateY(calc((var(--progress) - .5)*24px));pointer-events:none}
-.atlas{position:absolute;inset-inline-start:7%;top:50%;display:grid;width:min(39vw,560px);aspect-ratio:4/5;grid-template-columns:repeat(3,1fr);border:1px solid rgba(212, 175, 55,.52);transform:translateY(-50%) rotate(calc(-1deg + var(--progress)*2deg)) scale(calc(1 + var(--progress)*.035));transform-origin:center}
-.atlas::before,.atlas::after{content:"";position:absolute;background:rgba(212, 175, 55,.35)}
-.atlas::before{inset:10% 0 auto;height:1px}.atlas::after{inset-block:0;inset-inline-start:12%;width:1px}
-.atlas span{padding:18px;color:rgba(243,240,234,.48);font:600 .68rem/1 var(--font-sans);letter-spacing:.16em;border-inline-end:1px solid rgba(212, 175, 55,.2)}
-.atlas b{position:absolute;inset:0;display:grid;place-content:center;color:var(--champagne);font-family:var(--font-display);font-size:clamp(1.4rem,2.8vw,2.7rem);font-weight:500;letter-spacing:.16em;line-height:1.35;text-align:center}
-.heroCopy{inset-inline-end:7%;top:50%;width:min(45rem,48vw);transform:translateY(calc(-50% - var(--progress)*24px))}
+.hero,
+.categories,
+.catalog,
+.editorial {
+  width: min(calc(100% - clamp(1rem, 3vw, 2rem)), var(--container-max));
+  margin-inline: auto;
+  scroll-margin-top: 6rem;
+  border: 6px solid var(--elore-warm-white);
+  border-radius: clamp(1.65rem, 3vw, 3rem);
+  background: var(--elore-warm-white);
+  box-shadow: 0 1.6rem 4rem color-mix(in srgb, #000 24%, transparent);
+}
 
-.collectionScene .frame{color:var(--ink);background:linear-gradient(135deg,var(--warm),var(--ivory))}
-.heading{inset-inline-start:6%;top:8%;max-width:46rem}.heading p{color:var(--rosewood)}.heading h2{font-size:clamp(3.2rem,5.8vw,6.5rem)}
-.collectionTrack{position:absolute;inset-inline:5%;top:44%;bottom:5%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-.collectionCard{--index:0;position:relative;min-height:0;overflow:hidden;border:1px solid rgba(59, 15, 26,.2);border-radius:var(--radius-card);background:#ded4cb;box-shadow:0 18px 42px rgba(59, 15, 26,.09)}
-.collectionCard::after{content:"";position:absolute;inset:0;background:linear-gradient(0deg,rgba(42, 13, 20,.9),rgba(42, 13, 20,.06) 68%)}
-.collectionCard img{object-fit:cover;transition:transform .5s cubic-bezier(.2,.7,.2,1)}
-.collectionCard:hover img{transform:scale(1.035)}
-.collectionCard span,.collectionCard small,.collectionCard h3{position:absolute;z-index:2;inset-inline:22px}.collectionCard span{top:22px;color:var(--warm);font:.7rem/1 var(--font-sans);letter-spacing:.18em}.collectionCard small{bottom:78px;color:var(--champagne);font:700 .68rem/1 var(--font-sans);letter-spacing:.15em}.collectionCard h3{bottom:25px;color:var(--warm);font-size:clamp(1.35rem,2vw,2.1rem);font-weight:500}
+.hero {
+  position: relative;
+  display: grid;
+  min-height: clamp(390px, 42vw, 520px);
+  grid-template-columns: minmax(0, 0.82fr) minmax(420px, 1.18fr);
+  gap: clamp(0.4rem, 0.7vw, 0.7rem);
+  padding: clamp(0.4rem, 0.7vw, 0.7rem);
+  overflow: hidden;
+}
 
-.productsScene .frame{background:linear-gradient(135deg,#1f1419,#371820 55%,#2a0d14)}
-.productCopy{inset-inline-start:6%;top:7%;max-width:65rem}.productCopy h2{font-size:clamp(3.1rem,5.6vw,6.2rem)}.productCopy>a{width:fit-content;padding-bottom:4px;border-bottom:1px solid var(--champagne);color:var(--champagne);font-weight:700}
-.productStack{position:absolute;inset-inline:5%;top:43%;bottom:3%;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.productCard{--index:0;display:grid;min-width:0;overflow:hidden;border:1px solid rgba(212, 175, 55,.25);border-radius:var(--radius-card);background:#2d1b22;box-shadow:0 24px 54px rgba(0,0,0,.24)}
-.productCard>div{position:relative;aspect-ratio:1.04;background:#e4d8ce}.productCard img{object-fit:cover}.productCard small,.productCard h3,.productCard>span,.productCard>a{margin-inline:20px}.productCard small{margin-top:17px;color:var(--champagne);font:700 .65rem/1 var(--font-sans);letter-spacing:.14em}.productCard h3{margin-top:8px;font-size:1.12rem;font-weight:500}.productCard>span{margin-top:8px;color:rgba(243,240,234,.72);font-size:.82rem}.productCard>a{width:fit-content;margin-block:13px 20px;padding-bottom:3px;border-bottom:1px solid var(--champagne);color:var(--champagne);font-weight:700}
+.heroCopy {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  min-width: 0;
+  align-content: center;
+  justify-items: start;
+  gap: clamp(0.75rem, 1.4vw, 1.15rem);
+  padding: clamp(1.75rem, 4vw, 4rem);
+  overflow: hidden;
+  border-radius: clamp(1.15rem, 2.2vw, 2.15rem);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--elore-champagne) 10%, transparent), transparent 62%),
+    var(--elore-ivory);
+}
 
-.routesScene .frame{color:var(--ink);background:linear-gradient(145deg,var(--ivory),#e8ddd5)}
-.routeCenter{inset-inline-start:7%;top:50%;width:min(38rem,43vw);transform:translateY(calc(-50% + (var(--progress) - .5)*24px))}.routeCenter p{color:var(--rosewood)}.routeCenter h2{font-size:clamp(3.6rem,6.6vw,7.2rem)}.routeCenter>span{color:var(--cocoa)}
-.routeGrid{position:absolute;inset-inline-end:6%;top:50%;display:grid;width:min(47vw,670px);grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:rgba(59, 15, 26,.25);border:1px solid rgba(59, 15, 26,.25);transform:translateY(-50%)}
-.routeCard{--index:0;display:grid;min-height:210px;align-content:end;gap:8px;padding:25px;background:rgba(255,253,250,.92);transform:translateY(calc((1 - var(--enter))*min(24px,(var(--index) + 1)*6px)));transition:background-color .2s}
-.routeCard:hover{background:var(--warm)}.routeCard b{color:var(--rosewood);font:700 .72rem/1 var(--font-sans);letter-spacing:.16em}.routeCard h3{font-size:1.45rem;font-weight:500}.routeCard span{color:var(--cocoa);font-size:.9rem;line-height:1.65}
+.heroCopy::after {
+  content: "";
+  position: absolute;
+  inset-inline-end: -4.25rem;
+  bottom: -4.75rem;
+  width: 12rem;
+  aspect-ratio: 1;
+  pointer-events: none;
+  border: 1px solid color-mix(in srgb, var(--elore-champagne) 43%, transparent);
+  border-radius: 50%;
+}
 
-.finalScene{height:245svh}.finalScene .frame{background:linear-gradient(112deg,#2a0d14,#3b0f1a 62%,#321720)}
-.finalRule{position:absolute;inset-inline-start:5%;top:9%;bottom:9%;width:1px;background:linear-gradient(transparent,var(--champagne),transparent);transform:translateY(calc((var(--progress) - .5)*24px))}
-.finalProducts>div{--index:0;position:absolute;inset-inline-start:25%;top:52%;width:min(16vw,220px);aspect-ratio:4/5;overflow:hidden;border:1px solid rgba(212, 175, 55,.3);border-radius:var(--radius-card);box-shadow:0 25px 65px rgba(0,0,0,.27);transform:translate(-50%,-50%) translateX(calc((var(--index) - 1)*145px)) translateY(calc((var(--index) - 1)*-12px)) rotate(calc((var(--index) - 1)*2deg + var(--progress)*1deg)) scale(calc(.98 + var(--enter)*.02))}
-[dir="rtl"] .finalProducts>div{transform:translate(50%,-50%) translateX(calc((var(--index) - 1)*-145px)) translateY(calc((var(--index) - 1)*-12px)) rotate(calc((var(--index) - 1)*-2deg - var(--progress)*1deg)) scale(calc(.98 + var(--enter)*.02))}
-.finalProducts img{object-fit:cover}.finalCopy{inset-inline-end:7%;top:50%;width:min(44rem,47vw);transform:translateY(calc(-50% - var(--progress)*24px))}.finalCopy h2{font-size:clamp(3.8rem,7vw,7.8rem)}.finalCopy div{display:flex;flex-wrap:wrap;gap:10px}
+.eyebrow {
+  color: var(--elore-rosewood);
+  font-family: var(--font-body-latin), var(--font-body), sans-serif;
+  font-size: 0.68rem;
+  font-weight: 750;
+  line-height: 1.2;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
 
-@media(max-width:900px){.shop{--header-offset:64px}.scene,.finalScene{height:auto}.frame{position:relative;top:0;height:auto;min-height:100svh;padding:72px 24px;overflow:visible}.atlasScene .frame,.collectionScene .frame,.productsScene .frame,.routesScene .frame,.finalScene .frame{display:grid;align-content:center;gap:34px}.heroCopy,.heading,.productCopy,.routeCenter,.finalCopy,.atlas,.collectionTrack,.productStack,.routeGrid,.finalProducts{position:relative;inset:auto;width:auto;transform:none}.heroCopy h1,.heading h2,.routeCenter h2,.finalCopy h2{font-size:clamp(3rem,11vw,5.2rem)}.atlas{order:2;justify-self:center;width:min(76vw,480px);transform:none}.collectionTrack{grid-template-columns:repeat(2,minmax(0,1fr));transform:none}.collectionCard{min-height:330px}.productStack{grid-template-columns:repeat(2,minmax(0,1fr))}.productCard{position:relative;inset:auto;width:auto;transform:none}.routeCenter{text-align:start}.routeGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.routeCard{min-height:170px;padding:19px}.finalScene .frame{grid-template-columns:1fr}.finalProducts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.finalProducts>div,[dir="rtl"] .finalProducts>div{position:relative;inset:auto;width:auto;aspect-ratio:4/5;transform:none}.finalRule{display:none}}
-@media(max-width:620px){.frame{padding-inline:20px}.sceneCounter{top:24px}.heroCopy h1,.heading h2,.routeCenter h2,.finalCopy h2{font-size:clamp(2.7rem,12vw,4.3rem)}.collectionTrack,.productStack,.routeGrid{grid-template-columns:1fr}.collectionCard{min-height:430px}.productCopy h2{font-size:2.65rem}.routeCard{min-height:132px}.routeCard span{font-size:.82rem}.primaryAction,.secondaryAction{width:100%}}
+.heroCopy h1 {
+  max-width: 10ch;
+  color: var(--elore-wine);
+  font-size: clamp(3rem, 5.1vw, 5.65rem);
+  line-height: 0.94;
+}
 
-@media(prefers-reduced-motion:reduce){.scene,.finalScene{height:auto}.frame{position:relative;top:0;height:auto;min-height:100svh;padding-block:70px;overflow:visible}.atlasScene .frame,.collectionScene .frame,.productsScene .frame,.routesScene .frame,.finalScene .frame{display:grid;align-content:center;gap:36px}.atlasScene .frame{grid-template-columns:minmax(260px,.8fr) minmax(320px,1fr);padding-inline:6%}.atlas,.heroCopy,.heading,.productCopy,.routeCenter,.finalCopy,.collectionTrack,.productStack,.routeGrid,.finalProducts{position:relative;inset:auto;width:auto;transform:none}.atlas{width:min(100%,440px)}.heroCopy,.heading,.productCopy,.routeCenter,.finalCopy{inset:auto}.collectionScene .frame,.productsScene .frame,.routesScene .frame{padding-inline:5%}.collectionTrack{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));transform:none}.collectionCard{height:420px;transform:none}.productStack{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.productCard{position:relative;inset:auto;width:auto;transform:none}[dir="rtl"] .productCard{transform:none}.routeGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.finalScene .frame{grid-template-columns:1fr 1fr;padding-inline:6%}.finalProducts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.finalProducts>div,[dir="rtl"] .finalProducts>div{position:relative;inset:auto;width:auto;aspect-ratio:4/5;transform:none}.finalRule{display:none}}
-@media(prefers-reduced-motion:reduce) and (max-width:900px){.atlasScene .frame,.finalScene .frame{grid-template-columns:1fr}.collectionTrack{grid-template-columns:repeat(2,minmax(0,1fr))}.productStack{grid-template-columns:repeat(2,minmax(0,1fr))}.heroCopy,.heading,.productCopy,.routeCenter,.finalCopy{inset:auto;text-align:start}.atlas{justify-self:center}.collectionCard{height:380px}}
-@media(prefers-reduced-motion:reduce) and (max-width:620px){.collectionTrack,.productStack,.routeGrid{grid-template-columns:1fr}.collectionCard{height:430px}}
+.lede {
+  max-width: 34rem;
+  color: var(--elore-cocoa);
+  font-size: clamp(0.94rem, 1.15vw, 1.08rem);
+  line-height: 1.75;
+}
 
-/* Short-laptop guard (~720px tall): the 4-up product strip's cards are taller than
-   .productStack at short heights, so the per-card CTA overflows the sticky frame's
-   overflow:hidden and becomes unreachable. Let the strip scroll so every CTA stays
-   reachable. Gated off phones (min-width:901px, where the frame is already static),
-   off tall viewports (max-height:800px), and off reduced-motion (its frame is
-   already expanded to overflow:visible, so a nested scroll would be redundant). */
-@media (min-width: 901px) and (max-height: 800px) and (prefers-reduced-motion: no-preference) {
-  .productStack {
-    overflow-y: auto;
-    overscroll-behavior: contain;
+.heroActions,
+.catalogEmpty > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: 0.25rem;
+}
+
+.primaryAction,
+.secondaryAction,
+.editorialAction {
+  display: inline-flex;
+  min-height: 46px;
+  align-items: center;
+  justify-content: center;
+  padding: 0.7rem 1.25rem;
+  border: 1px solid var(--elore-wine);
+  border-radius: var(--radius-control);
+  font-family: var(--font-sans);
+  font-size: 0.84rem;
+  font-weight: 720;
+  transition:
+    color var(--motion-card) ease,
+    background-color var(--motion-card) ease,
+    border-color var(--motion-card) ease,
+    transform var(--motion-card) ease;
+}
+
+.primaryAction {
+  color: var(--elore-warm-white);
+  background: var(--elore-wine);
+}
+
+.secondaryAction {
+  color: var(--elore-wine);
+  background: transparent;
+}
+
+.heroMedia {
+  position: relative;
+  min-width: 0;
+  min-height: 100%;
+  overflow: hidden;
+  border-radius: clamp(1.15rem, 2.2vw, 2.15rem);
+  background: var(--elore-stone);
+}
+
+.heroMedia::before {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  inset: clamp(0.65rem, 1vw, 1rem);
+  pointer-events: none;
+  border: 1px solid color-mix(in srgb, var(--elore-champagne) 58%, transparent);
+  border-radius: clamp(0.8rem, 1.7vw, 1.55rem);
+}
+
+.heroMedia img,
+.categoryImage img,
+.productMedia img,
+.editorialMedia img {
+  object-fit: cover;
+}
+
+.heroMedia img {
+  transform: scale(1.012);
+}
+
+.heroMedia figcaption,
+.editorialMedia figcaption {
+  position: absolute;
+  z-index: 3;
+  inset-inline: 0.85rem;
+  bottom: 0.85rem;
+  width: fit-content;
+  max-width: calc(100% - 1.7rem);
+  padding: 0.4rem 0.65rem;
+  border-radius: var(--radius-pill);
+  color: var(--elore-warm-white);
+  background: color-mix(in srgb, var(--elore-wine) 84%, transparent);
+  font-size: 0.66rem;
+  line-height: 1.4;
+  backdrop-filter: blur(8px);
+}
+
+.categories,
+.catalog {
+  margin-top: clamp(0.4rem, 0.7vw, 0.7rem);
+  padding: clamp(0.4rem, 0.7vw, 0.7rem);
+  overflow: hidden;
+}
+
+.sectionHeading,
+.catalogHeading {
+  display: grid;
+  grid-template-columns: minmax(0, 0.82fr) minmax(18rem, 1.18fr);
+  gap: clamp(1rem, 3vw, 3rem);
+  align-items: end;
+  margin-bottom: clamp(0.4rem, 0.7vw, 0.7rem);
+  padding: clamp(1.35rem, 2.8vw, 2.5rem);
+  border-radius: clamp(1rem, 2vw, 1.8rem);
+  background:
+    linear-gradient(120deg, color-mix(in srgb, var(--elore-champagne) 8%, transparent), transparent 58%),
+    var(--elore-ivory);
+}
+
+.sectionHeading .eyebrow {
+  grid-column: 1 / -1;
+  margin-bottom: -0.45rem;
+}
+
+.sectionHeading h2,
+.catalogHeading h2,
+.editorialContent h2 {
+  color: var(--elore-wine);
+  font-size: clamp(2.35rem, 4vw, 4.5rem);
+  line-height: 0.98;
+}
+
+.sectionHeading > p:last-child,
+.catalogHeading > p {
+  max-width: 35rem;
+  color: var(--elore-cocoa);
+  line-height: 1.72;
+}
+
+.categoryRail {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(0.4rem, 0.7vw, 0.7rem);
+  overflow: visible;
+  padding: 0;
+}
+
+.categoryCard {
+  display: grid;
+  min-width: 0;
+  align-content: start;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--elore-wine) 12%, transparent);
+  border-radius: clamp(1rem, 1.8vw, 1.65rem);
+  background: var(--elore-stone);
+  transition:
+    transform var(--motion-card) ease,
+    box-shadow var(--motion-card) ease,
+    border-color var(--motion-card) ease;
+}
+
+.categoryCard:nth-child(4n + 1) {
+  color: var(--elore-warm-white);
+  border-color: color-mix(in srgb, var(--elore-champagne) 30%, transparent);
+  background: var(--elore-wine);
+}
+
+.categoryImage {
+  position: relative;
+  display: block;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: var(--elore-stone);
+}
+
+.categoryImage img {
+  transition: transform var(--motion-section) cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.categoryMeta {
+  margin: 0.8rem 0.9rem 0.35rem;
+  color: var(--elore-rosewood);
+  font-family: var(--font-body-latin), sans-serif;
+  font-size: 0.6rem;
+  font-weight: 750;
+  letter-spacing: 0.16em;
+}
+
+.categoryCard h3 {
+  margin: 0 0.9rem 1rem;
+  color: var(--elore-wine);
+  font-size: clamp(1.15rem, 1.55vw, 1.55rem);
+  line-height: 1.15;
+}
+
+.categoryCard:nth-child(4n + 1) .categoryMeta {
+  color: var(--elore-champagne);
+}
+
+.categoryCard:nth-child(4n + 1) h3 {
+  color: var(--elore-warm-white);
+}
+
+.catalog {
+  background: var(--elore-warm-white);
+}
+
+.catalogHeading > div {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.catalogCount {
+  margin: 0.3rem 0.15rem 0.8rem;
+  color: var(--elore-cocoa);
+  font-size: 0.76rem;
+}
+
+.productGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(0.4rem, 0.7vw, 0.7rem);
+}
+
+.productCard {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--elore-wine) 12%, transparent);
+  border-radius: clamp(1rem, 1.8vw, 1.65rem);
+  background: var(--elore-ivory);
+  transition:
+    transform var(--motion-card) ease,
+    box-shadow var(--motion-card) ease,
+    border-color var(--motion-card) ease;
+}
+
+.productMedia {
+  position: relative;
+  display: block;
+  aspect-ratio: 1 / 1.08;
+  overflow: hidden;
+  background: var(--elore-stone);
+}
+
+.productMedia img {
+  transition: transform var(--motion-section) cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.productMediaFallback {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(135deg, transparent 49.5%, color-mix(in srgb, var(--elore-champagne) 45%, transparent) 50%, transparent 50.5%),
+    var(--elore-stone);
+}
+
+.productDetails {
+  display: grid;
+  gap: 0.42rem;
+  padding: 0.9rem 0.95rem 1rem;
+}
+
+.productDetails p {
+  color: var(--elore-rosewood);
+  font-family: var(--font-body-latin), var(--font-body), sans-serif;
+  font-size: 0.63rem;
+  font-weight: 750;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.productDetails h3 {
+  color: var(--elore-wine);
+  font-size: clamp(1.15rem, 1.45vw, 1.45rem);
+  line-height: 1.2;
+}
+
+.productDetails > span {
+  color: var(--elore-cocoa);
+  font-size: 0.82rem;
+}
+
+.productDetails > a {
+  width: fit-content;
+  margin-top: 0.25rem;
+  padding-bottom: 0.12rem;
+  border-bottom: 1px solid var(--elore-champagne);
+  color: var(--elore-rosewood);
+  font-size: 0.8rem;
+  font-weight: 720;
+}
+
+.catalogEmpty {
+  display: grid;
+  min-height: 210px;
+  grid-template-columns: minmax(4rem, 0.28fr) minmax(0, 1fr);
+  gap: clamp(1.25rem, 3vw, 3rem);
+  align-items: center;
+  padding: clamp(1.35rem, 3vw, 2.75rem);
+  border-radius: clamp(1rem, 2vw, 1.8rem);
+  background:
+    linear-gradient(120deg, color-mix(in srgb, var(--elore-champagne) 12%, transparent), transparent 55%),
+    var(--elore-ivory);
+}
+
+.catalogEmpty > span {
+  display: block;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, var(--elore-champagne), transparent);
+}
+
+.editorial {
+  display: grid;
+  grid-template-columns: minmax(300px, 0.82fr) minmax(0, 1.18fr);
+  gap: clamp(0.4rem, 0.7vw, 0.7rem);
+  align-items: stretch;
+  margin-top: clamp(0.4rem, 0.7vw, 0.7rem);
+  padding: clamp(0.4rem, 0.7vw, 0.7rem);
+  overflow: hidden;
+}
+
+.editorialMedia {
+  position: relative;
+  min-height: 100%;
+  overflow: hidden;
+  border-radius: clamp(1rem, 2vw, 1.8rem);
+  background: var(--elore-stone);
+}
+
+.editorialContent {
+  display: grid;
+  align-content: center;
+  gap: 1rem;
+  padding: clamp(1.5rem, 3.5vw, 3.5rem);
+  border-radius: clamp(1rem, 2vw, 1.8rem);
+  color: var(--elore-ivory);
+  background:
+    radial-gradient(circle at 82% 8%, color-mix(in srgb, var(--elore-champagne) 14%, transparent), transparent 22rem),
+    var(--elore-wine);
+}
+
+.editorialContent .eyebrow {
+  color: var(--elore-champagne);
+}
+
+.editorialContent h2 {
+  max-width: 11ch;
+  color: var(--elore-ivory);
+}
+
+.editorialBody {
+  max-width: 39rem;
+  color: color-mix(in srgb, var(--elore-ivory) 76%, transparent);
+  line-height: 1.75;
+}
+
+.routeGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(0.35rem, 0.6vw, 0.6rem);
+  margin-block: 0.25rem;
+}
+
+.routeCard {
+  display: grid;
+  min-height: 132px;
+  align-content: end;
+  gap: 0.4rem;
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, var(--elore-champagne) 26%, transparent);
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--elore-wine) 91%, #000);
+  transition:
+    background-color var(--motion-card) ease,
+    transform var(--motion-card) ease;
+}
+
+.routeCard > span {
+  color: var(--elore-champagne);
+  font-family: var(--font-body-latin), sans-serif;
+  font-size: 0.62rem;
+  font-weight: 750;
+  letter-spacing: 0.16em;
+}
+
+.routeCard h3 {
+  color: var(--elore-ivory);
+  font-size: 1.1rem;
+  line-height: 1.2;
+}
+
+.routeCard p {
+  color: color-mix(in srgb, var(--elore-ivory) 68%, transparent);
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
+.editorialAction {
+  width: fit-content;
+  color: var(--elore-wine);
+  border-color: var(--elore-champagne);
+  background: var(--elore-champagne);
+}
+
+.primaryAction:active,
+.secondaryAction:active,
+.editorialAction:active,
+.categoryCard:active,
+.productCard:active,
+.routeCard:active {
+  transform: scale(0.985);
+}
+
+.primaryAction:focus-visible,
+.secondaryAction:focus-visible,
+.editorialAction:focus-visible,
+.categoryCard:focus-visible,
+.productMedia:focus-visible,
+.routeCard:focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: var(--focus-ring-offset);
+  box-shadow: var(--focus-ring);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .primaryAction:hover,
+  .secondaryAction:hover {
+    color: var(--elore-warm-white);
+    border-color: var(--elore-rosewood);
+    background: var(--elore-rosewood);
+    transform: translateY(-2px);
+  }
+
+  .categoryCard:hover,
+  .productCard:hover {
+    border-color: color-mix(in srgb, var(--elore-wine) 27%, transparent);
+    box-shadow: 0 1rem 2.25rem color-mix(in srgb, var(--elore-wine) 12%, transparent);
+    transform: translateY(-3px);
+  }
+
+  .categoryCard:hover .categoryImage img {
+    transform: scale(1.035);
+  }
+
+  .productCard:hover .productMedia img {
+    transform: scale(1.025);
+  }
+
+  .routeCard:hover {
+    background: var(--elore-rosewood);
+    transform: translateY(-2px);
+  }
+
+  .editorialAction:hover {
+    color: var(--elore-wine);
+    border-color: var(--elore-warm-white);
+    background: var(--elore-warm-white);
+    transform: translateY(-2px);
+  }
+}
+
+[dir="rtl"] .eyebrow,
+[dir="rtl"] .categoryMeta,
+[dir="rtl"] .productDetails p {
+  letter-spacing: 0;
+}
+
+@media (max-width: 1050px) {
+  .hero {
+    grid-template-columns: minmax(0, 0.92fr) minmax(350px, 1.08fr);
+  }
+
+  .categoryRail,
+  .productGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .categoryCard:nth-child(4n + 1) {
+    color: inherit;
+    border-color: color-mix(in srgb, var(--elore-wine) 12%, transparent);
+    background: var(--elore-stone);
+  }
+
+  .categoryCard:nth-child(4n + 1) .categoryMeta {
+    color: var(--elore-rosewood);
+  }
+
+  .categoryCard:nth-child(4n + 1) h3 {
+    color: var(--elore-wine);
+  }
+
+  .categoryCard:nth-child(3n + 1) {
+    color: var(--elore-warm-white);
+    border-color: color-mix(in srgb, var(--elore-champagne) 30%, transparent);
+    background: var(--elore-wine);
+  }
+
+  .categoryCard:nth-child(3n + 1) .categoryMeta {
+    color: var(--elore-champagne);
+  }
+
+  .categoryCard:nth-child(3n + 1) h3 {
+    color: var(--elore-warm-white);
+  }
+}
+
+@media (max-width: 800px) {
+  .hero {
+    min-height: 0;
+    grid-template-columns: 1fr;
+  }
+
+  .heroMedia {
+    min-height: auto;
+    aspect-ratio: 16 / 11;
+  }
+
+  .sectionHeading,
+  .catalogHeading {
+    grid-template-columns: 1fr;
+    gap: 0.8rem;
+  }
+
+  .sectionHeading .eyebrow {
+    grid-column: auto;
+    margin-bottom: 0;
+  }
+
+  .categoryRail,
+  .productGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .categoryCard:nth-child(3n + 1) {
+    color: inherit;
+    border-color: color-mix(in srgb, var(--elore-wine) 12%, transparent);
+    background: var(--elore-stone);
+  }
+
+  .categoryCard:nth-child(3n + 1) .categoryMeta {
+    color: var(--elore-rosewood);
+  }
+
+  .categoryCard:nth-child(3n + 1) h3 {
+    color: var(--elore-wine);
+  }
+
+  .categoryCard:nth-child(2n + 1) {
+    color: var(--elore-warm-white);
+    border-color: color-mix(in srgb, var(--elore-champagne) 30%, transparent);
+    background: var(--elore-wine);
+  }
+
+  .categoryCard:nth-child(2n + 1) .categoryMeta {
+    color: var(--elore-champagne);
+  }
+
+  .categoryCard:nth-child(2n + 1) h3 {
+    color: var(--elore-warm-white);
+  }
+
+  .editorial {
+    grid-template-columns: 1fr;
+  }
+
+  .editorialMedia {
+    min-height: 0;
+    aspect-ratio: 16 / 10;
+  }
+}
+
+@media (max-width: 560px) {
+  .shop {
+    padding-block-start: 0.4rem;
+  }
+
+  .hero,
+  .categories,
+  .catalog,
+  .editorial {
+    width: calc(100% - 0.8rem);
+    border-width: 4px;
+    border-radius: 1.5rem;
+  }
+
+  .hero,
+  .categories,
+  .catalog,
+  .editorial {
+    gap: 0.35rem;
+    padding: 0.35rem;
+  }
+
+  .heroCopy,
+  .heroMedia,
+  .sectionHeading,
+  .catalogHeading,
+  .catalogEmpty,
+  .editorialMedia,
+  .editorialContent {
+    border-radius: 1.05rem;
+  }
+
+  .heroCopy {
+    padding: 1.5rem 1.15rem;
+  }
+
+  .heroCopy h1 {
+    font-size: clamp(2.75rem, 14vw, 4.25rem);
+  }
+
+  .heroMedia {
+    aspect-ratio: 4 / 5;
+  }
+
+  .heroActions,
+  .catalogEmpty > div {
+    width: 100%;
+  }
+
+  .primaryAction,
+  .secondaryAction {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+
+  .sectionHeading,
+  .catalogHeading {
+    padding: 1.35rem 1.1rem;
+  }
+
+  .categoryRail,
+  .productGrid {
+    gap: 0.35rem;
+  }
+
+  .categoryMeta {
+    margin-inline: 0.7rem;
+  }
+
+  .categoryCard h3 {
+    margin-inline: 0.7rem;
+  }
+
+  .catalogEmpty {
+    min-height: 0;
+    grid-template-columns: 1fr;
+  }
+
+  .catalogEmpty > span {
+    width: 4rem;
+  }
+
+  .editorialContent {
+    padding: 1.35rem 1rem 1.5rem;
+  }
+
+  .routeGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .routeCard {
+    min-height: 116px;
+  }
+
+  .editorialAction {
+    width: 100%;
+  }
+}
+
+@media (max-width: 359px) {
+  .categoryRail,
+  .productGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .categoryCard:nth-child(2n + 1) {
+    color: inherit;
+    border-color: color-mix(in srgb, var(--elore-wine) 12%, transparent);
+    background: var(--elore-stone);
+  }
+
+  .categoryCard:nth-child(2n + 1) .categoryMeta {
+    color: var(--elore-rosewood);
+  }
+
+  .categoryCard:nth-child(2n + 1) h3 {
+    color: var(--elore-wine);
+  }
+
+  .categoryCard:nth-child(odd) {
+    color: var(--elore-warm-white);
+    border-color: color-mix(in srgb, var(--elore-champagne) 30%, transparent);
+    background: var(--elore-wine);
+  }
+
+  .categoryCard:nth-child(odd) .categoryMeta {
+    color: var(--elore-champagne);
+  }
+
+  .categoryCard:nth-child(odd) h3 {
+    color: var(--elore-warm-white);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .primaryAction,
+  .secondaryAction,
+  .editorialAction,
+  .categoryCard,
+  .categoryImage img,
+  .productCard,
+  .productMedia img,
+  .routeCard {
+    transition: none;
+  }
+
+  .primaryAction:hover,
+  .secondaryAction:hover,
+  .editorialAction:hover,
+  .categoryCard:hover,
+  .productCard:hover,
+  .routeCard:hover,
+  .categoryCard:hover .categoryImage img,
+  .productCard:hover .productMedia img {
+    transform: none;
   }
 }

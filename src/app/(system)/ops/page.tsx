@@ -187,11 +187,39 @@ function buildCustomerRecords(orders: StoredOrder[]) {
 }
 
 export default async function OpsDashboardPage() {
-  const orders = await readAuthorityOrders();
-  const dashboard = getOpsDashboardSnapshot(orders);
-  const catalog = getCatalogAuthoritySnapshot(orders);
-  const suppliers = getSupplierAuthoritySnapshot(orders);
-  const customers = buildCustomerRecords(orders);
+  let orders: StoredOrder[] = [];
+  let dashboard: ReturnType<typeof getOpsDashboardSnapshot> | null = null;
+  let catalog: ReturnType<typeof getCatalogAuthoritySnapshot> | null = null;
+  let suppliers: ReturnType<typeof getSupplierAuthoritySnapshot> | null = null;
+  let loadError: string | null = null;
+
+  try {
+    orders = await readAuthorityOrders();
+    dashboard = getOpsDashboardSnapshot(orders);
+    catalog = getCatalogAuthoritySnapshot(orders);
+    suppliers = getSupplierAuthoritySnapshot(orders);
+  } catch (error) {
+    loadError = error instanceof Error ? error.message : "تعذر تحميل بيانات لوحة التحكم.";
+  }
+
+  const customers = orders.length > 0 ? buildCustomerRecords(orders) : [];
+
+  if (loadError || !dashboard || !catalog || !suppliers) {
+    return (
+      <StorefrontShell activeHref="/ops">
+        <div className={`${styles.page} ${styles.opsDashboard}`}>
+          <OpsNav activeHref="/ops" />
+          <section className={styles.hero}>
+            <div>
+              <p className={styles.eyebrow}>Operations control center</p>
+              <h1>تعذر تحميل البيانات</h1>
+              <p className={styles.summary}>{loadError ?? "بيانات غير متاحة حاليًا."}</p>
+            </div>
+          </section>
+        </div>
+      </StorefrontShell>
+    );
+  }
 
   const catalogQueue = Object.values(catalog.records)
     .filter((record) => record.liveOrderCount > 0 || record.supplierStatus === "watch")
@@ -435,6 +463,15 @@ export default async function OpsDashboardPage() {
                     <p className={styles.helperText}>لا توجد عناصر كتالوج عاجلة الآن.</p>
                   )}
                 </div>
+                <TrackedLink
+                  href="/ops/catalog"
+                  analyticsLabel="ops_dashboard_catalog_all"
+                  analyticsSurface="ops_dashboard"
+                  analyticsDestinationType="ops_catalog"
+                  className={styles.helperLink}
+                >
+                  عرض كل الكتالوج ←
+                </TrackedLink>
               </article>
 
               <article className={styles.lineItem}>
@@ -464,6 +501,15 @@ export default async function OpsDashboardPage() {
                     <p className={styles.helperText}>كل الموردين في حالة مستقرة الآن.</p>
                   )}
                 </div>
+                <TrackedLink
+                  href="/ops/fulfillment"
+                  analyticsLabel="ops_dashboard_fulfillment_all"
+                  analyticsSurface="ops_dashboard"
+                  analyticsDestinationType="ops_fulfillment"
+                  className={styles.helperLink}
+                >
+                  عرض كل الموردين ←
+                </TrackedLink>
               </article>
             </div>
           </article>
@@ -513,6 +559,15 @@ export default async function OpsDashboardPage() {
                 </article>
               ))}
             </div>
+            <TrackedLink
+              href="/ops/customers"
+              analyticsLabel="ops_dashboard_customers_all"
+              analyticsSurface="ops_dashboard"
+              analyticsDestinationType="ops_customers"
+              className={styles.helperLink}
+            >
+              عرض كل العملاء ←
+            </TrackedLink>
           </article>
 
           <aside className={styles.summaryCard}>

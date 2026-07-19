@@ -1,0 +1,132 @@
+.banner {
+  position: fixed;
+  z-index: 120;
+  inset-inline-start: auto;
+  inset-inline-end: clamp(14px, 2.4vw, 34px);
+  bottom: clamp(14px, 2.4vw, 28px);
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  align-items: center;
+  width: min(560px, calc(100vw - 28px));
+  padding: clamp(14px, 1.5vw, 18px);
+  border: 1px solid color-mix(in srgb, var(--elore-champagne) 48%, transparent);
+  border-radius: 20px;
+  color: var(--elore-warm-white);
+  background: color-mix(in srgb, var(--elore-burgundy) 94%, transparent);
+  box-shadow: 0 28px 80px rgba(28, 16, 17, 0.34);
+  backdrop-filter: blur(18px);
+}
+
+.copy {
+  display: grid;
+  gap: 7px;
+}
+
+.copy p {
+  font-family: var(--font-display);
+  font-size: clamp(1.08rem, 1.45vw, 1.35rem);
+  line-height: 1.1;
+}
+
+.copy span {
+  max-width: 52ch;
+  color: rgba(255, 253, 252, 0.82);
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+
+.copy a {
+  width: fit-content;
+  color: var(--elore-champagne);
+  font-size: 0.78rem;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 9px;
+}
+
+.actions button {
+  min-height: 44px;
+  padding: 10px 17px;
+  border: 1px solid currentColor;
+  border-radius: var(--radius-control);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform var(--motion-micro), background-color var(--motion-control), color var(--motion-control);
+}
+
+.actions button:active { transform: scale(0.97); }
+
+.accept {
+  color: var(--elore-burgundy);
+  background: var(--elore-champagne);
+}
+
+.reject {
+  color: var(--elore-warm-white);
+  background: transparent;
+}
+
+.actions button:focus-visible,
+.copy a:focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: var(--focus-ring-offset);
+  box-shadow: var(--focus-ring);
+}
+
+@media (max-width: 720px) {
+  .banner {
+    inset-inline: 8px;
+    width: auto;
+    bottom: max(8px, env(safe-area-inset-bottom));
+    grid-template-columns: 1fr;
+    gap: 10px;
+    max-height: 44svh;
+    padding: 12px 14px;
+    overflow-y: auto;
+    border-radius: 16px;
+  }
+
+  .copy {
+    gap: 4px;
+  }
+
+  .copy p {
+    font-size: 1.08rem;
+  }
+
+  .copy span {
+    font-size: 0.78rem;
+    line-height: 1.45;
+  }
+
+  .actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    justify-content: stretch;
+  }
+
+  .actions button {
+    min-height: 44px;
+    padding: 8px 10px;
+    font-size: 0.75rem;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .actions button:hover { transform: translateY(-1px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .banner {
+    scroll-behavior: auto;
+  }
+}

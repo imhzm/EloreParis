@@ -7,6 +7,7 @@ import {
 import { localizePath, type Locale } from "@/lib/i18n";
 import { journalContent } from "@/lib/journal-content";
 import { journalSlugs } from "@/lib/journal-routing";
+import type { PublicCatalogProduct } from "@/lib/public-catalog-types";
 
 export type SearchResultKind =
   | "collection"
@@ -214,6 +215,50 @@ function createJournalRecords(locale: Locale): SearchRecord[] {
   });
 }
 
+function formatProductPrice(product: PublicCatalogProduct, locale: Locale) {
+  const prices = product.variants.map((variant) => variant.price);
+  const minimumPrice = Math.min(...prices);
+  const hasPriceRange = prices.some((price) => price !== minimumPrice);
+  const formattedPrice = new Intl.NumberFormat(locale === "ar" ? "ar-SA" : "en-SA", {
+    style: "currency",
+    currency: "SAR",
+    maximumFractionDigits: 0,
+  }).format(minimumPrice);
+
+  return hasPriceRange
+    ? `${locale === "ar" ? "من" : "From"} ${formattedPrice}`
+    : formattedPrice;
+}
+
+function createProductRecords(
+  locale: Locale,
+  approvedProducts: readonly PublicCatalogProduct[],
+): SearchRecord[] {
+  return approvedProducts
+    .filter((product) => product.media.length > 0 && product.variants.length > 0)
+    .map((product) => ({
+      kind: "product" as const,
+      slug: product.slug,
+      href: localizePath(locale, `/product/${product.slug}`),
+      title: product.name,
+      description: product.subtitle,
+      collection: product.collection,
+      eyebrow: product.brand,
+      metadata: formatProductPrice(product, locale),
+      priority: 8,
+      searchText: [
+        product.name,
+        product.subtitle,
+        product.brand,
+        product.finish,
+        product.ingredientsInci ?? "",
+        product.directions ?? "",
+        ...product.approvedClaims,
+        ...product.variants.flatMap((variant) => [variant.sku, variant.label, variant.size]),
+      ].join(" "),
+    }));
+}
+
 function getKindLabel(locale: Locale, kind: DiscoveryKind) {
   const labels: Record<Locale, Record<DiscoveryKind, string>> = {
     ar: { concern: "حسب الاحتياج", routine: "روتين", ingredient: "مكوّن" },
@@ -222,8 +267,12 @@ function getKindLabel(locale: Locale, kind: DiscoveryKind) {
   return labels[locale][kind];
 }
 
-function createSearchRecords(locale: Locale) {
+function createSearchRecords(
+  locale: Locale,
+  approvedProducts: readonly PublicCatalogProduct[],
+) {
   return [
+    ...createProductRecords(locale, approvedProducts),
     ...createCategoryRecords(locale),
     ...createDiscoveryRecords(locale),
     ...createJournalRecords(locale),
@@ -253,13 +302,17 @@ function createEmptyGroups(): Record<SearchResultKind, SearchResult[]> {
   return { collection: [], product: [], concern: [], ingredient: [], routine: [], article: [] };
 }
 
-export function searchSiteContent(rawQuery: string, locale: Locale = "ar") {
+export function searchSiteContent(
+  rawQuery: string,
+  locale: Locale = "ar",
+  approvedProducts: readonly PublicCatalogProduct[] = [],
+) {
   const query = rawQuery.trim().slice(0, 120);
   const normalizedQuery = normalizeSearchText(query);
   if (!normalizedQuery) return { query, normalizedQuery, total: 0, ordered: [] as SearchResult[], groups: createEmptyGroups() };
 
   const expandedTerms = expandSearchTerms(query);
-  const rankedResults = createSearchRecords(locale)
+  const rankedResults = createSearchRecords(locale, approvedProducts)
     .map((record) => ({ record, score: getRecordScore(record, normalizedQuery, expandedTerms) }))
     .filter(({ record, score }) => score > record.priority)
     .sort((left, right) =>

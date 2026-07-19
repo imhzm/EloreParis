@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { OpsNav } from "@/components/ops-nav";
 import { TrackedLink } from "@/components/tracked-link";
 import { fetchOpsAuditEntries } from "@/lib/ops-control-client";
+import { useClientPagination, PaginationControls } from "@/components/ops-pagination-controls";
+import { DownloadCsvButton } from "@/components/ops-download-csv";
 import type { OpsAuditAction, OpsAuditEntry } from "@/lib/ops-types";
 import styles from "./order-flow.module.css";
 
@@ -94,6 +96,9 @@ export function OpsAuditSurface() {
       ),
     [auditEntries, filter],
   );
+
+  const { pagination, paginatedItems, goToPage, changePageSize } =
+    useClientPagination(filteredEntries);
 
   const metrics = useMemo(
     () => ({
@@ -193,6 +198,28 @@ export function OpsAuditSurface() {
 
           {error ? <div className={styles.inlineError}>{error}</div> : null}
 
+          <div className={styles.filterChipRow}>
+            <PaginationControls
+              pagination={pagination}
+              onPageChange={goToPage}
+              onPageSizeChange={changePageSize}
+            />
+            <DownloadCsvButton
+              filename="elore-audit.csv"
+              rows={filteredEntries.map((entry) => ({
+                الإجراء: getAuditActionLabel(entry.action) ?? entry.action,
+                المعرف: entry.id,
+                الكيان: entry.entityType,
+                معرف_الكيان: entry.entityId,
+                المستخدم: entry.actor.name,
+                الدور: entry.actor.role,
+                التاريخ: formatTimestamp(entry.createdAt),
+                createdAt: entry.createdAt,
+              }))}
+              label="CSV"
+            />
+          </div>
+
           <div className={styles.ordersGrid}>
             {isLoading ? (
               <article className={styles.emptyCard}>
@@ -200,8 +227,8 @@ export function OpsAuditSurface() {
                 <h1>جارٍ تحميل سجل المراجعة</h1>
                 <p>Reading recent protected actions from the shared authority store.</p>
               </article>
-            ) : filteredEntries.length ? (
-              filteredEntries.map((entry) => (
+            ) : paginatedItems.length ? (
+              paginatedItems.map((entry) => (
                 <article key={entry.id} className={styles.lineItem}>
                   <div className={styles.lineHead}>
                     <div>

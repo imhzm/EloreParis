@@ -27,10 +27,7 @@ type CategoryCopy = {
 };
 
 const assets = {
-  // PLACEHOLDER: shared with the transition scene until a dedicated perfume
-  // still-life concept asset is commissioned. It is on-palette and on-theme,
-  // but it is not a perfume scene — replace it before any perfume launch.
-  perfumes: "/elore-assets/transition-burgundy-satin-concept-1672w.avif",
+  perfumes: "/elore-assets/perfume-amber-flacon-editorial-concept-1672x941.avif",
   skincare: "/elore-assets/texture-skincare-serum-concept-1536w.avif",
   makeup: "/elore-assets/texture-makeup-pigment-concept-1536w.avif",
   haircare: "/elore-assets/haircare-ribbon-editorial-concept-1122x1402.avif",
@@ -81,7 +78,7 @@ export const categorySharedCopy = {
 export const categoryCopy: Record<Locale, Record<CategorySlug, CategoryCopy>> = {
   ar: {
     perfumes: {
-      title: "العطور", eyebrow: "PERFUMES · A SIGNATURE, NOT A TREND", image: assets.perfumes, imageAlt: "مشهد تحريري مفاهيمي لحرير برغندي وإضاءة دافئة",
+      title: "العطور", eyebrow: "PERFUMES · A SIGNATURE, NOT A TREND", image: assets.perfumes, imageAlt: "زجاجة عطر مفاهيمية من الكهرمان فوق حجر فاتح وحرير برغندي بإضاءة دافئة",
       description: "العطر أقرب إلى التوقيع منه إلى المنتج. نبدأ من المناسبة والأثر ووقت اليوم، لا من الاسم.",
       principles: [["ابدئي من المناسبة", "عطر النهار الطويل وعطر الأمسية لا يحملان القرار نفسه."], ["الأثر والثبات", "نصف الأثر بوضوح، من دون وعود بساعات محددة."], ["المناخ يغيّر العطر", "الحرارة والرطوبة في السعودية جزء من الاختيار، لا تفصيل جانبي."]],
       routes: [["حسب الطقس", "رتّبي العطر داخل يومك ومناسبتك.", "/routines"], ["عالم الهدايا", "العطر اختيار يُهدى ويُتذكر.", "/shop/beauty-sets"], ["دليل الجمال", "افهمي لغة العطر قبل الاختيار.", "/journal"]],
@@ -125,7 +122,7 @@ export const categoryCopy: Record<Locale, Record<CategorySlug, CategoryCopy>> = 
   },
   en: {
     perfumes: {
-      title: "Perfumes", eyebrow: "PERFUMES · A SIGNATURE, NOT A TREND", image: assets.perfumes, imageAlt: "Conceptual editorial scene of burgundy silk in warm light",
+      title: "Perfumes", eyebrow: "PERFUMES · A SIGNATURE, NOT A TREND", image: assets.perfumes, imageAlt: "Conceptual amber perfume flacon on pale stone with burgundy silk and warm light",
       description: "A perfume is closer to a signature than a product. Begin with the occasion, the trace it leaves and the hour of the day — not the name.",
       principles: [["Begin with the occasion", "A long day and an evening do not carry the same decision."], ["Trace and presence", "We describe how a scent behaves, without promising a number of hours."], ["Climate changes a scent", "Saudi heat and humidity belong in the choice, not in a footnote."]],
       routes: [["By ritual", "Place a scent inside your day and your occasion.", "/routines"], ["The art of gifting", "A scent is chosen to be given, and remembered.", "/shop/beauty-sets"], ["The journal", "Learn the language of scent before choosing.", "/journal"]],

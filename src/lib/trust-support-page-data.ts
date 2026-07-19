@@ -26,8 +26,8 @@ export function buildTrustSupportMetadata(locale: Locale, path: string, record?:
     alternates: alternates(locale, path),
     // A route's openGraph REPLACES the layout's, so naming no image here shipped
     // these pages with no share card at all.
-    openGraph: { title, description, url, locale: localeConfig[locale].ogLocale, type: "website", images: defaultSocialCard(title).openGraph },
-    twitter: { card: "summary_large_image", title, description, images: defaultSocialCard(title).twitter },
+    openGraph: { title, description, url, locale: localeConfig[locale].ogLocale, type: "website", images: defaultSocialCard(title, locale).openGraph },
+    twitter: { card: "summary_large_image", title, description, images: defaultSocialCard(title, locale).twitter },
   };
 }
 

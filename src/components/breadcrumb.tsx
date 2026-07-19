@@ -1,4 +1,5 @@
 import { TrackedLink } from "@/components/tracked-link";
+import { serializeJsonLd } from "@/lib/site-content";
 import styles from "./breadcrumb.module.css";
 
 type BreadcrumbItem = {
@@ -28,7 +29,7 @@ export function Breadcrumb({ items }: BreadcrumbProps) {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
       />
       <nav className={styles.breadcrumb} aria-label="مسار التنقل">
         <ol className={styles.list}>

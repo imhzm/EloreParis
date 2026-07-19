@@ -26,11 +26,32 @@ const token = "signed-unsubscribe-token-1234567890";
  * Pinned literals are what let this rot: it asserted #491723 and #c9a67f for
  * however long the site had already moved on.
  */
+const globalCss = readFileSync("src/app/globals.css", "utf8");
+const customProperties = new Map(
+  [...globalCss.matchAll(/(--[a-z0-9-]+)\s*:\s*([^;{}]+);/giu)].map(
+    ([, name, value]) => [name, value.trim()],
+  ),
+);
+
+function resolveHexToken(name, resolving = new Set()) {
+  assert.ok(!resolving.has(name), `Circular CSS custom-property alias detected at ${name}`);
+
+  const value = customProperties.get(name);
+  assert.ok(value, `${name} is not defined in src/app/globals.css`);
+
+  const hex = /^#[0-9a-fA-F]{3,8}$/u.exec(value)?.[0];
+  if (hex) return hex;
+
+  const alias = /^var\(\s*(--[a-z0-9-]+)\s*\)$/iu.exec(value)?.[1];
+  assert.ok(alias, `${name} must resolve to a hex color; found ${value}`);
+
+  const nextResolving = new Set(resolving);
+  nextResolving.add(name);
+  return resolveHexToken(alias, nextResolving);
+}
+
 function brandTokenFromGlobals(token) {
-  const css = readFileSync("src/app/globals.css", "utf8");
-  const value = new RegExp(`--elore-${token}:\\s*(#[0-9a-fA-F]{3,8})`).exec(css)?.[1];
-  assert.ok(value, `--elore-${token} is not defined in src/app/globals.css`);
-  return value;
+  return resolveHexToken(`--elore-${token}`);
 }
 
 const siteBurgundy = brandTokenFromGlobals("burgundy");

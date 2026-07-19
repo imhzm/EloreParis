@@ -476,12 +476,15 @@ async function run() {
   const adminRoutes = [
     "/ops",
     "/ops/orders",
+    "/ops/customers",
+    "/ops/analytics",
     "/ops/catalog",
     "/ops/fulfillment",
     "/ops/release",
     "/ops/content",
     "/ops/notifications",
     "/ops/audit",
+    "/ops/settings",
   ];
 
   for (const pathname of adminRoutes) {

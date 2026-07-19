@@ -8,9 +8,17 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 40
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
@@ -21,88 +29,101 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
 
       - name: Install dependencies
         run: npm ci
 
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
       - name: Run lint
         run: npm run lint
+
+      - name: Run typecheck
+        run: npx tsc --noEmit
 
       - name: Run production build
         run: npm run build
 
-      - name: Run smoke checks
-        run: npm run test:smoke
+      - name: Validate Hostinger release shell
+        run: bash -n deploy/hostinger/deploy-release.sh
 
-      - name: Verify production catalog and commerce fences
-        run: npm run test:production-fence
+      - name: Run every non-browser project gate
+        run: |
+          node <<'NODE'
+          const { spawnSync } = require("node:child_process");
+          const { scripts = {} } = require("./package.json");
+          const browserTests = new Set([
+            "test:home-3d",
+            "test:category-cinematic",
+            "test:full-browser",
+            "test:live-commerce",
+          ]);
+          const tests = Object.keys(scripts)
+            .filter((name) => name.startsWith("test:") && !browserTests.has(name))
+            .sort();
 
-      - name: Upload release evidence artifact
+          for (const test of tests) {
+            console.log(`\n[CI] ${test}`);
+            const result = spawnSync("npm", ["run", test], { stdio: "inherit" });
+            if (result.status !== 0) process.exit(result.status ?? 1);
+          }
+          NODE
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install browser QA runtime
+        run: |
+          python -m pip install --disable-pip-version-check playwright==1.60.0
+          python -m playwright install --with-deps chromium
+
+      - name: Start standalone preview for browser regression
+        run: |
+          mkdir -p .artifacts
+          HOSTNAME=127.0.0.1 \
+          PORT=3056 \
+          NODE_ENV=production \
+          APP_ENV=development \
+          COZMATEKS_PROJECT_ROOT="$GITHUB_WORKSPACE" \
+          PUBLIC_COMMERCE_ENABLED=false \
+          node .next/standalone/server.js > .artifacts/ci-server.log 2>&1 &
+          echo "$!" > .artifacts/ci-server.pid
+          for attempt in $(seq 1 45); do
+            if curl --fail --silent --show-error http://127.0.0.1:3056/api/health >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat .artifacts/ci-server.log
+          exit 1
+
+      - name: Run reference-system browser regressions
+        run: |
+          npm run test:home-3d
+          npm run test:category-cinematic
+          npm run test:full-browser
+
+      - name: Stop standalone preview
+        if: always()
+        run: |
+          if [ -f .artifacts/ci-server.pid ]; then
+            kill "$(cat .artifacts/ci-server.pid)" 2>/dev/null || true
+          fi
+
+      - name: Run isolated live-commerce browser QA
+        run: npm run test:live-commerce
+
+      - name: Upload validation evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: release-evidence
-          path: .artifacts/release-evidence.json
+          name: validation-evidence
+          path: .artifacts
           if-no-files-found: ignore
-
-      - name: Upload release package artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-package
-          path: |
-            .artifacts/release-package.json
-            .artifacts/release-package.md
-          if-no-files-found: ignore
-
-      - name: Upload release history artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-history
-          path: |
-            .artifacts/release-history.json
-            .artifacts/release-history.md
-          if-no-files-found: ignore
-
-      - name: Upload release diff artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-diff
-          path: |
-            .artifacts/release-diff.json
-            .artifacts/release-diff.md
-          if-no-files-found: ignore
-
-      - name: Upload release handoff artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-handoff
-          path: |
-            .artifacts/release-handoff.json
-            .artifacts/release-handoff.md
-          if-no-files-found: ignore
-
-      - name: Upload release decision artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-decision
-          path: |
-            .artifacts/release-decision.json
-            .artifacts/release-decision.md
-          if-no-files-found: ignore
-
-      - name: Upload release packet artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-packet
-          path: |
-            .artifacts/release-packet.json
-            .artifacts/release-packet.md
-          if-no-files-found: ignore
+          include-hidden-files: true
+          retention-days: 7

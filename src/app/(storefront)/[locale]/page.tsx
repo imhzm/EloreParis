@@ -1,24 +1,16 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { OmniraInspiredHome } from "@/components/omnira-inspired-home";
+import { EloreReferenceHome } from "@/components/elore-reference-home";
+import { PublicPromotionRail } from "@/components/public-promotion-rail";
 import { StorefrontShell } from "@/components/storefront-shell";
-import { isLocale, localeConfig, locales, type Locale } from "@/lib/i18n";
-import { absoluteUrl, siteName } from "@/lib/site-content";
+import { TrustServiceStrip } from "@/components/trust-service-strip";
+import { isLocale, localeConfig, locales, shellCopy } from "@/lib/i18n";
+import { absoluteUrl, serializeJsonLd } from "@/lib/site-content";
+import { getEffectiveSiteContent } from "@/lib/site-content-authority";
 
 type PageProps = { params: Promise<{ locale: string }> };
 
-const metadataCopy: Record<Locale, { title: string; description: string }> = {
-  ar: {
-    title: "جمالٌ يُروى كتجربة",
-    description:
-      "تجربة جمال سعودية راقية تجمع الحس الباريسي مع وضوح القوام والدرجة والروتين.",
-  },
-  en: {
-    title: "Beauty, composed with intention",
-    description:
-      "A refined Saudi beauty experience pairing Parisian sensibility with clearer textures, shades and rituals.",
-  },
-};
+export const dynamic = "force-dynamic";
 
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
@@ -28,12 +20,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { locale: candidate } = await params;
   if (!isLocale(candidate)) return {};
 
-  const copy = metadataCopy[candidate];
+  const content = getEffectiveSiteContent();
+  const copy = content.seo[candidate];
+  const controlledSiteName = content.identity.siteName;
   const canonical = `/${candidate}`;
-  const socialImage = absoluteUrl("/opengraph-image");
+  const socialImage = absoluteUrl("/api/social-card");
   return {
-    title: copy.title,
-    description: copy.description,
+    title: copy.homeTitle,
+    description: copy.homeDescription,
     alternates: {
       canonical,
       languages: {
@@ -43,19 +37,19 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       },
     },
     openGraph: {
-      title: `${copy.title} | ${siteName}`,
-      description: copy.description,
+      title: copy.homeTitle,
+      description: copy.homeDescription,
       url: absoluteUrl(canonical),
       locale: localeConfig[candidate].ogLocale,
       alternateLocale: [localeConfig[candidate === "ar" ? "en" : "ar"].ogLocale],
       type: "website",
-      siteName,
-      images: [{ url: socialImage, width: 1200, height: 630, alt: `${siteName} — ${copy.title}` }],
+      siteName: controlledSiteName,
+      images: [{ url: socialImage, width: 1200, height: 630, alt: `${controlledSiteName} — ${copy.homeTitle}` }],
     },
     twitter: {
       card: "summary_large_image",
-      title: `${copy.title} | ${siteName}`,
-      description: copy.description,
+      title: copy.homeTitle,
+      description: copy.homeDescription,
       images: [socialImage],
     },
   };
@@ -66,14 +60,16 @@ export default async function LocalizedHomePage({ params }: PageProps) {
   if (!isLocale(candidate)) notFound();
 
   const path = `/${candidate}`;
+  const content = getEffectiveSiteContent();
+  const controlledSiteName = content.identity.siteName;
   const structuredData = {
     "@context": "https://schema.org",
     "@graph": [
-      { "@type": "Organization", "@id": absoluteUrl("/#organization"), name: siteName, url: absoluteUrl("/") },
+      { "@type": "Organization", "@id": absoluteUrl("/#organization"), name: controlledSiteName, url: absoluteUrl("/") },
       {
         "@type": "WebSite",
         "@id": absoluteUrl(`${path}#website`),
-        name: siteName,
+        name: controlledSiteName,
         url: absoluteUrl(path),
         inLanguage: localeConfig[candidate].htmlLang,
         publisher: { "@id": absoluteUrl("/#organization") },
@@ -90,10 +86,21 @@ export default async function LocalizedHomePage({ params }: PageProps) {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }}
       />
-      <StorefrontShell activeHref="/" locale={candidate}>
-        <OmniraInspiredHome locale={candidate} />
+      <StorefrontShell activeHref="/" locale={candidate} showServiceStrip={false}>
+        <EloreReferenceHome
+          locale={candidate}
+          content={content.home[candidate]}
+          bentoContent={content.editorial.bento[candidate]}
+          serviceStrip={(
+            <TrustServiceStrip
+              locale={candidate}
+              copy={{ ...shellCopy[candidate], ...content.shell[candidate] }}
+            />
+          )}
+        />
+        <PublicPromotionRail locale={candidate} />
       </StorefrontShell>
     </>
   );

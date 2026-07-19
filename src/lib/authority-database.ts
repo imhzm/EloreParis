@@ -17,6 +17,10 @@ const authorityTableDirectory = {
   catalogVariants: "authority_catalog_variants",
   lifecycleSubscriptions: "authority_lifecycle_subscriptions",
   lifecycleDeliveryOutbox: "authority_lifecycle_delivery_outbox",
+  promotions: "authority_promotions",
+  promotionRedemptions: "authority_promotion_redemptions",
+  mediaAssets: "authority_media_assets",
+  siteContentRevisions: "authority_site_content_revisions",
 } as const;
 
 type AuthorityTable = keyof typeof authorityTableDirectory;
@@ -640,6 +644,145 @@ const authorityMigrations = [
 
       CREATE INDEX idx_authority_public_request_throttle_last_request
         ON authority_public_request_throttle (last_request_at);
+    `,
+  },
+  {
+    id: "2026-07-18-promotion-authority-v1",
+    sql: `
+      CREATE TABLE authority_media_assets (
+        id TEXT PRIMARY KEY,
+        storage_key TEXT NOT NULL UNIQUE,
+        sha256 TEXT NOT NULL UNIQUE,
+        mime_type TEXT NOT NULL CHECK (
+          mime_type IN ('image/jpeg', 'image/png', 'image/webp', 'image/avif')
+        ),
+        byte_size INTEGER NOT NULL CHECK (byte_size > 0),
+        width INTEGER NOT NULL CHECK (width > 0),
+        height INTEGER NOT NULL CHECK (height > 0),
+        alt_ar TEXT NOT NULL,
+        alt_en TEXT NOT NULL,
+        rights_evidence_ref TEXT NOT NULL,
+        status TEXT NOT NULL CHECK (status IN ('pending', 'approved', 'retired')),
+        created_by TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        approved_by TEXT,
+        approved_at TEXT,
+        CHECK (
+          (status = 'approved' AND approved_by IS NOT NULL AND approved_at IS NOT NULL) OR
+          (status != 'approved')
+        )
+      );
+
+      CREATE INDEX idx_authority_media_assets_status_created_at
+        ON authority_media_assets (status, created_at DESC);
+
+      CREATE TABLE authority_promotions (
+        id TEXT PRIMARY KEY,
+        version INTEGER NOT NULL DEFAULT 1 CHECK (version >= 1),
+        mode TEXT NOT NULL CHECK (mode IN ('automatic', 'coupon')),
+        code_normalized TEXT COLLATE NOCASE,
+        name TEXT NOT NULL,
+        title_ar TEXT NOT NULL,
+        title_en TEXT NOT NULL,
+        description_ar TEXT NOT NULL,
+        description_en TEXT NOT NULL,
+        state TEXT NOT NULL CHECK (state IN ('draft', 'active', 'paused', 'archived')),
+        discount_type TEXT NOT NULL CHECK (discount_type IN ('percentage', 'fixed_amount')),
+        percentage_bps INTEGER CHECK (percentage_bps > 0 AND percentage_bps <= 10000),
+        fixed_halalas INTEGER CHECK (fixed_halalas > 0),
+        max_discount_halalas INTEGER CHECK (max_discount_halalas > 0),
+        min_subtotal_halalas INTEGER NOT NULL DEFAULT 0 CHECK (min_subtotal_halalas >= 0),
+        usage_limit_total INTEGER CHECK (usage_limit_total > 0),
+        usage_limit_per_customer INTEGER CHECK (usage_limit_per_customer > 0),
+        starts_at TEXT NOT NULL,
+        ends_at TEXT,
+        priority INTEGER NOT NULL DEFAULT 0 CHECK (priority >= -100000 AND priority <= 100000),
+        applies_to_all INTEGER NOT NULL DEFAULT 1 CHECK (applies_to_all IN (0, 1)),
+        media_asset_id TEXT,
+        public_badge TEXT,
+        public_path TEXT,
+        created_by TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_by TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        CHECK (
+          (mode = 'coupon' AND code_normalized IS NOT NULL) OR
+          (mode = 'automatic' AND code_normalized IS NULL)
+        ),
+        CHECK (
+          (discount_type = 'percentage' AND percentage_bps IS NOT NULL AND fixed_halalas IS NULL) OR
+          (discount_type = 'fixed_amount' AND fixed_halalas IS NOT NULL AND percentage_bps IS NULL)
+        ),
+        CHECK (ends_at IS NULL OR ends_at > starts_at),
+        FOREIGN KEY (media_asset_id) REFERENCES authority_media_assets(id) ON DELETE RESTRICT
+      );
+
+      CREATE UNIQUE INDEX idx_authority_promotions_coupon_code
+        ON authority_promotions(code_normalized) WHERE code_normalized IS NOT NULL;
+
+      CREATE INDEX idx_authority_promotions_eligibility
+        ON authority_promotions (state, mode, starts_at, ends_at, priority DESC);
+
+      CREATE TABLE authority_promotion_targets (
+        promotion_id TEXT NOT NULL,
+        target_type TEXT NOT NULL CHECK (target_type IN ('product', 'sku')),
+        target_key TEXT NOT NULL COLLATE NOCASE,
+        PRIMARY KEY (promotion_id, target_type, target_key),
+        FOREIGN KEY (promotion_id) REFERENCES authority_promotions(id) ON DELETE CASCADE
+      );
+
+      CREATE INDEX idx_authority_promotion_targets_lookup
+        ON authority_promotion_targets (target_type, target_key, promotion_id);
+
+      CREATE TABLE authority_promotion_redemptions (
+        id TEXT PRIMARY KEY,
+        promotion_id TEXT NOT NULL,
+        promotion_version INTEGER NOT NULL CHECK (promotion_version >= 1),
+        quote_id TEXT NOT NULL,
+        order_number TEXT NOT NULL UNIQUE,
+        customer_key_hash TEXT NOT NULL,
+        discount_halalas INTEGER NOT NULL CHECK (discount_halalas > 0),
+        redeemed_at TEXT NOT NULL,
+        UNIQUE (promotion_id, order_number),
+        FOREIGN KEY (promotion_id) REFERENCES authority_promotions(id) ON DELETE RESTRICT,
+        FOREIGN KEY (quote_id) REFERENCES authority_checkout_quotes(id) ON DELETE RESTRICT,
+        FOREIGN KEY (order_number) REFERENCES authority_orders(order_number) ON DELETE RESTRICT
+      );
+
+      CREATE INDEX idx_authority_promotion_redemptions_usage
+        ON authority_promotion_redemptions (promotion_id, redeemed_at DESC);
+
+      CREATE INDEX idx_authority_promotion_redemptions_customer_usage
+        ON authority_promotion_redemptions (promotion_id, customer_key_hash, redeemed_at DESC);
+    `,
+  },
+  {
+    id: "2026-07-18-site-content-authority-v1",
+    sql: `
+      CREATE TABLE authority_site_content_revisions (
+        id TEXT PRIMARY KEY,
+        document_key TEXT NOT NULL,
+        version INTEGER NOT NULL CHECK (version >= 1),
+        schema_version INTEGER NOT NULL CHECK (schema_version >= 1),
+        content_hash TEXT NOT NULL,
+        payload_json TEXT NOT NULL,
+        change_summary TEXT NOT NULL,
+        created_by TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        UNIQUE (document_key, version)
+      );
+
+      CREATE INDEX idx_authority_site_content_revisions_document
+        ON authority_site_content_revisions (document_key, version DESC);
+
+      CREATE TABLE authority_site_content_publications (
+        document_key TEXT PRIMARY KEY,
+        revision_id TEXT NOT NULL,
+        published_by TEXT NOT NULL,
+        published_at TEXT NOT NULL,
+        approval_ref TEXT NOT NULL,
+        FOREIGN KEY (revision_id) REFERENCES authority_site_content_revisions(id) ON DELETE RESTRICT
+      );
     `,
   },
 ] as const;

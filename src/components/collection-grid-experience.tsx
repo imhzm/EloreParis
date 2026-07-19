@@ -14,10 +14,27 @@ type SortKey = "featured" | "price-asc" | "price-desc";
 
 type Hero = { title: string; eyebrow: string; description: string; image: string; imageAlt: string };
 
+type Editorial = {
+  principles: ReadonlyArray<readonly [string, string]>;
+  routes: ReadonlyArray<readonly [string, string, string]>;
+  principlesEyebrow: string;
+  principlesTitle: string;
+  routesEyebrow: string;
+  routesTitle: string;
+  routesBody: string;
+  gateEyebrow: string;
+  gateTitle: string;
+  gateBody: string;
+  conceptNotice: string;
+  backToShop: string;
+  trust: string;
+};
+
 type Props = {
   locale: Locale;
   slug: string;
   hero: Hero;
+  editorial: Editorial;
   products: PublicCatalogProduct[];
 };
 
@@ -54,7 +71,7 @@ function minPrice(product: PublicCatalogProduct): number {
   return pool.length ? Math.min(...pool.map((v) => v.price)) : Number.POSITIVE_INFINITY;
 }
 
-export function CollectionGridExperience({ locale, slug, hero, products }: Props) {
+export function CollectionGridExperience({ locale, slug, hero, editorial, products }: Props) {
   const text = copy[locale];
   const { addItem, cartCount } = useCart();
   const [sort, setSort] = useState<SortKey>("featured");
@@ -87,8 +104,8 @@ export function CollectionGridExperience({ locale, slug, hero, products }: Props
   };
 
   return (
-    <div className={styles.page}>
-      <section className={styles.hero} aria-labelledby="collection-title">
+    <div className={styles.page} data-collection-grid data-collection-slug={slug}>
+      <section className={styles.hero} data-collection-hero aria-labelledby="collection-title">
         <div className={styles.heroMedia}>
           <Image src={hero.image} alt={hero.imageAlt} fill sizes="(max-width: 900px) 100vw, 46vw" priority />
         </div>
@@ -96,17 +113,35 @@ export function CollectionGridExperience({ locale, slug, hero, products }: Props
           <p className={styles.eyebrow} lang="en">{hero.eyebrow}</p>
           <h1 id="collection-title">{hero.title}</h1>
           <p className={styles.heroBody}>{hero.description}</p>
+          <small className={styles.heroNote}>{editorial.conceptNotice}</small>
         </div>
       </section>
 
       {products.length === 0 ? (
-        <div className={styles.empty}>
-          <h2>{text.emptyTitle}</h2>
-          <p>{text.emptyBody}</p>
-          <TrackedLink href={localizePath(locale, "/shop")} className={styles.emptyCta} analyticsLabel="collection_empty_back" analyticsSurface="collection_grid">{text.emptyCta}</TrackedLink>
-        </div>
+        <section className={styles.empty} data-catalog-state="gated" aria-labelledby="collection-gate-title">
+          <div className={styles.emptyCopy}>
+            <p className={styles.eyebrow} lang="en">{editorial.gateEyebrow}</p>
+            <h2 id="collection-gate-title">{editorial.gateTitle}</h2>
+            <p>{editorial.gateBody}</p>
+            <strong>{text.emptyTitle}</strong>
+            <p>{text.emptyBody}</p>
+            <div className={styles.emptyActions}>
+              <TrackedLink href={localizePath(locale, "/shop")} className={styles.emptyCta} analyticsLabel="collection_empty_back" analyticsSurface="collection_grid">{editorial.backToShop}</TrackedLink>
+              <TrackedLink href={localizePath(locale, "/trust")} className={styles.secondaryCta} analyticsLabel="collection_empty_trust" analyticsSurface="collection_grid">{editorial.trust}</TrackedLink>
+            </div>
+          </div>
+          <div className={styles.principles}>
+            <header>
+              <p className={styles.eyebrow} lang="en">{editorial.principlesEyebrow}</p>
+              <h2>{editorial.principlesTitle}</h2>
+            </header>
+            {editorial.principles.map(([title, body], index) => (
+              <article key={title}><span>0{index + 1}</span><h3>{title}</h3><p>{body}</p></article>
+            ))}
+          </div>
+        </section>
       ) : (
-        <section className={styles.listing} aria-label={hero.title}>
+        <section className={styles.listing} data-catalog-state="available" aria-label={hero.title}>
           <div className={styles.toolbar}>
             <p className={styles.resultCount} aria-live="polite">{text.count(shown.length, products.length)}</p>
             <label className={styles.sort}>
@@ -120,13 +155,12 @@ export function CollectionGridExperience({ locale, slug, hero, products }: Props
           </div>
 
           <div className={styles.grid}>
-            {shown.map((product, index) => (
+            {shown.map((product) => (
               <ProductCard
                 key={product.slug}
                 product={product}
                 locale={locale}
                 onQuickAdd={quickAdd(product)}
-                priority={index < 4}
               />
             ))}
           </div>
@@ -142,6 +176,21 @@ export function CollectionGridExperience({ locale, slug, hero, products }: Props
           <p className={styles.srStatus} role="status" aria-live="polite">{status}</p>
         </section>
       )}
+
+      <section className={styles.discovery} data-collection-routes aria-labelledby="collection-routes-title">
+        <header>
+          <p className={styles.eyebrow} lang="en">{editorial.routesEyebrow}</p>
+          <h2 id="collection-routes-title">{editorial.routesTitle}</h2>
+          <p>{editorial.routesBody}</p>
+        </header>
+        <nav className={styles.routeGrid} aria-label={editorial.routesTitle}>
+          {editorial.routes.map(([title, body, route], index) => (
+            <TrackedLink key={title} href={localizePath(locale, route)} analyticsLabel={`${slug}_route_${index}`} analyticsSurface="collection_grid">
+              <span>0{index + 1}</span><strong>{title}</strong><small>{body}</small>
+            </TrackedLink>
+          ))}
+        </nav>
+      </section>
     </div>
   );
 }

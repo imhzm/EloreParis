@@ -6,6 +6,7 @@ import { getAuthorityDatabasePath } from "@/lib/authority-database";
 import { getHostingDirection } from "@/lib/hosting-direction";
 import { getOpsAccessConfig } from "@/lib/ops-access";
 import { getRuntimeSigningSecretBindings } from "@/lib/provider-runtime-config";
+import { isHostedHttpsUrl } from "@/lib/public-site-url";
 import {
   getReleasePlatformOwner,
   getReleaseSecurityOwner,
@@ -17,15 +18,6 @@ import type {
   ReleaseRuntimePreflightSnapshot,
 } from "@/lib/release-readiness-types";
 import { getSiteUrl } from "@/lib/site-content";
-
-function isHostedUrl(url: string) {
-  try {
-    const parsedUrl = new URL(url);
-    return !["localhost", "127.0.0.1", "::1"].includes(parsedUrl.hostname);
-  } catch {
-    return false;
-  }
-}
 
 function getOverallStatus(
   checks: ReadonlyArray<{ status: ReleaseReadinessStatus }>,
@@ -97,6 +89,7 @@ export function getReleaseRuntimePreflightSnapshot(): ReleaseRuntimePreflightSna
   const authorityPathAccess = getPathWriteAccess(authorityDatabasePath);
   const releaseEvidencePathAccess = getPathWriteAccess(releaseEvidencePath);
   const nextPublicSiteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  const hasHostedHttpsSiteUrl = isHostedHttpsUrl(nextPublicSiteUrl);
   const hostingProvider = process.env.HOSTING_PROVIDER?.trim();
   const identityUsers = opsAccessConfig.users.filter(
     (user) => Boolean(user.username) && Boolean(user.passwordHash),
@@ -116,15 +109,11 @@ export function getReleaseRuntimePreflightSnapshot(): ReleaseRuntimePreflightSna
     {
       id: "public-site-url",
       title: "Public site URL contract",
-      status: nextPublicSiteUrl
-        ? isHostedUrl(nextPublicSiteUrl)
-          ? "ready"
-          : "blocked"
-        : "blocked",
+      status: hasHostedHttpsSiteUrl ? "ready" : "blocked",
       summary: nextPublicSiteUrl
-        ? isHostedUrl(nextPublicSiteUrl)
+        ? hasHostedHttpsSiteUrl
           ? "A non-local public site URL is configured explicitly for metadata, canonical URLs, and live release verification."
-          : "NEXT_PUBLIC_SITE_URL is still configured against a local runtime, so public metadata is not yet bound to a real hosted domain."
+          : "NEXT_PUBLIC_SITE_URL is not an explicit hosted HTTPS URL, so public metadata and search indexing remain fenced."
         : "No explicit hosted public site URL is configured, so canonical URLs still depend on a local runtime contract.",
       details: [
         `Resolved site URL: ${siteUrl}`,

@@ -31,6 +31,7 @@ yarn-error.log*
 .pnpm-debug.log*
 .dev-*.log
 .codex-runtime-support.*.log
+.codex-home.*.log
 test-results/
 .data/
 .artifacts/
@@ -38,6 +39,7 @@ test-results/
 .artifacts-*.png
 cozmateks-*-preview.png
 .claude/
+/.codex/config.toml
 .deployment-commit
 
 # env files (can opt-in for committing if needed)

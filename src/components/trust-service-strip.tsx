@@ -2,10 +2,9 @@ import { shellCopy, type Locale } from "@/lib/i18n";
 import styles from "./trust-service-strip.module.css";
 
 /**
- * §7.7 Trust / Service strip — the burgundy band of five real service promises the
- * reference seats above the footer (present on both the home and product boards, so
- * it lives site-wide in the shell). Content is owner-specified via shellCopy; the
- * icons are gold line marks. Decorative icons carry aria-hidden; the labels read.
+ * §7.7 Trust / Service strip — five service-status statements above the
+ * footer. Operational benefits remain approval-gated, so this surface says
+ * what is verified or pending instead of publishing promises.
  */
 
 const icons: Record<string, React.ReactNode> = {
@@ -46,8 +45,13 @@ const icons: Record<string, React.ReactNode> = {
   ),
 };
 
-export function TrustServiceStrip({ locale = "ar" }: { locale?: Locale }) {
-  const copy = shellCopy[locale];
+type TrustStripCopy = {
+  serviceStripTitle: string;
+  serviceStrip: Array<[string, string, string]> | ReadonlyArray<readonly [string, string, string]>;
+};
+
+export function TrustServiceStrip({ locale = "ar", copy: controlledCopy }: { locale?: Locale; copy?: TrustStripCopy }) {
+  const copy = controlledCopy ?? shellCopy[locale];
 
   return (
     <section className={styles.strip} aria-label={copy.serviceStripTitle}>

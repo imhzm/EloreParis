@@ -3,62 +3,64 @@
    single source serves RTL and LTR. Nothing here uses left/right. */
 
 .section {
-  --bento-gap: 10px;
-  --bento-radius: 28px;
+  --bento-gap: clamp(5px, 0.45vw, 7px);
+  --bento-shell-radius: clamp(34px, 3.4vw, 54px);
+  --bento-card-radius: clamp(15px, 1.35vw, 21px);
   position: relative;
-  padding: clamp(2rem, 5vw, 4.5rem) clamp(1rem, 4vw, 3.5rem) clamp(3rem, 6vw, 5rem);
-  background: var(--elore-ivory);
+  padding: 0 clamp(1rem, 4vw, 3.5rem) 0.75rem;
+  background: linear-gradient(180deg, var(--wine-950), var(--elore-burgundy));
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .grid {
   display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-template-rows:
+    minmax(clamp(160px, 11vw, 200px), auto)
+    minmax(clamp(145px, 9vw, 170px), auto);
   gap: var(--bento-gap);
   max-width: 1600px;
   margin-inline: auto;
   padding: var(--bento-gap);
-  border-radius: var(--bento-radius);
+  border-radius: var(--bento-shell-radius);
   background: var(--elore-warm-white);
-  border: 1px solid rgba(59, 15, 26, 0.1);
-  /* Desktop: the reference's two bands — six across, then the editorial row. */
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  border: 1px solid rgba(37, 8, 12, 0.1);
+  box-shadow: 0 22px 62px rgba(28, 16, 17, 0.08);
 }
 
 .cell {
   min-width: 0;
+  min-block-size: 0;
 }
 
-/* Row 1 — intro tile then five category cards. */
-.grid [data-kind="category"] .card,
-.grid [data-kind="intro"] .card {
-  aspect-ratio: 4 / 5;
-}
-
-/* Row 2 — editorial band. The media cards pair with their editorial sibling. */
-.grid [data-cell="rituals"] {
-  grid-column: span 1;
-}
+/* The desktop reference is a true 12-column mosaic. Both row definitions add
+   to 12, so authority copy may grow a row without changing the composition. */
+.grid [data-cell="intro"],
+.grid [data-kind="category"],
+.grid [data-cell="rituals"],
 .grid [data-cell="ritual-media"],
+.grid [data-cell="journal"],
+.grid [data-cell="quote"] {
+  grid-column: span 2;
+}
+
 .grid [data-cell="journal-media"] {
   grid-column: span 1;
 }
-.grid [data-cell="journal"],
-.grid [data-cell="gifting"],
-.grid [data-cell="quote"] {
-  grid-column: span 1;
-}
 
-/* The editorial band carries a heading, a line of copy and an action, in two
-   languages of different lengths. A fixed aspect ratio would decide the height
-   before the copy does and clip whichever locale runs longer — so these cards
-   take a floor and grow, and the grid row stretches them level. */
-.grid [data-kind="editorial"] .card,
-.grid [data-kind="quote"] .card {
-  min-block-size: 15rem;
-}
-
-.grid [data-kind="media"] .card {
-  aspect-ratio: 4 / 5;
-  min-block-size: 15rem;
+.grid [data-cell="gifting"] {
+  grid-column: span 3;
 }
 
 .card {
@@ -68,9 +70,10 @@
   justify-content: flex-end;
   gap: 0.55rem;
   height: 100%;
-  padding: clamp(1rem, 1.6vw, 1.65rem);
+  min-block-size: 0;
+  padding: clamp(0.8rem, 1.15vw, 1.2rem);
   overflow: hidden;
-  border-radius: calc(var(--bento-radius) - var(--bento-gap));
+  border-radius: var(--bento-card-radius);
   background: var(--elore-ivory);
   color: var(--elore-ink);
   text-decoration: none;
@@ -85,7 +88,8 @@
   transition: transform var(--motion-reveal);
 }
 
-/* Editorial media cards keep the dark bottom scrim (their label sits low). */
+/* A restrained veil lets these narrow crops sit beside copy without turning
+   into hard black slots. They are intentionally still present at every size. */
 .mediaCard::after {
   content: "";
   position: absolute;
@@ -93,8 +97,8 @@
   z-index: -1;
   background: linear-gradient(
     to top,
-    rgba(42, 13, 20, 0.72) 0%,
-    rgba(42, 13, 20, 0.24) 42%,
+    rgba(28, 16, 17, 0.34) 0%,
+    rgba(28, 16, 17, 0.1) 42%,
     transparent 72%
   );
 }
@@ -139,7 +143,7 @@
 
 .introTitle {
   margin-block: auto 0;
-  font-size: clamp(1.5rem, 2.1vw, 2.15rem);
+  font-size: clamp(1.2rem, 1.65vw, 1.85rem);
   font-weight: 400;
   color: var(--elore-ink);
 }
@@ -154,12 +158,12 @@
 
 .categoryLabel {
   font-family: var(--font-display);
-  font-size: clamp(1rem, 1.4vw, 1.4rem);
+  font-size: clamp(0.94rem, 1.15vw, 1.2rem);
   line-height: 1.2;
   color: var(--elore-burgundy);
 }
 
-/* This label is set in the display face (Cairo for Arabic), and the h1–h6
+/* This label is set in the display face (Noto Naskh for Arabic), and the h1–h6
    leading guard does not reach a span. 1.2 pinches the tops and tails of an
    Arabic word; the display leading gives them room. */
 :lang(ar) .categoryLabel {
@@ -179,7 +183,7 @@
 
 .ivory {
   background: var(--elore-warm-white);
-  border: 1px solid rgba(59, 15, 26, 0.12);
+  border: 1px solid rgba(37, 8, 12, 0.12);
 }
 
 .sand {
@@ -187,33 +191,54 @@
   color: var(--elore-ink);
 }
 
+.grid [data-cell="gifting"] .card {
+  color: var(--elore-warm-white);
+  background:
+    linear-gradient(90deg, rgba(28, 16, 17, 0.94), rgba(37, 8, 12, 0.66) 62%, rgba(37, 8, 12, 0.3)),
+    url("/elore-assets/bento-gifting-ribbon-v2.avif") center / cover no-repeat;
+}
+
+[dir="rtl"] .grid [data-cell="gifting"] .card {
+  background:
+    linear-gradient(270deg, rgba(28, 16, 17, 0.94), rgba(37, 8, 12, 0.66) 62%, rgba(37, 8, 12, 0.3)),
+    url("/elore-assets/bento-gifting-ribbon-v2.avif") center / cover no-repeat;
+}
+
 .editorialTitle {
-  font-size: clamp(1.25rem, 1.7vw, 1.75rem);
+  font-size: clamp(1.08rem, 1.35vw, 1.45rem);
   font-weight: 400;
-  line-height: 1.18;
+  line-height: 1.22;
 }
 
 .editorialBody {
-  font-size: 0.86rem;
-  line-height: 1.6;
+  font-size: clamp(0.74rem, 0.72vw, 0.82rem);
+  line-height: 1.48;
   opacity: 0.86;
-  max-width: 28ch;
+  max-width: 34ch;
 }
 
 /* ---- quote ------------------------------------------------------------- */
 
 .quote {
   justify-content: center;
-  gap: 0.9rem;
+  gap: 0.65rem;
   margin: 0;
-  background: var(--elore-warm-white);
-  border: 1px solid rgba(59, 15, 26, 0.12);
+  background:
+    linear-gradient(90deg, rgba(255, 253, 252, 0.98), rgba(255, 253, 252, 0.9) 58%, rgba(255, 253, 252, 0.7)),
+    url("/elore-assets/bento-paris-etching-v2.avif") center / cover no-repeat;
+  border: 1px solid rgba(37, 8, 12, 0.12);
   text-align: start;
+}
+
+[dir="rtl"] .quote {
+  background:
+    linear-gradient(270deg, rgba(255, 253, 252, 0.98), rgba(255, 253, 252, 0.9) 58%, rgba(255, 253, 252, 0.7)),
+    url("/elore-assets/bento-paris-etching-v2.avif") center / cover no-repeat;
 }
 
 .quoteMark {
   font-family: var(--font-display-latin), serif;
-  font-size: 3.4rem;
+  font-size: 2.8rem;
   line-height: 0.5;
   color: var(--elore-champagne);
 }
@@ -221,14 +246,14 @@
 .quoteText {
   margin: 0;
   font-family: var(--font-display);
-  font-size: clamp(1.05rem, 1.35vw, 1.35rem);
-  line-height: 1.5;
+  font-size: clamp(0.98rem, 1.1vw, 1.18rem);
+  line-height: 1.45;
   color: var(--elore-ink);
 }
 
 .quoteAttribution {
   font-family: var(--font-body-latin), sans-serif;
-  font-size: 0.64rem;
+  font-size: 0.68rem;
   letter-spacing: 0.18em;
   color: var(--elore-rosewood);
 }
@@ -271,40 +296,44 @@
 .category .arrow {
   position: absolute;
   inset-block-start: auto;
-  inset-block-end: clamp(1.1rem, 2vw, 1.9rem);
+  inset-block-end: clamp(0.7rem, 1vw, 1rem);
   inset-inline: 0;
   margin-inline: auto;
-  inline-size: clamp(38px, 3vw, 44px);
-  block-size: clamp(38px, 3vw, 44px);
+  inline-size: 44px;
+  block-size: 44px;
   background: color-mix(in srgb, var(--elore-champagne) 92%, transparent);
   border-color: transparent;
   color: var(--elore-ink);
-  box-shadow: 0 10px 24px rgba(42, 13, 20, 0.18);
+  box-shadow: 0 10px 24px rgba(28, 16, 17, 0.18);
 }
 
 .notice {
   max-width: 1600px;
-  margin: 1.25rem auto 0;
-  font-size: 0.7rem;
-  color: var(--elore-cocoa);
+  margin: 0.45rem auto 0;
+  padding-inline: 0.4rem;
+  font-size: 0.68rem;
+  line-height: 1.6;
+  color: color-mix(in srgb, var(--elore-warm-white) 74%, transparent);
   text-align: start;
 }
 
 /* ---- interaction ------------------------------------------------------- */
 
-.category:hover .media,
-.mediaCard:hover .media {
-  transform: scale(1.035);
-}
+@media (hover: hover) and (pointer: fine) {
+  .category:hover .media,
+  .mediaCard:hover .media {
+    transform: scale(1.035);
+  }
 
-.textAction:hover .arrow,
-.category:hover .arrow {
-  transform: translateX(3px);
-}
+  .textAction:hover .arrow,
+  .category:hover .arrow {
+    transform: translateX(3px);
+  }
 
-[dir="rtl"] .textAction:hover .arrow,
-[dir="rtl"] .category:hover .arrow {
-  transform: translateX(-3px);
+  [dir="rtl"] .textAction:hover .arrow,
+  [dir="rtl"] .category:hover .arrow {
+    transform: translateX(-3px);
+  }
 }
 
 .category:focus-visible,
@@ -319,45 +348,90 @@
 @media (max-width: 1023px) {
   .grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: none;
+    grid-auto-rows: auto;
   }
 
   .grid [data-cell="intro"] {
     grid-column: span 3;
   }
-  .grid [data-kind="intro"] .card {
-    aspect-ratio: auto;
-    min-block-size: 12rem;
+
+  .grid [data-kind="category"] {
+    grid-column: span 1;
   }
+
+  .grid [data-cell="gifts"],
   .grid [data-cell="rituals"],
   .grid [data-cell="journal"],
-  .grid [data-cell="gifting"],
-  .grid [data-cell="quote"] {
-    grid-column: span 3;
+  .grid [data-cell="gifting"] {
+    grid-column: span 2;
   }
-  .grid [data-kind="media"] {
-    display: none;
+
+  .grid [data-cell="ritual-media"],
+  .grid [data-cell="journal-media"],
+  .grid [data-cell="quote"] {
+    grid-column: span 1;
+  }
+
+  .grid [data-kind="intro"] .card {
+    aspect-ratio: auto;
+    min-block-size: 11.5rem;
+  }
+
+  .grid [data-kind="category"] .card {
+    aspect-ratio: 4 / 5;
+  }
+
+  .grid [data-cell="gifts"] .card {
+    aspect-ratio: auto;
+  }
+
+  .grid [data-kind="editorial"] .card,
+  .grid [data-kind="quote"] .card,
+  .grid [data-kind="media"] .card {
+    min-block-size: 12.5rem;
   }
 }
 
 /* ---- mobile ------------------------------------------------------------ */
 
 @media (max-width: 767px) {
+  .section {
+    --bento-card-radius: 16px;
+    padding-inline: 0.75rem;
+  }
+
   .grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .grid [data-cell="intro"],
   .grid [data-cell="rituals"],
+  .grid [data-cell="ritual-media"],
   .grid [data-cell="journal"],
+  .grid [data-cell="journal-media"],
   .grid [data-cell="gifting"],
   .grid [data-cell="quote"] {
     grid-column: span 2;
   }
 
+  .grid [data-kind="category"] {
+    grid-column: span 1;
+  }
+
+  .grid [data-kind="intro"] .card {
+    min-block-size: 11rem;
+  }
+
   .grid [data-kind="editorial"] .card,
   .grid [data-kind="quote"] .card {
     aspect-ratio: auto;
-    min-block-size: 11rem;
+    min-block-size: 12rem;
+  }
+
+  .grid [data-kind="media"] .card {
+    min-block-size: 9.5rem;
+    aspect-ratio: 16 / 9;
   }
 
   /* Five categories across two columns leaves the last one beside a hole.
@@ -369,11 +443,32 @@
     aspect-ratio: 16 / 9;
   }
 
-  /* Hover cannot be relied on here, and it never carries information — the
-     labels and actions are always rendered. */
   .category .arrow {
-    inline-size: 34px;
-    block-size: 34px;
+    inline-size: 44px;
+    block-size: 44px;
+  }
+}
+
+@media (max-width: 359px) {
+  .section {
+    padding-inline: 0.5rem;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .grid .cell {
+    grid-column: span 1;
+  }
+
+  .grid [data-kind="category"] .card,
+  .grid [data-cell="gifts"] .card {
+    aspect-ratio: 4 / 3;
+  }
+
+  .grid [data-kind="media"] .card {
+    aspect-ratio: 16 / 10;
   }
 }
 

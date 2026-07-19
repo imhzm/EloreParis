@@ -22,6 +22,8 @@ NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=true
+CacheDirectory=elore-paris
+CacheDirectoryMode=0750
 ReadWritePaths=/var/lib/elore-paris
 UMask=0027
 

@@ -1,37 +1,5 @@
 import { isPublicCatalogApproved, isPublicDiscoveryContentApproved, isPublicEditorialContentApproved, isPublicLegalContentApproved } from "./release-controls";
-
-function normalizeOptionalUrl(candidate?: string | null) {
-  if (!candidate) {
-    return null;
-  }
-
-  const trimmed = candidate.trim();
-
-  if (!trimmed) {
-    return null;
-  }
-
-  const withProtocol = /^https?:\/\//i.test(trimmed)
-    ? trimmed
-    : `https://${trimmed}`;
-
-  return withProtocol.replace(/\/+$/, "");
-}
-
-function isHostedUrl(candidate?: string | null) {
-  const normalizedUrl = normalizeOptionalUrl(candidate);
-
-  if (!normalizedUrl) {
-    return false;
-  }
-
-  try {
-    const parsedUrl = new URL(normalizedUrl);
-    return !["localhost", "127.0.0.1", "::1"].includes(parsedUrl.hostname);
-  } catch {
-    return false;
-  }
-}
+import { isHostedHttpsUrl, isHostedUrl } from "./public-site-url";
 
 export type SearchRuntimeStage = "local" | "preview" | "production";
 
@@ -82,6 +50,7 @@ export function isSearchIndexingEnabled(
 ) {
   return (
     getSearchRuntimeStage(env) === "production" &&
+    isHostedHttpsUrl(env.NEXT_PUBLIC_SITE_URL) &&
     isPublicReleaseApproved(env) &&
     isPublicCatalogApproved(env) &&
     isPublicDiscoveryContentApproved(env) &&

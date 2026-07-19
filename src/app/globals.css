@@ -19,21 +19,20 @@
 
      adjustFontFallback: false does not rescue this — it is typed, but verified
      ignored on a clean build in 16.2.10. Naming the real families is the only
-     way to get exactly one range-less family into the stack and put it LAST.
-     Keep "Cairo Fallback" as that one: it is metric-matched to the primary
-     script, so it is the right shape to hold the page during the swap.
+     way to keep each generated range-less fallback after the webfonts it can
+     otherwise hide. Display uses Playfair followed by Noto Naskh Arabic and
+     its metric fallback; body uses Public Sans followed by Cairo and its
+     metric fallback.
 
      The one cost of Latin-first: U+0020 is a Latin codepoint, so Arabic word
-     spaces come from Playfair (9.76px at 40px) rather than Cairo (8.8px) —
-     Arabic sets about 1px per space wider than Cairo intends. Measured, and
-     accepted: the alternative orderings break the wordmark or the whole site.
-     Cairo's Latin faces are emitted but never fetched, since Playfair and
-     Public Sans cover every Latin glyph the pages use — verified on a cold
-     load, which requests three font files and no more.
+     spaces come from the Latin face rather than the Arabic display face. That
+     small width difference is accepted; putting the Arabic face first would
+     render the English wordmark in it and make the Latin display download
+     redundant.
 
      The names must match the @font-face families next/font emits.
      `npm run test:font-stack` fails the build if they ever drift. */
-  --stack-display: "Playfair Display", "Cairo", "Cairo Fallback", Georgia, serif;
+  --stack-display: "Playfair Display", "Noto Naskh Arabic", "Noto Naskh Arabic Fallback", Georgia, serif;
   --stack-body: "Public Sans", "Cairo", "Cairo Fallback", "Segoe UI", Tahoma, sans-serif;
 
   --font-display: var(--stack-display);
@@ -53,46 +52,59 @@
   --leading-display: 0.98;
   --tracking-display: -0.03em;
 
-  /* The 2026-07-17 brand identity sheet. It supersedes the 2026-07-14 handoff
-     palette and the pack's design-tokens.json, both of which named different
-     values for the same roles. Owner-confirmed.
+  /* Canonical implementation-pack palette. The user's latest direction names
+     `ELORE_Claude_Implementation_Pack/design-tokens.json` and its reference
+     board as the visual authority for every surface, so these aliases map the
+     existing component roles onto that one source of truth. */
+  --wine-950: #120305;
+  --wine-900: #25080c;
+  --wine-800: #371319;
+  --wine-700: #521a25;
+  --wine-600: #6b2632;
+  --ivory-50: #f8f5f2;
+  --ivory-100: #f1e9e3;
+  --sand-100: #e9ddd4;
+  --sand-200: #e1d1c4;
+  --sand-300: #ceb49f;
+  --taupe-500: #a78a77;
+  --gold-400: #c7a36d;
+  --gold-500: #b8935e;
+  /* The pack's #9c7646 reaches only 4.12:1 on white. This deeper antique-gold
+     endpoint keeps the hue while making compact labels AA-safe even on sand. */
+  --gold-600: #7b532a;
+  --gold-accent: var(--gold-600);
+  --ink-900: #1c1011;
+  --muted-500: #765f58;
 
-       BURGUNDY #3B0F1A   WINE #6B1D2A     WARM IVORY #FBF7F2
-       BEIGE STONE #E6D9C9  BLUSH ROSE #E8C8BD  SOFT GOLD #D4AF37
-
-     Role names are kept so the ~200 call sites across the modules do not churn:
-     the sheet renamed champagne to soft gold and porcelain to warm ivory, but
-     they are the same slots. Ink and cocoa are not on the sheet; they are
-     derived from burgundy so text and muted copy stay in the family. */
-  --elore-ivory: #fbf7f2;
+  --elore-ivory: var(--ivory-50);
   --elore-warm-white: #ffffff;
-  --elore-burgundy: #3b0f1a;
-  --elore-wine: #6b1d2a;
-  --elore-rosewood: #6b1d2a;
-  --elore-champagne: #d4af37;
-  --elore-blush: #e8c8bd;
-  --elore-stone: #e6d9c9;
-  --elore-ink: #2a0d14;
-  --elore-cocoa: #6f5a52;
+  --elore-burgundy: var(--wine-900);
+  --elore-wine: var(--wine-700);
+  --elore-rosewood: var(--wine-600);
+  --elore-champagne: var(--gold-400);
+  --elore-blush: var(--sand-300);
+  --elore-stone: var(--sand-200);
+  --elore-ink: var(--ink-900);
+  --elore-cocoa: var(--muted-500);
   --liquid-pearl: var(--elore-ivory);
   --rose-sand: var(--elore-blush);
-  --sage-mist: #b8aaa6;
+  --sage-mist: #a78a77;
   --aubergine-ink: var(--elore-burgundy);
   --soft-brass: var(--elore-champagne);
   --mauve-stone: var(--elore-rosewood);
   --foreground: var(--elore-ink);
   --muted: var(--elore-cocoa);
-  --surface: rgba(255, 252, 249, 0.7);
-  --surface-strong: rgba(255, 250, 245, 0.9);
-  --surface-pearl: rgba(255, 252, 248, 0.86);
-  --surface-rose: rgba(232, 200, 189, 0.18);
+  --surface: rgba(248, 245, 242, 0.7);
+  --surface-strong: rgba(248, 245, 242, 0.9);
+  --surface-pearl: rgba(248, 245, 242, 0.86);
+  --surface-rose: rgba(206, 180, 159, 0.18);
   --surface-sage: rgba(151, 160, 149, 0.16);
-  --surface-ink: rgba(42, 13, 20, 0.96);
-  --line: rgba(42, 13, 20, 0.1);
-  --line-soft: rgba(42, 13, 20, 0.08);
-  --shadow: 0 20px 60px rgba(42, 13, 20, 0.1);
-  --shadow-soft: 0 24px 54px rgba(42, 13, 20, 0.08);
-  --shadow-lift: 0 24px 48px rgba(42, 13, 20, 0.14);
+  --surface-ink: rgba(28, 16, 17, 0.96);
+  --line: rgba(28, 16, 17, 0.1);
+  --line-soft: rgba(28, 16, 17, 0.08);
+  --shadow: 0 20px 60px rgba(28, 16, 17, 0.1);
+  --shadow-soft: 0 24px 54px rgba(28, 16, 17, 0.08);
+  --shadow-lift: 0 24px 48px rgba(28, 16, 17, 0.14);
 
   /* Corner scale — the pack's §8.4 values, which the code never actually held;
      it carried 34 ad-hoc radii instead, several of them 2–4px hard corners on
@@ -105,20 +117,36 @@
   --radius-control: 12px;
   --radius-card: 20px;
   --radius-panel: 32px;
+  --radius-xl: 48px;
   --radius-pill: 999px;
+
+  --container-max: 1600px;
+
+  /* Pack spacing scale. Components can migrate incrementally without inventing
+     new one-off gaps while existing layouts remain stable. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-28: 112px;
+  --space-36: 144px;
   /* FOCUS INDICATOR — two rings, and the measurement is what forces that.
      WCAG 2.1 SC 1.4.11 asks for 3:1 against the adjacent colour, and this site
      seats controls on warm ivory AND on burgundy. No single brand colour clears
      3:1 on both surfaces:
 
-       soft gold #D4AF37 -> 1.97:1 on ivory  (fails)   7.87:1 on burgundy
-       burgundy #3B0F1A  -> 15.51:1 on ivory           1.00:1 on burgundy (gone)
+       pack gold #c7a36d -> 2.18:1 on ivory  (fails)   7.95:1 on burgundy
+       burgundy #25080c  -> 17.28:1 on ivory           1.00:1 on burgundy (gone)
 
      A gold ring is what this site had, so on every ivory page the focus
-     indicator was failing at 1.97:1 — the old champagne measured 2.00:1, so it
-     has never passed.
+     indicator would fail at 2.18:1.
 
-     Two concentric rings fix it, because gold and ink contrast 8.56:1 with EACH
+     Two concentric rings fix it, because gold and ink contrast 7.85:1 with EACH
      OTHER: whatever the ring lands on, one of the two separates from it and the
      pair still reads as a ring. Gold inside against the control, ink outside
      against the page. This is the same answer GOV.UK and USWDS reached from the
@@ -136,6 +164,7 @@
 
   --motion-micro: 160ms cubic-bezier(0.22, 1, 0.36, 1);
   --motion-control: 220ms cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-card: 320ms cubic-bezier(0.22, 1, 0.36, 1);
   --motion-reveal: 360ms cubic-bezier(0.22, 1, 0.36, 1);
   --motion-section: 520ms cubic-bezier(0.22, 1, 0.36, 1);
   --motion-hero: 700ms cubic-bezier(0.16, 1, 0.3, 1);
@@ -150,13 +179,10 @@
      Tracking goes to zero because letter-spacing an Arabic run breaks the
      joins between letters — it is not a stylistic preference. */
   --leading-body: 1.75;
-  /* Measured on Cairo, not chosen: an unvowelled Arabic display line inks at
-     0.97x font-size, while the font's own line box is 1.87x. 1.28 sits between
-     them — clear of the ink so nothing is clipped, well under the font box so
-     headings do not sprawl. Raise it toward 1.37 only if harakat are ever
-     authored; there are none in the content today, and they are what pushes the
-     ink past 1.0. */
-  --leading-display: 1.28;
+  /* Noto Naskh's taller marks need more room than the Latin display face, while
+     1.2 keeps compact commerce headings from opening into poster-like vertical
+     gaps. */
+  --leading-display: 1.2;
   --tracking-display: 0;
 }
 
@@ -207,7 +233,7 @@ body::before {
   inset: 0;
   z-index: -2;
   pointer-events: none;
-  background-image: linear-gradient(90deg, transparent 0 49.9%, rgba(59, 15, 26, 0.035) 50%, transparent 50.1%);
+  background-image: linear-gradient(90deg, transparent 0 49.9%, rgba(37, 8, 12, 0.035) 50%, transparent 50.1%);
   opacity: 0.45;
 }
 
@@ -217,7 +243,7 @@ body::after {
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background: radial-gradient(circle at 18% 8%, rgba(212, 175, 55, 0.12), transparent 32%);
+  background: radial-gradient(circle at 18% 8%, rgba(199, 163, 109, 0.12), transparent 32%);
   opacity: 1;
 }
 
@@ -322,7 +348,7 @@ body::-webkit-scrollbar-track {
 body::-webkit-scrollbar-thumb {
   border: 2px solid rgba(255, 252, 249, 0.8);
   border-radius: 999px;
-  background: linear-gradient(180deg, rgba(122, 95, 108, 0.78), rgba(42, 13, 20, 0.9));
+  background: linear-gradient(180deg, rgba(122, 95, 108, 0.78), rgba(28, 16, 17, 0.9));
 }
 
 @keyframes soft-reveal {

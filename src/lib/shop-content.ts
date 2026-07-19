@@ -18,22 +18,51 @@ export const shopCopy = {
   ar: {
     metadata: {
       title: "المتجر",
-      description: "اكتشفي عالم ÉLORÉ PARIS عبر أقسام العناية والمكياج والهدايا في تجربة هادئة وواضحة.",
+      description: "تصفحي عالم ÉLORÉ PARIS عبر فئات العناية والمكياج والهدايا في تجربة هادئة وواضحة.",
       pageName: "متجر ÉLORÉ PARIS",
       pageDescription: "بوابة تسوق تجمع فئات العناية والجمال في مسارات واضحة.",
       home: "الرئيسية",
       shop: "المتجر",
     },
-    hero: { aria: "بوابة المتجر", eyebrow: "THE BEAUTY ATLAS", title: "اختاري طريقك.\nلا مجرد منتج.", body: "فئة، احتياج، روتين أو مكوّن. كل طريق يقرّبك من قرار أوضح.", cta: "ابدئي الرحلة" },
-    // No number in the headline. It said "ستة" over seven cards the moment
-    // perfumes was added — copy that counts the thing beside it will always
-    // drift behind it, and Arabic number agreement means the fix is not a digit
-    // swap either. The line keeps its cadence and stops making a claim the data
-    // has to keep true.
-    categories: { aria: "تصنيفات المتجر", eyebrow: "SHOP BY CATEGORY", title: "كل باب مدخل.\nواختيار مدروس." },
-    edit: { aria: "دراسات تحريرية للمجموعة", eyebrow: "THE EDIT IN PROGRESS", title: "المجموعة قيد التنسيق.\nوالاختيار يبدأ بالفهم.", cta: "استكشفي دليل الجمال ←", cardCta: "عرض القسم" },
-    routesIntro: { aria: "طرق الاختيار", eyebrow: "CHOOSE WITH INTENT", title: "حين لا تكفي\nالفئة وحدها.", body: "ابدئي من السؤال الأقرب لك." },
-    finale: { aria: "نهاية تجربة المتجر", eyebrow: "BEAUTY, CONSIDERED", title: "اختيارك يبدأ\nمن الوضوح.", body: "نعرض المنتجات والأسعار فقط بعد اعتماد بياناتها وصورها ومعلوماتها التشغيلية.", primary: "دليل الجمال", secondary: "الثقة والسياسات" },
+    hero: {
+      aria: "مقدمة متجر إلوري باريس",
+      eyebrow: "THE ÉLORÉ EDIT",
+      title: "الجمال، باختيار\nأكثر هدوءًا.",
+      body: "ابدئي من الفئة التي تهمك، أو ابحثي مباشرة عمّا تعرفينه. هنا تظهر المنتجات فقط بعد اعتماد بياناتها وصورها.",
+      primary: "تصفحي الأقسام",
+      secondary: "ابحثي بالاسم",
+      image: images.silk,
+      imageAlt: "تكوين تحريري من الحرير بلون الشمبانيا",
+      conceptNotice: "صورة مفاهيمية — لا تمثل منتجًا معروضًا للبيع.",
+    },
+    categories: {
+      aria: "تصنيفات المتجر",
+      eyebrow: "SHOP BY CATEGORY",
+      title: "أبواب واضحة.\nواختيار أقرب لك.",
+      body: "تصفحي الفئات، ثم انتقلي إلى القسم الذي يناسب ما تبحثين عنه.",
+    },
+    catalog: {
+      aria: "المنتجات المعتمدة",
+      eyebrow: "APPROVED CATALOGUE",
+      availableTitle: "اختيارات متاحة الآن",
+      availableBody: "هذه هي المنتجات المنشورة حاليًا ببياناتها وصورها المعتمدة.",
+      emptyTitle: "نجهّز الرف بعناية.",
+      emptyBody: "لا توجد منتجات منشورة الآن. إلى أن يكتمل الاعتماد، يمكنك استكشاف الفئات ودليل الجمال دون وعود أو أسعار غير معتمدة.",
+      productCta: "عرض التفاصيل",
+      emptyPrimary: "اقرئي دليل الجمال",
+      emptySecondary: "الثقة والسياسات",
+      count: (count: number) => `عدد المنتجات المنشورة: ${count}`,
+    },
+    editorial: {
+      aria: "طرق تساعدك على الاختيار",
+      eyebrow: "CHOOSE WITH INTENT",
+      title: "لا تعرفين من أين\nتبدئين؟",
+      body: "ابدئي من احتياج، أو روتين، أو مكوّن. هذه المسارات تساعدك على تضييق الاختيار قبل الوصول إلى المنتج.",
+      image: images.editorial,
+      imageAlt: "دراسة تحريرية مفاهيمية للضوء على البشرة",
+      conceptNotice: "صورة تحريرية مفاهيمية.",
+      cta: "استكشفي دليل الجمال",
+    },
     collections: [
       ["العطور", "PERFUMES", "/shop/perfumes", images.perfumes, "shop_hub_collection_perfumes"],
       ["العناية بالبشرة", "SKINCARE", "/shop/skincare", images.skincare, "shop_hub_collection_skincare"],
@@ -42,12 +71,6 @@ export const shopCopy = {
       ["العناية بالجسم", "BODYCARE", "/shop/bodycare", images.bodycare, "shop_hub_collection_bodycare"],
       ["الأدوات", "TOOLS", "/shop/tools", images.tools, "shop_hub_collection_tools"],
       ["مجموعات الجمال", "BEAUTY SETS", "/shop/beauty-sets", images.gifting, "shop_hub_collection_beauty_sets"],
-    ],
-    studies: [
-      ["طقس الترطيب", "CONCEPT STUDY", images.skincare, "/routines"],
-      ["ضوء البشرة", "EDITORIAL STUDY", images.editorial, "/journal"],
-      ["لون بوعي", "TEXTURE STUDY", images.makeup, "/concerns"],
-      ["طقس الهدية", "GIFTING STUDY", images.gifting, "/journal"],
     ],
     routes: [
       ["01", "حسب الاحتياج", "ابدئي بالنتيجة التي تبحثين عنها.", "/concerns", "shop_hub_to_concerns"],
@@ -60,19 +83,51 @@ export const shopCopy = {
   en: {
     metadata: {
       title: "Shop",
-      description: "Explore the ÉLORÉ PARIS world through skincare, makeup and gifting in a quieter, clearer experience.",
+      description: "Explore the ÉLORÉ PARIS world through care, makeup and gifting in a quieter, clearer experience.",
       pageName: "ÉLORÉ PARIS shop",
       pageDescription: "A considered gateway to beauty and care categories.",
       home: "Home",
       shop: "Shop",
     },
-    hero: { aria: "Shop gateway", eyebrow: "THE BEAUTY ATLAS", title: "Choose your path.\nNot just a product.", body: "Category, concern, ritual or ingredient. Every route brings you closer to a clearer choice.", cta: "Begin the journey" },
-    // See the Arabic note: the count was wrong the moment a seventh door
-    // opened, so the line no longer carries one.
-    categories: { aria: "Shop categories", eyebrow: "SHOP BY CATEGORY", title: "Every door an entrance.\nOne considered choice." },
-    edit: { aria: "Editorial collection studies", eyebrow: "THE EDIT IN PROGRESS", title: "The collection is being composed.\nChoice begins with understanding.", cta: "Explore the beauty journal →", cardCta: "View section" },
-    routesIntro: { aria: "Ways to choose", eyebrow: "CHOOSE WITH INTENT", title: "When category\nis not enough.", body: "Begin with the question closest to you." },
-    finale: { aria: "End of the shop experience", eyebrow: "BEAUTY, CONSIDERED", title: "Your choice begins\nwith clarity.", body: "Products and prices appear only after their imagery, data and operational information are approved.", primary: "Beauty journal", secondary: "Trust and policies" },
+    hero: {
+      aria: "ÉLORÉ PARIS shop introduction",
+      eyebrow: "THE ÉLORÉ EDIT",
+      title: "Beauty, chosen\nwith more clarity.",
+      body: "Begin with the category that matters to you, or search directly for what you know. Products appear here only after their data and imagery are approved.",
+      primary: "Browse categories",
+      secondary: "Search by name",
+      image: images.silk,
+      imageAlt: "Editorial composition of champagne-toned silk",
+      conceptNotice: "Concept image — not a product offered for sale.",
+    },
+    categories: {
+      aria: "Shop categories",
+      eyebrow: "SHOP BY CATEGORY",
+      title: "Clear doors.\nA closer choice.",
+      body: "Browse the categories, then enter the section that best matches what you are looking for.",
+    },
+    catalog: {
+      aria: "Approved products",
+      eyebrow: "APPROVED CATALOGUE",
+      availableTitle: "Available now",
+      availableBody: "These are the products currently published with approved data and imagery.",
+      emptyTitle: "We are composing the shelf.",
+      emptyBody: "No products are published yet. Until approval is complete, explore the categories and beauty journal without unverified prices or promises.",
+      productCta: "View details",
+      emptyPrimary: "Read the beauty journal",
+      emptySecondary: "Trust and policies",
+      count: (count: number) => `${count} ${count === 1 ? "product" : "products"} published`,
+    },
+    editorial: {
+      aria: "Ways to choose",
+      eyebrow: "CHOOSE WITH INTENT",
+      title: "Not sure where\nto begin?",
+      body: "Start with a concern, ritual or ingredient. These routes help narrow the choice before you arrive at a product.",
+      image: images.editorial,
+      imageAlt: "Concept editorial study of light on skin",
+      conceptNotice: "Concept editorial image.",
+      cta: "Explore the beauty journal",
+    },
     collections: [
       ["Perfumes", "PERFUMES", "/shop/perfumes", images.perfumes, "shop_hub_collection_perfumes"],
       ["Skincare", "SKINCARE", "/shop/skincare", images.skincare, "shop_hub_collection_skincare"],
@@ -81,12 +136,6 @@ export const shopCopy = {
       ["Bodycare", "BODYCARE", "/shop/bodycare", images.bodycare, "shop_hub_collection_bodycare"],
       ["Tools", "TOOLS", "/shop/tools", images.tools, "shop_hub_collection_tools"],
       ["Beauty sets", "BEAUTY SETS", "/shop/beauty-sets", images.gifting, "shop_hub_collection_beauty_sets"],
-    ],
-    studies: [
-      ["Hydration ritual", "CONCEPT STUDY", images.skincare, "/routines"],
-      ["Light on skin", "EDITORIAL STUDY", images.editorial, "/journal"],
-      ["Colour, considered", "TEXTURE STUDY", images.makeup, "/concerns"],
-      ["The gifting ritual", "GIFTING STUDY", images.gifting, "/journal"],
     ],
     routes: [
       ["01", "By concern", "Begin with the result you are looking for.", "/concerns", "shop_hub_to_concerns"],

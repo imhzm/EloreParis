@@ -5,25 +5,32 @@
 .card {
   display: flex;
   flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.35rem;
   overflow: hidden;
-  border-radius: var(--radius-card);
-  background: var(--elore-ivory);
-  border: 1px solid rgba(59, 15, 26, 0.08);
-  transition: transform var(--motion-card), box-shadow var(--motion-card);
+  border: 1px solid color-mix(in srgb, var(--elore-wine) 12%, transparent);
+  border-radius: clamp(1rem, 1.8vw, 1.65rem);
+  background: var(--elore-warm-white);
+  transition:
+    transform var(--motion-card),
+    box-shadow var(--motion-card),
+    border-color var(--motion-card);
 }
 
 @media (hover: hover) and (pointer: fine) {
   .card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 26px 60px rgba(42, 13, 20, 0.12);
+    border-color: color-mix(in srgb, var(--elore-wine) 28%, transparent);
+    transform: translateY(-3px);
+    box-shadow: 0 1rem 2.25rem color-mix(in srgb, var(--elore-wine) 12%, transparent);
   }
 }
 
 .media {
   position: relative;
   display: block;
-  aspect-ratio: 4 / 5;
+  aspect-ratio: 1 / 1.12;
   overflow: hidden;
+  border-radius: clamp(0.75rem, 1.4vw, 1.25rem);
   background: var(--elore-blush);
 }
 
@@ -41,8 +48,8 @@
 .body {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
-  padding: clamp(0.9rem, 1.4vw, 1.4rem);
+  gap: 0.35rem;
+  padding: clamp(0.7rem, 1.1vw, 1rem) clamp(0.65rem, 1vw, 0.95rem) clamp(0.8rem, 1.2vw, 1.05rem);
   text-align: start;
 }
 
@@ -64,7 +71,7 @@
 .name {
   margin: 0;
   font-family: var(--font-display);
-  font-size: clamp(1.15rem, 1.5vw, 1.5rem);
+  font-size: clamp(1.08rem, 1.35vw, 1.38rem);
   font-weight: 500;
   line-height: 1.2;
 }
@@ -87,8 +94,8 @@
 }
 
 .subtitle {
-  font-size: 0.82rem;
-  line-height: 1.5;
+  font-size: 0.79rem;
+  line-height: 1.45;
   color: var(--elore-cocoa);
 }
 
@@ -123,7 +130,7 @@
 .soldOut {
   position: relative;
   z-index: 1;
-  margin-block-start: 0.7rem;
+  margin-block-start: 0.55rem;
 }
 
 .addButton {
@@ -134,7 +141,7 @@
   min-height: 44px;
   padding-inline: 1.1rem;
   border: 0;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-control);
   background: var(--elore-burgundy);
   color: var(--elore-warm-white);
   font: inherit;
@@ -157,8 +164,8 @@
   justify-content: center;
   min-height: 44px;
   padding-inline: 1.1rem;
-  border: 1px solid rgba(59, 15, 26, 0.28);
-  border-radius: var(--radius-pill);
+  border: 1px solid rgba(37, 8, 12, 0.28);
+  border-radius: var(--radius-control);
   color: var(--elore-burgundy);
   font-size: 0.86rem;
   font-weight: 600;
@@ -169,7 +176,7 @@
 @media (hover: hover) and (pointer: fine) {
   .chooseLink:hover {
     border-color: var(--elore-burgundy);
-    background: rgba(59, 15, 26, 0.04);
+    background: rgba(37, 8, 12, 0.04);
   }
 }
 
@@ -179,6 +186,12 @@
   min-height: 44px;
   color: var(--elore-cocoa);
   font-size: 0.84rem;
+}
+
+.card:active,
+.addButton:active,
+.chooseLink:active {
+  transform: scale(0.985);
 }
 
 .addButton:focus-visible,
@@ -192,10 +205,14 @@
 @media (prefers-reduced-motion: reduce) {
   .card,
   .media img,
-  .addButton {
+  .addButton,
+  .chooseLink {
     transition: none;
   }
-  .card:hover {
+  .card:hover,
+  .card:active,
+  .addButton:active,
+  .chooseLink:active {
     transform: none;
   }
   .card:hover .media img {

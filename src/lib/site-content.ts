@@ -71,6 +71,28 @@ export function absoluteUrl(path = "/") {
   return new URL(path, getSiteUrl()).toString();
 }
 
+const jsonLdHtmlEscapes: Record<string, string> = {
+  "<": "\\u003c",
+  ">": "\\u003e",
+  "&": "\\u0026",
+  "\u2028": "\\u2028",
+  "\u2029": "\\u2029",
+};
+
+/** Serialize structured data without allowing its content to close the script element. */
+export function serializeJsonLd(value: unknown) {
+  const serialized = JSON.stringify(value);
+
+  if (serialized === undefined) {
+    throw new TypeError("JSON-LD value must be JSON-serializable.");
+  }
+
+  return serialized.replace(
+    /[<>&\u2028\u2029]/g,
+    (character) => jsonLdHtmlEscapes[character],
+  );
+}
+
 /**
  * The share card every route falls back to.
  *
@@ -81,11 +103,11 @@ export function absoluteUrl(path = "/") {
  * contact, faq, terms, trust, trust/shipping, journal. The pages that worked
  * (discovery) only worked because they happened to name an image of their own.
  *
- * app/opengraph-image.tsx renders this at request time, so it is always the
+ * The stable `/api/social-card` route renders this at request time, so it is always the
  * current wordmark and tagline rather than a file to keep in step.
  */
-export function defaultSocialCard(title: string) {
-  const url = absoluteUrl("/opengraph-image");
+export function defaultSocialCard(title: string, locale: "ar" | "en") {
+  const url = absoluteUrl(`/api/social-card?locale=${locale}`);
   return {
     openGraph: [{ url, width: 1200, height: 630, alt: `${siteName} — ${title}` }],
     twitter: [url],
