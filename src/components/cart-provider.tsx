@@ -2,6 +2,7 @@
 
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useState,
@@ -140,7 +141,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const cartCount = getCartCount(lines);
   const subtotal = getCartSubtotal(lines);
 
-  const addItem = ({ productSlug, sku, quantity }: CartItemInput) => {
+  const addItem = useCallback(({ productSlug, sku, quantity }: CartItemInput) => {
     setItems((currentItems) =>
       sanitizeCartItems([
         ...currentItems,
@@ -151,9 +152,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
         },
       ]),
     );
-  };
+  }, []);
 
-  const updateItemQuantity = ({ productSlug, sku, quantity }: CartItemInput) => {
+  const updateItemQuantity = useCallback(({ productSlug, sku, quantity }: CartItemInput) => {
     if (quantity <= 0) {
       setItems((currentItems) =>
         currentItems.filter(
@@ -172,19 +173,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
         ),
       ),
     );
-  };
+  }, []);
 
-  const removeItem = (productSlug: string, sku: string) => {
+  const removeItem = useCallback((productSlug: string, sku: string) => {
     setItems((currentItems) =>
       currentItems.filter(
         (item) => !(item.productSlug === productSlug && item.sku === sku),
       ),
     );
-  };
+  }, []);
 
-  const clearCart = () => {
+  const clearCart = useCallback(() => {
     setItems([]);
-  };
+  }, []);
 
   return (
     <CartContext.Provider

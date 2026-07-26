@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import ts from "typescript";
 
 /**
- * Guards the fail-closed contract of the public commerce gate.
+ * Guards the fail-closed contract of the public guest-commerce gate.
  *
  * The gate exists so that a copied env template cannot switch commerce on. That
  * held for secrets but not for policy versions: isConfiguredVersion carried its
@@ -36,23 +36,42 @@ function transpileToDataUrl(source) {
 
 // Everything except the value under test is satisfied, so the assertion is
 // isolated to the gate being probed.
-const satisfied = {
+const guestCommerceReady = {
   PUBLIC_RELEASE_APPROVED: "true",
   PUBLIC_CATALOG_APPROVED: "true",
   PUBLIC_LEGAL_CONTENT_APPROVED: "true",
   PUBLIC_COMMERCE_ENABLED: "true",
-  AUTH_PROVIDER_AUTHORIZE_URL: "https://id.idp-host.test/authorize",
-  AUTH_PROVIDER_TOKEN_URL: "https://id.idp-host.test/token",
-  AUTH_PROVIDER_CLIENT_ID: "elore-live-client",
-  AUTH_PROVIDER_CLIENT_SECRET: "a-real-looking-secret-value-1234",
   PUBLIC_TERMS_VERSION: "terms-2026-07-17-v1",
   PUBLIC_PRIVACY_NOTICE_VERSION: "privacy-2026-07-17-v1",
 };
 
+const satisfied = {
+  ...guestCommerceReady,
+  AUTH_PROVIDER_AUTHORIZE_URL: "https://id.idp-host.test/authorize",
+  AUTH_PROVIDER_TOKEN_URL: "https://id.idp-host.test/token",
+  AUTH_PROVIDER_CLIENT_ID: "elore-live-client",
+  AUTH_PROVIDER_CLIENT_SECRET: "a-real-looking-secret-value-1234",
+};
+
 assert.equal(
-  controls.isPublicCommerceAvailable(satisfied),
+  controls.isGuestCommerceAvailable(guestCommerceReady),
   true,
-  "A fully configured environment must be able to reach commerce, or the gate is not a gate but a wall",
+  "Guest checkout must remain available when commerce is ready without an external identity provider",
+);
+assert.equal(
+  controls.isPublicCommerceAvailable(guestCommerceReady),
+  true,
+  "The backward-compatible public commerce gate must follow guest-commerce readiness",
+);
+assert.equal(
+  controls.isExternalCustomerAuthConfigured(guestCommerceReady),
+  false,
+  "External customer auth must remain an independent optional-account readiness signal",
+);
+assert.equal(
+  controls.isExternalCustomerAuthConfigured(satisfied),
+  true,
+  "A complete provider contract must enable the optional customer-account lane",
 );
 
 // The vocabulary an unedited template speaks. Every one of these must be
@@ -199,5 +218,5 @@ for (const siteUrl of [
 }
 
 console.log(
-  "Release control checks passed: template values cannot satisfy release gates and indexing requires an explicit hosted HTTPS site URL.",
+  "Release control checks passed: guest commerce is independent from optional customer auth, template values cannot satisfy release gates, and indexing requires an explicit hosted HTTPS site URL.",
 );

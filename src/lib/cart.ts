@@ -3,7 +3,7 @@ import type {
   PublicCatalogVariant,
 } from "@/lib/public-catalog-types";
 
-export const CART_STORAGE_KEY = "cozmateks-cart";
+export const CART_STORAGE_KEY = "elore-cart";
 export const MAX_CART_ITEM_QUANTITY = 10;
 
 export type StoredCartItem = {

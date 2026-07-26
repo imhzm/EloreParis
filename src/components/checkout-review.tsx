@@ -468,7 +468,8 @@ export function CheckoutReview() {
       });
 
     return () => controller.abort();
-  }, [appliedCouponCode, catalogStatus, formState.paymentMethodId, formState.shippingMethodId, isHydrated, itemFingerprint, items, locale, recoveryState, refreshNonce, unavailableItems.length]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appliedCouponCode, catalogStatus, formState.shippingMethodId, isHydrated, itemFingerprint, items, locale, recoveryState, refreshNonce, unavailableItems.length]);
 
   useEffect(() => {
     if (!quote) return;

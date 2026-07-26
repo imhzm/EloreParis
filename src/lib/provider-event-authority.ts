@@ -22,6 +22,27 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
+export function parseProviderPaymentAmountHalalas(value: unknown) {
+  const normalized =
+    typeof value === "number" && Number.isFinite(value)
+      ? String(value)
+      : typeof value === "string"
+        ? value.trim()
+        : "";
+  if (!/^(?:0|[1-9]\d{0,9})(?:\.\d{1,2})?$/.test(normalized)) {
+    return null;
+  }
+
+  const [riyals, fraction = ""] = normalized.split(".");
+  const halalas = Number(riyals) * 100 + Number(fraction.padEnd(2, "0"));
+  return Number.isSafeInteger(halalas) && halalas > 0 ? halalas : null;
+}
+
+export function parseProviderPaymentCurrency(value: unknown) {
+  const normalized = typeof value === "string" ? value.trim().toUpperCase() : "";
+  return /^[A-Z]{3}$/.test(normalized) ? normalized : null;
+}
+
 function canonicalize(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(canonicalize);
   if (!isRecord(value)) return value;

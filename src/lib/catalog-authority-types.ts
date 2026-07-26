@@ -1,6 +1,7 @@
 import { safePublicMediaUrl } from "@/lib/public-media-url";
 
 export const catalogCollections = [
+  "perfumes",
   "skincare",
   "makeup",
   "haircare",
@@ -57,6 +58,7 @@ export type CatalogImportProduct = {
   nameEn: string;
   descriptionAr: string;
   descriptionEn: string;
+  merchandising?: CatalogProductMerchandising;
   compliance: {
     sfdaNotificationId: string | null;
     ecosmaProductReference: string | null;
@@ -108,6 +110,33 @@ export type CatalogImportProduct = {
     status: "approved" | "rejected";
   }>;
   variants: CatalogImportVariant[];
+};
+
+export type CatalogProductMerchandising = {
+  tagsAr: string[];
+  tagsEn: string[];
+  concernsAr: string[];
+  concernsEn: string[];
+  routinesAr: string[];
+  routinesEn: string[];
+  benefitsAr: string[];
+  benefitsEn: string[];
+  packagingAr: string | null;
+  packagingEn: string | null;
+  giftEligible: boolean;
+  relatedSlugs: string[];
+  fragrance: {
+    familyAr: string;
+    familyEn: string;
+    concentrationAr: string;
+    concentrationEn: string;
+    topNotesAr: string[];
+    topNotesEn: string[];
+    heartNotesAr: string[];
+    heartNotesEn: string[];
+    baseNotesAr: string[];
+    baseNotesEn: string[];
+  } | null;
 };
 
 export type CatalogImportVariant = {
@@ -176,6 +205,103 @@ function stringArray(value: unknown, maximumItems = 50) {
   if (!Array.isArray(value) || value.length > maximumItems) return null;
   const items = value.map((item) => stringValue(item, 1_000));
   return items.every((item): item is string => item !== null) ? items : null;
+}
+
+function parseMerchandising(
+  value: unknown,
+  path: string,
+  issues: string[],
+): CatalogProductMerchandising | undefined | null {
+  if (value === undefined) return undefined;
+  if (!isRecord(value)) {
+    issues.push(`${path} must be an object when provided.`);
+    return null;
+  }
+
+  const tagsAr = stringArray(value.tagsAr, 30);
+  const tagsEn = stringArray(value.tagsEn, 30);
+  const concernsAr = stringArray(value.concernsAr, 30);
+  const concernsEn = stringArray(value.concernsEn, 30);
+  const routinesAr = stringArray(value.routinesAr, 30);
+  const routinesEn = stringArray(value.routinesEn, 30);
+  const benefitsAr = stringArray(value.benefitsAr, 20);
+  const benefitsEn = stringArray(value.benefitsEn, 20);
+  const relatedSlugs = stringArray(value.relatedSlugs, 24);
+  const giftEligible = value.giftEligible;
+  const packagingAr = value.packagingAr === null
+    ? null
+    : nullableString(value.packagingAr, 2_000);
+  const packagingEn = value.packagingEn === null
+    ? null
+    : nullableString(value.packagingEn, 2_000);
+
+  if (
+    tagsAr === null || tagsEn === null || concernsAr === null || concernsEn === null ||
+    routinesAr === null || routinesEn === null ||
+    benefitsAr === null || benefitsEn === null || relatedSlugs === null ||
+    relatedSlugs.some((slug) => !slugPattern.test(slug)) ||
+    typeof giftEligible !== "boolean" ||
+    packagingAr === null && value.packagingAr !== null ||
+    packagingEn === null && value.packagingEn !== null
+  ) {
+    issues.push(`${path} contains invalid tags, benefits, packaging, gifting, or related products.`);
+    return null;
+  }
+
+  let fragrance: CatalogProductMerchandising["fragrance"] = null;
+  if (value.fragrance !== null && value.fragrance !== undefined) {
+    if (!isRecord(value.fragrance)) {
+      issues.push(`${path}.fragrance must be an object or null.`);
+      return null;
+    }
+    const source = value.fragrance;
+    const familyAr = stringValue(source.familyAr, 240);
+    const familyEn = stringValue(source.familyEn, 240);
+    const concentrationAr = stringValue(source.concentrationAr, 240);
+    const concentrationEn = stringValue(source.concentrationEn, 240);
+    const topNotesAr = stringArray(source.topNotesAr, 20);
+    const topNotesEn = stringArray(source.topNotesEn, 20);
+    const heartNotesAr = stringArray(source.heartNotesAr, 20);
+    const heartNotesEn = stringArray(source.heartNotesEn, 20);
+    const baseNotesAr = stringArray(source.baseNotesAr, 20);
+    const baseNotesEn = stringArray(source.baseNotesEn, 20);
+    if (
+      !familyAr || !familyEn || !concentrationAr || !concentrationEn ||
+      topNotesAr === null || topNotesEn === null || heartNotesAr === null ||
+      heartNotesEn === null || baseNotesAr === null || baseNotesEn === null
+    ) {
+      issues.push(`${path}.fragrance contains incomplete localized fragrance data.`);
+      return null;
+    }
+    fragrance = {
+      familyAr,
+      familyEn,
+      concentrationAr,
+      concentrationEn,
+      topNotesAr,
+      topNotesEn,
+      heartNotesAr,
+      heartNotesEn,
+      baseNotesAr,
+      baseNotesEn,
+    };
+  }
+
+  return {
+    tagsAr,
+    tagsEn,
+    concernsAr,
+    concernsEn,
+    routinesAr,
+    routinesEn,
+    benefitsAr,
+    benefitsEn,
+    packagingAr,
+    packagingEn,
+    giftEligible,
+    relatedSlugs,
+    fragrance,
+  };
 }
 
 function parseVariant(
@@ -260,6 +386,7 @@ function parseProduct(
     ? null
     : integerValue(compliance.paoMonths, 1, 120);
   const returnWindowDays = integerValue(returnProfile.returnWindowDays, 0, 365);
+  const merchandising = parseMerchandising(value.merchandising, `${path}.merchandising`, issues);
 
   if (
     !slug || !slugPattern.test(slug) ||
@@ -274,7 +401,8 @@ function parseProduct(
     returnWindowDays === null ||
     typeof returnProfile.hygieneSealRequired !== "boolean" ||
     typeof returnProfile.openedReturnEligible !== "boolean" ||
-    typeof returnProfile.healthResaleExceptionApplies !== "boolean"
+    typeof returnProfile.healthResaleExceptionApplies !== "boolean" ||
+    merchandising === null
   ) {
     issues.push(`${path} contains invalid localized, compliance, expiry, or return data.`);
     return null;
@@ -355,6 +483,7 @@ function parseProduct(
     nameEn,
     descriptionAr,
     descriptionEn,
+    ...(merchandising ? { merchandising } : {}),
     compliance: {
       sfdaNotificationId: nullableString(compliance.sfdaNotificationId, 240),
       ecosmaProductReference: nullableString(compliance.ecosmaProductReference, 240),

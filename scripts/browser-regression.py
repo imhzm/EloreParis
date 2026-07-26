@@ -139,7 +139,7 @@ def attach_diagnostics(page: Page, diagnostics: dict[str, list[str]]) -> None:
             and request.method == "GET"
             and request_path.startswith(("/ar/shop/", "/en/shop/"))
             and request_path.rsplit("/", 1)[-1]
-            in {"skincare", "makeup", "haircare", "bodycare", "tools", "beauty-sets"}
+            in {"perfumes", "skincare", "makeup", "haircare", "bodycare", "tools", "beauty-sets"}
         ):
             return
         if (
@@ -267,7 +267,7 @@ def verify_search_surface(
     positions = page.locator("[data-search-frame]").evaluate_all(
         "elements => elements.map(element => getComputedStyle(element).position)"
     )
-    expected = ["relative"] * 5 if viewport_width <= 900 else ["sticky", "sticky", "sticky", "relative", "sticky"]
+    expected = ["static"]
     if positions != expected:
         raise AssertionError(f"{route} has search frame positions {positions}, expected {expected}")
     if page.locator("[data-search-results] a").count() == 0:
@@ -277,17 +277,11 @@ def verify_search_surface(
         if forbidden in html:
             raise AssertionError(f"{route} exposes unapproved search content: {forbidden}")
 
-    if viewport_width > 900:
-        first_scene = scenes.first
-        motion = page.locator("[data-search-motion] img")
-        before = motion.evaluate("element => getComputedStyle(element).transform")
-        first_scene.evaluate(
-            "scene => window.scrollTo({top: scene.offsetTop + Math.max(scene.offsetHeight - innerHeight, 1) * .55, behavior: 'instant'})"
-        )
-        page.wait_for_timeout(160)
-        after = motion.evaluate("element => getComputedStyle(element).transform")
-        if before == after:
-            raise AssertionError(f"{route} search motion did not respond to scroll")
+    sticky_scenes = scenes.evaluate_all(
+        "elements => elements.filter(element => getComputedStyle(element).position === 'sticky').length"
+    )
+    if sticky_scenes:
+        raise AssertionError(f"{route} reintroduced sticky search scenes")
 
 
 def verify_home_motion(
@@ -300,10 +294,25 @@ def verify_home_motion(
     expected_title: str,
 ) -> None:
     page.goto(urljoin(base_url, route), wait_until="domcontentloaded")
-    page.locator("[data-home-scene]").first.wait_for(state="visible")
-    scenes = page.locator("[data-home-scene]")
-    if scenes.count() != 10:
-        raise AssertionError(f"{route} has {scenes.count()} scenes, expected 10")
+    page.locator("[data-reference-home]").wait_for(state="visible")
+    section_selectors = (
+        "[data-home-hero]",
+        "[data-home-bento]",
+        "[data-home-trust]",
+        "[data-home-catalog-gate]",
+        "[data-home-routine]",
+        "[data-home-gifting]",
+        "[data-home-editorial]",
+        "[data-home-newsletter]",
+    )
+    positions = [
+        page.locator(selector).evaluate(
+            "element => element.getBoundingClientRect().top + scrollY"
+        )
+        for selector in section_selectors
+    ]
+    if positions != sorted(positions):
+        raise AssertionError(f"{route} has an incorrect reference narrative order")
 
     html = page.locator("html")
     if html.get_attribute("lang") != expected_lang:
@@ -318,22 +327,12 @@ def verify_home_motion(
         if forbidden in body_text:
             raise AssertionError(f"Homepage still exposes forbidden legacy copy: {forbidden}")
 
-    layer = page.locator('[data-home-motion-layer="texture"]')
-    layer.scroll_into_view_if_needed()
-    page.wait_for_timeout(100)
-    before = layer.evaluate("element => getComputedStyle(element).transform")
-
-    if viewport_width <= 900:
-        if before != "none":
-            raise AssertionError(f"Mobile homepage parallax is {before}, expected none")
-        return
-
-    page.evaluate("window.scrollBy({ top: 120, behavior: 'instant' })")
-    page.wait_for_timeout(120)
-    after = layer.evaluate("element => getComputedStyle(element).transform")
-    if before == "none" or after == "none" or before == after:
+    arrival = page.locator("[data-home-signature-motion]").evaluate(
+        "element => getComputedStyle(element).animationName"
+    )
+    if "hero-arrival" not in arrival:
         raise AssertionError(
-            f"Desktop homepage motion did not respond to scroll: {before} -> {after}"
+            f"{route} lost the approved Hero arrival motion: {arrival}"
         )
 
 
@@ -347,11 +346,11 @@ def verify_discovery_surface(
     viewport_width: int,
 ) -> None:
     page.goto(urljoin(base_url, route), wait_until="networkidle")
-    scene_selector = "[data-discovery-scene]" if surface == "hub" else "[data-knowledge-scene]"
-    expected_count = 4 if surface == "hub" else 5
-    scenes = page.locator(scene_selector)
-    if scenes.count() != expected_count:
-        raise AssertionError(f"{route} has {scenes.count()} scenes, expected {expected_count}")
+    surface_selector = "[data-discovery-kind]" if surface == "hub" else "[data-discovery-detail]"
+    discovery = page.locator(surface_selector)
+    discovery.wait_for(state="visible")
+    if discovery.count() != 1:
+        raise AssertionError(f"{route} must expose one discovery surface")
     if page.locator("h1").count() != 1:
         raise AssertionError(f"{route} must expose exactly one h1")
     if page.locator("html").get_attribute("lang") != expected_lang:
@@ -360,34 +359,11 @@ def verify_discovery_surface(
         raise AssertionError(f"{route} has an incorrect text direction")
     assert_no_horizontal_overflow(page, route)
 
-    frame_positions = scenes.locator(":scope > div").evaluate_all(
-        "elements => elements.map(element => ({"
-        "position: getComputedStyle(element).position,"
-        "top: parseFloat(getComputedStyle(element).top) || 0"
-        "}))"
+    sticky_sections = discovery.locator("section").evaluate_all(
+        "elements => elements.filter(element => getComputedStyle(element).position === 'sticky').length"
     )
-    expected_position = "relative" if viewport_width <= 900 else "sticky"
-    if any(frame["position"] != expected_position for frame in frame_positions):
-        raise AssertionError(f"{route} has incorrect frame positions: {frame_positions}")
-    if viewport_width > 900 and any(abs(frame["top"] - 78) > 1 for frame in frame_positions):
-        raise AssertionError(f"{route} has incorrect sticky offsets: {frame_positions}")
-    if viewport_width > 900:
-        copies = page.locator('[data-discovery-column="copy"]').evaluate_all(
-            "elements => elements.map(element => element.getBoundingClientRect().toJSON())"
-        )
-        panels = page.locator('[data-discovery-column="panel"]').evaluate_all(
-            "elements => elements.map(element => element.getBoundingClientRect().toJSON())"
-        )
-        if len(copies) != len(panels):
-            raise AssertionError(f"{route} has unmatched desktop discovery columns")
-        for copy_rect, panel_rect in zip(copies, panels, strict=True):
-            overlap = max(
-                0,
-                min(copy_rect["right"], panel_rect["right"])
-                - max(copy_rect["left"], panel_rect["left"]),
-            )
-            if overlap > 1:
-                raise AssertionError(f"{route} has {overlap}px overlapping desktop columns")
+    if sticky_sections != 0:
+        raise AssertionError(f"{route} must not trap visitors in sticky scenes")
 
     html = page.content()
     body_text = page.locator("body").inner_text()
@@ -402,25 +378,6 @@ def verify_discovery_surface(
         if any(href == "/journal" or (href or "").startswith("/search") for href in related_hrefs):
             raise AssertionError(f"{route} links English visitors into a legacy Arabic surface")
 
-    if viewport_width > 900:
-        motion = page.locator("[data-discovery-motion]").first
-        before = motion.evaluate("element => getComputedStyle(element).transform")
-        first_scene = scenes.first
-        first_scene.evaluate(
-            "scene => window.scrollTo({"
-            "top: scene.offsetTop + Math.max(scene.offsetHeight - window.innerHeight, 1) * .55,"
-            "behavior: 'instant'"
-            "})"
-        )
-        page.wait_for_timeout(180)
-        progress = float(first_scene.evaluate(
-            "element => getComputedStyle(element).getPropertyValue('--progress') || '0'"
-        ))
-        after = motion.evaluate("element => getComputedStyle(element).transform")
-        if not 0.3 < progress < 0.8:
-            raise AssertionError(f"{route} has incorrect scroll progress {progress}")
-        if before == after:
-            raise AssertionError(f"{route} block motion did not respond to scroll")
 
 
 def verify_discovery_keyboard(page: Page, base_url: str) -> None:
@@ -445,13 +402,13 @@ def verify_journal_keyboard(page: Page, base_url: str) -> None:
         urljoin(base_url, "/ar/journal/morning-ritual-for-hot-weather"),
         wait_until="networkidle",
     )
-    answer_link = page.locator('a[href="#article-answer"]')
+    answer_link = page.locator('a[href="#article-answer"]').first
     answer_link.focus()
     answer_link.press("Enter")
     page.wait_for_timeout(180)
     if urlparse(page.url).fragment != "article-answer":
         raise AssertionError("Journal answer CTA did not support keyboard activation")
-    toc_link = page.locator("[data-article-toc] a").first
+    toc_link = page.locator('[data-article-toc] a[href="#chapter-1"]')
     toc_link.focus()
     toc_link.press("Enter")
     page.wait_for_timeout(180)
@@ -471,57 +428,47 @@ def verify_reduced_motion(
 ) -> None:
     page = context.new_page()
     page.goto(urljoin(base_url, "/ar/shop"), wait_until="networkidle")
-    frame_position = page.locator("[data-shop-scene] > div").first.evaluate(
-        "element => getComputedStyle(element).position"
+    shop_positions = page.locator("[data-shop-hub] section").evaluate_all(
+        "elements => elements.map(element => getComputedStyle(element).position)"
     )
     scroll_behavior = page.locator("html").evaluate(
         "element => getComputedStyle(element).scrollBehavior"
     )
-    if frame_position != "relative":
+    if any(position == "sticky" for position in shop_positions):
         raise AssertionError(
-            f"Reduced-motion shop frame is {frame_position}, expected relative"
+            f"Reduced-motion shop reintroduced sticky sections: {shop_positions}"
         )
     if scroll_behavior != "auto":
         raise AssertionError(
             f"Reduced-motion scroll behavior is {scroll_behavior}, expected auto"
         )
     page.goto(urljoin(base_url, "/ar/shop/skincare"), wait_until="networkidle")
-    category_positions = page.locator("[data-category-scene] > div").evaluate_all(
+    category_positions = page.locator("[data-collection-grid] section").evaluate_all(
         "elements => elements.map(element => getComputedStyle(element).position)"
     )
-    if any(position != "relative" for position in category_positions):
+    if any(position == "sticky" for position in category_positions):
         raise AssertionError(
-            f"Reduced-motion category frames are {category_positions}, expected relative"
+            f"Reduced-motion category reintroduced sticky sections: {category_positions}"
         )
     page.goto(urljoin(base_url, "/ar"), wait_until="domcontentloaded")
-    page.locator("[data-home-motion-layer]").first.wait_for(state="visible")
-    transforms = page.locator("[data-home-motion-layer]").evaluate_all(
+    page.locator("[data-home-signature-motion]").wait_for(state="visible")
+    transforms = page.locator(
+        "[data-home-signature-motion], [data-home-hero-media] img"
+    ).evaluate_all(
         "elements => elements.map(element => getComputedStyle(element).transform)"
     )
     if any(transform != "none" for transform in transforms):
         raise AssertionError(
             f"Reduced-motion homepage still has transforms: {transforms}"
         )
-    for route, selector in (
-        ("/ar/concerns", "[data-discovery-scene]"),
-        ("/en/ingredients/vitamin-c", "[data-knowledge-scene]"),
-    ):
+    for route in ("/ar/concerns", "/en/ingredients/vitamin-c"):
         page.goto(urljoin(base_url, route), wait_until="networkidle")
-        positions = page.locator(f"{selector} > div").evaluate_all(
+        positions = page.locator("[data-discovery-experience] section").evaluate_all(
             "elements => elements.map(element => getComputedStyle(element).position)"
         )
-        if any(position != "relative" for position in positions):
+        if any(position == "sticky" for position in positions):
             raise AssertionError(
-                f"Reduced-motion discovery frames are {positions}, expected relative"
-            )
-        motion = page.locator("[data-discovery-motion]").first
-        before = motion.evaluate("element => getComputedStyle(element).transform")
-        page.evaluate("window.scrollTo({ top: document.body.scrollHeight * .5, behavior: 'instant' })")
-        page.wait_for_timeout(120)
-        after = motion.evaluate("element => getComputedStyle(element).transform")
-        if before != after:
-            raise AssertionError(
-                f"Reduced-motion discovery transform changed: {before} -> {after}"
+                f"Reduced-motion discovery reintroduced sticky frames: {positions}"
             )
     for route, selector in (
         ("/ar/journal", "[data-journal-scene]"),
@@ -531,9 +478,9 @@ def verify_reduced_motion(
         positions = page.locator(f"{selector} > [data-journal-frame], {selector} > [data-article-frame]").evaluate_all(
             "elements => elements.map(element => getComputedStyle(element).position)"
         )
-        if any(position != "relative" for position in positions):
+        if any(position == "sticky" for position in positions):
             raise AssertionError(
-                f"Reduced-motion journal frames are {positions}, expected relative"
+                f"Reduced-motion journal reintroduced sticky frames: {positions}"
             )
         transforms = page.locator("[data-journal-motion] img").evaluate_all(
             "elements => elements.map(element => getComputedStyle(element).transform)"
@@ -546,16 +493,16 @@ def verify_reduced_motion(
     search_positions = page.locator("[data-search-frame]").evaluate_all(
         "elements => elements.map(element => getComputedStyle(element).position)"
     )
-    if any(position != "relative" for position in search_positions):
+    if any(position == "sticky" for position in search_positions):
         raise AssertionError(
-            f"Reduced-motion search frames are {search_positions}, expected relative"
+            f"Reduced-motion search reintroduced sticky frames: {search_positions}"
         )
-    search_transform = page.locator("[data-search-motion] img").evaluate(
-        "element => getComputedStyle(element).transform"
+    search_animation = page.locator("[data-search-motion]").evaluate(
+        "element => getComputedStyle(element).animationName"
     )
-    if search_transform != "none":
+    if search_animation != "none":
         raise AssertionError(
-            f"Reduced-motion search still has transform: {search_transform}"
+            f"Reduced-motion search still has animation: {search_animation}"
         )
     page.close()
 
@@ -623,7 +570,7 @@ def main() -> None:
                 "/ar",
                 "ar-SA",
                 "rtl",
-                "جمال باختيار مدروس.",
+                "جمالٌ يُروى كتجربة.",
             )
             verify_home_motion(
                 page,
@@ -632,32 +579,29 @@ def main() -> None:
                 "/en",
                 "en-SA",
                 "ltr",
-                "Beauty, considered.",
+                "Beauty, composed with intention.",
             )
 
             for shop_route, lang, direction, heading in (
-                ("/ar/shop", "ar-SA", "rtl", "اختاري طريقك."),
-                ("/en/shop", "en-SA", "ltr", "Choose your path."),
+                ("/ar/shop", "ar-SA", "rtl", "الجمال، باختيار\nأكثر هدوءًا."),
+                ("/en/shop", "en-SA", "ltr", "Beauty, chosen\nwith more clarity."),
             ):
                 page.goto(urljoin(base_url, shop_route), wait_until="networkidle")
-                if page.locator("[data-shop-scene]").count() != 5:
-                    raise AssertionError(f"{shop_route} must render five shop scenes")
+                shop = page.locator("[data-shop-hub]")
+                shop.wait_for(state="visible")
+                if shop.locator(":scope > section").count() != 4:
+                    raise AssertionError(f"{shop_route} must render four shop chapters")
                 if page.locator("html").get_attribute("lang") != lang:
                     raise AssertionError(f"{shop_route} has an incorrect html lang")
                 if page.locator("html").get_attribute("dir") != direction:
                     raise AssertionError(f"{shop_route} has an incorrect text direction")
-                if heading not in page.locator("h1").inner_text():
+                if page.locator("h1").inner_text().strip() != heading:
                     raise AssertionError(f"{shop_route} has incorrect localized shop copy")
-                frame_position = page.locator("[data-shop-scene] > div").first.evaluate(
-                    "element => getComputedStyle(element).position"
+                sticky_sections = shop.locator(":scope > section").evaluate_all(
+                    "elements => elements.filter(element => getComputedStyle(element).position === 'sticky').length"
                 )
-                expected_position = "relative" if width <= 900 else "sticky"
-                if frame_position != expected_position:
-                    raise AssertionError(
-                        f"{shop_route} frame is {frame_position}, expected {expected_position}"
-                    )
-                if width > 900:
-                    verify_sticky_scene(page, "[data-shop-scene]", 78)
+                if sticky_sections != 0:
+                    raise AssertionError(f"{shop_route} must not trap visitors in sticky scenes")
                 shop_html = page.content()
                 for forbidden_copy in ("BIODERMA", "EUCERIN", "منتجات حقيقية", "منتجات أصلية"):
                     if forbidden_copy in shop_html:
@@ -672,28 +616,46 @@ def main() -> None:
                 ("/en/shop/haircare", "en-SA", "ltr", "Haircare"),
             ):
                 page.goto(urljoin(base_url, category_route), wait_until="networkidle")
-                scenes = page.locator("[data-category-scene]")
-                if scenes.count() != 4:
-                    raise AssertionError(f"{category_route} must render four category scenes")
+                collection = page.locator("[data-collection-grid]")
+                collection.wait_for(state="visible")
+                if page.locator("[data-collection-hero]").count() != 1:
+                    raise AssertionError(f"{category_route} must render one collection Hero")
+                if page.locator("[data-collection-routes]").count() != 1:
+                    raise AssertionError(f"{category_route} must render its discovery routes")
                 if page.locator("html").get_attribute("lang") != lang:
                     raise AssertionError(f"{category_route} has an incorrect html lang")
                 if page.locator("html").get_attribute("dir") != direction:
                     raise AssertionError(f"{category_route} has an incorrect text direction")
                 if page.locator("h1").inner_text().strip() != heading:
                     raise AssertionError(f"{category_route} has incorrect localized copy")
-                frame_position = scenes.first.locator(":scope > div").evaluate(
-                    "element => getComputedStyle(element).position"
+                sticky_sections = collection.locator("section").evaluate_all(
+                    "elements => elements.filter(element => getComputedStyle(element).position === 'sticky').length"
                 )
-                expected_position = "relative" if width <= 900 else "sticky"
-                if frame_position != expected_position:
+                if sticky_sections != 0:
+                    raise AssertionError(f"{category_route} must not trap visitors in sticky scenes")
+                catalog_state = collection.locator("[data-catalog-state]").get_attribute(
+                    "data-catalog-state"
+                )
+                if catalog_state == "available":
+                    if collection.locator("[data-product-card]").count() == 0:
+                        raise AssertionError(
+                            f"{category_route} reports an available catalog without product cards"
+                        )
+                    continue
+                if catalog_state != "gated":
                     raise AssertionError(
-                        f"{category_route} frame is {frame_position}, expected {expected_position}"
+                        f"{category_route} exposes an unknown catalog state: {catalog_state}"
                     )
-                body_text = page.locator("body").inner_text()
-                for forbidden_copy in ("ر.س", "SAR", "عرض المنتج", "View product"):
+                body_text = collection.inner_text()
+                for forbidden_copy in ("ر.س", "SAR"):
                     if forbidden_copy in body_text:
                         raise AssertionError(
                             f"Unapproved commerce copy remains in {category_route}: {forbidden_copy}"
+                        )
+                for forbidden_control in ("عرض المنتج", "View product"):
+                    if page.get_by_text(forbidden_control, exact=True).count() > 0:
+                        raise AssertionError(
+                            f"Unapproved commerce control remains in {category_route}: {forbidden_control}"
                         )
 
             for discovery_route, lang, direction, surface in DISCOVERY_BROWSER_CASES:
@@ -709,9 +671,14 @@ def main() -> None:
 
             for trust_route, lang, direction in TRUST_SUPPORT_CASES:
                 page.goto(urljoin(base_url, trust_route), wait_until="networkidle")
-                scenes = page.locator("[data-trust-scene], [data-trust-detail-scene]")
-                if scenes.count() != 4:
-                    raise AssertionError(f"{trust_route} must render four trust scenes")
+                experience_selector = (
+                    "[data-about-editorial]" if trust_route.endswith("/about")
+                    else "[data-trust-experience]"
+                )
+                experience = page.locator(experience_selector)
+                experience.wait_for(state="visible", timeout=10_000)
+                if experience.count() != 1:
+                    raise AssertionError(f"{trust_route} must render one trust experience")
                 if page.locator("h1").count() != 1:
                     raise AssertionError(f"{trust_route} must expose exactly one h1")
                 if page.locator("html").get_attribute("lang") != lang:
@@ -719,16 +686,11 @@ def main() -> None:
                 if page.locator("html").get_attribute("dir") != direction:
                     raise AssertionError(f"{trust_route} has an incorrect text direction")
                 assert_no_horizontal_overflow(page, trust_route)
-                frame_position = scenes.first.locator(":scope > div").evaluate(
-                    "element => getComputedStyle(element).position"
+                sticky_sections = experience.locator("section").evaluate_all(
+                    "elements => elements.filter(element => getComputedStyle(element).position === 'sticky').length"
                 )
-                expected_position = "relative" if width <= 900 else "sticky"
-                if frame_position != expected_position:
-                    raise AssertionError(
-                        f"{trust_route} frame is {frame_position}, expected {expected_position}"
-                    )
-                if width > 900:
-                    verify_sticky_scene(page, "[data-trust-scene], [data-trust-detail-scene]", 78)
+                if sticky_sections != 0:
+                    raise AssertionError(f"{trust_route} must not trap visitors in sticky scenes")
                 body_text = page.locator("body").inner_text()
                 for forbidden in ("support@example", "+966", "24 hours"):
                     if forbidden in body_text:
@@ -739,11 +701,11 @@ def main() -> None:
 
             for journal_route, lang, direction, surface in JOURNAL_CASES:
                 page.goto(urljoin(base_url, journal_route), wait_until="networkidle")
-                selector = "[data-journal-scene]" if surface == "hub" else "[data-article-scene]"
-                frame_selector = "[data-journal-frame]" if surface == "hub" else "[data-article-frame]"
-                scenes = page.locator(selector)
-                if scenes.count() != 5:
-                    raise AssertionError(f"{journal_route} must render five journal scenes")
+                selector = "[data-journal-experience]" if surface == "hub" else "[data-article-experience]"
+                experience = page.locator(selector)
+                experience.wait_for(state="visible", timeout=10_000)
+                if experience.count() != 1:
+                    raise AssertionError(f"{journal_route} must render one journal experience")
                 if page.locator("h1").count() != 1:
                     raise AssertionError(f"{journal_route} must expose exactly one h1")
                 if page.locator("html").get_attribute("lang") != lang:
@@ -751,16 +713,11 @@ def main() -> None:
                 if page.locator("html").get_attribute("dir") != direction:
                     raise AssertionError(f"{journal_route} has an incorrect text direction")
                 assert_no_horizontal_overflow(page, journal_route)
-                positions = page.locator(frame_selector).evaluate_all(
-                    "elements => elements.map(element => getComputedStyle(element).position)"
+                sticky_sections = experience.locator("section").evaluate_all(
+                    "elements => elements.filter(element => getComputedStyle(element).position === 'sticky').length"
                 )
-                expected_position = "relative" if width <= 900 else "sticky"
-                if any(position != expected_position for position in positions):
-                    raise AssertionError(
-                        f"{journal_route} frame positions are {positions}, expected {expected_position}"
-                    )
-                if width > 900:
-                    verify_sticky_scene(page, selector, 78)
+                if sticky_sections != 0:
+                    raise AssertionError(f"{journal_route} must not trap visitors in sticky scenes")
                 html = page.content()
                 for forbidden in (
                     'href="/products/', '"@type":"Product"', '"@type":"Offer"',

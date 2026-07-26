@@ -319,6 +319,8 @@
 .main { min-height: 60vh; }
 
 .footer {
+  content-visibility: auto;
+  contain-intrinsic-size: 400px;
   display: grid;
   grid-template-columns: 1.5fr repeat(3, 1fr);
   gap: 44px;
@@ -454,8 +456,8 @@
 
 @media (max-width: 360px) {
   .header {
+    --header-pad: 8px;
     gap: 8px;
-    padding-inline: 8px;
   }
   .brand { width: 96px; }
   .headerActions { gap: 4px; }

@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { OpsNav } from "@/components/ops-nav";
 import { useClientPagination, PaginationControls } from "@/components/ops-pagination-controls";
 import { DownloadCsvButton } from "@/components/ops-download-csv";
 import type { MediaAsset } from "@/lib/media-authority";
@@ -283,9 +284,10 @@ export function OpsPromotionsSurface() {
   };
 
   return (
-    <main className={styles.page}>
+    <div className={styles.page}>
+      <OpsNav activeHref="/ops/promotions" />
       <header className={styles.hero}>
-        <div><span>PRICING AUTHORITY</span><h1>العروض والكوبونات</h1><p>قواعد تسعير محكومة، مؤرخة، قابلة للتدقيق، ومربوطة مباشرة بالـ Checkout.</p></div>
+        <div><p>PRICING AUTHORITY</p><h1>العروض والكوبونات</h1><p>قواعد تسعير محكومة، مؤرخة، قابلة للتدقيق، ومربوطة مباشرة بالـ Checkout.</p></div>
         <div className={styles.metrics}><strong>{promotions.length}</strong><span>إجمالي السجلات</span><strong>{activeCount}</strong><span>نشطة</span></div>
       </header>
 
@@ -393,6 +395,6 @@ export function OpsPromotionsSurface() {
           <p className={styles.status} role="status">{status}</p>
         </form>
       </div>
-    </main>
+    </div>
   );
 }

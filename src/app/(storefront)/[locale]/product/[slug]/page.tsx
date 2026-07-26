@@ -60,10 +60,13 @@ export default async function LocalizedProductPage({ params }: PageProps) {
   if (!isLocale(candidate)) notFound();
   const product = getProduct(candidate, slug);
   if (!product) notFound();
+  const catalogProducts = getPublicCatalogSnapshot(candidate).products;
+  const relatedProducts = product.merchandising.relatedSlugs
+    .map((relatedSlug) => catalogProducts.find((candidateProduct) => candidateProduct.slug === relatedSlug))
+    .filter((candidateProduct): candidateProduct is NonNullable<typeof candidateProduct> => Boolean(candidateProduct))
+    .slice(0, 4);
   const path = `/${candidate}/product/${product.slug}`;
 
-  // Home › Collection › Product — the reference wayfinding. The collection hop
-  // links to its /shop/<slug> page when that page exists, otherwise to /shop.
   const editorial = getEffectiveSiteContent().editorial;
   const shared = editorial.categorySharedCopy[candidate];
   const collectionSlug = product.collection;
@@ -78,47 +81,58 @@ export default async function LocalizedProductPage({ params }: PageProps) {
     { label: collectionLabel, href: collectionHref },
     { label: product.name },
   ];
-  const breadcrumbData = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: breadcrumbItems.map((item, index) => ({
-      "@type": "ListItem",
-      position: index + 1,
-      name: item.label,
-      ...(item.href ? { item: absoluteUrl(item.href) } : {}),
-    })),
-  };
   const structuredData = {
     "@context": "https://schema.org",
-    "@type": "Product",
-    name: product.name,
-    description: product.subtitle,
-    image: product.media.map((media) => absoluteUrl(media.url)),
-    brand: { "@type": "Brand", name: product.brand },
-    category: product.collection,
-    url: absoluteUrl(path),
-    inLanguage: localeConfig[candidate].htmlLang,
-    offers: product.variants.map((variant) => ({
-      "@type": "Offer",
-      sku: variant.sku,
-      priceCurrency: "SAR",
-      price: (variant.grossHalalas / 100).toFixed(2),
-      availability: `https://schema.org/${variant.availability}`,
-      url: absoluteUrl(path),
-      itemCondition: "https://schema.org/NewCondition",
-    })),
+    "@graph": [
+      {
+        "@type": "Product",
+        name: product.name,
+        description: product.subtitle,
+        image: product.media.map((media) => absoluteUrl(media.url)),
+        sku: product.variants[0]?.sku,
+        brand: { "@type": "Brand", name: product.brand },
+        category: product.collection,
+        url: absoluteUrl(path),
+        inLanguage: localeConfig[candidate].htmlLang,
+        offers: product.variants.map((variant) => ({
+          "@type": "Offer",
+          sku: variant.sku,
+          priceCurrency: "SAR",
+          price: (variant.grossHalalas / 100).toFixed(2),
+          availability: `https://schema.org/${variant.availability}`,
+          url: absoluteUrl(path),
+          itemCondition: "https://schema.org/NewCondition",
+        })),
+      },
+      ...(product.questions.length > 0
+        ? [
+            {
+              "@type": "FAQPage",
+              mainEntity: product.questions.map((q) => ({
+                "@type": "Question",
+                name: q.question,
+                acceptedAnswer: { "@type": "Answer", text: q.answer },
+              })),
+            },
+          ]
+        : []),
+    ],
   };
 
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbData) }} />
       <StorefrontShell
         activeHref={`/shop/${product.collection}`}
         locale={candidate}
         languageHref={`/${candidate === "ar" ? "en" : "ar"}/product/${product.slug}`}
       >
-        <CinematicProductExperience product={product} locale={candidate} breadcrumb={breadcrumbItems} />
+        <CinematicProductExperience
+          product={product}
+          relatedProducts={relatedProducts}
+          locale={candidate}
+          breadcrumb={breadcrumbItems}
+        />
       </StorefrontShell>
     </>
   );

@@ -23,7 +23,13 @@ export type AnalyticsEventName =
   | "ops_release_decision_submit"
   | "search_submit"
   | "search_result_click"
-  | "track_order_lookup";
+  | "track_order_lookup"
+  | "ritual_start"
+  | "ritual_step"
+  | "ritual_complete"
+  | "wishlist_add"
+  | "wishlist_remove"
+  | "wishlist_view";
 
 export type AnalyticsEventValue = string | number | boolean;
 
@@ -220,6 +226,18 @@ export function getPageType(pathname: string) {
 
   if (normalizedPathname === "/routines") {
     return "routine_index";
+  }
+
+  if (normalizedPathname === "/rituals/builder") {
+    return "ritual_builder";
+  }
+
+  if (normalizedPathname === "/rituals") {
+    return "ritual_builder_redirect";
+  }
+
+  if (normalizedPathname === "/wishlist") {
+    return "wishlist";
   }
 
   if (normalizedPathname === "/journal") {

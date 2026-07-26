@@ -100,8 +100,8 @@ async function runCase({ name, port, release, catalog, discovery, editorial, leg
     );
     assert.equal(
       health.publicCommerceConfigured,
-      release && catalog && legal && commerce && auth,
-      `${name}: configured commerce prerequisites`,
+      release && catalog && legal && commerce,
+      `${name}: configured guest-commerce prerequisites`,
     );
     assert.equal(health.publicCommerceAvailable, false, `${name}: evidence-backed commerce readiness`);
 
@@ -256,4 +256,4 @@ await runCase({
   auth: true,
 });
 
-console.log("Production release, catalog, commerce, customer auth, and indexing fences passed.");
+console.log("Production release, catalog, guest commerce, optional customer auth, and indexing fences passed.");

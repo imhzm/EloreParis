@@ -121,7 +121,7 @@ try {
   const unsubscribeLink = lifecycle.createLifecycleUnsubscribeLink({
     unsubscribeToken: newsletter.unsubscribeToken,
     locale: "ar",
-    baseUrl: "http://localhost:3056/path-that-must-not-survive?token=unsafe",
+    baseUrl: `http://localhost:${process.env.TEST_PORT || "3056"}/path-that-must-not-survive?token=unsafe`,
   });
   const unsubscribeUrl = new URL(unsubscribeLink);
   assert.equal(unsubscribeUrl.pathname, "/ar/unsubscribe");

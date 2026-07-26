@@ -7,6 +7,7 @@ import { getOrderFulfillmentPlan } from "@/lib/fulfillment";
 import { fetchOpsOrdersFromAuthority } from "@/lib/order-authority-client";
 import { useClientPagination, PaginationControls } from "@/components/ops-pagination-controls";
 import { DownloadCsvButton } from "@/components/ops-download-csv";
+import { OpsLastUpdated } from "@/components/ops-last-updated";
 import { type StoredOrder } from "@/lib/orders";
 import styles from "./order-flow.module.css";
 
@@ -108,12 +109,14 @@ export function OpsFulfillmentSurface() {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<FulfillmentFilter>("all");
   const [error, setError] = useState<string | null>(null);
+  const [lastFetched, setLastFetched] = useState<Date | null>(null);
 
   useEffect(() => {
     void fetchOpsOrdersFromAuthority()
       .then((nextOrders) => {
         setOrders(nextOrders);
         setError(null);
+        setLastFetched(new Date());
       })
       .catch((loadError: unknown) => {
         setOrders([]);
@@ -270,6 +273,7 @@ export function OpsFulfillmentSurface() {
             راجعي أهلية الدفع عند الاستلام، الشحنات المنقسمة، الناقل المقترح،
             والحالات التي تحتاج مراجعة يدوية قبل بدء التنفيذ.
           </p>
+          <OpsLastUpdated lastFetched={lastFetched} onRefresh={() => { setIsLoading(true); void fetchOpsOrdersFromAuthority().then((nextOrders) => { setOrders(nextOrders); setError(null); setLastFetched(new Date()); }).catch((loadError: unknown) => { setOrders([]); setError(loadError instanceof Error ? loadError.message : "تعذر التحديث."); }).finally(() => setIsLoading(false)); }} isLoading={isLoading} />
         </div>
 
         <div className={styles.heroAside}>

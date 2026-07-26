@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { TrackedLink } from "@/components/tracked-link";
+import { WishlistButton } from "@/components/wishlist-button";
 import type { Locale } from "@/lib/i18n";
 import type { PublicCatalogProduct } from "@/lib/public-catalog-types";
 import styles from "./product-card.module.css";
@@ -51,6 +52,13 @@ export function ProductCard({ product, locale, onQuickAdd, priority }: ProductCa
           <Image src={image.url} alt="" fill sizes="(max-width: 600px) 50vw, (max-width: 1023px) 33vw, 22vw" priority={priority} />
         ) : null}
       </div>
+      <WishlistButton
+        productSlug={product.slug}
+        productName={product.name}
+        locale={locale}
+        surface="product_card"
+        className={styles.wishlistButton}
+      />
 
       <div className={styles.body}>
         <p className={styles.brand}>{product.brand}</p>

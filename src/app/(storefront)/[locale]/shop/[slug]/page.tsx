@@ -62,9 +62,9 @@ export default async function LocalizedCategoryPage({ params }: PageProps) {
   const { copy, shared } = getEffectiveCategoryContent(candidate, slug);
   const path = `/${candidate}/shop/${slug}`;
   // The reference collection page is a product grid. Pull the approved catalogue
-  // and keep the items whose collection matches this category. Perfumes is an
-  // editorial-only category (no CatalogCollection), so it resolves to an empty
-  // grid — the component renders an honest awaiting-catalogue state.
+  // and keep the items whose collection matches this category. Every public
+  // category, including perfumes, has a matching CatalogCollection so approved
+  // merchandise cannot disappear between import and the storefront.
   const products = getPublicCatalogSnapshot(candidate).products.filter(
     (product) => product.collection === slug,
   );

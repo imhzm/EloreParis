@@ -10,6 +10,7 @@
     "build": "next build && node scripts/prepare-standalone.mjs",
     "start": "node scripts/start-standalone.mjs",
     "lint": "eslint .",
+    "test:all": "node scripts/run-all-checks.mjs",
     "test:home-3d": "python scripts/home-3d-regression.py",
     "test:category-cinematic": "python scripts/category-cinematic-regression.py",
     "test:full-browser": "python scripts/full-reference-browser-regression.py",
@@ -38,7 +39,15 @@
     "test:font-stack": "node scripts/font-stack-check.mjs",
     "test:scroll-reveal": "node scripts/scroll-reveal-check.mjs",
     "test:web-vitals": "node scripts/web-vitals-source-check.mjs",
+    "test:ritual-builder": "node scripts/ritual-builder-source-check.mjs",
+    "test:ritual-builder-browser": "python scripts/ritual-builder-browser-check.py",
+    "test:wishlist": "node scripts/wishlist-source-check.mjs",
+    "test:wishlist-browser": "python scripts/wishlist-browser-check.py",
     "test:social-card": "node scripts/social-card-check.mjs",
+    "test:browser-regression": "python scripts/browser-regression.py",
+    "test:ops-dashboard": "python scripts/ops-dashboard-regression.py",
+    "test:site-content-browser": "python scripts/site-content-browser-check.py",
+    "test:release-smoke": "node scripts/release-smoke-check.mjs",
     "dev:seed-demo": "node scripts/dev-seed-demo-catalog.mjs"
   },
   "dependencies": {

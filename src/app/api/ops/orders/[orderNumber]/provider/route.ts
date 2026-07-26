@@ -9,6 +9,10 @@ import {
   updateAuthorityOrderProviderBinding,
 } from "@/lib/order-authority";
 import { ProviderGatewayError } from "@/lib/provider-gateway";
+import {
+  parseProviderPaymentAmountHalalas,
+  parseProviderPaymentCurrency,
+} from "@/lib/provider-event-authority";
 import type { OrderProviderBindingAction } from "@/lib/orders";
 import {
   RequestHardeningError,
@@ -44,6 +48,8 @@ export async function PATCH(
       action?: unknown;
       paymentReferenceId?: unknown;
       settlementReference?: unknown;
+      amount?: unknown;
+      currency?: unknown;
       eventId?: unknown;
       shippingBookingReference?: unknown;
       shippingTrackingNumber?: unknown;
@@ -71,6 +77,14 @@ export async function PATCH(
               settlementReference:
                 typeof body.settlementReference === "string"
                   ? body.settlementReference.trim()
+                  : undefined,
+              paymentAmountHalalas:
+                body.action === "payment_confirmed"
+                  ? parseProviderPaymentAmountHalalas(body.amount) ?? undefined
+                  : undefined,
+              paymentCurrency:
+                body.action === "payment_confirmed"
+                  ? parseProviderPaymentCurrency(body.currency) ?? undefined
                   : undefined,
               paymentEventId:
                 body.action === "payment_confirmed"

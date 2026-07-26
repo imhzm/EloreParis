@@ -33,6 +33,20 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
   }));
 
+  const ritualBuilderPages = (["ar", "en"] as const).map((locale) => ({
+    url: `${siteUrl}/${locale}/rituals/builder`,
+    lastModified: CONTENT_REVISION_DATE,
+    changeFrequency: "monthly" as const,
+    priority: 0.8,
+    alternates: {
+      languages: {
+        "ar-SA": `${siteUrl}/ar/rituals/builder`,
+        "en-SA": `${siteUrl}/en/rituals/builder`,
+        "x-default": `${siteUrl}/ar/rituals/builder`,
+      },
+    },
+  }));
+
   const collectionPages = categorySlugs.flatMap((slug) => ["ar", "en"].map((locale) => ({
     url: `${siteUrl}/${locale}/shop/${slug}`,
     lastModified: CONTENT_REVISION_DATE,
@@ -121,6 +135,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   return [
     ...localizedCorePages,
+    ...ritualBuilderPages,
     ...collectionPages,
     ...discoveryPages,
     ...productPages,

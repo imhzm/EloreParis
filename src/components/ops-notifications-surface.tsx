@@ -8,6 +8,7 @@ import { TrackedLink } from "@/components/tracked-link";
 import { getPageType, trackAnalyticsEvent } from "@/lib/analytics";
 import { useClientPagination, PaginationControls } from "@/components/ops-pagination-controls";
 import { DownloadCsvButton } from "@/components/ops-download-csv";
+import { OpsLastUpdated } from "@/components/ops-last-updated";
 import {
   fetchOpsNotifications,
   updateOpsNotificationStatus,
@@ -79,6 +80,7 @@ export function OpsNotificationsSurface() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [lastFetched, setLastFetched] = useState<Date | null>(null);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<NotificationFilter>("all");
   const [pendingNotificationId, setPendingNotificationId] = useState<string | null>(null);
@@ -90,6 +92,7 @@ export function OpsNotificationsSurface() {
       .then(({ notifications: nextNotifications }) => {
         setNotifications(nextNotifications);
         setError(null);
+        setLastFetched(new Date());
       })
       .catch((loadError: unknown) => {
         setNotifications([]);
@@ -298,10 +301,11 @@ export function OpsNotificationsSurface() {
             <p className={styles.eyebrow}>نطاق التشغيل</p>
             <h2>سجل مركزي لحالة كل رسالة</h2>
             <p>
-              يعرض هذا السطح حالة الرسائل داخل النظام. الربط مع مزود الإرسال
-              الخارجي يظل واضحًا ضمن حدود الجاهزية الحالية.
-            </p>
-          </div>
+            يعرض هذا السطح حالة الرسائل داخل النظام. الربط مع مزود الإرسال
+            الخارجي يظل واضحًا ضمن حدود الجاهزية الحالية.
+          </p>
+          <OpsLastUpdated lastFetched={lastFetched} onRefresh={() => { setIsLoading(true); void fetchOpsNotifications().then(({ notifications: nextNotifications }) => { setNotifications(nextNotifications); setError(null); setLastFetched(new Date()); }).catch((loadError: unknown) => { setNotifications([]); setError(loadError instanceof Error ? loadError.message : "تعذر التحديث."); }).finally(() => setIsLoading(false)); }} isLoading={isLoading} />
+        </div>
         </div>
       </section>
 

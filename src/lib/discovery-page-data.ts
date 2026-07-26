@@ -91,5 +91,27 @@ export function buildDiscoverySchema(locale: Locale, kind: DiscoveryKind, record
       itemListElement: records.map((item, index) => ({ "@type": "ListItem", position: index + 1, name: item.title, url: absoluteUrl(`${basePath}/${item.slug}`) })),
     });
   }
+  if (record && kind === "routine" && record.chapters.length > 0) {
+    graph.push({
+      "@type": "HowTo",
+      name: record.title,
+      description: record.summary,
+      step: record.chapters.map(([title, body]) => ({
+        "@type": "HowToStep",
+        name: title,
+        text: body,
+      })),
+    });
+  }
+  if (record && record.faqs.length > 0) {
+    graph.push({
+      "@type": "FAQPage",
+      mainEntity: record.faqs.map(([question, answer]) => ({
+        "@type": "Question",
+        name: question,
+        acceptedAnswer: { "@type": "Answer", text: answer },
+      })),
+    });
+  }
   return { "@context": "https://schema.org", "@graph": graph };
 }

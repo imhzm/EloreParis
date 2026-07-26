@@ -13,12 +13,33 @@ import {
   verifyOpsSessionToken,
 } from "@/lib/ops-access";
 
+function applySecurityHeaders(response: NextResponse) {
+  const securityHeaders: Record<string, string> = {
+    "Referrer-Policy": "strict-origin-when-cross-origin",
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+    "Permissions-Policy":
+      "camera=(), microphone=(), geolocation=(), payment=(), usb=(), browsing-topics=()",
+  };
+
+  for (const [key, value] of Object.entries(securityHeaders)) {
+    response.headers.set(key, value);
+  }
+
+  return response;
+}
+
 function applySearchCrawlerDirective(response: NextResponse) {
   const directive = getSearchCrawlerDirectiveHeader();
   if (directive) {
     response.headers.set("X-Robots-Tag", directive);
   }
   return response;
+}
+
+function applyAllHeaders(response: NextResponse) {
+  return applySearchCrawlerDirective(applySecurityHeaders(response));
 }
 
 async function protectOperations(request: NextRequest) {
@@ -56,47 +77,47 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (pathname === "/ops" || pathname.startsWith("/ops/")) {
-    return applySearchCrawlerDirective(await protectOperations(request));
+    return applyAllHeaders(await protectOperations(request));
   }
 
   if (pathname === "/") {
-    return applySearchCrawlerDirective(NextResponse.redirect(new URL("/ar", request.url), 308));
+    return applyAllHeaders(NextResponse.redirect(new URL("/ar", request.url), 308));
   }
 
   if (pathname === "/shop") {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/ar/shop";
-    return applySearchCrawlerDirective(NextResponse.redirect(redirectUrl, 308));
+    return applyAllHeaders(NextResponse.redirect(redirectUrl, 308));
   }
 
   if (isLocalizedShopCollectionPath(pathname)) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = `/ar${pathname}`;
-    return applySearchCrawlerDirective(NextResponse.redirect(redirectUrl, 308));
+    return applyAllHeaders(NextResponse.redirect(redirectUrl, 308));
   }
 
   if (isLocalizedDiscoveryPath(pathname)) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = `/ar${pathname}`;
-    return applySearchCrawlerDirective(NextResponse.redirect(redirectUrl, 308));
+    return applyAllHeaders(NextResponse.redirect(redirectUrl, 308));
   }
 
   if (isLocalizedTrustSupportPath(pathname)) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = `/ar${pathname}`;
-    return applySearchCrawlerDirective(NextResponse.redirect(redirectUrl, 308));
+    return applyAllHeaders(NextResponse.redirect(redirectUrl, 308));
   }
 
   if (isLocalizedJournalPath(pathname)) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = `/ar${pathname}`;
-    return applySearchCrawlerDirective(NextResponse.redirect(redirectUrl, 308));
+    return applyAllHeaders(NextResponse.redirect(redirectUrl, 308));
   }
 
   if (pathname === "/search") {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/ar/search";
-    return applySearchCrawlerDirective(NextResponse.redirect(redirectUrl, 308));
+    return applyAllHeaders(NextResponse.redirect(redirectUrl, 308));
   }
 
   if (pathname === "/checkout/success") {
@@ -105,13 +126,13 @@ export async function proxy(request: NextRequest) {
     const response = NextResponse.redirect(redirectUrl, 307);
     response.headers.set("Cache-Control", "no-store");
     response.headers.set("Referrer-Policy", "no-referrer");
-    return applySearchCrawlerDirective(response);
+    return applyAllHeaders(response);
   }
 
   if (isLocalizedCommercePath(pathname)) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = `/ar${pathname}`;
-    return applySearchCrawlerDirective(NextResponse.redirect(redirectUrl, 308));
+    return applyAllHeaders(NextResponse.redirect(redirectUrl, 308));
   }
 
   if (pathname.startsWith("/journal/")) {
@@ -120,7 +141,7 @@ export async function proxy(request: NextRequest) {
     if (destination) {
       const redirectUrl = request.nextUrl.clone();
       redirectUrl.pathname = `/ar${destination}`;
-      return applySearchCrawlerDirective(NextResponse.redirect(redirectUrl, 308));
+      return applyAllHeaders(NextResponse.redirect(redirectUrl, 308));
     }
 
     if (isRetiredLegacyJournalSlug(slug)) {
@@ -134,7 +155,7 @@ export async function proxy(request: NextRequest) {
   if (pathname.startsWith("/products/") && !isPublicCatalogApproved()) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/ar/shop";
-    return applySearchCrawlerDirective(NextResponse.redirect(redirectUrl, 308));
+    return applyAllHeaders(NextResponse.redirect(redirectUrl, 308));
   }
 
   // The canonical product route needs the same guard the legacy shape above has
@@ -158,10 +179,10 @@ export async function proxy(request: NextRequest) {
   ) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = `/${localeSegment}/shop`;
-    return applySearchCrawlerDirective(NextResponse.redirect(redirectUrl, 307));
+    return applyAllHeaders(NextResponse.redirect(redirectUrl, 307));
   }
 
-  return applySearchCrawlerDirective(NextResponse.next());
+  return applyAllHeaders(NextResponse.next());
 }
 
 export const config = {

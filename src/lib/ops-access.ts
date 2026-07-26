@@ -7,7 +7,7 @@ import type {
   OpsSessionSummary,
 } from "@/lib/ops-types";
 
-export const OPS_SESSION_COOKIE = "cozmateks-ops-session";
+export const OPS_SESSION_COOKIE = "elore-ops-session";
 export const OPS_SESSION_MAX_AGE_SECONDS = 60 * 60 * 12;
 
 export type OpsUserConfig = {
@@ -63,6 +63,7 @@ const rolePathMap: Record<OpsRole, string[]> = {
     "/ops/settings",
     "/ops/fulfillment",
     "/ops/catalog",
+    "/ops/media",
     "/ops/promotions",
     "/ops/content",
     "/ops/release",
@@ -400,7 +401,10 @@ function normalizeOpsAccessPath(pathname: string) {
     return "/ops/promotions";
   }
 
-  if (pathname.startsWith("/api/ops/session")) {
+  if (
+    pathname.startsWith("/api/ops/session") ||
+    pathname.startsWith("/api/ops/counts")
+  ) {
     return "/ops-session";
   }
 

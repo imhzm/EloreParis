@@ -2,6 +2,7 @@ import "server-only";
 
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
+import type { DatabaseSync } from "node:sqlite";
 import type { NextRequest } from "next/server";
 import {
   getAuthorityDatabase,
@@ -125,6 +126,8 @@ type OrderProviderBindingMetadata = {
   paymentUrl?: string;
   settlementReference?: string;
   paymentEventId?: string;
+  paymentAmountHalalas?: number;
+  paymentCurrency?: string;
   shippingBookingReference?: string;
   shippingTrackingNumber?: string;
   shippingEventId?: string;
@@ -234,6 +237,17 @@ function buildCustomerAccessKey(order: StoredOrder) {
 function normalizeProviderReference(value: string | undefined) {
   const normalizedValue = value?.trim();
   return normalizedValue ? normalizedValue : null;
+}
+
+function getOrderTotalGrossHalalas(order: StoredOrder) {
+  if (order.pricingSnapshot) {
+    return order.pricingSnapshot.totalGrossHalalas;
+  }
+
+  const legacyTotalHalalas = Math.round(order.totalEstimate * 100);
+  return Number.isSafeInteger(legacyTotalHalalas) && legacyTotalHalalas > 0
+    ? legacyTotalHalalas
+    : null;
 }
 
 function normalizeProviderUrl(value: string | undefined) {
@@ -588,6 +602,7 @@ async function createRecentOrderToken(orderNumber: string) {
 }
 
 function buildQuotedStoredOrder(
+  database: DatabaseSync,
   quote: CheckoutQuote,
   checkout: AuthorityCheckoutSubmissionInput,
 ) {
@@ -683,24 +698,74 @@ function buildQuotedStoredOrder(
       addressLine: checkout.addressLine.trim(),
       notes: checkout.notes.trim(),
     },
-    lines: quote.lines.map((line) => ({
-      key: `${line.productSlug}:${line.sku}`,
-      productSlug: line.productSlug,
-      productName: line.nameAr,
-      productSubtitle: line.nameEn,
-      sku: line.sku,
-      variantLabel: line.labelAr,
-      size: line.size,
-      quantity: line.quantity,
-      unitPrice: line.unitGrossHalalas / 100,
-      lineTotal: line.lineGrossHalalas / 100,
-      shippingNote: quote.shipping.estimatedDeliveryAr,
-      catalogTruth: buildStoredOrderLineCatalogTruth({
+    lines: quote.lines.map((line) => {
+      const product = catalog.payload.products.find(
+        (candidate) => candidate.slug === line.productSlug,
+      );
+      const variant = product?.variants.find(
+        (candidate) => candidate.sku === line.sku,
+      );
+      if (!variant) {
+        throw new OrderAuthorityError(
+          "A quoted SKU is no longer present in the active catalog authority.",
+          409,
+          "quote_stale",
+        );
+      }
+      const inventory = database.prepare(`
+        SELECT balance.on_hand, balance.reserved, balance.safety_stock
+        FROM authority_inventory_balances AS balance
+        INNER JOIN authority_inventory_locations AS location
+          ON location.id = balance.location_id
+        WHERE balance.import_id = ? AND balance.sku = ? AND location.code = ?
+        LIMIT 1
+      `).get(
+        catalog.importId,
+        line.sku,
+        catalog.payload.inventoryLocation.code,
+      ) as
+        | { on_hand: number; reserved: number; safety_stock: number }
+        | undefined;
+      if (!inventory) {
+        throw new OrderAuthorityError(
+          "A quoted SKU no longer has an active catalog inventory balance.",
+          409,
+          "quote_stale",
+        );
+      }
+      const availability =
+        inventory.on_hand - inventory.reserved - inventory.safety_stock >=
+        line.quantity
+          ? "InStock"
+          : "OutOfStock";
+
+      return {
+        key: `${line.productSlug}:${line.sku}`,
         productSlug: line.productSlug,
+        productName: line.nameAr,
+        productSubtitle: line.nameEn,
         sku: line.sku,
-        availability: "InStock",
-      }),
-    })),
+        variantLabel: line.labelAr,
+        size: line.size,
+        quantity: line.quantity,
+        unitPrice: line.unitGrossHalalas / 100,
+        lineTotal: line.lineGrossHalalas / 100,
+        shippingNote: quote.shipping.estimatedDeliveryAr,
+        catalogTruth: buildStoredOrderLineCatalogTruth({
+          productSlug: line.productSlug,
+          sku: line.sku,
+          availability,
+          catalogAuthority: {
+            catalogVersion: catalog.importId,
+            inventoryLocationCode: catalog.payload.inventoryLocation.code,
+            inventoryLocationName: catalog.payload.inventoryLocation.name,
+            stockOnHand: inventory.on_hand,
+            lowStockThreshold: inventory.safety_stock,
+            codEligible: variant.codEligible,
+          },
+        }),
+      };
+    }),
     providerBindings,
     pricingSnapshot: {
       quoteId: quote.quoteId,
@@ -826,7 +891,7 @@ export async function createAuthorityOrderFromQuote({
       );
     }
 
-    const order = buildQuotedStoredOrder(quoteRecord.quote, checkout);
+    const order = buildQuotedStoredOrder(database, quoteRecord.quote, checkout);
     const reservationExpiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
     const reservationTargets: Array<{
       sku: string;
@@ -1712,6 +1777,12 @@ export async function updateAuthorityOrderProviderBinding(
   const paymentUrl = normalizeProviderUrl(metadata.paymentUrl);
   const settlementReference = normalizeProviderReference(metadata.settlementReference);
   const paymentEventId = normalizeProviderReference(metadata.paymentEventId);
+  const paymentAmountHalalas =
+    Number.isSafeInteger(metadata.paymentAmountHalalas) &&
+    Number(metadata.paymentAmountHalalas) > 0
+      ? Number(metadata.paymentAmountHalalas)
+      : null;
+  const paymentCurrency = metadata.paymentCurrency?.trim().toUpperCase() ?? null;
   const shippingBookingReference = normalizeProviderReference(
     metadata.shippingBookingReference,
   );
@@ -1799,14 +1870,58 @@ export async function updateAuthorityOrderProviderBinding(
         );
       }
 
+      const expectedAmountHalalas = getOrderTotalGrossHalalas(order);
+      const expectedCurrency = order.pricingSnapshot?.currency ?? "SAR";
+      if (paymentAmountHalalas === null || !paymentCurrency) {
+        throw new OrderAuthorityError(
+          "Payment confirmation requires the settled amount and currency.",
+          400,
+          "payment_settlement_value_missing",
+        );
+      }
+      if (expectedAmountHalalas === null) {
+        throw new OrderAuthorityError(
+          "The order does not contain an authoritative total for payment reconciliation.",
+          409,
+          "payment_order_total_unavailable",
+        );
+      }
+      if (paymentAmountHalalas !== expectedAmountHalalas) {
+        throw new OrderAuthorityError(
+          "The settled payment amount does not match the authoritative order total.",
+          409,
+          "payment_amount_mismatch",
+        );
+      }
+      if (paymentCurrency !== expectedCurrency) {
+        throw new OrderAuthorityError(
+          "The settled payment currency does not match the authoritative order currency.",
+          409,
+          "payment_currency_mismatch",
+        );
+      }
+      if (!order.providerBindings.payment.referenceId || !paymentReferenceId) {
+        throw new OrderAuthorityError(
+          "Payment confirmation requires an existing provider payment binding.",
+          409,
+          "payment_binding_missing",
+        );
+      }
+
       if (
-        paymentReferenceId &&
-        order.providerBindings.payment.referenceId &&
         paymentReferenceId !== order.providerBindings.payment.referenceId
       ) {
         throw new OrderAuthorityError(
           "مرجع الدفع القادم من callback لا يطابق payment binding الحالية لهذا الطلب.",
           409,
+          "payment_reference_mismatch",
+        );
+      }
+      if (!settlementReference || !paymentEventId) {
+        throw new OrderAuthorityError(
+          "Payment confirmation requires settlement and provider event references.",
+          400,
+          "payment_settlement_reference_missing",
         );
       }
 
@@ -1819,15 +1934,11 @@ export async function updateAuthorityOrderProviderBinding(
             ...order.providerBindings.payment,
             state: "confirmed",
             providerLabel: paymentProvider.label,
-            referenceId:
-              order.providerBindings.payment.referenceId ??
-              paymentReferenceId ??
-              buildProviderReference("PAY"),
+            referenceId: order.providerBindings.payment.referenceId,
             paymentUrl: order.providerBindings.payment.paymentUrl,
             settlementReference:
               order.providerBindings.payment.settlementReference ??
-              settlementReference ??
-              buildProviderReference("SET"),
+              settlementReference,
             settlementEventId:
               paymentEventId ?? order.providerBindings.payment.settlementEventId,
             updatedAt: now,

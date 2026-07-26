@@ -1,14 +1,5 @@
 import type { ResolvedCartLine } from "@/lib/cart";
 import type { Locale } from "@/lib/i18n";
-import { getProductBySlug } from "@/lib/site-content";
-import {
-  getSupplierRecord,
-  getVariantOperations,
-  type ShippingClass,
-  type SupplierAuthorityRoute,
-  type SupplierId,
-  type SupplierRecord,
-} from "@/lib/variant-operations";
 
 export type ShippingMethodId = "standard" | "express";
 export type PaymentMethodId = "payment_link" | "cash_on_delivery";
@@ -64,15 +55,24 @@ export type CheckoutCustomerDetails = {
 export type StoredOrderLineCatalogTruth = {
   availability: "InStock" | "PreOrder" | "OutOfStock";
   mappingStatus: "mapped" | "pending";
-  supplierId: SupplierId | null;
+  supplierId: "atelier-core" | "desert-distribution" | null;
   supplierName: string;
-  fulfillmentModel: SupplierRecord["fulfillmentModel"] | "unmapped";
+  fulfillmentModel: "direct" | "dropship" | "hybrid" | "unmapped";
   truthSourceLabel: string;
   continuityOwnerLabel: string;
-  continuityRoute: SupplierAuthorityRoute;
+  continuityRoute: "/ops/catalog" | "/ops/orders" | "/ops/fulfillment";
   continuityRule: string;
   supplierSku: string | null;
-  shippingClass: ShippingClass | null;
+  shippingClass: "serum-light" | "foundation-standard" | null;
+  stockOnHand: number;
+  lowStockThreshold: number;
+  codEligible: boolean;
+};
+
+export type StoredOrderLineCatalogAuthoritySnapshot = {
+  catalogVersion: string;
+  inventoryLocationCode: string;
+  inventoryLocationName: string;
   stockOnHand: number;
   lowStockThreshold: number;
   codEligible: boolean;
@@ -295,11 +295,15 @@ function isOrderStatus(value: unknown): value is OrderStatus {
   return typeof value === "string" && value in statusDirectory;
 }
 
-function isSupplierId(value: unknown): value is SupplierId {
+function isSupplierId(
+  value: unknown,
+): value is NonNullable<StoredOrderLineCatalogTruth["supplierId"]> {
   return value === "atelier-core" || value === "desert-distribution";
 }
 
-function isSupplierAuthorityRoute(value: unknown): value is SupplierAuthorityRoute {
+function isSupplierAuthorityRoute(
+  value: unknown,
+): value is StoredOrderLineCatalogTruth["continuityRoute"] {
   return (
     value === "/ops/catalog" ||
     value === "/ops/orders" ||
@@ -307,7 +311,9 @@ function isSupplierAuthorityRoute(value: unknown): value is SupplierAuthorityRou
   );
 }
 
-function isShippingClass(value: unknown): value is ShippingClass {
+function isShippingClass(
+  value: unknown,
+): value is NonNullable<StoredOrderLineCatalogTruth["shippingClass"]> {
   return value === "serum-light" || value === "foundation-standard";
 }
 
@@ -332,21 +338,13 @@ function normalizeTimestamp(value: unknown, fallbackValue: string) {
   return typeof value === "string" && value.trim() ? value : fallbackValue;
 }
 
-function getCurrentCatalogAvailability(productSlug: string, sku: string) {
-  return (
-    getProductBySlug(productSlug)?.variants.find((variant) => variant.sku === sku)
-      ?.availability ?? "PreOrder"
-  );
-}
-
 export function buildStoredOrderLineCatalogTruth(input: {
   productSlug: string;
   sku: string;
   availability: StoredOrderLineCatalogTruth["availability"];
+  catalogAuthority?: StoredOrderLineCatalogAuthoritySnapshot;
 }): StoredOrderLineCatalogTruth {
-  const variantOperations = getVariantOperations(input.productSlug, input.sku);
-
-  if (!variantOperations) {
+  if (!input.catalogAuthority) {
     return {
       availability: input.availability,
       mappingStatus: "pending",
@@ -366,23 +364,24 @@ export function buildStoredOrderLineCatalogTruth(input: {
     };
   }
 
-  const supplier = getSupplierRecord(variantOperations.supplierId);
+  const authority = input.catalogAuthority;
 
   return {
     availability: input.availability,
     mappingStatus: "mapped",
-    supplierId: supplier.id,
-    supplierName: supplier.name,
-    fulfillmentModel: supplier.fulfillmentModel,
-    truthSourceLabel: supplier.truthSourceLabel,
-    continuityOwnerLabel: supplier.defaultAuthorityOwnerLabel,
-    continuityRoute: supplier.defaultAuthorityRoute,
-    continuityRule: supplier.continuityRule,
-    supplierSku: variantOperations.supplierSku,
-    shippingClass: variantOperations.shippingClass,
-    stockOnHand: variantOperations.stockOnHand,
-    lowStockThreshold: variantOperations.lowStockThreshold,
-    codEligible: variantOperations.codEligible,
+    supplierId: null,
+    supplierName: authority.inventoryLocationName,
+    fulfillmentModel: "direct",
+    truthSourceLabel: "Active Catalog Authority",
+    continuityOwnerLabel: authority.inventoryLocationName,
+    continuityRoute: "/ops/catalog",
+    continuityRule:
+      `Use catalog publication ${authority.catalogVersion} and inventory location ${authority.inventoryLocationCode} as the operational source for this SKU.`,
+    supplierSku: null,
+    shippingClass: null,
+    stockOnHand: authority.stockOnHand,
+    lowStockThreshold: authority.lowStockThreshold,
+    codEligible: authority.codEligible,
   };
 }
 
@@ -872,7 +871,11 @@ function normalizeStoredOrder(value: unknown): StoredOrder | null {
         catalogTruth: normalizeStoredOrderLineCatalogTruth(line.catalogTruth, {
           productSlug: line.productSlug,
           sku: line.sku,
-          availability: getCurrentCatalogAvailability(line.productSlug, line.sku),
+          availability:
+            isRecord(line.catalogTruth) &&
+            isCatalogAvailability(line.catalogTruth.availability)
+              ? line.catalogTruth.availability
+              : "PreOrder",
         }),
       } satisfies StoredOrderLine;
     })

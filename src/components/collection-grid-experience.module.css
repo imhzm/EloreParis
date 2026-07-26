@@ -143,6 +143,122 @@
   background: var(--elore-ivory);
 }
 
+.activeFilters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  padding: 0.75rem 1rem 0.35rem;
+  background: var(--elore-ivory);
+}
+
+.activeFilters button {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding-inline: 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--elore-wine) 18%, transparent);
+  border-radius: var(--radius-pill);
+  color: var(--elore-wine);
+  background: var(--elore-warm-white);
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.activeFilters .clearFilters {
+  border-color: transparent;
+  background: transparent;
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+
+.catalogLayout {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.24fr) minmax(0, 1fr);
+  gap: clamp(0.4rem, 0.7vw, 0.7rem);
+  margin-block-start: clamp(0.4rem, 0.7vw, 0.7rem);
+}
+
+.filters {
+  align-self: start;
+  overflow: hidden;
+  border-radius: clamp(1rem, 2vw, 1.8rem);
+  background: var(--elore-ivory);
+}
+
+.filterHeading {
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1rem 1.1rem;
+  border-block-end: 1px solid color-mix(in srgb, var(--elore-wine) 12%, transparent);
+}
+
+.filterHeading h2 {
+  margin: 0;
+  color: var(--elore-wine);
+  font-size: 1rem;
+}
+
+.filterHeading button {
+  border: 0;
+  color: var(--elore-rosewood);
+  background: transparent;
+  font: inherit;
+  font-size: 0.74rem;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.filters fieldset {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 1rem 1.1rem;
+  border: 0;
+  border-block-end: 1px solid color-mix(in srgb, var(--elore-wine) 10%, transparent);
+}
+
+.filters fieldset:last-child {
+  border-block-end: 0;
+}
+
+.filters legend {
+  width: 100%;
+  margin-block-end: 0.2rem;
+  color: var(--elore-wine);
+  font-weight: 700;
+}
+
+.filters label {
+  min-height: 34px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.55rem;
+  color: var(--elore-cocoa);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.filters input {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--elore-burgundy);
+}
+
+.filters small {
+  color: color-mix(in srgb, var(--elore-cocoa) 60%, transparent);
+  font-family: var(--font-body-latin), sans-serif;
+}
+
+.results {
+  min-width: 0;
+}
+
 .resultCount {
   color: var(--elore-cocoa);
   font-size: 0.86rem;
@@ -178,20 +294,24 @@
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: clamp(0.4rem, 0.7vw, 0.7rem);
-  margin-block-start: clamp(0.4rem, 0.7vw, 0.7rem);
+  margin-block-start: 0;
 }
 
 .pagination {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
+  gap: 0.35rem;
   padding: clamp(1.3rem, 2.5vw, 2rem) 1rem 0.8rem;
 }
 
-.moreButton {
-  min-height: 46px;
-  padding-inline: 1.8rem;
+.pagination button {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-grid;
+  place-items: center;
   border: 1px solid color-mix(in srgb, var(--elore-wine) 30%, transparent);
-  border-radius: var(--radius-pill);
+  border-radius: 50%;
   background: transparent;
   color: var(--elore-burgundy);
   font: inherit;
@@ -202,6 +322,24 @@
     background-color var(--motion-control),
     border-color var(--motion-control),
     transform var(--motion-control);
+}
+
+.pagination button[aria-current="page"] {
+  border-color: var(--elore-burgundy);
+  color: var(--elore-warm-white);
+  background: var(--elore-burgundy);
+}
+
+.noMatches {
+  min-height: 260px;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: 2rem;
+  border-radius: clamp(1rem, 2vw, 1.8rem);
+  color: var(--elore-cocoa);
+  text-align: center;
+  background: var(--elore-ivory);
 }
 
 .empty {
@@ -398,7 +536,10 @@
   color: color-mix(in srgb, var(--elore-warm-white) 72%, transparent);
 }
 
-.moreButton:focus-visible,
+.pagination button:focus-visible,
+.activeFilters button:focus-visible,
+.filterHeading button:focus-visible,
+.filters input:focus-visible,
 .emptyCta:focus-visible,
 .secondaryCta:focus-visible,
 .routeGrid a:focus-visible {
@@ -407,7 +548,7 @@
   box-shadow: var(--focus-ring);
 }
 
-.moreButton:active,
+.pagination button:active,
 .emptyCta:active,
 .secondaryCta:active,
 .routeGrid a:active {
@@ -415,7 +556,7 @@
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .moreButton:hover,
+  .pagination button:hover,
   .secondaryCta:hover {
     border-color: var(--elore-burgundy);
     background: color-mix(in srgb, var(--elore-burgundy) 6%, transparent);
@@ -483,6 +624,19 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .catalogLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .filters {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .filterHeading {
+    grid-column: 1 / -1;
+  }
+
   .empty,
   .discovery {
     grid-template-columns: 1fr;
@@ -546,6 +700,10 @@
     gap: 0.35rem;
   }
 
+  .filters {
+    grid-template-columns: 1fr;
+  }
+
   .emptyCopy,
   .discovery > header {
     padding: 1.35rem 1rem;
@@ -573,18 +731,21 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .moreButton,
+  .pagination button,
+  .activeFilters button,
   .emptyCta,
   .secondaryCta,
   .routeGrid a {
     transition: none;
   }
 
-  .moreButton:hover,
+  .pagination button:hover,
+  .activeFilters button:hover,
   .emptyCta:hover,
   .secondaryCta:hover,
   .routeGrid a:hover,
-  .moreButton:active,
+  .pagination button:active,
+  .activeFilters button:active,
   .emptyCta:active,
   .secondaryCta:active,
   .routeGrid a:active {

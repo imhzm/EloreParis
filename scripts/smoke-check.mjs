@@ -4,7 +4,7 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
 
-const port = 3066;
+const port = Number(process.env.TEST_PORT) || 3056;
 const baseUrl = `http://127.0.0.1:${port}`;
 const opsAccessCode = "smoke-test-ops-access-code";
 const serverFile = path.resolve(process.cwd(), ".next/standalone/server.js");
@@ -329,7 +329,7 @@ async function run() {
     "Legacy tracking route must preserve every query value in one redirect",
   );
 
-  for (const slug of ["skincare", "makeup", "haircare", "bodycare", "tools", "beauty-sets"]) {
+  for (const slug of ["perfumes", "skincare", "makeup", "haircare", "bodycare", "tools", "beauty-sets"]) {
     const collectionRedirect = await expectStatus(`/shop/${slug}?source=smoke`, 308);
     assert.equal(
       collectionRedirect.headers.get("location"),

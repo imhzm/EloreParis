@@ -1,0 +1,251 @@
+.page {
+  min-height: 62vh;
+  color: var(--elore-ink);
+  background:
+    radial-gradient(circle at 10% 35%, color-mix(in srgb, var(--elore-blush) 48%, transparent), transparent 30rem),
+    var(--elore-ivory);
+}
+
+.eyebrow {
+  margin: 0 0 0.65rem;
+  color: var(--elore-soft-gold);
+  font-family: var(--font-body-latin), sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+}
+
+.hero {
+  position: relative;
+  min-height: clamp(28rem, 48vw, 42rem);
+  overflow: hidden;
+  display: grid;
+  align-items: center;
+  padding: clamp(4rem, 8vw, 8rem) clamp(1.25rem, 7vw, 7rem);
+  color: var(--elore-warm-white);
+  background: var(--elore-burgundy);
+}
+
+.hero > img {
+  object-fit: cover;
+  object-position: center 54%;
+}
+
+.heroShade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(30, 6, 13, 0.94), rgba(38, 8, 16, 0.72) 48%, rgba(38, 8, 16, 0.18));
+}
+
+[dir="rtl"] .heroShade {
+  transform: scaleX(-1);
+}
+
+.heroCopy {
+  position: relative;
+  z-index: 1;
+  max-width: 42rem;
+}
+
+.heroCopy h1,
+.stateCard h1 {
+  max-width: 13ch;
+  margin: 0;
+  font-size: clamp(3rem, 6vw, 6.2rem);
+  font-weight: 500;
+  line-height: 0.98;
+  text-wrap: balance;
+}
+
+.heroCopy > p:not(.eyebrow) {
+  max-width: 39rem;
+  color: color-mix(in srgb, var(--elore-warm-white) 82%, transparent);
+  font-size: clamp(1rem, 1.2vw, 1.2rem);
+  line-height: 1.8;
+}
+
+.heroCopy small {
+  display: block;
+  max-width: 36rem;
+  padding-block-start: 1rem;
+  border-block-start: 1px solid color-mix(in srgb, var(--elore-soft-gold) 32%, transparent);
+  color: color-mix(in srgb, var(--elore-warm-white) 62%, transparent);
+  line-height: 1.65;
+}
+
+.collection {
+  width: min(90rem, calc(100% - 2rem));
+  margin-inline: auto;
+  padding-block: clamp(2.5rem, 6vw, 6rem);
+}
+
+.collection > header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-block-end: 1.75rem;
+}
+
+.collection h2 {
+  margin: 0;
+  color: var(--elore-burgundy);
+  font-size: clamp(2rem, 3vw, 3.5rem);
+  font-weight: 500;
+}
+
+.collection header > a,
+.stateActions a {
+  display: inline-flex;
+  min-height: 46px;
+  align-items: center;
+  justify-content: center;
+  padding: 0.7rem 1.25rem;
+  border: 1px solid color-mix(in srgb, var(--elore-burgundy) 28%, transparent);
+  border-radius: var(--radius-control);
+  color: var(--elore-burgundy);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(0.8rem, 1.6vw, 1.4rem);
+}
+
+.stateCard {
+  display: grid;
+  width: min(70rem, calc(100% - 2rem));
+  min-height: clamp(28rem, 60vh, 42rem);
+  align-content: center;
+  justify-items: center;
+  margin-inline: auto;
+  padding: clamp(2rem, 7vw, 6rem);
+  text-align: center;
+}
+
+.stateCard h1 {
+  max-width: 18ch;
+  color: var(--elore-burgundy);
+  font-size: clamp(2.5rem, 5vw, 5rem);
+}
+
+.stateCard > p:not(.eyebrow) {
+  max-width: 46rem;
+  color: var(--elore-cocoa);
+  line-height: 1.8;
+}
+
+.stateCard[data-wishlist-state="gated"] {
+  width: min(82rem, calc(100% - 2rem));
+  margin-block: 1rem;
+  border-radius: clamp(1.5rem, 4vw, 3.5rem);
+  background:
+    linear-gradient(rgba(45, 8, 17, 0.88), rgba(45, 8, 17, 0.92)),
+    url("/elore-assets/transition-burgundy-satin-concept-1672w.avif") center / cover;
+  color: var(--elore-warm-white);
+}
+
+.stateCard[data-wishlist-state="gated"] h1,
+.stateCard[data-wishlist-state="gated"] > p:not(.eyebrow) {
+  color: inherit;
+}
+
+.stateCard[data-wishlist-state="gated"] > p:not(.eyebrow) {
+  color: color-mix(in srgb, var(--elore-warm-white) 75%, transparent);
+}
+
+.stateCard[data-wishlist-state="gated"] .stateActions a {
+  border-color: var(--elore-soft-gold);
+  color: var(--elore-warm-white);
+}
+
+.stateActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-block-start: 1rem;
+}
+
+.stateActions a:first-child {
+  border-color: var(--elore-burgundy);
+  background: var(--elore-burgundy);
+  color: var(--elore-warm-white);
+}
+
+.stateCard[data-wishlist-state="gated"] .stateActions a:first-child {
+  border-color: var(--elore-soft-gold);
+  background: var(--elore-soft-gold);
+  color: var(--elore-burgundy);
+}
+
+.prunedNotice {
+  padding: 0.85rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--elore-soft-gold) 38%, transparent);
+  border-radius: 0.8rem;
+  background: color-mix(in srgb, var(--elore-soft-gold) 8%, transparent);
+  color: var(--elore-cocoa);
+  line-height: 1.6;
+}
+
+.stateCard .prunedNotice {
+  margin-block: 1rem 0;
+}
+
+.collection a:focus-visible,
+.stateActions a:focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: var(--focus-ring-offset);
+  box-shadow: var(--focus-ring);
+}
+
+@media (max-width: 1050px) {
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .hero {
+    min-height: 35rem;
+    align-items: end;
+    padding-block-end: 4rem;
+  }
+
+  .heroShade,
+  [dir="rtl"] .heroShade {
+    transform: none;
+    background: linear-gradient(0deg, rgba(30, 6, 13, 0.94), rgba(38, 8, 16, 0.58) 70%, rgba(38, 8, 16, 0.12));
+  }
+
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .collection {
+    width: min(100% - 1rem, 90rem);
+  }
+
+  .collection > header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .collection header > a {
+    align-self: start;
+  }
+
+  .grid {
+    gap: 0.55rem;
+  }
+
+  .stateCard {
+    width: min(100% - 1rem, 70rem);
+    padding-inline: 1.25rem;
+  }
+}

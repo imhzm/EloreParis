@@ -31,6 +31,22 @@ export type PublicCatalogProduct = {
     months: number;
   } | null;
   approvedClaims: string[];
+  merchandising: {
+    tags: string[];
+    concerns: string[];
+    routines: string[];
+    benefits: string[];
+    packaging: string | null;
+    giftEligible: boolean;
+    relatedSlugs: string[];
+    fragrance: {
+      family: string;
+      concentration: string;
+      topNotes: string[];
+      heartNotes: string[];
+      baseNotes: string[];
+    } | null;
+  };
   returns: {
     windowDays: number;
     hygieneSealRequired: boolean;

@@ -329,7 +329,7 @@ def verify_checkout_errors(page: Page) -> None:
         raise AssertionError(f"Expected 6 checkout field errors; found {invalid.count()}.")
     try:
         page.wait_for_function(
-            "document.activeElement?.id === 'checkout-full-name'", timeout=2_000
+            "() => document.activeElement?.id === 'checkout-full-name'", timeout=2_000
         )
     except PlaywrightTimeoutError as error:
         active_id = page.evaluate("document.activeElement?.id")

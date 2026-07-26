@@ -92,7 +92,16 @@ export const contentGovernanceEntries: ContentGovernanceEntry[] = [
     status: "awaiting_style_samples",
     owner: "SEO and content owner",
     approver: "Growth lead",
-    routes: ["/concerns", "/concerns/pigmentation", "/routines", "/routines/morning-routine-oily-skin", "/ingredients", "/ingredients/vitamin-c"],
+    routes: [
+      "/concerns",
+      "/concerns/pigmentation",
+      "/routines",
+      "/routines/morning-routine-oily-skin",
+      "/ingredients",
+      "/ingredients/vitamin-c",
+      "/rituals",
+      "/rituals/builder",
+    ],
     freezeDecision:
       "The discovery graph and internal-linking logic are frozen. Answer-first content remains provisional until brand and SEO examples are approved together.",
     launchBlocker:

@@ -119,6 +119,44 @@ export function getPublicCatalogSnapshot(
             ? [claim.exactText]
             : [],
         ),
+        merchandising: {
+          tags: locale === "ar"
+            ? product.merchandising?.tagsAr ?? []
+            : product.merchandising?.tagsEn ?? [],
+          concerns: locale === "ar"
+            ? product.merchandising?.concernsAr ?? []
+            : product.merchandising?.concernsEn ?? [],
+          routines: locale === "ar"
+            ? product.merchandising?.routinesAr ?? []
+            : product.merchandising?.routinesEn ?? [],
+          benefits: locale === "ar"
+            ? product.merchandising?.benefitsAr ?? []
+            : product.merchandising?.benefitsEn ?? [],
+          packaging: locale === "ar"
+            ? product.merchandising?.packagingAr ?? null
+            : product.merchandising?.packagingEn ?? null,
+          giftEligible: product.merchandising?.giftEligible ?? false,
+          relatedSlugs: product.merchandising?.relatedSlugs ?? [],
+          fragrance: product.merchandising?.fragrance
+            ? {
+                family: locale === "ar"
+                  ? product.merchandising.fragrance.familyAr
+                  : product.merchandising.fragrance.familyEn,
+                concentration: locale === "ar"
+                  ? product.merchandising.fragrance.concentrationAr
+                  : product.merchandising.fragrance.concentrationEn,
+                topNotes: locale === "ar"
+                  ? product.merchandising.fragrance.topNotesAr
+                  : product.merchandising.fragrance.topNotesEn,
+                heartNotes: locale === "ar"
+                  ? product.merchandising.fragrance.heartNotesAr
+                  : product.merchandising.fragrance.heartNotesEn,
+                baseNotes: locale === "ar"
+                  ? product.merchandising.fragrance.baseNotesAr
+                  : product.merchandising.fragrance.baseNotesEn,
+              }
+            : null,
+        },
         returns: {
           windowDays: product.returnProfile.returnWindowDays,
           hygieneSealRequired: product.returnProfile.hygieneSealRequired,

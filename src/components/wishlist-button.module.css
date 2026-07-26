@@ -1,0 +1,66 @@
+.button {
+  display: inline-grid;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--elore-burgundy) 20%, transparent);
+  border-radius: 50%;
+  color: var(--elore-burgundy);
+  background: color-mix(in srgb, var(--elore-warm-white) 92%, transparent);
+  box-shadow: 0 0.35rem 1.1rem color-mix(in srgb, var(--elore-burgundy) 10%, transparent);
+  cursor: pointer;
+  transition: color var(--motion-control), background var(--motion-control), transform var(--motion-control);
+}
+
+.button svg {
+  width: 20px;
+  height: 20px;
+  fill: transparent;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.button[data-saved="true"] {
+  color: var(--elore-warm-white);
+  background: var(--elore-burgundy);
+}
+
+.button[data-saved="true"] svg {
+  fill: currentColor;
+}
+
+.button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.button:focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: var(--focus-ring-offset);
+  box-shadow: var(--focus-ring);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .button:not(:disabled):hover {
+    transform: scale(1.05);
+  }
+}
+
+.button:not(:disabled):active {
+  transform: scale(0.96);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button {
+    transition: none;
+  }
+
+  .button:not(:disabled):hover,
+  .button:not(:disabled):active {
+    transform: none;
+  }
+}

@@ -93,6 +93,13 @@
   position: relative;
 }
 
+.wishlistButton {
+  position: absolute;
+  z-index: 2;
+  inset-block-start: 0.85rem;
+  inset-inline-end: 0.85rem;
+}
+
 .subtitle {
   font-size: 0.79rem;
   line-height: 1.45;

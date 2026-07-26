@@ -20,6 +20,8 @@ const localizedDiscoveryPaths = new Set([
   "/concerns",
   "/concerns/pigmentation",
   "/concerns/makeup-longwear",
+  "/rituals",
+  "/rituals/builder",
   "/routines",
   "/routines/morning-routine-oily-skin",
   "/routines/occasion-base-routine",
@@ -52,6 +54,7 @@ const localizedCommercePaths = new Set([
   "/checkout",
   "/checkout/success",
   "/track-order",
+  "/wishlist",
 ]);
 
 export function isLocalizedShopCollectionPath(pathname: string) {
@@ -300,7 +303,7 @@ export const shellCopy = {
     // joins them here. Search is not a nav entry: the header already carries a
     // search control beside it, and two routes to the same page is the kind of
     // clutter this brand is meant to be the opposite of.
-    nav: [["/", "الرئيسية"], ["/shop", "المتجر"], ["/shop/perfumes", "العطور"], ["/concerns", "حسب المشكلة"], ["/routines", "الروتينات"], ["/journal", "المجلة"], ["/trust", "الثقة"]],
+    nav: [["/", "الرئيسية"], ["/shop", "المتجر"], ["/shop/perfumes", "العطور"], ["/concerns", "حسب المشكلة"], ["/rituals/builder", "ابني طقسك"], ["/journal", "المجلة"], ["/trust", "الثقة"]],
     policies: [["/terms", "الشروط والأحكام"], ["/trust/verification", "بيانات المنشأة"], ["/trust/privacy", "الخصوصية"], ["/trust/shipping", "الشحن والتوصيل"], ["/trust/returns", "الاستبدال والاسترجاع"]],
     support: [["/contact", "تواصلي معنا"], ["/faq", "الأسئلة الشائعة"], ["/track-order", "تتبع الطلب"], ["/cart", "السلة"], ["/search", "البحث داخل المتجر"]],
     // §7.7 Trust / Service strip. These are deliberately status statements,
@@ -323,7 +326,7 @@ export const shellCopy = {
     menuOpen: "Open menu", menuClose: "Close menu", footerBody: "A premium digital beauty house pairing Parisian sensibility with clarity made for life in Saudi Arabia.",
     footerStatus: "Product and policy information is presented from verified sources, with clarity before every decision.", aboutLabel: "Discover our story", policyTitle: "Trust and policies", supportTitle: "Order support",
     footerTagline: "Beauty. Composed with intention.", languageLabel: "العربية", languageHref: "/ar",
-    nav: [["/", "Home"], ["/shop", "Shop"], ["/shop/perfumes", "Perfumes"], ["/concerns", "By concern"], ["/routines", "Rituals"], ["/journal", "Journal"], ["/trust", "Trust"]],
+    nav: [["/", "Home"], ["/shop", "Shop"], ["/shop/perfumes", "Perfumes"], ["/concerns", "By concern"], ["/rituals/builder", "Ritual finder"], ["/journal", "Journal"], ["/trust", "Trust"]],
     policies: [["/terms", "Terms and conditions"], ["/trust/verification", "Business information"], ["/trust/privacy", "Privacy"], ["/trust/shipping", "Shipping and delivery"], ["/trust/returns", "Returns and refunds"]],
     support: [["/contact", "Contact us"], ["/faq", "Frequently asked questions"], ["/track-order", "Track order"], ["/cart", "Cart"], ["/search", "Search the store"]],
     serviceStripTitle: "Clarity before purchase",

@@ -11,6 +11,7 @@ import type { PublicCatalogProduct } from "@/lib/public-catalog-types";
 import styles from "./collection-grid-experience.module.css";
 
 type SortKey = "featured" | "price-asc" | "price-desc";
+type FacetGroup = "tags" | "concerns" | "routines" | "fragrance" | "availability";
 
 type Hero = { title: string; eyebrow: string; description: string; image: string; imageAlt: string };
 
@@ -51,6 +52,18 @@ const copy = {
     emptyBody: "نعرض المنتجات فور اعتمادها ببياناتها الموثّقة. تصفّحي بقية المتجر في هذه الأثناء.",
     emptyCta: "العودة إلى المتجر",
     page: (n: number) => `صفحة ${n}`,
+    filters: "تصفية النتائج",
+    clear: "مسح الكل",
+    noMatches: "لا توجد منتجات معتمدة تطابق هذه الاختيارات.",
+    facetGroups: {
+      tags: "الخصائص",
+      concerns: "الاحتياج",
+      routines: "الطقس",
+      fragrance: "البصمة العطرية",
+      availability: "التوفر",
+    } as Record<FacetGroup, string>,
+    inStock: "متاح الآن",
+    giftEligible: "مناسب للإهداء",
   },
   en: {
     sortLabel: "Sort by",
@@ -62,6 +75,18 @@ const copy = {
     emptyBody: "Products appear the moment they are approved with verified data. Explore the rest of the store meanwhile.",
     emptyCta: "Back to the shop",
     page: (n: number) => `Page ${n}`,
+    filters: "Filter results",
+    clear: "Clear all",
+    noMatches: "No approved products match these selections.",
+    facetGroups: {
+      tags: "Characteristics",
+      concerns: "Concern",
+      routines: "Ritual",
+      fragrance: "Fragrance profile",
+      availability: "Availability",
+    } as Record<FacetGroup, string>,
+    inStock: "Available now",
+    giftEligible: "Gift eligible",
   },
 } as const;
 
@@ -71,21 +96,88 @@ function minPrice(product: PublicCatalogProduct): number {
   return pool.length ? Math.min(...pool.map((v) => v.price)) : Number.POSITIVE_INFINITY;
 }
 
+function productFacetTokens(product: PublicCatalogProduct) {
+  return new Set([
+    ...product.merchandising.tags.map((value) => `tags:${value}`),
+    ...product.merchandising.concerns.map((value) => `concerns:${value}`),
+    ...product.merchandising.routines.map((value) => `routines:${value}`),
+    ...(product.merchandising.fragrance
+      ? [
+          `fragrance:${product.merchandising.fragrance.family}`,
+          `fragrance:${product.merchandising.fragrance.concentration}`,
+        ]
+      : []),
+    ...(product.variants.some((variant) => variant.availability === "InStock")
+      ? ["availability:in-stock"]
+      : []),
+    ...(product.merchandising.giftEligible ? ["availability:gift"] : []),
+  ]);
+}
+
 export function CollectionGridExperience({ locale, slug, hero, editorial, products }: Props) {
   const text = copy[locale];
   const { addItem, cartCount } = useCart();
   const [sort, setSort] = useState<SortKey>("featured");
-  const [visible, setVisible] = useState(PAGE_SIZE);
+  const [selectedFacets, setSelectedFacets] = useState<string[]>([]);
+  const [page, setPage] = useState(1);
   const [status, setStatus] = useState("");
 
+  const facets = useMemo(() => {
+    const counts = new Map<string, number>();
+    products.forEach((product) => {
+      productFacetTokens(product).forEach((token) => counts.set(token, (counts.get(token) ?? 0) + 1));
+    });
+    const labelFor = (token: string) => {
+      if (token === "availability:in-stock") return text.inStock;
+      if (token === "availability:gift") return text.giftEligible;
+      return token.slice(token.indexOf(":") + 1);
+    };
+    return (["tags", "concerns", "routines", "fragrance", "availability"] as FacetGroup[])
+      .map((group) => ({
+        group,
+        label: text.facetGroups[group],
+        options: [...counts.entries()]
+          .filter(([token]) => token.startsWith(`${group}:`))
+          .map(([token, count]) => ({ token, label: labelFor(token), count }))
+          .sort((a, b) => a.label.localeCompare(b.label, locale === "ar" ? "ar" : "en")),
+      }))
+      .filter((facet) => facet.options.length > 0);
+  }, [locale, products, text]);
+
   const sorted = useMemo(() => {
-    const list = [...products];
+    const list = products.filter((product) => {
+      if (!selectedFacets.length) return true;
+      const tokens = productFacetTokens(product);
+      const groups = new Map<string, string[]>();
+      selectedFacets.forEach((token) => {
+        const group = token.slice(0, token.indexOf(":"));
+        groups.set(group, [...(groups.get(group) ?? []), token]);
+      });
+      return [...groups.values()].every((groupTokens) =>
+        groupTokens.some((token) => tokens.has(token)));
+    });
     if (sort === "price-asc") list.sort((a, b) => minPrice(a) - minPrice(b));
     else if (sort === "price-desc") list.sort((a, b) => minPrice(b) - minPrice(a));
     return list;
-  }, [products, sort]);
+  }, [products, selectedFacets, sort]);
 
-  const shown = sorted.slice(0, visible);
+  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const shown = sorted.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  const toggleFacet = (token: string) => {
+    const willSelect = !selectedFacets.includes(token);
+    setSelectedFacets((current) => willSelect
+      ? [...current, token]
+      : current.filter((currentToken) => currentToken !== token));
+    setPage(1);
+    trackAnalyticsEvent("filter_apply", {
+      source_path: `/${locale}/shop/${slug}`,
+      source_page_type: "collection",
+      filter: token,
+      selected: willSelect,
+    });
+  };
 
   const quickAdd = (product: PublicCatalogProduct) => (sku: string) => {
     addItem({ productSlug: product.slug, sku, quantity: 1 });
@@ -143,10 +235,10 @@ export function CollectionGridExperience({ locale, slug, hero, editorial, produc
       ) : (
         <section className={styles.listing} data-catalog-state="available" aria-label={hero.title}>
           <div className={styles.toolbar}>
-            <p className={styles.resultCount} aria-live="polite">{text.count(shown.length, products.length)}</p>
+            <p className={styles.resultCount} aria-live="polite">{text.count(shown.length, sorted.length)}</p>
             <label className={styles.sort}>
               <span>{text.sortLabel}</span>
-              <select value={sort} onChange={(e) => { setSort(e.target.value as SortKey); setVisible(PAGE_SIZE); }}>
+              <select value={sort} onChange={(e) => { setSort(e.target.value as SortKey); setPage(1); }}>
                 {(Object.keys(text.sort) as SortKey[]).map((key) => (
                   <option key={key} value={key}>{text.sort[key]}</option>
                 ))}
@@ -154,24 +246,73 @@ export function CollectionGridExperience({ locale, slug, hero, editorial, produc
             </label>
           </div>
 
-          <div className={styles.grid}>
-            {shown.map((product) => (
-              <ProductCard
-                key={product.slug}
-                product={product}
-                locale={locale}
-                onQuickAdd={quickAdd(product)}
-              />
-            ))}
-          </div>
-
-          {visible < sorted.length ? (
-            <div className={styles.pagination}>
-              <button type="button" className={styles.moreButton} onClick={() => setVisible((v) => v + PAGE_SIZE)}>
-                {text.more}
-              </button>
+          {selectedFacets.length ? (
+            <div className={styles.activeFilters} aria-label={text.filters}>
+              {selectedFacets.map((token) => {
+                const option = facets.flatMap((facet) => facet.options).find((candidate) => candidate.token === token);
+                return <button key={token} type="button" onClick={() => toggleFacet(token)}>{option?.label ?? token}<span aria-hidden="true">×</span></button>;
+              })}
+              <button type="button" className={styles.clearFilters} onClick={() => { setSelectedFacets([]); setPage(1); }}>{text.clear}</button>
             </div>
           ) : null}
+
+          <div className={styles.catalogLayout}>
+            {facets.length ? (
+              <aside className={styles.filters} aria-labelledby="catalog-filter-title">
+                <div className={styles.filterHeading}>
+                  <h2 id="catalog-filter-title">{text.filters}</h2>
+                  {selectedFacets.length ? <button type="button" onClick={() => { setSelectedFacets([]); setPage(1); }}>{text.clear}</button> : null}
+                </div>
+                {facets.map((facet) => (
+                  <fieldset key={facet.group}>
+                    <legend>{facet.label}</legend>
+                    {facet.options.map((option) => (
+                      <label key={option.token}>
+                        <input
+                          type="checkbox"
+                          checked={selectedFacets.includes(option.token)}
+                          onChange={() => toggleFacet(option.token)}
+                        />
+                        <span>{option.label}</span>
+                        <small>{option.count}</small>
+                      </label>
+                    ))}
+                  </fieldset>
+                ))}
+              </aside>
+            ) : null}
+
+            <div className={styles.results}>
+              {shown.length ? (
+                <div className={styles.grid}>
+                  {shown.map((product) => (
+                    <ProductCard
+                      key={product.slug}
+                      product={product}
+                      locale={locale}
+                      onQuickAdd={quickAdd(product)}
+                    />
+                  ))}
+                </div>
+              ) : <p className={styles.noMatches}>{text.noMatches}</p>}
+
+              {totalPages > 1 ? (
+                <nav className={styles.pagination} aria-label={text.filters}>
+                  {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => (
+                    <button
+                      key={pageNumber}
+                      type="button"
+                      aria-current={pageNumber === currentPage ? "page" : undefined}
+                      aria-label={text.page(pageNumber)}
+                      onClick={() => setPage(pageNumber)}
+                    >
+                      {pageNumber}
+                    </button>
+                  ))}
+                </nav>
+              ) : null}
+            </div>
+          </div>
 
           <p className={styles.srStatus} role="status" aria-live="polite">{status}</p>
         </section>

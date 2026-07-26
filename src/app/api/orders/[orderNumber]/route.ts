@@ -29,6 +29,23 @@ const TRACKING_ATTEMPT_LIMIT = 8;
 const MAX_TRACKING_BUCKETS = 5_000;
 const trackingAttempts = new Map<string, { count: number; resetAt: number }>();
 
+if (typeof globalThis !== "undefined") {
+  const CLEANUP_INTERVAL_MS = 60_000;
+  const existing = (globalThis as Record<string, unknown>).__trackingCleanup;
+  if (!existing) {
+    const interval = setInterval(() => {
+      const now = Date.now();
+      for (const [key, entry] of trackingAttempts) {
+        if (entry.resetAt <= now) trackingAttempts.delete(key);
+      }
+      if (trackingAttempts.size === 0) clearInterval(interval);
+    }, CLEANUP_INTERVAL_MS);
+    if (typeof interval === "object" || typeof interval === "number") {
+      (globalThis as Record<string, unknown>).__trackingCleanup = interval;
+    }
+  }
+}
+
 function consumeTrackingAttempt(orderNumber: string) {
   const key = orderNumber.trim().toUpperCase();
   const now = Date.now();

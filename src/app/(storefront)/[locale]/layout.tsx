@@ -1,15 +1,18 @@
 import type { Metadata, Viewport } from "next";
+import dynamic from "next/dynamic";
 import { notFound } from "next/navigation";
-import { AnalyticsProvider } from "@/components/analytics-provider";
 import { AnalyticsConsentBanner } from "@/components/analytics-consent-banner";
 import { CartProvider } from "@/components/cart-provider";
 import { WebVitalsReporter } from "@/components/web-vitals-reporter";
+import { WishlistProvider } from "@/components/wishlist-provider";
 import { fontVariables } from "@/lib/fonts";
 import { getDefaultMetadataRobots } from "@/lib/seo";
 import { isLocale, locales, localeConfig } from "@/lib/i18n";
 import { defaultDescription, getSiteUrl, siteName, siteTagline } from "@/lib/site-content";
 import { getEffectiveSiteContent } from "@/lib/site-content-authority";
 import "../../globals.css";
+
+const AnalyticsProvider = dynamic(() => import("@/components/analytics-provider").then((m) => m.AnalyticsProvider));
 
 const siteUrl = getSiteUrl();
 const socialImageUrl = new URL("/api/social-card", siteUrl).toString();
@@ -57,6 +60,7 @@ export async function generateMetadata(): Promise<Metadata> {
     description: controlledDescription,
     siteName: controlledSiteName,
     locale: "ar_SA",
+    alternateLocale: ["en_SA"],
     type: "website",
     images: [
       {
@@ -117,12 +121,14 @@ export default async function StorefrontRootLayout({
       className={fontVariables}
     >
       <body>
-        <CartProvider>
-          <AnalyticsProvider />
-          <WebVitalsReporter />
-          <AnalyticsConsentBanner locale={locale} />
-          {children}
-        </CartProvider>
+        <WishlistProvider>
+          <CartProvider>
+            <AnalyticsProvider />
+            <WebVitalsReporter />
+            <AnalyticsConsentBanner locale={locale} />
+            {children}
+          </CartProvider>
+        </WishlistProvider>
       </body>
     </html>
   );

@@ -172,3 +172,82 @@ gated preview only and do not replace approved launch packshots.
 - Home visual baseline, updated `test:home-3d`, the full public matrix, live
   commerce matrix, font-stack build check, and final production build remain
   required after all route-family slices settle.
+
+## 2026-07-26 implementation and validation closure
+
+This entry supersedes the pending validation note immediately above. The
+reference-led storefront, commerce hardening, and browser coverage were
+reconciled against the current source and a fresh standalone production build.
+
+### Delivered surface changes
+
+- The reference system now governs Home, collection grids, PDP, About, Search,
+  Cart, Checkout, journal/discovery surfaces, and the shared responsive shell.
+- `/[locale]/rituals/builder` provides a four-step bilingual ritual finder. It
+  recommends only approved products from the public catalogue and otherwise
+  closes honestly on an educational/gated result.
+- `/[locale]/wishlist` provides hydration-safe, versioned, local-only wishlist
+  state with cross-tab synchronization, stale-SKU pruning after a verified
+  catalogue load, PDP/card controls, and a header count.
+- Collection pages now expose authority-backed facets, sorting, selected-filter
+  state, empty states, pagination, and consent-aware analytics. PDPs consume
+  approved localized merchandising, fragrance notes, benefits, packaging, and
+  related-product slugs without exposing bilingual authority fields.
+- Payment callbacks now reject amount, currency, and reference mismatches.
+  Shipment booking stops before any provider call until authority-backed item
+  weights and packed weight exist. Guest commerce readiness no longer depends
+  on optional customer OIDC readiness.
+- Promotions now render inside the shared protected Ops navigation; the
+  authenticated Ops-count endpoint no longer produces client-side 401s for
+  valid operations roles.
+- The content ownership register now covers the Ritual Builder navigation
+  destination so it cannot bypass owner and approver release gates.
+
+### Verified result
+
+| Gate | Result | Evidence |
+|---|---|---|
+| ESLint | PASS | `npm run lint` |
+| TypeScript | PASS | `npx tsc --noEmit` |
+| Production build | PASS | `npm run build`; 106 pages generated and standalone assets prepared |
+| Unified project QA | PASS | `npm run test:all`; all 35 registered `test:*` scripts passed sequentially |
+| Full public matrix | PASS | 40 AR/EN routes on desktop plus the same 40 on mobile; no console, page, request, response, or overflow failures |
+| Responsive Home | PASS | 320, 430, 667, 768, 1024, 1440, and 1920 checks; no horizontal overflow and reduced motion honored |
+| Live commerce | PASS | AR/EN desktop and mobile journeys against isolated catalogue/order storage |
+| Ops and Content Authority | PASS | Protected desktop/mobile navigation, keyboard drawer behavior, RBAC UI, console, network, and overflow |
+
+The exact 35-script inventory is:
+
+`test:authority-backup`, `test:boundaries`, `test:browser-regression`,
+`test:catalog-authority`, `test:category-cinematic`,
+`test:content-governance`, `test:font-stack`, `test:full-browser`,
+`test:home-3d`, `test:hostinger-release`, `test:jsonld-security`,
+`test:lifecycle-authority`, `test:lifecycle-delivery`,
+`test:lifecycle-email-templates`, `test:lifecycle-ses`,
+`test:lifecycle-sns`, `test:live-commerce`, `test:ops-dashboard`,
+`test:ops-lifecycle-source`, `test:production-fence`,
+`test:promotion-authority`, `test:provider-auth-security`,
+`test:provider-callback-security`, `test:release-controls`,
+`test:release-smoke`, `test:ritual-builder`,
+`test:ritual-builder-browser`, `test:scroll-reveal`,
+`test:site-content-authority`, `test:site-content-browser`, `test:smoke`,
+`test:social-card`, `test:web-vitals`, `test:wishlist`, and
+`test:wishlist-browser`.
+
+### Remaining public-release blockers
+
+- Import and approve the real Saudi catalogue, SKU prices, stock, packshots,
+  rights evidence, product weights, and packed shipment weights.
+- Approve the legal entity, CR/VAT details, support channels, shipping fees and
+  coverage, returns/refunds, privacy, complaints, and final terms.
+- Configure and certify the real payment, shipping, notification, CMP, and
+  analytics providers. External customer OIDC must remain disabled until
+  cryptographic JWKS signature verification is added to the current claim and
+  nonce validation path.
+- Replace preview concept imagery with owner-approved launch photography and
+  finish native Arabic/English editorial and policy review.
+- Rotate every credential previously pasted into conversation before GitHub or
+  Hostinger access. No exposed token or password is an acceptable release input.
+
+The source is technically validated but public deployment remains deliberately
+fail-closed until these owner/provider inputs are complete.

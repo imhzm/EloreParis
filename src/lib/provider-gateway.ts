@@ -312,6 +312,17 @@ function assertLiveRequestConfigured(
   }
 }
 
+function requireVerifiedShipmentWeightGrams(
+  order: StoredOrder,
+  providerLabel: string,
+): never {
+  throw new ProviderGatewayError(
+    providerLabel,
+    `Shipping booking for ${order.orderNumber} is blocked until every order line has an authority-backed product weight and a verified packed shipment weight can be calculated.`,
+    409,
+  );
+}
+
 export async function createPaymentLinkWithProvider(order: StoredOrder) {
   const config = getLivePaymentProviderConfig();
   assertLiveRequestConfigured(config);
@@ -414,6 +425,10 @@ export async function createPaymentLinkWithProvider(order: StoredOrder) {
 export async function bookShipmentWithProvider(order: StoredOrder) {
   const config = getLiveShippingProviderConfig();
   assertLiveRequestConfigured(config);
+  const totalWeightGrams = requireVerifiedShipmentWeightGrams(
+    order,
+    config.label,
+  );
 
   const response = ensureProviderRecord(
     await requestProviderJson(
@@ -436,10 +451,7 @@ export async function bookShipmentWithProvider(order: StoredOrder) {
           callbackUrl: buildAbsoluteAppUrl(config.callbackPath),
           shipment: {
             shippingMethodId: order.shippingMethodId,
-            totalWeight: order.lines.reduce(
-              (sum, line) => sum + Math.max(line.quantity, 1),
-              0,
-            ),
+            totalWeightGrams,
             cashOnDeliveryAmount:
               order.paymentMethodId === "cash_on_delivery"
                 ? order.totalEstimate

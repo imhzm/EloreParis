@@ -162,6 +162,40 @@ for (const routePath of routePaths) {
   );
 }
 
+const paymentRoute = readFileSync(
+  resolve(root, "src/app/api/providers/payment/route.ts"),
+  "utf8",
+);
+assert.match(paymentRoute, /"amount"/);
+assert.match(paymentRoute, /"currency"/);
+assert.match(paymentRoute, /parseProviderPaymentAmountHalalas\s*\(/);
+assert.match(paymentRoute, /parseProviderPaymentCurrency\s*\(/);
+
+const orderAuthority = readFileSync(
+  resolve(root, "src/lib/order-authority.ts"),
+  "utf8",
+);
+assert.match(orderAuthority, /payment_amount_mismatch/);
+assert.match(orderAuthority, /payment_currency_mismatch/);
+assert.match(orderAuthority, /payment_binding_missing/);
+
+const providerGateway = readFileSync(
+  resolve(root, "src/lib/provider-gateway.ts"),
+  "utf8",
+);
+assert.match(providerGateway, /requireVerifiedShipmentWeightGrams\s*\(/);
+assert.match(providerGateway, /totalWeightGrams/);
+assert.doesNotMatch(
+  providerGateway,
+  /totalWeight\s*:\s*order\.lines\.reduce/,
+  "Shipping weight must not be derived from line quantities",
+);
+assert.doesNotMatch(
+  providerGateway,
+  /Math\.max\(line\.quantity,\s*1\)/,
+  "Item count must never masquerade as shipment weight",
+);
+
 const notificationRoute = readFileSync(
   resolve(root, "src/app/api/providers/notifications/route.ts"),
   "utf8",
@@ -170,4 +204,4 @@ assert.match(notificationRoute, /inspectAuthorityProviderEvent\s*\(/);
 assert.match(notificationRoute, /recordAuthorityProviderEvent\s*\(/);
 assert.match(notificationRoute, /authenticationMode\s*===\s*"hmac"/);
 
-console.log("Provider callback HMAC and replay-security checks passed.");
+console.log("Provider callback HMAC, payment reconciliation, replay security, and shipment-weight gates passed.");

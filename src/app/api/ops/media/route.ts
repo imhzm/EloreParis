@@ -31,7 +31,7 @@ function managerOnly(role: string) {
 
 export async function GET(request: NextRequest) {
   try {
-    await assertOpsRequestAccess(request, "/ops/promotions");
+    await assertOpsRequestAccess(request, "/ops/media");
     return response({ assets: listMediaAssets() });
   } catch (error) {
     return failure(error);
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     assertTrustedMutationRequest(request);
-    const session = await assertOpsRequestAccess(request, "/ops/promotions");
+    const session = await assertOpsRequestAccess(request, "/ops/media");
     managerOnly(session.role);
     const body = await request.json() as unknown;
     if (

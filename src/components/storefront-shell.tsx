@@ -6,6 +6,7 @@ import { MobileNavDrawer } from "@/components/mobile-nav-drawer";
 import { SearchDialog } from "@/components/search-dialog";
 import { TrackedLink } from "@/components/tracked-link";
 import { TrustServiceStrip } from "@/components/trust-service-strip";
+import { WishlistHeaderLink } from "@/components/wishlist-header-link";
 import { localizePath, resolveActiveNavHref, shellCopy, type Locale } from "@/lib/i18n";
 import { getEffectiveSiteContent } from "@/lib/site-content-authority";
 import styles from "./storefront-shell.module.css";
@@ -93,6 +94,7 @@ export function StorefrontShell({
             <TrackedLink href={localizePath(locale, "/account/orders")} className={styles.accountLink} analyticsLabel="header_account" analyticsSurface="header_actions" analyticsDestinationType="account" aria-label={copy.account}>
               <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.25" /><path d="M5.75 19c.65-3.35 2.75-5.25 6.25-5.25S17.6 15.65 18.25 19" /></svg>
             </TrackedLink>
+            <WishlistHeaderLink locale={locale} />
             <CartDrawer locale={locale} className={styles.cartLink} badgeClassName={styles.cartBadge} />
             <MobileNavDrawer activeHref={activeHref} locale={locale} languageHref={languageHref} copy={copy} />
           </div>

@@ -5,7 +5,7 @@ import { mkdir } from "node:fs/promises";
 const require = createRequire(import.meta.url);
 const { chromium } = require("playwright");
 
-const baseUrl = process.env.OPS_TEST_BASE_URL ?? "http://127.0.0.1:3056";
+const baseUrl = process.env.OPS_TEST_BASE_URL ?? `http://127.0.0.1:${process.env.TEST_PORT || "3056"}`;
 const opsAccessCode = process.env.OPS_TEST_ACCESS_CODE?.trim();
 const outputDirectory = "test-results/ops-dashboard";
 const desktopRoutes = [

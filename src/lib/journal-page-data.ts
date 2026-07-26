@@ -26,13 +26,18 @@ export function buildJournalSchema(locale: Locale, records: JournalRecord[], rec
   const url = `${siteUrl}/${locale}${path}`;
   const pageName = record?.title.replace("\n", " ") ?? hubCopy?.title.replace("\n", " ") ?? (locale === "ar" ? "مجلة الجمال" : "The beauty journal");
   const graph: Record<string, unknown>[] = [
-    { "@type": record ? "WebPage" : "CollectionPage", "@id": `${url}#page`, url, name: pageName, description: record?.summary ?? hubCopy?.intro, inLanguage: localeConfig[locale].htmlLang, isPartOf: { "@id": `${siteUrl}/${locale}#website` } },
+    record
+      ? { "@type": "NewsArticle", "@id": `${url}#article`, url, headline: pageName, description: record.summary, image: record.image, author: { "@type": "Organization", name: "ÉLORÉ PARIS" }, publisher: { "@type": "Organization", name: "ÉLORÉ PARIS" }, inLanguage: localeConfig[locale].htmlLang, isPartOf: { "@id": `${siteUrl}/${locale}#website` }, mainEntityOfPage: { "@type": "WebPage", "@id": url } }
+      : { "@type": "CollectionPage", "@id": `${url}#page`, url, name: pageName, description: hubCopy?.intro, inLanguage: localeConfig[locale].htmlLang, isPartOf: { "@id": `${siteUrl}/${locale}#website` } },
     { "@type": "BreadcrumbList", "@id": `${url}#breadcrumb`, itemListElement: [
       { "@type": "ListItem", position: 1, name: locale === "ar" ? "الرئيسية" : "Home", item: `${siteUrl}/${locale}` },
       { "@type": "ListItem", position: 2, name: locale === "ar" ? "المجلة" : "Journal", item: `${siteUrl}/${locale}/journal` },
       ...(record ? [{ "@type": "ListItem", position: 3, name: pageName, item: url }] : []),
     ] },
   ];
+  if (record) {
+    graph.push({ "@type": "WebPage", "@id": `${url}#page`, url, name: pageName, description: record.summary, inLanguage: localeConfig[locale].htmlLang, isPartOf: { "@id": `${siteUrl}/${locale}#website` } });
+  }
   if (!record) graph.push({ "@type": "ItemList", "@id": `${url}#edition`, numberOfItems: records.length, itemListElement: records.map((item, index) => ({ "@type": "ListItem", position: index + 1, name: item.title.replace("\n", " "), url: `${siteUrl}/${locale}/journal/${item.slug}` })) });
   return { "@context": "https://schema.org", "@graph": graph };
 }

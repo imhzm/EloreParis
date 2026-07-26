@@ -10,7 +10,7 @@ import {
 
 type ViewEventName = Extract<
   AnalyticsEventName,
-  "view_item" | "view_cart" | "begin_checkout"
+  "view_item" | "view_cart" | "begin_checkout" | "wishlist_view"
 >;
 
 type Props = {

@@ -29,6 +29,11 @@ if (!existsSync(serverFile)) {
 // check proves valid is byte-for-byte the record the dev seeder publishes.
 import { product, validPayload } from "./fixtures/qa-catalog-fixture.mjs";
 
+const perfumePayload = {
+  ...validPayload,
+  products: [{ ...product, collection: "perfumes" }],
+};
+
 async function waitForServer(output) {
   const deadline = Date.now() + 30_000;
   while (Date.now() < deadline) {
@@ -60,11 +65,18 @@ async function api(method, body) {
 rmSync(databasePath, { force: true });
 rmSync(legacyOrderPath, { force: true });
 const paymentRequests = [];
+const shippingRequests = [];
 const paymentMock = createServer((request, response) => {
   let body = "";
   request.setEncoding("utf8");
   request.on("data", (chunk) => { body += chunk; });
   request.on("end", () => {
+    if (request.method === "POST" && request.url === "/shipments/bookings") {
+      shippingRequests.push(JSON.parse(body));
+      response.writeHead(200, { "Content-Type": "application/json" });
+      response.end(JSON.stringify({ bookingReference: "UNEXPECTED-BOOKING" }));
+      return;
+    }
     if (request.method !== "POST" || request.url !== "/payments/links") {
       response.writeHead(404).end();
       return;
@@ -72,6 +84,8 @@ const paymentMock = createServer((request, response) => {
     const payload = JSON.parse(body);
     paymentRequests.push({
       orderNumber: payload.orderNumber,
+      amount: payload.amount,
+      currency: payload.currency,
       idempotencyKey: request.headers["idempotency-key"],
       returnUrl: payload.returnUrl,
       locale: payload.metadata?.locale,
@@ -107,6 +121,11 @@ const server = spawn(process.execPath, [serverFile], {
     PAYMENT_PROVIDER_BASE_URL: paymentBaseUrl,
     PAYMENT_PROVIDER_REQUEST_PATH: "/payments/links",
     PAYMENT_PROVIDER_API_KEY: "qa-payment-api-key",
+    SHIPPING_PROVIDER_LABEL: "QA shipping provider",
+    SHIPPING_PROVIDER_CALLBACK_SECRET: "qa-shipping-callback-secret",
+    SHIPPING_PROVIDER_BASE_URL: paymentBaseUrl,
+    SHIPPING_PROVIDER_REQUEST_PATH: "/shipments/bookings",
+    SHIPPING_PROVIDER_API_KEY: "qa-shipping-api-key",
   },
   stdio: ["ignore", "pipe", "pipe"],
 });
@@ -129,7 +148,7 @@ try {
   });
   assert.equal(loginResponse.status, 200);
   sessionCookie = (loginResponse.headers.get("set-cookie") ?? "").split(";", 1)[0];
-  assert.match(sessionCookie, /^cozmateks-ops-session=/);
+  assert.match(sessionCookie, /^elore-ops-session=/);
 
   const empty = await api("GET");
   assert.equal(empty.response.status, 200);
@@ -155,13 +174,13 @@ try {
   assert.equal(invalid.body.code, "catalog_import_invalid");
   assert.match(invalid.body.issues.join("\n"), /Duplicate product slug/i);
 
-  const imported = await api("POST", validPayload);
+  const imported = await api("POST", perfumePayload);
   assert.equal(imported.response.status, 201);
   assert.equal(imported.body.readiness.ready, true);
   assert.equal(imported.body.readiness.productCount, 1);
   assert.equal(imported.body.readiness.variantCount, 4);
 
-  const duplicate = await api("POST", validPayload);
+  const duplicate = await api("POST", perfumePayload);
   assert.equal(duplicate.response.status, 409);
   assert.equal(duplicate.body.code, "catalog_import_duplicate");
 
@@ -189,14 +208,27 @@ try {
   assert.equal(publicCatalog.available, true);
   assert.equal(publicCatalog.locale, "ar");
   assert.equal(publicCatalog.products.length, 1);
+  assert.equal(publicCatalog.products[0].collection, "perfumes");
   assert.equal(publicCatalog.products[0].name, product.nameAr);
   assert.equal(publicCatalog.products[0].variants.length, 4);
+  assert.deepEqual(publicCatalog.products[0].merchandising.tags, product.merchandising.tagsAr);
+  assert.deepEqual(
+    publicCatalog.products[0].merchandising.concerns,
+    product.merchandising.concernsAr,
+  );
+  assert.equal(
+    publicCatalog.products[0].merchandising.fragrance.family,
+    product.merchandising.fragrance.familyAr,
+  );
   const serializedPublicCatalog = JSON.stringify(publicCatalog);
   for (const forbiddenKey of [
     "catalogVersion", "sourceHash", "sourceRef", "barcode", "stockOnHand",
     "safetyStock", "reserved", "codEligible", "rightsEvidenceRef",
     "sfdaNotificationId", "ecosmaProductReference", "approvedBy",
     "evidenceRef", "saudiImporterLicense", "internalLabelArtworkRef",
+    "tagsAr", "tagsEn", "concernsAr", "concernsEn", "routinesAr",
+    "routinesEn", "benefitsAr", "benefitsEn", "packagingAr", "packagingEn",
+    "familyAr", "familyEn", "topNotesAr", "topNotesEn",
   ]) {
     assert.equal(
       serializedPublicCatalog.includes(forbiddenKey),
@@ -209,6 +241,15 @@ try {
   assert.equal(englishCatalogResponse.status, 200);
   const englishCatalog = await englishCatalogResponse.json();
   assert.equal(englishCatalog.products[0].name, product.nameEn);
+  assert.deepEqual(englishCatalog.products[0].merchandising.tags, product.merchandising.tagsEn);
+  assert.deepEqual(
+    englishCatalog.products[0].merchandising.concerns,
+    product.merchandising.concernsEn,
+  );
+  assert.equal(
+    englishCatalog.products[0].merchandising.fragrance.family,
+    product.merchandising.fragrance.familyEn,
+  );
 
   for (const locale of ["ar", "en"]) {
     const shopResponse = await fetch(`${baseUrl}/${locale}/shop`);
@@ -458,7 +499,29 @@ try {
   assert.deepEqual(orderBody.notifications, []);
   assert.equal(orderBody.order.customer.phone, "966501234567");
   assert.equal(orderBody.order.customer.email, "");
-  assert.equal(orderBody.order.lines[0].catalogTruth.supplierId, null);
+  assert.equal(orderBody.order.lines[0].catalogTruth.mappingStatus, "pending");
+  const orderTruthDatabase = new DatabaseSync(databasePath);
+  const persistedOrderRow = orderTruthDatabase.prepare(`
+    SELECT payload_json
+    FROM authority_orders
+    WHERE order_number = ?
+  `).get(orderBody.order.orderNumber);
+  orderTruthDatabase.close();
+  assert.ok(persistedOrderRow);
+  const persistedOrder = JSON.parse(persistedOrderRow.payload_json);
+  const orderCatalogTruth = persistedOrder.lines[0].catalogTruth;
+  assert.equal(orderCatalogTruth.mappingStatus, "mapped");
+  assert.equal(orderCatalogTruth.supplierId, null);
+  assert.equal(orderCatalogTruth.supplierName, perfumePayload.inventoryLocation.name);
+  assert.equal(orderCatalogTruth.truthSourceLabel, "Active Catalog Authority");
+  assert.equal(orderCatalogTruth.stockOnHand, product.variants[0].stockOnHand);
+  assert.equal(orderCatalogTruth.lowStockThreshold, product.variants[0].safetyStock);
+  assert.equal(orderCatalogTruth.codEligible, product.variants[0].codEligible);
+  assert.match(orderCatalogTruth.continuityRule, new RegExp(imported.body.importId));
+  assert.match(
+    orderCatalogTruth.continuityRule,
+    new RegExp(perfumePayload.inventoryLocation.code),
+  );
   assert.equal(orderBody.order.providerBindings.payment.referenceId, null);
   assert.equal(orderBody.order.pricingSnapshot.quoteId, quoteBody.quote.quoteId);
   assert.equal(orderBody.order.pricingSnapshot.locale, "ar");
@@ -626,6 +689,29 @@ try {
   assert.ok(raceWinner);
   await confirmCodOrder(raceWinner.body.order.orderNumber);
 
+  const unweightedShipmentResponse = await fetch(
+    `${baseUrl}/api/ops/orders/${orderBody.order.orderNumber}/provider`,
+    {
+      method: "PATCH",
+      headers: {
+        Cookie: sessionCookie,
+        Origin: baseUrl,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ action: "shipping_booked" }),
+    },
+  );
+  assert.equal(unweightedShipmentResponse.status, 409);
+  assert.match(
+    (await unweightedShipmentResponse.json()).error,
+    /authority-backed product weight/i,
+  );
+  assert.equal(
+    shippingRequests.length,
+    0,
+    "Shipping booking must fail before calling a provider when verified weights are absent",
+  );
+
   const paymentQuoteResponse = await fetch(`${baseUrl}/api/checkout/quote`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -688,6 +774,11 @@ try {
   assert.equal(outboxState.failed, 0);
   assert.equal(paymentRequests.length, 1);
   assert.equal(paymentRequests[0].orderNumber, paymentOrderNumber);
+  assert.equal(
+    paymentRequests[0].amount,
+    paymentOrderBody.order.pricingSnapshot.totalGrossHalalas / 100,
+  );
+  assert.equal(paymentRequests[0].currency, "SAR");
   assert.equal(paymentRequests[0].locale, "en");
   const paymentReturnUrl = new URL(paymentRequests[0].returnUrl);
   assert.equal(paymentReturnUrl.pathname, "/en/checkout/success");
@@ -750,6 +841,8 @@ try {
     orderNumber: paymentOrderNumber,
     paymentReferenceId: `PAY-${paymentOrderNumber}`,
     settlementReference: `SET-${paymentOrderNumber}`,
+    amount: paymentOrderBody.order.pricingSnapshot.totalGrossHalalas / 100,
+    currency: "SAR",
     eventId: "qa-payment-event-0001",
     settledAt: new Date().toISOString(),
   };
@@ -763,6 +856,55 @@ try {
     body: JSON.stringify({ ...paymentCallback, eventId: "" }),
   });
   assert.equal(missingEventCallback.status, 400);
+
+  const missingAmountCallback = await fetch(`${baseUrl}/api/providers/payment`, {
+    method: "POST",
+    headers: callbackHeaders,
+    body: JSON.stringify({ ...paymentCallback, amount: undefined }),
+  });
+  assert.equal(missingAmountCallback.status, 400);
+  assert.equal((await missingAmountCallback.json()).code, "payment_amount_invalid");
+
+  const mismatchedAmountCallback = await fetch(`${baseUrl}/api/providers/payment`, {
+    method: "POST",
+    headers: callbackHeaders,
+    body: JSON.stringify({
+      ...paymentCallback,
+      amount: paymentCallback.amount + 1,
+      eventId: "qa-payment-event-wrong-amount",
+    }),
+  });
+  assert.equal(mismatchedAmountCallback.status, 409);
+  assert.equal((await mismatchedAmountCallback.json()).code, "payment_amount_mismatch");
+
+  const mismatchedCurrencyCallback = await fetch(`${baseUrl}/api/providers/payment`, {
+    method: "POST",
+    headers: callbackHeaders,
+    body: JSON.stringify({
+      ...paymentCallback,
+      currency: "USD",
+      eventId: "qa-payment-event-wrong-currency",
+    }),
+  });
+  assert.equal(mismatchedCurrencyCallback.status, 409);
+  assert.equal((await mismatchedCurrencyCallback.json()).code, "payment_currency_mismatch");
+
+  const rejectedPaymentDatabase = new DatabaseSync(databasePath);
+  assert.equal(
+    rejectedPaymentDatabase.prepare(`
+      SELECT status FROM authority_orders WHERE order_number = ?
+    `).get(paymentOrderNumber).status,
+    "payment_pending",
+  );
+  assert.equal(
+    rejectedPaymentDatabase.prepare(`
+      SELECT COUNT(*) AS count
+      FROM authority_provider_events
+      WHERE provider = 'payment' AND event_id IN (?, ?)
+    `).get("qa-payment-event-wrong-amount", "qa-payment-event-wrong-currency").count,
+    0,
+  );
+  rejectedPaymentDatabase.close();
 
   const firstPaymentCallback = await fetch(`${baseUrl}/api/providers/payment`, {
     method: "POST",
@@ -828,7 +970,8 @@ try {
     }),
   });
   assert.equal(expiryOrderResponse.status, 201);
-  const expiryOrderNumber = (await expiryOrderResponse.json()).order.orderNumber;
+  const expiryOrderBody = await expiryOrderResponse.json();
+  const expiryOrderNumber = expiryOrderBody.order.orderNumber;
 
   const expiryDrainResponse = await fetch(`${baseUrl}/api/ops/outbox`, {
     method: "POST",
@@ -879,6 +1022,8 @@ try {
       orderNumber: expiryOrderNumber,
       paymentReferenceId: `PAY-${expiryOrderNumber}`,
       settlementReference: `SET-${expiryOrderNumber}`,
+      amount: expiryOrderBody.order.pricingSnapshot.totalGrossHalalas / 100,
+      currency: "SAR",
       eventId: "qa-payment-event-late-0001",
       settledAt: new Date().toISOString(),
     }),

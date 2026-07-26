@@ -7,6 +7,7 @@ import { TrackedLink } from "@/components/tracked-link";
 import { getPageType, trackAnalyticsEvent } from "@/lib/analytics";
 import { DownloadCsvButton } from "@/components/ops-download-csv";
 import { useClientPagination, PaginationControls } from "@/components/ops-pagination-controls";
+import { OpsLastUpdated } from "@/components/ops-last-updated";
 import {
   getOrderFulfillmentPlan,
   getOrderProviderHandoff,
@@ -115,6 +116,7 @@ export function OrdersOpsSurface() {
   const [statusFilter, setStatusFilter] = useState<OrderStatusFilter>("all");
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<string | null>(null);
+  const [lastFetched, setLastFetched] = useState<Date | null>(null);
   const [selectedOrderNumbers, setSelectedOrderNumbers] = useState<Set<string>>(new Set());
   const [isBulkProcessing, setIsBulkProcessing] = useState(false);
   const [activeProviderActionKey, setActiveProviderActionKey] = useState<string | null>(null);
@@ -163,6 +165,7 @@ export function OrdersOpsSurface() {
       .then((nextOrders) => {
         setOrders(nextOrders);
         setError(null);
+        setLastFetched(new Date());
       })
       .catch((loadError: unknown) => {
         setOrders([]);
@@ -401,6 +404,7 @@ export function OrdersOpsSurface() {
             ابحثي بالمرجع أو العميل، راجعي الدفع والشحن، ثم نفّذي الخطوة التالية
             من سجل مركزي يحافظ على حالة الطلب ومسار المتابعة.
           </p>
+          <OpsLastUpdated lastFetched={lastFetched} onRefresh={() => { setIsLoading(true); void fetchOpsOrdersFromAuthority().then((nextOrders) => { setOrders(nextOrders); setError(null); setLastFetched(new Date()); }).catch((loadError: unknown) => { setOrders([]); setError(loadError instanceof Error ? loadError.message : "تعذر التحديث."); }).finally(() => setIsLoading(false)); }} isLoading={isLoading} />
         </div>
 
         <div className={styles.heroAside}>

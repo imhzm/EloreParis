@@ -69,6 +69,7 @@ export function OpsAuditSurface() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<AuditFilter>("all");
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
     void fetchOpsAuditEntries()
@@ -89,13 +90,18 @@ export function OpsAuditSurface() {
       });
   }, []);
 
-  const filteredEntries = useMemo(
-    () =>
-      auditEntries.filter((entry) =>
-        filter === "all" ? true : entry.action === filter,
-      ),
-    [auditEntries, filter],
-  );
+  const filteredEntries = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+    return auditEntries.filter((entry) => {
+      if (filter !== "all" && entry.action !== filter) return false;
+      if (!normalizedQuery) return true;
+      return (
+        entry.actor.name.toLowerCase().includes(normalizedQuery) ||
+        entry.entityId.toLowerCase().includes(normalizedQuery) ||
+        entry.actor.role.toLowerCase().includes(normalizedQuery)
+      );
+    });
+  }, [auditEntries, filter, query]);
 
   const { pagination, paginatedItems, goToPage, changePageSize } =
     useClientPagination(filteredEntries);
@@ -176,6 +182,7 @@ export function OpsAuditSurface() {
           <h2>النشاط الحالي</h2>
 
           <div className={styles.filterChipRow}>
+            <input className={styles.textInput} type="search" value={query} onChange={(event) => setQuery(event.currentTarget.value)} placeholder="بحث باسم المستخدم أو معرف الكيان…" aria-label="بحث في سجل المراجعة" style={{ minHeight: 40, width: "auto", flex: "0 1 220px", padding: "8px 14px" }} />
             {auditFilters.map((candidate) => {
               const isActive = filter === candidate;
               const label =

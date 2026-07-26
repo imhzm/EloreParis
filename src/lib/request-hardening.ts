@@ -95,7 +95,7 @@ export function assertTrustedMutationRequest(request: Request) {
 
   const fetchSiteHeader = request.headers.get("sec-fetch-site");
 
-  if (fetchSiteHeader === "same-origin" || fetchSiteHeader === "same-site") {
+  if (fetchSiteHeader === "same-origin") {
     return;
   }
 

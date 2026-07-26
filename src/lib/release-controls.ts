@@ -75,7 +75,7 @@ export function isPublicCommerceEnabled(
   return isEnabled(env.PUBLIC_COMMERCE_ENABLED);
 }
 
-export function isPublicCommerceAvailable(
+export function isGuestCommerceAvailable(
   env: NodeJS.ProcessEnv = process.env,
 ) {
   return (
@@ -84,7 +84,18 @@ export function isPublicCommerceAvailable(
     isPublicLegalContentApproved(env) &&
     isPublicCommerceEnabled(env) &&
     isConfiguredVersion(env.PUBLIC_TERMS_VERSION) &&
-    isConfiguredVersion(env.PUBLIC_PRIVACY_NOTICE_VERSION) &&
-    isExternalCustomerAuthConfigured(env)
+    isConfiguredVersion(env.PUBLIC_PRIVACY_NOTICE_VERSION)
   );
+}
+
+/**
+ * Backward-compatible public commerce gate.
+ *
+ * Customer account sign-in is an optional enhancement. Guest checkout remains
+ * available when the release, catalog, legal, and commerce controls are ready.
+ */
+export function isPublicCommerceAvailable(
+  env: NodeJS.ProcessEnv = process.env,
+) {
+  return isGuestCommerceAvailable(env);
 }

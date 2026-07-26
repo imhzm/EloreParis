@@ -166,18 +166,18 @@ export function buildProviderIntegrationContract(): ReleaseProviderIntegrationCo
   const shippingExecutionLane: ReleaseProviderIntegrationLane = {
     id: "shipping_execution",
     title: "Shipping execution",
-    status: shippingProvider.requestConfigured ? "warning" : "blocked",
+    status: "blocked",
     ownerPath: "/ops/fulfillment",
     currentMode: shippingProvider.requestConfigured
-      ? `${shippingProvider.label} live booking over ${standardShippingMethod?.label ?? "Standard shipping"} + ${expressShippingMethod?.label ?? "Express shipping"} lanes`
+      ? `${shippingProvider.label} configured, with outbound booking blocked until verified shipment weights exist`
       : `${standardShippingMethod?.label ?? "Standard shipping"} + ${expressShippingMethod?.label ?? "Express shipping"} rehearsal`,
     evidence:
       shippingProvider.requestConfigured
-        ? `Carrier booking now hands off through ${shippingProvider.label} at ${shippingProvider.requestPath}, and protected callbacks on ${shippingProvider.callbackPath} persist booking references, tracking numbers, and callback event ids instead of only flipping delivery state.`
+        ? `The ${shippingProvider.label} request contract is configured at ${shippingProvider.requestPath}, but outbound booking fails closed because current catalog and order authority do not contain verified product or packed-shipment weights. Protected callbacks remain available on ${shippingProvider.callbackPath}.`
         : "Carrier assignment, dispatch windows, and shipping fees are authority-driven and estimated, but they are not yet bound to live outbound carrier booking.",
     nextAction:
       shippingProvider.requestConfigured
-        ? "Keep the shipping contract stable, then bind live carrier pricing and tariff confirmation before release treats shipping as fully owned."
+        ? "Add authority-backed product weights with explicit units, calculate packed shipment weight, and verify carrier tariff rules before enabling outbound booking."
         : "Bind SHIPPING_PROVIDER_BASE_URL, SHIPPING_PROVIDER_REQUEST_PATH, and SHIPPING_PROVIDER_API_KEY for live booking, tracking sync, and delivery callbacks.",
     missingBindings: [
       ...(!shippingProvider.requestConfigured
@@ -188,6 +188,7 @@ export function buildProviderIntegrationContract(): ReleaseProviderIntegrationCo
       ...(!shippingProvider.callbackConfigured
         ? ["No dedicated shipping callback secret is configured in the runtime."]
         : []),
+      "Authority-backed product and packed-shipment weights are not available, so outbound booking is intentionally blocked.",
       "Shipping fees remain estimated until a carrier pricing contract is bound.",
       "No live carrier tariff confirmation integration is configured.",
     ],

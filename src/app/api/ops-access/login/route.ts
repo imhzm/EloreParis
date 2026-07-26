@@ -220,7 +220,7 @@ export async function POST(request: NextRequest) {
     name: OPS_SESSION_COOKIE,
     value: sessionToken,
     httpOnly: true,
-    sameSite: "lax",
+    sameSite: "strict",
     secure: shouldUseSecureOpsCookies(),
     path: "/",
     maxAge: OPS_SESSION_MAX_AGE_SECONDS,

@@ -1,5 +1,5 @@
 import { TrackedLink } from "@/components/tracked-link";
-import { serializeJsonLd } from "@/lib/site-content";
+import { absoluteUrl, serializeJsonLd } from "@/lib/site-content";
 import styles from "./breadcrumb.module.css";
 
 type BreadcrumbItem = {
@@ -21,7 +21,7 @@ export function Breadcrumb({ items }: BreadcrumbProps) {
       "@type": "ListItem",
       position: index + 1,
       name: item.label,
-      ...(item.href ? { item: item.href } : {}),
+      ...(item.href ? { item: absoluteUrl(item.href) } : {}),
     })),
   };
 

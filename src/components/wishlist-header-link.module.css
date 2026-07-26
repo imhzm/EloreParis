@@ -1,0 +1,69 @@
+.link {
+  position: relative;
+  display: inline-flex;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-pill);
+  color: var(--elore-burgundy);
+  transition: color var(--motion-control), background var(--motion-control), transform var(--motion-control);
+}
+
+.link svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.55;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.badge {
+  position: absolute;
+  inset-block-start: 2px;
+  inset-inline-end: 0;
+  display: grid;
+  min-width: 17px;
+  height: 17px;
+  place-items: center;
+  padding: 0 4px;
+  border-radius: 999px;
+  color: var(--elore-burgundy);
+  background: var(--elore-blush);
+  font-size: 0.61rem;
+  font-weight: 700;
+}
+
+.link:focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: var(--focus-ring-offset);
+  box-shadow: var(--focus-ring);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .link:hover {
+    background: color-mix(in srgb, var(--elore-champagne) 16%, transparent);
+    transform: scale(1.04);
+  }
+}
+
+.link:active {
+  transform: scale(0.97);
+}
+
+@media (max-width: 700px) {
+  .link {
+    width: 40px;
+    height: 40px;
+    flex-basis: 40px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .link {
+    transition: none;
+  }
+}

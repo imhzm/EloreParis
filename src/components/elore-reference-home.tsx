@@ -33,13 +33,13 @@ export function EloreReferenceHome({ locale, content, bentoContent, serviceStrip
             media="(max-width: 680px)"
             srcSet={mobileHeroSrc}
           />
-          <img
+          <Image
             src={desktopHeroSrc}
             alt=""
-            width="1904"
-            height="826"
-            fetchPriority="high"
-            decoding="async"
+            width={1904}
+            height={826}
+            priority
+            unoptimized
           />
         </picture>
         <div className={styles.heroShade} aria-hidden="true" />
@@ -129,7 +129,7 @@ export function EloreReferenceHome({ locale, content, bentoContent, serviceStrip
           ))}
         </div>
         <TrackedLink
-          href={href("/routines")}
+          href={href("/rituals/builder")}
           className={styles.primaryAction}
           analyticsLabel="home_reference_routine"
           analyticsSurface="reference_home"

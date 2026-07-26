@@ -8,6 +8,8 @@ import {
 } from "@/lib/order-authority";
 import {
   inspectAuthorityProviderEvent,
+  parseProviderPaymentAmountHalalas,
+  parseProviderPaymentCurrency,
   ProviderEventAuthorityError,
   readAuthenticatedProviderCallback,
   recordAuthorityProviderEvent,
@@ -21,6 +23,8 @@ const callbackKeys = [
   "orderNumber",
   "paymentReferenceId",
   "settlementReference",
+  "amount",
+  "currency",
   "eventId",
   "settledAt",
 ] as const;
@@ -50,6 +54,22 @@ export async function POST(request: NextRequest) {
     const orderNumber = requiredString(body, "orderNumber", 160).toUpperCase();
     const paymentReferenceId = requiredString(body, "paymentReferenceId");
     const settlementReference = requiredString(body, "settlementReference");
+    const paymentAmountHalalas = parseProviderPaymentAmountHalalas(body.amount);
+    if (paymentAmountHalalas === null) {
+      throw new ProviderEventAuthorityError(
+        "amount must be a positive SAR value with no more than two decimal places.",
+        400,
+        "payment_amount_invalid",
+      );
+    }
+    const paymentCurrency = parseProviderPaymentCurrency(body.currency);
+    if (!paymentCurrency) {
+      throw new ProviderEventAuthorityError(
+        "currency must be a three-letter ISO currency code.",
+        400,
+        "payment_currency_invalid",
+      );
+    }
     const eventId = requiredString(body, "eventId");
     const settledAt = requiredString(body, "settledAt", 80);
     if (Number.isNaN(Date.parse(settledAt))) {
@@ -66,6 +86,8 @@ export async function POST(request: NextRequest) {
       {
         paymentReferenceId,
         settlementReference,
+        paymentAmountHalalas,
+        paymentCurrency,
         paymentEventId: eventId,
         occurredAt: new Date(settledAt).toISOString(),
       },

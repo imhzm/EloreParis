@@ -45,8 +45,8 @@ CASES = (
     PageCase("journal-en", "/en/journal", "[data-journal-experience]"),
     PageCase("article-ar", "/ar/journal/morning-ritual-for-hot-weather", "[data-article-experience]"),
     PageCase("article-en", "/en/journal/morning-ritual-for-hot-weather", "[data-article-experience]"),
-    PageCase("about-ar", "/ar/about", "[data-trust-variant=brand]"),
-    PageCase("about-en", "/en/about", "[data-trust-variant=brand]"),
+    PageCase("about-ar", "/ar/about", "[data-about-editorial]"),
+    PageCase("about-en", "/en/about", "[data-about-editorial]"),
     PageCase("contact-ar", "/ar/contact", "[data-trust-variant=support]"),
     PageCase("contact-en", "/en/contact", "[data-trust-variant=support]"),
     PageCase("faq-ar", "/ar/faq", "[data-trust-variant=faq]"),
@@ -155,7 +155,10 @@ def inspect_accessibility(page: Page, case: PageCase) -> dict:
     require(not missing_alt, f"{case.name} has images without alt attributes: {missing_alt}")
     require(sticky_sections == 0, f"{case.name} regressed to sticky content scenes")
     require("Public Sans" in body_font and "Cairo" in body_font, f"{case.name} lost the bilingual body stack")
-    require("Playfair Display" in heading_font and "Cairo" in heading_font, f"{case.name} lost the bilingual display stack")
+    require(
+        "Playfair Display" in heading_font and "Noto Naskh Arabic" in heading_font,
+        f"{case.name} lost the bilingual display stack",
+    )
 
     return {
         "name": case.name,
