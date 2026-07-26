@@ -12,7 +12,7 @@ import {
 } from "@/lib/order-authority";
 
 const MAX_OUTBOX_ATTEMPTS = 8;
-const DEFAULT_LEASE_MS = 60_000;
+const DEFAULT_LEASE_MS = 300_000;
 const MAX_BATCH_SIZE = 50;
 
 type AuthorityOutboxStatus = "pending" | "processing" | "succeeded" | "failed";
@@ -211,7 +211,9 @@ async function processAuthorityOutboxEvent(event: ClaimedAuthorityOutboxEvent) {
       await initiateAuthorityPaymentLink(orderNumber);
       return;
     case "notification.order.received":
-      await syncAndDeliverNotificationsForOrders([order]);
+      await syncAndDeliverNotificationsForOrders([order], {
+        failOnDeferredDelivery: true,
+      });
       return;
     default:
       throw new Error(`Unsupported outbox event type: ${event.eventType}`);
@@ -225,10 +227,16 @@ export async function drainAuthorityOutbox({
   limit?: number;
   aggregateId?: string;
 } = {}) {
-  const claimed = claimAuthorityOutboxEvents({ limit, aggregateId });
-  const summary = { claimed: claimed.length, succeeded: 0, retried: 0, failed: 0 };
+  const batchSize = normalizeBatchSize(limit);
+  const summary = { claimed: 0, succeeded: 0, retried: 0, failed: 0 };
 
-  for (const event of claimed) {
+  for (let index = 0; index < batchSize; index += 1) {
+    const [event] = claimAuthorityOutboxEvents({
+      limit: 1,
+      aggregateId,
+    });
+    if (!event) break;
+    summary.claimed += 1;
     try {
       await processAuthorityOutboxEvent(event);
       if (!markAuthorityOutboxSucceeded(event)) {

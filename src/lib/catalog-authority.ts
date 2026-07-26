@@ -139,6 +139,9 @@ export function evaluateCatalogImportReadiness(
   ) {
     blockers.add("shipping_methods_incomplete");
   }
+  if (!payload.shipmentPacking) {
+    blockers.add("shipment_packing_authority_missing");
+  }
 
   let variantCount = 0;
   for (const product of payload.products) {
@@ -168,6 +171,9 @@ export function evaluateCatalogImportReadiness(
       if (variant.grossHalalas <= 0) blockers.add(`variant_price_invalid:${variant.sku}`);
       if (!approvals.has(approvalKey("variant", variant.sku, "price"))) {
         blockers.add(`variant_price_approval_missing:${variant.sku}`);
+      }
+      if (!variant.shippingProfile) {
+        blockers.add(`variant_shipping_profile_missing:${variant.sku}`);
       }
     }
   }

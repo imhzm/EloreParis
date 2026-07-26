@@ -7,9 +7,15 @@ import {
   type RuntimeAuthProviderConfig,
   type RuntimeProviderBindingConfig,
 } from "@/lib/provider-runtime-config";
+import {
+  isExternalCustomerAuthConfigured,
+  isTrustedProviderRequestPath,
+  isTrustedProviderUrl,
+} from "@/lib/release-controls";
 
 const PROVIDER_REQUEST_TOKEN_MIN_LENGTH = 8;
 const PROVIDER_CALLBACK_SECRET_MIN_LENGTH = 16;
+const PROVIDER_REQUEST_TIMEOUT_MAX_MS = 10_000;
 
 function normalizeValue(value: string | undefined) {
   return value?.trim() ?? "";
@@ -38,7 +44,9 @@ function normalizeHeaderName(value: string | undefined) {
 
 function normalizeTimeout(value: string | undefined, fallbackValue: number) {
   const parsedValue = Number.parseInt(normalizeValue(value), 10);
-  return Number.isFinite(parsedValue) && parsedValue >= 1000
+  return Number.isFinite(parsedValue) &&
+    parsedValue >= 1000 &&
+    parsedValue <= PROVIDER_REQUEST_TIMEOUT_MAX_MS
     ? parsedValue
     : fallbackValue;
 }
@@ -69,6 +77,7 @@ export type RuntimeNotificationProviderConfig = {
 
 export type RuntimeExternalAuthProviderConfig = RuntimeAuthProviderConfig & {
   issuer: string;
+  jwksUrl: string;
   authorizeUrl: string;
   tokenUrl: string;
   profileUrl: string;
@@ -76,6 +85,7 @@ export type RuntimeExternalAuthProviderConfig = RuntimeAuthProviderConfig & {
   clientSecret: string;
   scope: string;
   externalAuthConfigured: boolean;
+  externalAuthRequested: boolean;
 };
 
 function resolveLiveRequestConfig(
@@ -102,7 +112,9 @@ function resolveLiveRequestConfig(
     requestAuthHeaderName,
     requestAuthToken,
     requestConfigured:
-      Boolean(requestBaseUrl && requestPath) && isConfiguredToken(requestAuthToken),
+      isTrustedProviderUrl(requestBaseUrl, process.env) &&
+      isTrustedProviderRequestPath(requestPath) &&
+      isConfiguredToken(requestAuthToken),
   };
 }
 
@@ -159,19 +171,28 @@ export function getExternalAuthProviderConfig(): RuntimeExternalAuthProviderConf
   const clientId = normalizeValue(process.env.AUTH_PROVIDER_CLIENT_ID);
   const clientSecret = normalizeValue(process.env.AUTH_PROVIDER_CLIENT_SECRET);
   const configuredIssuer = normalizeValue(process.env.AUTH_PROVIDER_ISSUER);
+  const jwksUrl = normalizeValue(process.env.AUTH_PROVIDER_JWKS_URL);
   let inferredIssuer = "";
   try {
     inferredIssuer = authorizeUrl ? new URL(authorizeUrl).origin : "";
   } catch {
     inferredIssuer = "";
   }
-  const externalAuthConfigured =
-    Boolean(authorizeUrl && tokenUrl && clientId) &&
-    isConfiguredToken(clientSecret);
+  const externalAuthConfigured = isExternalCustomerAuthConfigured(process.env);
+  const externalAuthRequested = Boolean(
+    configuredIssuer ||
+    jwksUrl ||
+    authorizeUrl ||
+    tokenUrl ||
+    profileUrl ||
+    clientId ||
+    clientSecret,
+  );
 
   return {
     ...baseConfig,
     issuer: (configuredIssuer || inferredIssuer).replace(/\/$/, ""),
+    jwksUrl,
     authorizeUrl,
     tokenUrl,
     profileUrl,
@@ -181,5 +202,6 @@ export function getExternalAuthProviderConfig(): RuntimeExternalAuthProviderConf
       normalizeValue(process.env.AUTH_PROVIDER_SCOPE) ||
       "openid profile email phone",
     externalAuthConfigured,
+    externalAuthRequested,
   };
 }

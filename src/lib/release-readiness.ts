@@ -304,7 +304,11 @@ export function getReleaseReadinessSnapshot(): ReleaseReadinessSnapshot {
     ...runtimePreflight.checks,
     ...providerOwnables,
   ]);
-  const releaseStatusItems = [...gates, ...providerOwnables];
+  const releaseStatusItems = [
+    ...gates,
+    ...runtimePreflight.checks,
+    ...providerOwnables,
+  ];
   const providerNextActions = Array.from(
     new Set(
       providerContract.lanes

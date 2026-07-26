@@ -78,9 +78,22 @@ export async function deliverNotificationForOrder(
   return deliverQueuedNotification(notification, order);
 }
 
-export async function syncAndDeliverNotificationsForOrders(orders: StoredOrder[]) {
+export async function syncAndDeliverNotificationsForOrders(
+  orders: StoredOrder[],
+  { failOnDeferredDelivery = false }: { failOnDeferredDelivery?: boolean } = {},
+) {
   const notifications = await syncNotificationQueueForOrders(orders);
   const updatedNotifications = new Map<string, StoredNotification>();
+  const orderNumbers = new Set(orders.map((order) => order.orderNumber));
+  const deliverableNotificationIds = new Set(
+    notifications
+      .filter(
+        (notification) =>
+          orderNumbers.has(notification.orderNumber) &&
+          notification.status === "queued",
+      )
+      .map((notification) => notification.id),
+  );
 
   for (const order of orders) {
     const orderNotifications = notifications.filter(
@@ -96,7 +109,20 @@ export async function syncAndDeliverNotificationsForOrders(orders: StoredOrder[]
     }
   }
 
-  return notifications.map(
+  const deliveredNotifications = notifications.map(
     (notification) => updatedNotifications.get(notification.id) ?? notification,
   );
+
+  if (
+    failOnDeferredDelivery &&
+    deliveredNotifications.some(
+      (notification) =>
+        deliverableNotificationIds.has(notification.id) &&
+        notification.status === "queued",
+    )
+  ) {
+    throw new Error("Notification delivery was deferred for a retryable provider failure.");
+  }
+
+  return deliveredNotifications;
 }

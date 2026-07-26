@@ -47,10 +47,15 @@ const guestCommerceReady = {
 
 const satisfied = {
   ...guestCommerceReady,
-  AUTH_PROVIDER_AUTHORIZE_URL: "https://id.idp-host.test/authorize",
-  AUTH_PROVIDER_TOKEN_URL: "https://id.idp-host.test/token",
+  APP_ENV: "production",
+  AUTH_PROVIDER_ISSUER: "https://identity.example.com",
+  AUTH_PROVIDER_AUTHORIZE_URL: "https://identity.example.com/authorize",
+  AUTH_PROVIDER_TOKEN_URL: "https://identity.example.com/token",
+  AUTH_PROVIDER_JWKS_URL: "https://identity.example.com/.well-known/jwks.json",
+  AUTH_PROVIDER_PROFILE_URL: "https://identity.example.com/profile",
   AUTH_PROVIDER_CLIENT_ID: "elore-live-client",
   AUTH_PROVIDER_CLIENT_SECRET: "a-real-looking-secret-value-1234",
+  AUTH_PROVIDER_SCOPE: "openid profile email phone",
 };
 
 assert.equal(
@@ -109,6 +114,77 @@ for (const value of templateValues) {
     `AUTH_PROVIDER_CLIENT_SECRET=${JSON.stringify(value)} must not count as configured`,
   );
 }
+
+for (const requiredField of [
+  "AUTH_PROVIDER_ISSUER",
+  "AUTH_PROVIDER_AUTHORIZE_URL",
+  "AUTH_PROVIDER_TOKEN_URL",
+  "AUTH_PROVIDER_JWKS_URL",
+  "AUTH_PROVIDER_CLIENT_ID",
+]) {
+  assert.equal(
+    controls.isExternalCustomerAuthConfigured({
+      ...satisfied,
+      [requiredField]: "",
+    }),
+    false,
+    `${requiredField} is required before optional OIDC account auth is ready`,
+  );
+}
+
+for (const unsafeProviderUrl of [
+  "http://identity.example.com/jwks",
+  "https://user:password@identity.example.com/jwks",
+  "https://127.0.0.1/jwks",
+  "https://10.0.0.8/jwks",
+  "https://identity.internal/jwks",
+]) {
+  assert.equal(
+    controls.isExternalCustomerAuthConfigured({
+      ...satisfied,
+      AUTH_PROVIDER_JWKS_URL: unsafeProviderUrl,
+    }),
+    false,
+    `Unsafe JWKS endpoint ${unsafeProviderUrl} must fail closed`,
+  );
+}
+
+assert.equal(
+  controls.isExternalCustomerAuthConfigured({
+    ...satisfied,
+    AUTH_PROVIDER_SCOPE: "profile email",
+  }),
+  false,
+  "OIDC readiness requires the openid scope because a signed id_token is mandatory",
+);
+
+assert.equal(
+  controls.isTrustedProviderUrl("http://127.0.0.1:4071", { APP_ENV: "development" }),
+  true,
+  "Loopback HTTP provider mocks are allowed only outside production",
+);
+assert.equal(
+  controls.isTrustedProviderUrl("http://127.0.0.1:4071", { APP_ENV: "production" }),
+  false,
+  "Production provider calls must not target loopback HTTP",
+);
+for (const requestPath of [
+  "https://attacker.example/path",
+  "//attacker.example/path",
+  "\\\\attacker.example\\path",
+  "relative/path",
+]) {
+  assert.equal(
+    controls.isTrustedProviderRequestPath(requestPath),
+    false,
+    `Outbound provider request path ${requestPath} must not override its trusted base URL`,
+  );
+}
+assert.equal(
+  controls.isTrustedProviderRequestPath("/payments/links"),
+  true,
+  "A normal relative provider API path must remain supported",
+);
 
 // Each flag is load-bearing on its own.
 for (const flag of [

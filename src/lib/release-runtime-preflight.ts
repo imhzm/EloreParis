@@ -104,6 +104,10 @@ export function getReleaseRuntimePreflightSnapshot(): ReleaseRuntimePreflightSna
   const signingSecretResolution =
     signingSecretBindings.find((binding) => binding.status !== "ready")?.nextAction ??
     "Keep ORDER_AUTHORITY_SECRET and OPS_ACCESS_SIGNING_SECRET rotation explicit inside the hosted runtime.";
+  const outboxWorkerSecret = process.env.OUTBOX_WORKER_SECRET?.trim() ?? "";
+  const outboxWorkerReady =
+    outboxWorkerSecret.length >= 32 &&
+    !/replace|change-me|example|placeholder/i.test(outboxWorkerSecret);
 
   const checks: ReleaseRuntimePreflightCheck[] = [
     {
@@ -202,6 +206,22 @@ export function getReleaseRuntimePreflightSnapshot(): ReleaseRuntimePreflightSna
       owner: securityOwner,
       resolutionAction:
         "Configure at least one manager-capable protected identity before live release publication, evidence publication, or approval actions.",
+    },
+    {
+      id: "outbox-retry-worker",
+      title: "Unattended order outbox retry",
+      status: outboxWorkerReady ? "ready" : "blocked",
+      summary: outboxWorkerReady
+        ? "A dedicated secret is configured for the loopback-only systemd outbox retry worker."
+        : "The unattended order outbox worker cannot authenticate, so transient payment and notification failures may require manual recovery.",
+      details: [
+        `Worker secret configured: ${outboxWorkerReady ? "yes" : "no"}`,
+        "Hostinger timer target: elore-paris-outbox.timer",
+        "Public Nginx route exposure: denied by exact-match location",
+      ],
+      owner: platformOwner,
+      resolutionAction:
+        "Generate OUTBOX_WORKER_SECRET with at least 32 random characters in the Hostinger environment, then enable and verify elore-paris-outbox.timer.",
     },
   ];
 

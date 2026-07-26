@@ -6,6 +6,7 @@ export type ReleaseEvidenceCheck = {
   id: string;
   title: string;
   count: number;
+  status: "passed" | "failed";
 };
 
 export type ReleaseEvidenceReport = {

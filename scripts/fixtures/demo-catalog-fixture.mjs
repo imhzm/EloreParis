@@ -71,6 +71,13 @@ function variant(sku, labelAr, labelEn, size, grossHalalas, compareAtHalalas = n
     stockOnHand,
     safetyStock: 1,
     codEligible: true,
+    shippingProfile: {
+      itemWeightGrams: 100,
+      packagingWeightGrams: 40,
+      evidenceRef: `evidence://demo/shipping-weight/${sku}`,
+      verifiedBy: "demo-catalog-auditor",
+      verifiedAt: decidedAt,
+    },
   };
 }
 
@@ -207,6 +214,13 @@ const demoPayload = {
     approvedAt: decidedAt,
   },
   inventoryLocation: { code: "DEMO-RUH-01", name: "Demo Riyadh location" },
+  shipmentPacking: {
+    outerPackagingWeightGrams: 180,
+    additionalItemPackagingWeightGrams: 20,
+    evidenceRef: "evidence://demo/shipment-packing",
+    approvedBy: "demo-catalog-auditor",
+    approvedAt: decidedAt,
+  },
   shippingMethods: [{
     id: "standard",
     labelAr: "شحن قياسي",

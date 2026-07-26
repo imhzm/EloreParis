@@ -24,6 +24,7 @@
     "test:site-content-authority": "node scripts/site-content-authority-check.mjs",
     "test:jsonld-security": "node scripts/jsonld-security-check.mjs",
     "test:hostinger-release": "node scripts/hostinger-release-contract-check.mjs",
+    "test:outbox-worker": "node scripts/outbox-worker-security-check.mjs",
     "test:provider-auth-security": "node scripts/provider-auth-security-check.mjs",
     "test:ops-lifecycle-source": "node scripts/ops-lifecycle-source-check.mjs",
     "test:provider-callback-security": "node scripts/provider-callback-security-check.mjs",
@@ -47,25 +48,28 @@
     "test:browser-regression": "python scripts/browser-regression.py",
     "test:ops-dashboard": "python scripts/ops-dashboard-regression.py",
     "test:site-content-browser": "python scripts/site-content-browser-check.py",
+    "test:release-evidence": "node scripts/release-evidence-policy-check.mjs",
+    "test:live-release-verifier": "node scripts/live-release-verifier-check.mjs",
     "test:release-smoke": "node scripts/release-smoke-check.mjs",
     "dev:seed-demo": "node scripts/dev-seed-demo-catalog.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-sesv2": "^3.1087.0",
-    "next": "16.2.10",
+    "next": "^16.2.12",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "sharp": "^0.34.5"
+    "sharp": "^0.35.3"
   },
   "devDependencies": {
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.2.10",
+    "eslint-config-next": "^16.2.12",
     "typescript": "^5"
   },
   "overrides": {
-    "postcss": "8.5.19"
+    "postcss": "8.5.19",
+    "sharp": "$sharp"
   }
 }

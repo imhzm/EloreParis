@@ -66,11 +66,30 @@ rmSync(databasePath, { force: true });
 rmSync(legacyOrderPath, { force: true });
 const paymentRequests = [];
 const shippingRequests = [];
+const notificationRequests = [];
+let notificationProviderAvailable = false;
 const paymentMock = createServer((request, response) => {
   let body = "";
   request.setEncoding("utf8");
   request.on("data", (chunk) => { body += chunk; });
   request.on("end", () => {
+    if (request.method === "POST" && request.url === "/notifications/send") {
+      const payload = JSON.parse(body);
+      notificationRequests.push({
+        notificationId: payload.notificationId,
+        orderNumber: payload.orderNumber,
+        idempotencyKey: request.headers["idempotency-key"],
+      });
+      response.writeHead(notificationProviderAvailable ? 200 : 503, {
+        "Content-Type": "application/json",
+      });
+      response.end(JSON.stringify(
+        notificationProviderAvailable
+          ? { deliveryId: `DELIVERY-${payload.notificationId}` }
+          : { error: "Temporary notification provider failure." },
+      ));
+      return;
+    }
     if (request.method === "POST" && request.url === "/shipments/bookings") {
       shippingRequests.push(JSON.parse(body));
       response.writeHead(200, { "Content-Type": "application/json" });
@@ -126,6 +145,10 @@ const server = spawn(process.execPath, [serverFile], {
     SHIPPING_PROVIDER_BASE_URL: paymentBaseUrl,
     SHIPPING_PROVIDER_REQUEST_PATH: "/shipments/bookings",
     SHIPPING_PROVIDER_API_KEY: "qa-shipping-api-key",
+    NOTIFICATION_PROVIDER_LABEL: "QA notification provider",
+    NOTIFICATION_PROVIDER_BASE_URL: paymentBaseUrl,
+    NOTIFICATION_PROVIDER_REQUEST_PATH: "/notifications/send",
+    NOTIFICATION_PROVIDER_API_KEY: "qa-notification-api-key",
   },
   stdio: ["ignore", "pipe", "pipe"],
 });
@@ -174,6 +197,61 @@ try {
   assert.equal(invalid.body.code, "catalog_import_invalid");
   assert.match(invalid.body.issues.join("\n"), /Duplicate product slug/i);
 
+  const invalidWeight = await api("POST", {
+    ...perfumePayload,
+    sourceRef: "qa://catalog/invalid-weight",
+    products: [{
+      ...perfumePayload.products[0],
+      variants: perfumePayload.products[0].variants.map((variant, index) =>
+        index === 0
+          ? {
+              ...variant,
+              shippingProfile: {
+                ...variant.shippingProfile,
+                itemWeightGrams: -1,
+              },
+            }
+          : variant),
+    }],
+  });
+  assert.equal(invalidWeight.response.status, 400);
+  assert.equal(invalidWeight.body.code, "catalog_import_invalid");
+  assert.match(invalidWeight.body.issues.join("\n"), /shippingProfile/i);
+
+  const legacyPayloadBase = structuredClone(perfumePayload);
+  delete legacyPayloadBase.shipmentPacking;
+  const legacyProducts = legacyPayloadBase.products.map((catalogProduct) => ({
+    ...catalogProduct,
+    variants: catalogProduct.variants.map((variant) => {
+      const legacyVariant = { ...variant };
+      delete legacyVariant.shippingProfile;
+      return legacyVariant;
+    }),
+  }));
+  const legacyImport = await api("POST", {
+    ...legacyPayloadBase,
+    sourceRef: "qa://catalog/legacy-without-shipping-weight",
+    products: legacyProducts,
+  });
+  assert.equal(legacyImport.response.status, 201);
+  assert.equal(legacyImport.body.readiness.ready, false);
+  assert.ok(
+    legacyImport.body.readiness.blockers.includes(
+      "shipment_packing_authority_missing",
+    ),
+  );
+  assert.ok(
+    legacyImport.body.readiness.blockers.includes(
+      `variant_shipping_profile_missing:${product.variants[0].sku}`,
+    ),
+  );
+  const legacyPublish = await api("PATCH", {
+    action: "publish",
+    importId: legacyImport.body.importId,
+  });
+  assert.equal(legacyPublish.response.status, 409);
+  assert.equal(legacyPublish.body.code, "catalog_import_not_ready");
+
   const imported = await api("POST", perfumePayload);
   assert.equal(imported.response.status, 201);
   assert.equal(imported.body.readiness.ready, true);
@@ -186,8 +264,12 @@ try {
 
   const beforePublish = await api("GET");
   assert.equal(beforePublish.body.readiness.ready, false);
-  assert.equal(beforePublish.body.imports.length, 1);
-  assert.equal(beforePublish.body.imports[0].readiness.ready, true);
+  assert.equal(beforePublish.body.imports.length, 2);
+  assert.equal(
+    beforePublish.body.imports.find((entry) => entry.id === imported.body.importId)
+      .readiness.ready,
+    true,
+  );
 
   const published = await api("PATCH", {
     action: "publish",
@@ -226,6 +308,8 @@ try {
     "safetyStock", "reserved", "codEligible", "rightsEvidenceRef",
     "sfdaNotificationId", "ecosmaProductReference", "approvedBy",
     "evidenceRef", "saudiImporterLicense", "internalLabelArtworkRef",
+    "shippingProfile", "shipmentPacking", "itemWeightGrams",
+    "packagingWeightGrams", "weightEvidenceRef",
     "tagsAr", "tagsEn", "concernsAr", "concernsEn", "routinesAr",
     "routinesEn", "benefitsAr", "benefitsEn", "packagingAr", "packagingEn",
     "familyAr", "familyEn", "topNotesAr", "topNotesEn",
@@ -461,7 +545,7 @@ try {
       shippingMethodId: "standard",
       paymentMethodId: "cash_on_delivery",
       acceptPolicies: true,
-      acceptUpdates: false,
+      acceptUpdates: true,
       termsVersion: "qa-terms-v1",
       privacyNoticeVersion: "qa-privacy-v1",
     },
@@ -500,6 +584,8 @@ try {
   assert.equal(orderBody.order.customer.phone, "966501234567");
   assert.equal(orderBody.order.customer.email, "");
   assert.equal(orderBody.order.lines[0].catalogTruth.mappingStatus, "pending");
+  assert.equal("shippingWeightSnapshot" in orderBody.order, false);
+  assert.equal("itemWeightGrams" in orderBody.order.lines[0].catalogTruth, false);
   const orderTruthDatabase = new DatabaseSync(databasePath);
   const persistedOrderRow = orderTruthDatabase.prepare(`
     SELECT payload_json
@@ -517,6 +603,26 @@ try {
   assert.equal(orderCatalogTruth.stockOnHand, product.variants[0].stockOnHand);
   assert.equal(orderCatalogTruth.lowStockThreshold, product.variants[0].safetyStock);
   assert.equal(orderCatalogTruth.codEligible, product.variants[0].codEligible);
+  assert.equal(
+    orderCatalogTruth.itemWeightGrams,
+    product.variants[0].shippingProfile.itemWeightGrams,
+  );
+  assert.equal(
+    orderCatalogTruth.packagingWeightGrams,
+    product.variants[0].shippingProfile.packagingWeightGrams,
+  );
+  assert.equal(
+    orderCatalogTruth.weightEvidenceRef,
+    product.variants[0].shippingProfile.evidenceRef,
+  );
+  assert.ok(persistedOrder.shippingWeightSnapshot);
+  assert.equal(
+    persistedOrder.shippingWeightSnapshot.totalWeightGrams,
+    product.variants[0].shippingProfile.itemWeightGrams * 2 +
+      product.variants[0].shippingProfile.packagingWeightGrams * 2 +
+      perfumePayload.shipmentPacking.outerPackagingWeightGrams +
+      perfumePayload.shipmentPacking.additionalItemPackagingWeightGrams,
+  );
   assert.match(orderCatalogTruth.continuityRule, new RegExp(imported.body.importId));
   assert.match(
     orderCatalogTruth.continuityRule,
@@ -529,6 +635,95 @@ try {
   assert.equal(orderBody.order.pricingSnapshot.totalVatHalalas, 3300);
   assert.equal(orderBody.order.pricingSnapshot.termsVersion, "qa-terms-v1");
   assert.equal(orderBody.order.pricingSnapshot.privacyNoticeVersion, "qa-privacy-v1");
+
+  const notificationFailureDeadline = Date.now() + 5_000;
+  let failedNotificationOutbox = null;
+  let queuedNotification = null;
+  while (Date.now() < notificationFailureDeadline) {
+    const notificationDatabase = new DatabaseSync(databasePath);
+    failedNotificationOutbox = notificationDatabase.prepare(`
+      SELECT status, attempts, next_attempt_at
+      FROM authority_outbox
+      WHERE aggregate_id = ? AND event_type = 'notification.order.received'
+    `).get(orderBody.order.orderNumber);
+    const notificationRow = notificationDatabase.prepare(`
+      SELECT payload_json
+      FROM authority_notifications
+      WHERE order_number = ? AND template_key = 'order_received'
+    `).get(orderBody.order.orderNumber);
+    notificationDatabase.close();
+    queuedNotification = notificationRow
+      ? JSON.parse(notificationRow.payload_json)
+      : null;
+    if (failedNotificationOutbox?.attempts >= 1 && queuedNotification) break;
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  assert.ok(failedNotificationOutbox);
+  assert.equal(failedNotificationOutbox.status, "pending");
+  assert.equal(failedNotificationOutbox.attempts, 1);
+  assert.equal(queuedNotification.status, "queued");
+  assert.match(queuedNotification.lastError, /Temporary notification provider failure/i);
+  assert.equal(notificationRequests.length, 1);
+
+  notificationProviderAvailable = true;
+  const releaseNotificationRetryDatabase = new DatabaseSync(databasePath);
+  releaseNotificationRetryDatabase.prepare(`
+    UPDATE authority_outbox
+    SET next_attempt_at = ?
+    WHERE aggregate_id = ? AND event_type = 'notification.order.received'
+  `).run(new Date(0).toISOString(), orderBody.order.orderNumber);
+  releaseNotificationRetryDatabase.close();
+
+  const notificationRecoveryResponse = await fetch(`${baseUrl}/api/ops/outbox`, {
+    method: "POST",
+    headers: {
+      Cookie: sessionCookie,
+      Origin: baseUrl,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ limit: 10 }),
+  });
+  assert.equal(notificationRecoveryResponse.status, 200);
+  const notificationRecovery = await notificationRecoveryResponse.json();
+  assert.deepEqual(notificationRecovery.result, {
+    claimed: 1,
+    succeeded: 1,
+    retried: 0,
+    failed: 0,
+  });
+
+  const recoveredNotificationDatabase = new DatabaseSync(databasePath);
+  const recoveredNotificationOutbox = recoveredNotificationDatabase.prepare(`
+    SELECT status, attempts
+    FROM authority_outbox
+    WHERE aggregate_id = ? AND event_type = 'notification.order.received'
+  `).get(orderBody.order.orderNumber);
+  const recoveredNotificationRow = recoveredNotificationDatabase.prepare(`
+    SELECT payload_json
+    FROM authority_notifications
+    WHERE order_number = ? AND template_key = 'order_received'
+  `).get(orderBody.order.orderNumber);
+  recoveredNotificationDatabase.close();
+  const recoveredNotification = JSON.parse(recoveredNotificationRow.payload_json);
+  assert.equal(recoveredNotificationOutbox.status, "succeeded");
+  assert.equal(recoveredNotificationOutbox.attempts, 2);
+  assert.equal(recoveredNotification.status, "sent");
+  assert.equal(notificationRequests.length, 2);
+  assert.equal(notificationRequests[0].notificationId, notificationRequests[1].notificationId);
+  assert.equal(notificationRequests[0].idempotencyKey, notificationRequests[1].idempotencyKey);
+
+  const notificationNoReplayResponse = await fetch(`${baseUrl}/api/ops/outbox`, {
+    method: "POST",
+    headers: {
+      Cookie: sessionCookie,
+      Origin: baseUrl,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ limit: 10 }),
+  });
+  assert.equal(notificationNoReplayResponse.status, 200);
+  assert.equal((await notificationNoReplayResponse.json()).result.claimed, 0);
+  assert.equal(notificationRequests.length, 2);
 
   const replayResponse = await fetch(`${baseUrl}/api/orders`, {
     method: "POST",
@@ -687,7 +882,33 @@ try {
   await confirmCodOrder(orderBody.order.orderNumber);
   const raceWinner = raceResults.find((result) => result.status === 201);
   assert.ok(raceWinner);
+  const prematureShipmentResponse = await fetch(
+    `${baseUrl}/api/ops/orders/${raceWinner.body.order.orderNumber}/provider`,
+    {
+      method: "PATCH",
+      headers: {
+        Cookie: sessionCookie,
+        Origin: baseUrl,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ action: "shipping_booked" }),
+    },
+  );
+  assert.equal(prematureShipmentResponse.status, 409);
+  assert.equal(shippingRequests.length, 0);
   await confirmCodOrder(raceWinner.body.order.orderNumber);
+
+  const shipmentSnapshotDatabase = new DatabaseSync(databasePath);
+  const confirmedOrderRow = shipmentSnapshotDatabase.prepare(`
+    SELECT payload_json FROM authority_orders WHERE order_number = ?
+  `).get(orderBody.order.orderNumber);
+  const confirmedWeightedOrder = JSON.parse(confirmedOrderRow.payload_json);
+  const unweightedOrder = structuredClone(confirmedWeightedOrder);
+  delete unweightedOrder.shippingWeightSnapshot;
+  shipmentSnapshotDatabase.prepare(`
+    UPDATE authority_orders SET payload_json = ? WHERE order_number = ?
+  `).run(JSON.stringify(unweightedOrder), orderBody.order.orderNumber);
+  shipmentSnapshotDatabase.close();
 
   const unweightedShipmentResponse = await fetch(
     `${baseUrl}/api/ops/orders/${orderBody.order.orderNumber}/provider`,
@@ -710,6 +931,75 @@ try {
     shippingRequests.length,
     0,
     "Shipping booking must fail before calling a provider when verified weights are absent",
+  );
+
+  const tamperedShipmentDatabase = new DatabaseSync(databasePath);
+  const tamperedWeightedOrder = structuredClone(confirmedWeightedOrder);
+  tamperedWeightedOrder.shippingWeightSnapshot.totalWeightGrams += 1;
+  tamperedShipmentDatabase.prepare(`
+    UPDATE authority_orders SET payload_json = ? WHERE order_number = ?
+  `).run(JSON.stringify(tamperedWeightedOrder), orderBody.order.orderNumber);
+  tamperedShipmentDatabase.close();
+  const tamperedShipmentResponse = await fetch(
+    `${baseUrl}/api/ops/orders/${orderBody.order.orderNumber}/provider`,
+    {
+      method: "PATCH",
+      headers: {
+        Cookie: sessionCookie,
+        Origin: baseUrl,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ action: "shipping_booked" }),
+    },
+  );
+  assert.equal(tamperedShipmentResponse.status, 409);
+  assert.equal(shippingRequests.length, 0);
+
+  const mismatchedLineDatabase = new DatabaseSync(databasePath);
+  const mismatchedLineOrder = structuredClone(confirmedWeightedOrder);
+  mismatchedLineOrder.lines[0].sku = "QA-TAMPERED-SKU";
+  mismatchedLineDatabase.prepare(`
+    UPDATE authority_orders SET payload_json = ? WHERE order_number = ?
+  `).run(JSON.stringify(mismatchedLineOrder), orderBody.order.orderNumber);
+  mismatchedLineDatabase.close();
+  const mismatchedLineResponse = await fetch(
+    `${baseUrl}/api/ops/orders/${orderBody.order.orderNumber}/provider`,
+    {
+      method: "PATCH",
+      headers: {
+        Cookie: sessionCookie,
+        Origin: baseUrl,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ action: "shipping_booked" }),
+    },
+  );
+  assert.equal(mismatchedLineResponse.status, 409);
+  assert.equal(shippingRequests.length, 0);
+
+  const restoreShipmentDatabase = new DatabaseSync(databasePath);
+  restoreShipmentDatabase.prepare(`
+    UPDATE authority_orders SET payload_json = ? WHERE order_number = ?
+  `).run(JSON.stringify(confirmedWeightedOrder), orderBody.order.orderNumber);
+  restoreShipmentDatabase.close();
+
+  const weightedShipmentResponse = await fetch(
+    `${baseUrl}/api/ops/orders/${orderBody.order.orderNumber}/provider`,
+    {
+      method: "PATCH",
+      headers: {
+        Cookie: sessionCookie,
+        Origin: baseUrl,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ action: "shipping_booked" }),
+    },
+  );
+  assert.equal(weightedShipmentResponse.status, 200);
+  assert.equal(shippingRequests.length, 1);
+  assert.equal(
+    shippingRequests[0].shipment.totalWeightGrams,
+    confirmedWeightedOrder.shippingWeightSnapshot.totalWeightGrams,
   );
 
   const paymentQuoteResponse = await fetch(`${baseUrl}/api/checkout/quote`, {
@@ -1075,11 +1365,11 @@ try {
   );
   assert.equal(
     database.prepare("SELECT COUNT(*) AS count FROM authority_catalog_products").get().count,
-    1,
+    2,
   );
   assert.equal(
     database.prepare("SELECT COUNT(*) AS count FROM authority_catalog_variants").get().count,
-    4,
+    8,
   );
   assert.equal(
     database.prepare("SELECT COUNT(*) AS count FROM authority_checkout_quotes").get().count,
@@ -1098,22 +1388,46 @@ try {
     4,
   );
   assert.equal(
-    database.prepare("SELECT on_hand FROM authority_inventory_balances WHERE sku = ?")
+    database.prepare(`
+      SELECT balance.on_hand
+      FROM authority_inventory_balances AS balance
+      INNER JOIN authority_catalog_publications AS publication
+        ON publication.import_id = balance.import_id
+      WHERE publication.status = 'active' AND balance.sku = ?
+    `)
       .get("QA-AUTH-001").on_hand,
     1,
   );
   assert.equal(
-    database.prepare("SELECT on_hand FROM authority_inventory_balances WHERE sku = ?")
+    database.prepare(`
+      SELECT balance.on_hand
+      FROM authority_inventory_balances AS balance
+      INNER JOIN authority_catalog_publications AS publication
+        ON publication.import_id = balance.import_id
+      WHERE publication.status = 'active' AND balance.sku = ?
+    `)
       .get("QA-RACE-001").on_hand,
     0,
   );
   assert.equal(
-    database.prepare("SELECT on_hand FROM authority_inventory_balances WHERE sku = ?")
+    database.prepare(`
+      SELECT balance.on_hand
+      FROM authority_inventory_balances AS balance
+      INNER JOIN authority_catalog_publications AS publication
+        ON publication.import_id = balance.import_id
+      WHERE publication.status = 'active' AND balance.sku = ?
+    `)
       .get("QA-PAY-001").on_hand,
     0,
   );
   assert.equal(
-    database.prepare("SELECT on_hand FROM authority_inventory_balances WHERE sku = ?")
+    database.prepare(`
+      SELECT balance.on_hand
+      FROM authority_inventory_balances AS balance
+      INNER JOIN authority_catalog_publications AS publication
+        ON publication.import_id = balance.import_id
+      WHERE publication.status = 'active' AND balance.sku = ?
+    `)
       .get("QA-EXP-001").on_hand,
     1,
   );

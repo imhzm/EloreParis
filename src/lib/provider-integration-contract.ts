@@ -1,5 +1,9 @@
 import "server-only";
 
+import {
+  evaluateCatalogImportReadiness,
+  getActiveCatalogAuthority,
+} from "@/lib/catalog-authority";
 import { getOpsAccessConfig, getOpsAuthMethodLabel } from "@/lib/ops-access";
 import {
   CUSTOMER_ACCOUNT_COOKIE,
@@ -49,6 +53,18 @@ export function buildProviderIntegrationContract(): ReleaseProviderIntegrationCo
   const paymentProvider = getLivePaymentProviderConfig();
   const shippingProvider = getLiveShippingProviderConfig();
   const notificationProvider = getNotificationProviderConfig();
+  const activeCatalog = getActiveCatalogAuthority();
+  const shippingWeightAuthorityReady = Boolean(
+    activeCatalog &&
+    evaluateCatalogImportReadiness(
+      activeCatalog.payload,
+      activeCatalog.importId,
+    ).ready &&
+    activeCatalog.payload.shipmentPacking &&
+    activeCatalog.payload.products.every((product) =>
+      product.variants.every((variant) => Boolean(variant.shippingProfile)),
+    ),
+  );
   const opsAuthLane: ReleaseProviderIntegrationLane = {
     id: "ops_auth",
     title: "Ops authentication",
@@ -89,12 +105,17 @@ export function buildProviderIntegrationContract(): ReleaseProviderIntegrationCo
   const customerOrderAccessLane: ReleaseProviderIntegrationLane = {
     id: "customer_order_access",
     title: "Customer auth and order access",
-    status: authProvider.externalAuthConfigured ? "warning" : "blocked",
+    status:
+      authProvider.externalAuthRequested && !authProvider.externalAuthConfigured
+        ? "blocked"
+        : "warning",
     ownerPath: "/account/orders",
     currentMode:
       authProvider.externalAuthConfigured
         ? `Guest order tracking plus ${authProvider.label} external auth handoff through ${authProvider.authorizeUrl}`
-        : "Guest order tracking plus local provider-auth handoff fallback for cross-device customer account ownership",
+        : authProvider.externalAuthRequested
+          ? "Guest order tracking is active; the requested external customer-account integration is incomplete and disabled"
+          : "Guest order tracking is active; optional cross-device customer accounts are intentionally disabled",
     evidence: authProvider.externalAuthConfigured
       ? `Recent-order access is signed with ${RECENT_ORDER_COOKIE} for ${Math.round(
           RECENT_ORDER_MAX_AGE_SECONDS / 3600,
@@ -102,23 +123,29 @@ export function buildProviderIntegrationContract(): ReleaseProviderIntegrationCo
           ORDER_ACCESS_MAX_AGE_SECONDS / 86400,
         )} days, and signed \`/account/access\` handoff links now redirect into ${authProvider.label} before returning to ${authProvider.callbackPath}, where customer account authority mints ${CUSTOMER_ACCOUNT_COOKIE} for ${Math.round(
           CUSTOMER_ACCOUNT_MAX_AGE_SECONDS / 86400,
-        )} days and refreshes ${ORDER_ACCESS_COOKIE} plus ${CUSTOMER_ACCESS_COOKIE}.`
+        )} days and refreshes ${ORDER_ACCESS_COOKIE} plus ${CUSTOMER_ACCESS_COOKIE}. Identity is accepted only after PKCE, nonce, issuer, audience, lifetime, and cryptographic JWKS signature validation through ${authProvider.jwksUrl}.`
       : `Recent-order access is signed with ${RECENT_ORDER_COOKIE} for ${Math.round(
           RECENT_ORDER_MAX_AGE_SECONDS / 3600,
         )} hours, successful order lookups now refresh ${ORDER_ACCESS_COOKIE} for ${Math.round(
           ORDER_ACCESS_MAX_AGE_SECONDS / 86400,
-        )} days, but cross-device customer account ownership still resolves through the local fallback path on ${authProvider.callbackPath}.`,
+        )} days. Guest commerce remains independent from the optional customer-account provider.`,
     nextAction:
       authProvider.externalAuthConfigured
         ? "Keep the external customer auth handoff stable, then add recovery, revocation, and durable self-serve credentials before launch can treat customer ownership as complete."
-        : "Set AUTH_PROVIDER_AUTHORIZE_URL, AUTH_PROVIDER_TOKEN_URL, AUTH_PROVIDER_CLIENT_ID, and AUTH_PROVIDER_CLIENT_SECRET so customer account continuity stops depending on the local fallback handoff.",
+        : authProvider.externalAuthRequested
+          ? "Complete the explicit issuer, authorize, token, JWKS, OpenID scope, client ID, and client secret contract or remove the partial provider settings before release."
+          : "Keep guest order tracking as the launch path, or configure the optional OIDC account lane later with an explicit issuer and JWKS contract.",
     missingBindings: [
-      ...(!authProvider.externalAuthConfigured
+      ...(authProvider.externalAuthRequested && !authProvider.externalAuthConfigured
         ? [
-            "External customer auth authorize/token contract is not fully configured in the runtime.",
+            "The requested external customer auth issuer/authorize/token/JWKS contract is incomplete or unsafe.",
           ]
         : []),
-      "Durable self-serve customer credentials, recovery, and revocation controls are not implemented in the current runtime.",
+      ...(authProvider.externalAuthConfigured
+        ? [
+            "Durable self-serve customer credentials, recovery, and revocation controls are not implemented in the current runtime.",
+          ]
+        : []),
     ],
   };
 
@@ -166,18 +193,33 @@ export function buildProviderIntegrationContract(): ReleaseProviderIntegrationCo
   const shippingExecutionLane: ReleaseProviderIntegrationLane = {
     id: "shipping_execution",
     title: "Shipping execution",
-    status: "blocked",
+    status:
+      shippingProvider.requestConfigured &&
+      shippingProvider.callbackConfigured &&
+      shippingWeightAuthorityReady
+        ? "warning"
+        : "blocked",
     ownerPath: "/ops/fulfillment",
     currentMode: shippingProvider.requestConfigured
-      ? `${shippingProvider.label} configured, with outbound booking blocked until verified shipment weights exist`
+      ? shippingWeightAuthorityReady && shippingProvider.callbackConfigured
+        ? `${shippingProvider.label} configured with verified gram-based order snapshots and protected callbacks`
+        : shippingWeightAuthorityReady
+          ? `${shippingProvider.label} booking is configured, but the callback contract is not protected yet`
+        : `${shippingProvider.label} configured, with outbound booking blocked until verified shipment weights exist`
       : `${standardShippingMethod?.label ?? "Standard shipping"} + ${expressShippingMethod?.label ?? "Express shipping"} rehearsal`,
     evidence:
       shippingProvider.requestConfigured
-        ? `The ${shippingProvider.label} request contract is configured at ${shippingProvider.requestPath}, but outbound booking fails closed because current catalog and order authority do not contain verified product or packed-shipment weights. Protected callbacks remain available on ${shippingProvider.callbackPath}.`
+        ? shippingWeightAuthorityReady && shippingProvider.callbackConfigured
+          ? `The ${shippingProvider.label} request contract is configured at ${shippingProvider.requestPath}; each order freezes evidence-backed product, unit-packaging, and outer-packing weights in grams before booking, with callbacks protected on ${shippingProvider.callbackPath}.`
+          : shippingWeightAuthorityReady
+            ? `The ${shippingProvider.label} request contract and verified gram-based order snapshots are available, but a dedicated callback secret is still missing.`
+          : `The ${shippingProvider.label} request contract is configured at ${shippingProvider.requestPath}, but outbound booking fails closed until the active catalog contains verified product and packed-shipment weights.`
         : "Carrier assignment, dispatch windows, and shipping fees are authority-driven and estimated, but they are not yet bound to live outbound carrier booking.",
     nextAction:
-      shippingProvider.requestConfigured
-        ? "Add authority-backed product weights with explicit units, calculate packed shipment weight, and verify carrier tariff rules before enabling outbound booking."
+      shippingProvider.requestConfigured && shippingWeightAuthorityReady
+        ? "Validate the carrier tariff, dimensional-weight, multi-package, and service-level contract before promoting this lane from warning to ready."
+        : shippingProvider.requestConfigured
+          ? "Publish an active catalog with authority-backed product and packing weights before enabling outbound booking."
         : "Bind SHIPPING_PROVIDER_BASE_URL, SHIPPING_PROVIDER_REQUEST_PATH, and SHIPPING_PROVIDER_API_KEY for live booking, tracking sync, and delivery callbacks.",
     missingBindings: [
       ...(!shippingProvider.requestConfigured
@@ -188,7 +230,11 @@ export function buildProviderIntegrationContract(): ReleaseProviderIntegrationCo
       ...(!shippingProvider.callbackConfigured
         ? ["No dedicated shipping callback secret is configured in the runtime."]
         : []),
-      "Authority-backed product and packed-shipment weights are not available, so outbound booking is intentionally blocked.",
+      ...(!shippingWeightAuthorityReady
+        ? [
+            "Authority-backed product and packed-shipment weights are not available in the active catalog, so outbound booking is intentionally blocked.",
+          ]
+        : []),
       "Shipping fees remain estimated until a carrier pricing contract is bound.",
       "No live carrier tariff confirmation integration is configured.",
     ],

@@ -5,6 +5,7 @@ export function redactOrderForCustomerView(order: StoredOrder): StoredOrder {
   return {
     ...order,
     allowOperationalUpdates: false,
+    shippingWeightSnapshot: undefined,
     customer: {
       fullName: order.customer.fullName,
       phone: order.customer.phone,
@@ -94,6 +95,7 @@ export function redactOrderForPublicTracking(order: StoredOrder): StoredOrder {
   return {
     ...order,
     allowOperationalUpdates: false,
+    shippingWeightSnapshot: undefined,
     customer: {
       fullName: "",
       phone: "",

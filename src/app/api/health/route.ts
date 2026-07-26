@@ -13,6 +13,7 @@ import {
   isPublicReleaseApproved,
   isSearchIndexingEnabled,
 } from "@/lib/search-visibility";
+import { getRuntimeDeploymentCommitReference } from "@/lib/runtime-deployment";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
@@ -46,6 +47,8 @@ export function GET() {
       status: "ok",
       service: "elore-paris-storefront",
       environment: getEnvironmentLabel(),
+      hostingProvider: process.env.HOSTING_PROVIDER?.trim() || "local",
+      commitReference: getRuntimeDeploymentCommitReference(),
       runtimeStage,
       publicReleaseApproved,
       publicCatalogApproved: isPublicCatalogApproved(),

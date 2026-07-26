@@ -11,6 +11,10 @@ import {
   type RuntimeLiveProviderConfig,
   type RuntimeNotificationProviderConfig,
 } from "@/lib/live-provider-config";
+import {
+  OidcIdTokenVerificationError,
+  verifyOidcIdToken,
+} from "@/lib/oidc-id-token";
 import { getSiteUrl } from "@/lib/site-content";
 
 type ProviderJsonRecord = Record<string, unknown>;
@@ -31,6 +35,8 @@ type ProviderFetchConfig = {
   label: string;
   timeoutMs: number;
 };
+
+const PROVIDER_RESPONSE_MAX_BYTES = 256 * 1024;
 
 export class ProviderGatewayError extends Error {
   provider: string;
@@ -83,76 +89,8 @@ function normalizeSubject(value: string | null) {
     : null;
 }
 
-function base64UrlDecode(value: string) {
-  return Buffer.from(value, "base64url").toString("utf8");
-}
-
-function parseIdTokenClaims(value: unknown, providerLabel: string) {
-  if (typeof value !== "string" || !value.trim()) return null;
-  const parts = value.split(".");
-  if (parts.length !== 3) {
-    throw new ProviderGatewayError(providerLabel, "Auth provider returned a malformed id_token.");
-  }
-  try {
-    const header = ensureProviderRecord(
-      JSON.parse(base64UrlDecode(parts[0])) as unknown,
-      providerLabel,
-    );
-    if (
-      typeof header.alg !== "string" ||
-      !["RS256", "PS256", "ES256"].includes(header.alg)
-    ) {
-      throw new ProviderGatewayError(
-        providerLabel,
-        "Auth provider id_token uses an unsupported signing algorithm.",
-        401,
-      );
-    }
-    const claims = JSON.parse(base64UrlDecode(parts[1])) as unknown;
-    return ensureProviderRecord(claims, providerLabel);
-  } catch (error) {
-    if (error instanceof ProviderGatewayError) throw error;
-    throw new ProviderGatewayError(providerLabel, "Auth provider returned invalid id_token claims.");
-  }
-}
-
 function claimIsExplicitlyTrue(value: unknown, candidatePaths: string[]) {
   return candidatePaths.some((path) => readPathValue(value, path) === true);
-}
-
-function validateIdTokenClaims({
-  claims,
-  config,
-  expectedNonce,
-}: {
-  claims: ProviderJsonRecord;
-  config: RuntimeExternalAuthProviderConfig;
-  expectedNonce: string;
-}) {
-  const issuer = normalizeIssuer(pickFirstString(claims, ["iss"]) ?? "");
-  const configuredIssuer = normalizeIssuer(config.issuer);
-  const subject = normalizeSubject(pickFirstString(claims, ["sub"]));
-  const nonce = pickFirstString(claims, ["nonce"]);
-  const audience = readPathValue(claims, "aud");
-  const audienceMatches =
-    audience === config.clientId ||
-    (Array.isArray(audience) && audience.some((entry) => entry === config.clientId));
-  const expiresAt = readPathValue(claims, "exp");
-
-  if (
-    !issuer ||
-    !configuredIssuer ||
-    issuer !== configuredIssuer ||
-    !subject ||
-    nonce !== expectedNonce ||
-    !audienceMatches ||
-    typeof expiresAt !== "number" ||
-    expiresAt * 1000 <= Date.now()
-  ) {
-    throw new ProviderGatewayError(config.label, "Auth provider id_token claims failed validation.", 401);
-  }
-
-  return subject;
 }
 
 function buildAbsoluteAppUrl(pathname: string) {
@@ -164,10 +102,6 @@ function buildAbsoluteAppUrl(pathname: string) {
 }
 
 function resolveProviderUrl(baseUrl: string, requestPath: string) {
-  if (/^https?:\/\//i.test(requestPath)) {
-    return requestPath;
-  }
-
   const normalizedBaseUrl = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
   const normalizedPath = requestPath.startsWith("/")
     ? requestPath.slice(1)
@@ -199,14 +133,66 @@ function buildProviderJsonHeaders(
   return headers;
 }
 
-async function parseProviderResponse(response: Response) {
-  const contentType = response.headers.get("content-type") ?? "";
+async function readBoundedProviderResponse(
+  response: Response,
+  providerLabel: string,
+) {
+  const contentLength = Number.parseInt(
+    response.headers.get("content-length") ?? "",
+    10,
+  );
+  if (
+    Number.isFinite(contentLength) &&
+    contentLength > PROVIDER_RESPONSE_MAX_BYTES
+  ) {
+    throw new ProviderGatewayError(
+      providerLabel,
+      "Provider response exceeded the maximum accepted size.",
+      502,
+    );
+  }
+  if (!response.body) return "";
 
-  if (contentType.includes("application/json")) {
-    return (await response.json().catch(() => null)) as unknown;
+  const reader = response.body.getReader();
+  const chunks: Buffer[] = [];
+  let totalBytes = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      totalBytes += value.byteLength;
+      if (totalBytes > PROVIDER_RESPONSE_MAX_BYTES) {
+        await reader.cancel();
+        throw new ProviderGatewayError(
+          providerLabel,
+          "Provider response exceeded the maximum accepted size.",
+          502,
+        );
+      }
+      chunks.push(Buffer.from(value));
+    }
+  } finally {
+    reader.releaseLock();
   }
 
-  const text = await response.text().catch(() => "");
+  return Buffer.concat(chunks, totalBytes).toString("utf8");
+}
+
+async function parseProviderResponse(
+  response: Response,
+  providerLabel: string,
+) {
+  const contentType = response.headers.get("content-type") ?? "";
+  const text = await readBoundedProviderResponse(response, providerLabel);
+
+  if (contentType.includes("application/json")) {
+    try {
+      return JSON.parse(text) as unknown;
+    } catch {
+      return null;
+    }
+  }
+
   return text ? { message: text } : null;
 }
 
@@ -222,9 +208,10 @@ async function requestProviderJson(
     const response = await fetch(url, {
       ...init,
       cache: "no-store",
+      redirect: "error",
       signal: controller.signal,
     });
-    const payload = await parseProviderResponse(response);
+    const payload = await parseProviderResponse(response, config.label);
 
     if (!response.ok) {
       const providerMessage =
@@ -315,12 +302,99 @@ function assertLiveRequestConfigured(
 function requireVerifiedShipmentWeightGrams(
   order: StoredOrder,
   providerLabel: string,
-): never {
-  throw new ProviderGatewayError(
-    providerLabel,
-    `Shipping booking for ${order.orderNumber} is blocked until every order line has an authority-backed product weight and a verified packed shipment weight can be calculated.`,
-    409,
+): number {
+  const snapshot = order.shippingWeightSnapshot;
+  const pricingSnapshot = order.pricingSnapshot;
+  const reject = () => {
+    throw new ProviderGatewayError(
+      providerLabel,
+      `Shipping booking for ${order.orderNumber} is blocked because its authority-backed product weight and packed-shipment snapshot are missing or inconsistent.`,
+      409,
+    );
+  };
+
+  if (
+    !snapshot ||
+    snapshot.unit !== "g" ||
+    !pricingSnapshot ||
+    snapshot.catalogVersion !== pricingSnapshot.catalogVersion ||
+    snapshot.catalogHash !== pricingSnapshot.catalogHash ||
+    !Number.isSafeInteger(snapshot.outerPackagingWeightGrams) ||
+    snapshot.outerPackagingWeightGrams < 1 ||
+    !Number.isSafeInteger(snapshot.additionalItemPackagingWeightGrams) ||
+    snapshot.additionalItemPackagingWeightGrams < 0 ||
+    !snapshot.packingEvidenceRef.trim() ||
+    !snapshot.packingApprovedBy.trim() ||
+    Number.isNaN(Date.parse(snapshot.packingApprovedAt))
+  ) {
+    return reject();
+  }
+
+  let itemCount = 0;
+  let itemsWeightGrams = 0;
+  let productPackagingWeightGrams = 0;
+  const pricedQuantities = new Map(
+    pricingSnapshot.lines.map((line) => [line.sku, line.quantity]),
   );
+  if (
+    pricedQuantities.size !== pricingSnapshot.lines.length ||
+    order.lines.length !== pricingSnapshot.lines.length
+  ) {
+    return reject();
+  }
+  for (const line of order.lines) {
+    const truth = line.catalogTruth;
+    if (
+      !Number.isSafeInteger(line.quantity) ||
+      line.quantity < 1 ||
+      !Number.isSafeInteger(truth.itemWeightGrams) ||
+      Number(truth.itemWeightGrams) < 1 ||
+      !Number.isSafeInteger(truth.packagingWeightGrams) ||
+      Number(truth.packagingWeightGrams) < 0 ||
+      !truth.weightEvidenceRef?.trim() ||
+      !truth.weightVerifiedBy?.trim() ||
+      !truth.weightVerifiedAt ||
+      Number.isNaN(Date.parse(truth.weightVerifiedAt))
+    ) {
+      return reject();
+    }
+    if (pricedQuantities.get(line.sku) !== line.quantity) {
+      return reject();
+    }
+    itemCount += line.quantity;
+    itemsWeightGrams += line.quantity * Number(truth.itemWeightGrams);
+    productPackagingWeightGrams +=
+      line.quantity * Number(truth.packagingWeightGrams);
+    if (
+      !Number.isSafeInteger(itemCount) ||
+      !Number.isSafeInteger(itemsWeightGrams) ||
+      !Number.isSafeInteger(productPackagingWeightGrams)
+    ) {
+      return reject();
+    }
+  }
+
+  const totalPackagingWeightGrams =
+    productPackagingWeightGrams +
+    snapshot.outerPackagingWeightGrams +
+    Math.max(0, itemCount - 1) *
+      snapshot.additionalItemPackagingWeightGrams;
+  const totalWeightGrams = itemsWeightGrams + totalPackagingWeightGrams;
+  if (
+    !Number.isSafeInteger(totalPackagingWeightGrams) ||
+    !Number.isSafeInteger(totalWeightGrams) ||
+    totalWeightGrams < 1 ||
+    totalWeightGrams > 100_000 ||
+    snapshot.itemCount !== itemCount ||
+    snapshot.itemsWeightGrams !== itemsWeightGrams ||
+    snapshot.productPackagingWeightGrams !== productPackagingWeightGrams ||
+    snapshot.totalPackagingWeightGrams !== totalPackagingWeightGrams ||
+    snapshot.totalWeightGrams !== totalWeightGrams
+  ) {
+    return reject();
+  }
+
+  return totalWeightGrams;
 }
 
 export async function createPaymentLinkWithProvider(order: StoredOrder) {
@@ -457,6 +531,13 @@ export async function bookShipmentWithProvider(order: StoredOrder) {
                 ? order.totalEstimate
                 : 0,
           },
+          items: order.lines.map((line) => ({
+            sku: line.sku,
+            name: line.productName,
+            quantity: line.quantity,
+            itemWeightGrams: line.catalogTruth.itemWeightGrams,
+            packagingWeightGrams: line.catalogTruth.packagingWeightGrams,
+          })),
           customer: {
             fullName: order.customer.fullName,
             phone: order.customer.phone,
@@ -468,11 +549,6 @@ export async function bookShipmentWithProvider(order: StoredOrder) {
             addressLine: order.customer.addressLine,
             notes: order.customer.notes,
           },
-          items: order.lines.map((line) => ({
-            sku: line.sku,
-            name: line.productName,
-            quantity: line.quantity,
-          })),
         }),
       },
     ),
@@ -703,29 +779,41 @@ export async function exchangeExternalAuthCodeForCustomerIdentity(
   if (!issuer) {
     throw new ProviderGatewayError(config.label, "Customer auth provider issuer is invalid.", 503);
   }
-  const exchange = await exchangeAuthorizationCode(
-    config,
-    code,
-    securityContext?.codeVerifier,
-  );
-  const idTokenClaims = parseIdTokenClaims(
-    readPathValue(exchange.tokenPayload, "id_token"),
-    config.label,
-  );
-  if (idTokenClaims && !securityContext) {
+  if (!securityContext) {
     throw new ProviderGatewayError(
       config.label,
-      "Auth provider id_token cannot be accepted without the original nonce context.",
+      "Customer auth cannot continue without its original PKCE and nonce context.",
       401,
     );
   }
-  const idTokenSubject = idTokenClaims && securityContext
-    ? validateIdTokenClaims({
-        claims: idTokenClaims,
-        config,
-        expectedNonce: securityContext.expectedNonce,
-      })
-    : null;
+  const exchange = await exchangeAuthorizationCode(
+    config,
+    code,
+    securityContext.codeVerifier,
+  );
+  let verifiedIdToken;
+  try {
+    verifiedIdToken = await verifyOidcIdToken(
+      readPathValue(exchange.tokenPayload, "id_token"),
+      {
+        clientId: config.clientId,
+        issuer: config.issuer,
+        jwksUrl: config.jwksUrl,
+        providerLabel: config.label,
+      },
+      securityContext.expectedNonce,
+    );
+  } catch (error) {
+    if (error instanceof OidcIdTokenVerificationError) {
+      throw new ProviderGatewayError(
+        config.label,
+        error.message,
+        error.statusCode,
+      );
+    }
+    throw error;
+  }
+  const idTokenSubject = verifiedIdToken.subject;
   const profilePayload =
     config.profileUrl && config.profileUrl.length > 0
       ? ensureProviderRecord(
@@ -745,7 +833,7 @@ export async function exchangeExternalAuthCodeForCustomerIdentity(
           ),
           config.label,
         )
-      : exchange.tokenPayload;
+      : verifiedIdToken.claims;
 
   const email = claimIsExplicitlyTrue(profilePayload, [
     "email_verified",
@@ -786,9 +874,7 @@ export async function exchangeExternalAuthCodeForCustomerIdentity(
       "profile.id",
       "data.id",
     ]));
-  const subject = idTokenSubject ?? profileSubject;
-
-  if (!subject || (idTokenSubject && profileSubject && idTokenSubject !== profileSubject)) {
+  if (profileSubject && idTokenSubject !== profileSubject) {
     throw new ProviderGatewayError(config.label, "Auth provider subject claim is missing or inconsistent.", 401);
   }
 
@@ -796,6 +882,6 @@ export async function exchangeExternalAuthCodeForCustomerIdentity(
     issuer,
     email,
     phone,
-    subject,
+    subject: idTokenSubject,
   } satisfies ProviderCustomerIdentity;
 }

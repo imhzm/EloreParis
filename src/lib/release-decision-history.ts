@@ -10,6 +10,7 @@ import {
 import { getContentGovernanceSummary } from "@/lib/content-governance";
 import { getLatestReleaseHandoffRecord } from "@/lib/release-handoff-history";
 import { buildReleaseHandoffReview } from "@/lib/release-handoff-review";
+import { validateReleaseEvidenceForApproval } from "@/lib/release-evidence";
 import { buildReleasePackageComparison } from "@/lib/release-package-comparison";
 import {
   buildReleasePacketReviewToken,
@@ -18,6 +19,7 @@ import {
 } from "@/lib/release-packet-review";
 import type { ReleaseDecisionRecord } from "@/lib/release-package-types";
 import type { OpsSessionSummary } from "@/lib/ops-types";
+import { getRuntimeDeploymentCommitReference } from "@/lib/runtime-deployment";
 
 const RELEASE_DECISION_RETENTION_LIMIT = 20;
 
@@ -177,14 +179,23 @@ export async function publishReleaseDecisionRecord(
     );
   }
 
-  if (
-    decision.verdict === "approve" &&
-    !releaseComparison.currentArtifact.releaseEvidence
-  ) {
-    throw new ReleaseDecisionError(
-      "Release evidence must exist before an approval decision can be recorded.",
-      409,
+  if (decision.verdict === "approve") {
+    const evidenceApproval = validateReleaseEvidenceForApproval(
+      releaseComparison.currentArtifact.releaseEvidence,
+      {
+        canonicalUrl: releaseComparison.currentArtifact.canonicalUrl,
+        runtimeCommitReference: getRuntimeDeploymentCommitReference(),
+      },
     );
+
+    if (!evidenceApproval.ready) {
+      throw new ReleaseDecisionError(
+        `Release evidence is not approval-ready: ${evidenceApproval.blockers.join(
+          ", ",
+        )}.`,
+        409,
+      );
+    }
   }
 
   const record: ReleaseDecisionRecord = {

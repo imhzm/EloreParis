@@ -67,6 +67,11 @@ export type StoredOrderLineCatalogTruth = {
   stockOnHand: number;
   lowStockThreshold: number;
   codEligible: boolean;
+  itemWeightGrams?: number;
+  packagingWeightGrams?: number;
+  weightEvidenceRef?: string;
+  weightVerifiedBy?: string;
+  weightVerifiedAt?: string;
 };
 
 export type StoredOrderLineCatalogAuthoritySnapshot = {
@@ -76,6 +81,27 @@ export type StoredOrderLineCatalogAuthoritySnapshot = {
   stockOnHand: number;
   lowStockThreshold: number;
   codEligible: boolean;
+  itemWeightGrams: number;
+  packagingWeightGrams: number;
+  weightEvidenceRef: string;
+  weightVerifiedBy: string;
+  weightVerifiedAt: string;
+};
+
+export type StoredOrderShippingWeightSnapshot = {
+  unit: "g";
+  catalogVersion: string;
+  catalogHash: string;
+  itemCount: number;
+  itemsWeightGrams: number;
+  productPackagingWeightGrams: number;
+  outerPackagingWeightGrams: number;
+  additionalItemPackagingWeightGrams: number;
+  totalPackagingWeightGrams: number;
+  totalWeightGrams: number;
+  packingEvidenceRef: string;
+  packingApprovedBy: string;
+  packingApprovedAt: string;
 };
 
 export type StoredOrderLine = {
@@ -173,6 +199,7 @@ export type StoredOrder = {
   lines: StoredOrderLine[];
   providerBindings: StoredOrderProviderBindings;
   pricingSnapshot?: OrderPricingSnapshot;
+  shippingWeightSnapshot?: StoredOrderShippingWeightSnapshot;
 };
 
 export type OrderTimelineStep = {
@@ -382,6 +409,11 @@ export function buildStoredOrderLineCatalogTruth(input: {
     stockOnHand: authority.stockOnHand,
     lowStockThreshold: authority.lowStockThreshold,
     codEligible: authority.codEligible,
+    itemWeightGrams: authority.itemWeightGrams,
+    packagingWeightGrams: authority.packagingWeightGrams,
+    weightEvidenceRef: authority.weightEvidenceRef,
+    weightVerifiedBy: authority.weightVerifiedBy,
+    weightVerifiedAt: authority.weightVerifiedAt,
   };
 }
 
@@ -398,6 +430,20 @@ function normalizeStoredOrderLineCatalogTruth(
   if (!isRecord(value)) {
     return fallbackTruth;
   }
+
+  const hasVerifiedWeight =
+    Number.isSafeInteger(value.itemWeightGrams) &&
+    Number(value.itemWeightGrams) > 0 &&
+    Number(value.itemWeightGrams) <= 50_000 &&
+    Number.isSafeInteger(value.packagingWeightGrams) &&
+    Number(value.packagingWeightGrams) >= 0 &&
+    Number(value.packagingWeightGrams) <= 10_000 &&
+    typeof value.weightEvidenceRef === "string" &&
+    Boolean(value.weightEvidenceRef.trim()) &&
+    typeof value.weightVerifiedBy === "string" &&
+    Boolean(value.weightVerifiedBy.trim()) &&
+    typeof value.weightVerifiedAt === "string" &&
+    !Number.isNaN(Date.parse(value.weightVerifiedAt));
 
   return {
     availability: isCatalogAvailability(value.availability)
@@ -456,6 +502,15 @@ function normalizeStoredOrderLineCatalogTruth(
       typeof value.codEligible === "boolean"
         ? value.codEligible
         : fallbackTruth.codEligible,
+    ...(hasVerifiedWeight
+      ? {
+          itemWeightGrams: Number(value.itemWeightGrams),
+          packagingWeightGrams: Number(value.packagingWeightGrams),
+          weightEvidenceRef: String(value.weightEvidenceRef).trim(),
+          weightVerifiedBy: String(value.weightVerifiedBy).trim(),
+          weightVerifiedAt: new Date(String(value.weightVerifiedAt)).toISOString(),
+        }
+      : {}),
   };
 }
 
@@ -800,6 +855,83 @@ function normalizeOrderPricingSnapshot(value: unknown): OrderPricingSnapshot | u
   };
 }
 
+function normalizeStoredOrderShippingWeightSnapshot(
+  value: unknown,
+): StoredOrderShippingWeightSnapshot | undefined {
+  if (!isRecord(value) || value.unit !== "g") {
+    return undefined;
+  }
+
+  const integerFields = [
+    value.itemCount,
+    value.itemsWeightGrams,
+    value.productPackagingWeightGrams,
+    value.outerPackagingWeightGrams,
+    value.additionalItemPackagingWeightGrams,
+    value.totalPackagingWeightGrams,
+    value.totalWeightGrams,
+  ];
+  if (
+    integerFields.some((field) => !Number.isSafeInteger(field)) ||
+    Number(value.itemCount) < 1 ||
+    Number(value.itemCount) > 1_000 ||
+    Number(value.itemsWeightGrams) < 1 ||
+    Number(value.productPackagingWeightGrams) < 0 ||
+    Number(value.outerPackagingWeightGrams) < 1 ||
+    Number(value.additionalItemPackagingWeightGrams) < 0 ||
+    Number(value.totalPackagingWeightGrams) < 1 ||
+    Number(value.totalWeightGrams) < 1 ||
+    Number(value.totalWeightGrams) > 100_000 ||
+    typeof value.catalogVersion !== "string" ||
+    !value.catalogVersion.trim() ||
+    typeof value.catalogHash !== "string" ||
+    !/^[a-f0-9]{64}$/i.test(value.catalogHash) ||
+    typeof value.packingEvidenceRef !== "string" ||
+    !value.packingEvidenceRef.trim() ||
+    typeof value.packingApprovedBy !== "string" ||
+    !value.packingApprovedBy.trim() ||
+    typeof value.packingApprovedAt !== "string" ||
+    Number.isNaN(Date.parse(value.packingApprovedAt))
+  ) {
+    return undefined;
+  }
+
+  const itemCount = Number(value.itemCount);
+  const productPackagingWeightGrams = Number(value.productPackagingWeightGrams);
+  const expectedTotalPackagingWeightGrams =
+    productPackagingWeightGrams +
+    Number(value.outerPackagingWeightGrams) +
+    Math.max(0, itemCount - 1) * Number(value.additionalItemPackagingWeightGrams);
+  const expectedTotalWeightGrams =
+    Number(value.itemsWeightGrams) + expectedTotalPackagingWeightGrams;
+  if (
+    !Number.isSafeInteger(expectedTotalPackagingWeightGrams) ||
+    !Number.isSafeInteger(expectedTotalWeightGrams) ||
+    expectedTotalPackagingWeightGrams !== Number(value.totalPackagingWeightGrams) ||
+    expectedTotalWeightGrams !== Number(value.totalWeightGrams)
+  ) {
+    return undefined;
+  }
+
+  return {
+    unit: "g",
+    catalogVersion: value.catalogVersion.trim(),
+    catalogHash: value.catalogHash.toLowerCase(),
+    itemCount,
+    itemsWeightGrams: Number(value.itemsWeightGrams),
+    productPackagingWeightGrams,
+    outerPackagingWeightGrams: Number(value.outerPackagingWeightGrams),
+    additionalItemPackagingWeightGrams: Number(
+      value.additionalItemPackagingWeightGrams,
+    ),
+    totalPackagingWeightGrams: expectedTotalPackagingWeightGrams,
+    totalWeightGrams: expectedTotalWeightGrams,
+    packingEvidenceRef: value.packingEvidenceRef.trim(),
+    packingApprovedBy: value.packingApprovedBy.trim(),
+    packingApprovedAt: new Date(value.packingApprovedAt).toISOString(),
+  };
+}
+
 function normalizeStoredOrder(value: unknown): StoredOrder | null {
   if (!isRecord(value)) {
     return null;
@@ -889,6 +1021,9 @@ function normalizeStoredOrder(value: unknown): StoredOrder | null {
   if (value.pricingSnapshot !== undefined && !pricingSnapshot) {
     return null;
   }
+  const shippingWeightSnapshot = normalizeStoredOrderShippingWeightSnapshot(
+    value.shippingWeightSnapshot,
+  );
 
   return {
     orderNumber: value.orderNumber.trim().toUpperCase(),
@@ -919,6 +1054,7 @@ function normalizeStoredOrder(value: unknown): StoredOrder | null {
       value.createdAt,
     ),
     ...(pricingSnapshot ? { pricingSnapshot } : {}),
+    ...(shippingWeightSnapshot ? { shippingWeightSnapshot } : {}),
   };
 }
 

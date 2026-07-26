@@ -130,8 +130,8 @@ export async function ingestPromotionImage(input: {
   const rightsEvidenceRef = boundedText(input.rightsEvidenceRef, "rightsEvidenceRef", 3, 500);
   const actor = boundedText(input.actor, "actor", 2, 160);
 
-  let pipeline: sharp.Sharp;
-  let metadata: sharp.Metadata;
+  let pipeline: ReturnType<typeof sharp>;
+  let metadata: Awaited<ReturnType<ReturnType<typeof sharp>["metadata"]>>;
   try {
     pipeline = sharp(input.bytes, {
       failOn: "error",

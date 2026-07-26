@@ -15,6 +15,13 @@
 // (CLAUDE.md §19: no fake product data on the real path).
 
 const decidedAt = "2026-07-15T10:00:00.000Z";
+const shippingProfile = (itemWeightGrams, packagingWeightGrams, sku) => ({
+  itemWeightGrams,
+  packagingWeightGrams,
+  evidenceRef: `evidence://qa/variant/${sku}/shipping-weight`,
+  verifiedBy: "qa-fulfillment-auditor",
+  verifiedAt: decidedAt,
+});
 const product = {
   slug: "qa-authority-product",
   collection: "skincare",
@@ -108,6 +115,7 @@ const product = {
       stockOnHand: 3,
       safetyStock: 1,
       codEligible: true,
+      shippingProfile: shippingProfile(100, 50, "QA-AUTH-001"),
     },
     {
       sku: "QA-RACE-001",
@@ -121,6 +129,7 @@ const product = {
       stockOnHand: 1,
       safetyStock: 0,
       codEligible: true,
+      shippingProfile: shippingProfile(45, 25, "QA-RACE-001"),
     },
     {
       sku: "QA-PAY-001",
@@ -134,6 +143,7 @@ const product = {
       stockOnHand: 1,
       safetyStock: 0,
       codEligible: false,
+      shippingProfile: shippingProfile(70, 30, "QA-PAY-001"),
     },
     {
       sku: "QA-EXP-001",
@@ -147,6 +157,7 @@ const product = {
       stockOnHand: 1,
       safetyStock: 0,
       codEligible: false,
+      shippingProfile: shippingProfile(80, 35, "QA-EXP-001"),
     },
   ],
 };
@@ -173,6 +184,13 @@ const validPayload = {
     approvedAt: decidedAt,
   },
   inventoryLocation: { code: "QA-RUH-01", name: "Isolated QA location" },
+  shipmentPacking: {
+    outerPackagingWeightGrams: 200,
+    additionalItemPackagingWeightGrams: 20,
+    evidenceRef: "evidence://qa/shipment-packing/standard-v1",
+    approvedBy: "qa-fulfillment-auditor",
+    approvedAt: decidedAt,
+  },
   shippingMethods: [{
     id: "standard",
     labelAr: "شحن قياسي للاختبار",

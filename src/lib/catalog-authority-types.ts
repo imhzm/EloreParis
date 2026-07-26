@@ -35,6 +35,7 @@ export type CatalogImportPayload = {
     code: string;
     name: string;
   };
+  shipmentPacking?: CatalogShipmentPackingProfile;
   shippingMethods: Array<{
     id: "standard" | "express";
     labelAr: string;
@@ -151,6 +152,23 @@ export type CatalogImportVariant = {
   stockOnHand: number;
   safetyStock: number;
   codEligible: boolean;
+  shippingProfile?: CatalogVariantShippingProfile;
+};
+
+export type CatalogVariantShippingProfile = {
+  itemWeightGrams: number;
+  packagingWeightGrams: number;
+  evidenceRef: string;
+  verifiedBy: string;
+  verifiedAt: string;
+};
+
+export type CatalogShipmentPackingProfile = {
+  outerPackagingWeightGrams: number;
+  additionalItemPackagingWeightGrams: number;
+  evidenceRef: string;
+  approvedBy: string;
+  approvedAt: string;
 };
 
 export type CatalogImportApproval = {
@@ -327,6 +345,11 @@ function parseVariant(
       : integerValue(value.compareAtHalalas, 0, 100_000_000);
   const stockOnHand = integerValue(value.stockOnHand, 0, 10_000_000);
   const safetyStock = integerValue(value.safetyStock, 0, 10_000_000);
+  const shippingProfile = parseVariantShippingProfile(
+    value.shippingProfile,
+    `${path}.shippingProfile`,
+    issues,
+  );
 
   if (
     !sku || !codePattern.test(sku) || !barcode || !/^\d{8,14}$/.test(barcode) ||
@@ -353,6 +376,43 @@ function parseVariant(
     stockOnHand,
     safetyStock,
     codEligible: value.codEligible,
+    ...(shippingProfile ? { shippingProfile } : {}),
+  };
+}
+
+function parseVariantShippingProfile(
+  value: unknown,
+  path: string,
+  issues: string[],
+): CatalogVariantShippingProfile | undefined | null {
+  if (value === undefined) return undefined;
+  if (!isRecord(value)) {
+    issues.push(`${path} must be an evidence-backed weight object when provided.`);
+    return null;
+  }
+
+  const itemWeightGrams = integerValue(value.itemWeightGrams, 1, 50_000);
+  const packagingWeightGrams = integerValue(value.packagingWeightGrams, 0, 10_000);
+  const evidenceRef = stringValue(value.evidenceRef, 1_000);
+  const verifiedBy = stringValue(value.verifiedBy, 240);
+  const verifiedAt = isoDate(value.verifiedAt);
+  if (
+    itemWeightGrams === null ||
+    packagingWeightGrams === null ||
+    !evidenceRef ||
+    !verifiedBy ||
+    !verifiedAt
+  ) {
+    issues.push(`${path} contains invalid item/packaging weights or verification evidence.`);
+    return null;
+  }
+
+  return {
+    itemWeightGrams,
+    packagingWeightGrams,
+    evidenceRef,
+    verifiedBy,
+    verifiedAt,
   };
 }
 
@@ -589,6 +649,49 @@ function parseShippingMethod(value: unknown, index: number, issues: string[]) {
   };
 }
 
+function parseShipmentPackingProfile(
+  value: unknown,
+  issues: string[],
+): CatalogShipmentPackingProfile | undefined | null {
+  if (value === undefined) return undefined;
+  if (!isRecord(value)) {
+    issues.push("shipmentPacking must be an evidence-backed packing object when provided.");
+    return null;
+  }
+
+  const outerPackagingWeightGrams = integerValue(
+    value.outerPackagingWeightGrams,
+    1,
+    20_000,
+  );
+  const additionalItemPackagingWeightGrams = integerValue(
+    value.additionalItemPackagingWeightGrams,
+    0,
+    5_000,
+  );
+  const evidenceRef = stringValue(value.evidenceRef, 1_000);
+  const approvedBy = stringValue(value.approvedBy, 240);
+  const approvedAt = isoDate(value.approvedAt);
+  if (
+    outerPackagingWeightGrams === null ||
+    additionalItemPackagingWeightGrams === null ||
+    !evidenceRef ||
+    !approvedBy ||
+    !approvedAt
+  ) {
+    issues.push("shipmentPacking contains invalid packed-weight values or approval evidence.");
+    return null;
+  }
+
+  return {
+    outerPackagingWeightGrams,
+    additionalItemPackagingWeightGrams,
+    evidenceRef,
+    approvedBy,
+    approvedAt,
+  };
+}
+
 export function parseCatalogImportPayload(value: unknown): CatalogImportValidationResult {
   const issues: string[] = [];
   if (!isRecord(value) || !isRecord(value.taxProfile) || !isRecord(value.inventoryLocation)) {
@@ -605,6 +708,10 @@ export function parseCatalogImportPayload(value: unknown): CatalogImportValidati
   const taxApprovedBy = stringValue(taxProfile.approvedBy, 240);
   const locationCode = stringValue(inventoryLocation.code, 80);
   const locationName = stringValue(inventoryLocation.name, 240);
+  const shipmentPacking = parseShipmentPackingProfile(
+    value.shipmentPacking,
+    issues,
+  );
 
   if (!sourceRef || !generatedAt || value.currency !== "SAR") issues.push("Catalog source, timestamp, or SAR currency is invalid.");
   if (rateBps === null || taxProfile.pricesIncludeTax !== true || !taxEvidenceRef || !taxApprovedBy || !approvedAt) {
@@ -669,6 +776,7 @@ export function parseCatalogImportPayload(value: unknown): CatalogImportValidati
         approvedAt,
       },
       inventoryLocation: { code: locationCode, name: locationName },
+      ...(shipmentPacking ? { shipmentPacking } : {}),
       shippingMethods: validShippingMethods,
       products: validProducts,
       approvals: validApprovals,

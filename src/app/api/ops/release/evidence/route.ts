@@ -100,8 +100,12 @@ export async function POST(request: NextRequest) {
         verification_mode: releaseEvidence.verificationMode,
         target_base_url: releaseEvidence.targetBaseUrl,
         generated_at: releaseEvidence.generatedAt,
+        commit_reference: releaseEvidence.commitReference ?? "none",
         api_checks: releaseEvidence.summary.apiChecks,
         protected_route_checks: releaseEvidence.summary.protectedRouteChecks,
+        failed_check_count: releaseEvidence.checks.filter(
+          (check) => check.status === "failed",
+        ).length,
       },
     });
 

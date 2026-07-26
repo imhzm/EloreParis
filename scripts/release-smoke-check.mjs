@@ -510,6 +510,40 @@ function buildOwnerSummaries(items) {
   const readinessSource = readFileSync(readinessPath, "utf8");
 
   assert(readinessSource.includes("export function getReleaseReadinessSnapshot"), "readiness: getReleaseReadinessSnapshot exported");
+  assert(
+    /const releaseStatusItems = \[\s*\.\.\.gates,\s*\.\.\.runtimePreflight\.checks,\s*\.\.\.providerOwnables,\s*\];/m.test(
+      readinessSource,
+    ),
+    "readiness: runtime preflight checks participate in overall status and counts",
+  );
+}
+
+// ── Workflow package-script integrity ─────────────────────────────────
+
+{
+  const { existsSync, readFileSync, readdirSync } = await import("node:fs");
+  const { fileURLToPath } = await import("node:url");
+  const packagePath = fileURLToPath(new URL("../package.json", import.meta.url));
+  const workflowsPath = fileURLToPath(new URL("../.github/workflows", import.meta.url));
+  const renderWorkflowPath = fileURLToPath(
+    new URL("../.github/workflows/deploy-render.yml", import.meta.url),
+  );
+  const packageScripts = JSON.parse(readFileSync(packagePath, "utf8")).scripts ?? {};
+
+  for (const workflowName of readdirSync(workflowsPath).filter((name) => /\.ya?ml$/i.test(name))) {
+    const workflowSource = readFileSync(`${workflowsPath}/${workflowName}`, "utf8");
+    for (const match of workflowSource.matchAll(/npm run ([\w:-]+)/g)) {
+      assert(
+        Object.hasOwn(packageScripts, match[1]),
+        `workflows: ${workflowName} references existing package script ${match[1]}`,
+      );
+    }
+  }
+
+  assert(
+    !existsSync(renderWorkflowPath),
+    "workflows: abandoned Render deployment workflow stays removed from the Hostinger release path",
+  );
 }
 
 // ── Release package comparison ─────────────────────────────────────────

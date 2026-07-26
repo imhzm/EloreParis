@@ -649,6 +649,14 @@ function buildQuotedStoredOrder(
       "quote_stale",
     );
   }
+  const shipmentPacking = catalog.payload.shipmentPacking;
+  if (!shipmentPacking) {
+    throw new OrderAuthorityError(
+      "The active catalog does not contain an approved shipment-packing weight profile.",
+      409,
+      "quote_stale",
+    );
+  }
   if (checkout.paymentMethodId === "payment_link") {
     assertPaymentProviderBindingReady();
   } else {
@@ -679,6 +687,119 @@ function buildQuotedStoredOrder(
       shippingProviderLabel: getShippingProviderRuntimeConfig().label,
     },
   );
+  const orderLines = quote.lines.map((line) => {
+    const product = catalog.payload.products.find(
+      (candidate) => candidate.slug === line.productSlug,
+    );
+    const variant = product?.variants.find(
+      (candidate) => candidate.sku === line.sku,
+    );
+    if (!variant) {
+      throw new OrderAuthorityError(
+        "A quoted SKU is no longer present in the active catalog authority.",
+        409,
+        "quote_stale",
+      );
+    }
+    if (!variant.shippingProfile) {
+      throw new OrderAuthorityError(
+        "A quoted SKU no longer has an authority-backed shipping weight.",
+        409,
+        "quote_stale",
+      );
+    }
+    const inventory = database.prepare(`
+      SELECT balance.on_hand, balance.reserved, balance.safety_stock
+      FROM authority_inventory_balances AS balance
+      INNER JOIN authority_inventory_locations AS location
+        ON location.id = balance.location_id
+      WHERE balance.import_id = ? AND balance.sku = ? AND location.code = ?
+      LIMIT 1
+    `).get(
+      catalog.importId,
+      line.sku,
+      catalog.payload.inventoryLocation.code,
+    ) as
+      | { on_hand: number; reserved: number; safety_stock: number }
+      | undefined;
+    if (!inventory) {
+      throw new OrderAuthorityError(
+        "A quoted SKU no longer has an active catalog inventory balance.",
+        409,
+        "quote_stale",
+      );
+    }
+    const availability =
+      inventory.on_hand - inventory.reserved - inventory.safety_stock >=
+      line.quantity
+        ? "InStock"
+        : "OutOfStock";
+
+    return {
+      key: `${line.productSlug}:${line.sku}`,
+      productSlug: line.productSlug,
+      productName: line.nameAr,
+      productSubtitle: line.nameEn,
+      sku: line.sku,
+      variantLabel: line.labelAr,
+      size: line.size,
+      quantity: line.quantity,
+      unitPrice: line.unitGrossHalalas / 100,
+      lineTotal: line.lineGrossHalalas / 100,
+      shippingNote: quote.shipping.estimatedDeliveryAr,
+      catalogTruth: buildStoredOrderLineCatalogTruth({
+        productSlug: line.productSlug,
+        sku: line.sku,
+        availability,
+        catalogAuthority: {
+          catalogVersion: catalog.importId,
+          inventoryLocationCode: catalog.payload.inventoryLocation.code,
+          inventoryLocationName: catalog.payload.inventoryLocation.name,
+          stockOnHand: inventory.on_hand,
+          lowStockThreshold: inventory.safety_stock,
+          codEligible: variant.codEligible,
+          itemWeightGrams: variant.shippingProfile.itemWeightGrams,
+          packagingWeightGrams: variant.shippingProfile.packagingWeightGrams,
+          weightEvidenceRef: variant.shippingProfile.evidenceRef,
+          weightVerifiedBy: variant.shippingProfile.verifiedBy,
+          weightVerifiedAt: variant.shippingProfile.verifiedAt,
+        },
+      }),
+    };
+  });
+  const itemCount = orderLines.reduce((sum, line) => sum + line.quantity, 0);
+  const itemsWeightGrams = orderLines.reduce(
+    (sum, line) =>
+      sum + line.quantity * (line.catalogTruth.itemWeightGrams ?? 0),
+    0,
+  );
+  const productPackagingWeightGrams = orderLines.reduce(
+    (sum, line) =>
+      sum + line.quantity * (line.catalogTruth.packagingWeightGrams ?? 0),
+    0,
+  );
+  const totalPackagingWeightGrams =
+    productPackagingWeightGrams +
+    shipmentPacking.outerPackagingWeightGrams +
+    Math.max(0, itemCount - 1) *
+      shipmentPacking.additionalItemPackagingWeightGrams;
+  const totalWeightGrams = itemsWeightGrams + totalPackagingWeightGrams;
+  if (
+    !Number.isSafeInteger(itemCount) ||
+    !Number.isSafeInteger(itemsWeightGrams) ||
+    !Number.isSafeInteger(productPackagingWeightGrams) ||
+    !Number.isSafeInteger(totalPackagingWeightGrams) ||
+    !Number.isSafeInteger(totalWeightGrams) ||
+    itemCount < 1 ||
+    itemsWeightGrams < 1 ||
+    totalWeightGrams > 100_000
+  ) {
+    throw new OrderAuthorityError(
+      "The verified shipment weight exceeds the supported single-package contract.",
+      409,
+      "quote_stale",
+    );
+  }
   const order: StoredOrder = {
     orderNumber: buildOrderNumber(),
     createdAt,
@@ -698,74 +819,7 @@ function buildQuotedStoredOrder(
       addressLine: checkout.addressLine.trim(),
       notes: checkout.notes.trim(),
     },
-    lines: quote.lines.map((line) => {
-      const product = catalog.payload.products.find(
-        (candidate) => candidate.slug === line.productSlug,
-      );
-      const variant = product?.variants.find(
-        (candidate) => candidate.sku === line.sku,
-      );
-      if (!variant) {
-        throw new OrderAuthorityError(
-          "A quoted SKU is no longer present in the active catalog authority.",
-          409,
-          "quote_stale",
-        );
-      }
-      const inventory = database.prepare(`
-        SELECT balance.on_hand, balance.reserved, balance.safety_stock
-        FROM authority_inventory_balances AS balance
-        INNER JOIN authority_inventory_locations AS location
-          ON location.id = balance.location_id
-        WHERE balance.import_id = ? AND balance.sku = ? AND location.code = ?
-        LIMIT 1
-      `).get(
-        catalog.importId,
-        line.sku,
-        catalog.payload.inventoryLocation.code,
-      ) as
-        | { on_hand: number; reserved: number; safety_stock: number }
-        | undefined;
-      if (!inventory) {
-        throw new OrderAuthorityError(
-          "A quoted SKU no longer has an active catalog inventory balance.",
-          409,
-          "quote_stale",
-        );
-      }
-      const availability =
-        inventory.on_hand - inventory.reserved - inventory.safety_stock >=
-        line.quantity
-          ? "InStock"
-          : "OutOfStock";
-
-      return {
-        key: `${line.productSlug}:${line.sku}`,
-        productSlug: line.productSlug,
-        productName: line.nameAr,
-        productSubtitle: line.nameEn,
-        sku: line.sku,
-        variantLabel: line.labelAr,
-        size: line.size,
-        quantity: line.quantity,
-        unitPrice: line.unitGrossHalalas / 100,
-        lineTotal: line.lineGrossHalalas / 100,
-        shippingNote: quote.shipping.estimatedDeliveryAr,
-        catalogTruth: buildStoredOrderLineCatalogTruth({
-          productSlug: line.productSlug,
-          sku: line.sku,
-          availability,
-          catalogAuthority: {
-            catalogVersion: catalog.importId,
-            inventoryLocationCode: catalog.payload.inventoryLocation.code,
-            inventoryLocationName: catalog.payload.inventoryLocation.name,
-            stockOnHand: inventory.on_hand,
-            lowStockThreshold: inventory.safety_stock,
-            codEligible: variant.codEligible,
-          },
-        }),
-      };
-    }),
+    lines: orderLines,
     providerBindings,
     pricingSnapshot: {
       quoteId: quote.quoteId,
@@ -795,6 +849,22 @@ function buildQuotedStoredOrder(
         lineGrossHalalas: line.lineGrossHalalas,
         lineVatHalalas: line.lineVatHalalas,
       })),
+    },
+    shippingWeightSnapshot: {
+      unit: "g",
+      catalogVersion: catalog.importId,
+      catalogHash: catalog.sourceHash,
+      itemCount,
+      itemsWeightGrams,
+      productPackagingWeightGrams,
+      outerPackagingWeightGrams: shipmentPacking.outerPackagingWeightGrams,
+      additionalItemPackagingWeightGrams:
+        shipmentPacking.additionalItemPackagingWeightGrams,
+      totalPackagingWeightGrams,
+      totalWeightGrams,
+      packingEvidenceRef: shipmentPacking.evidenceRef,
+      packingApprovedBy: shipmentPacking.approvedBy,
+      packingApprovedAt: shipmentPacking.approvedAt,
     },
   };
   return order;
@@ -1718,6 +1788,18 @@ export async function initiateAuthorityShipmentBooking(orderNumber: string) {
       order,
       action: "shipping_booked" as const,
     };
+  }
+
+  if (
+    order.status !== "confirmed" &&
+    order.status !== "processing" &&
+    order.status !== "out_for_delivery"
+  ) {
+    throw new OrderAuthorityError(
+      "The order must be confirmed before requesting an external shipment booking.",
+      409,
+      "shipment_booking_not_allowed",
+    );
   }
 
   assertShippingProviderBindingReady();

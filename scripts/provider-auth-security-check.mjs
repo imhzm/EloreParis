@@ -1,5 +1,11 @@
 import assert from "node:assert/strict";
-import { createHash, createHmac, randomBytes } from "node:crypto";
+import {
+  createHash,
+  createHmac,
+  createSign,
+  generateKeyPairSync,
+  randomBytes,
+} from "node:crypto";
 import { spawn } from "node:child_process";
 import { existsSync, rmSync } from "node:fs";
 import { createServer } from "node:http";
@@ -18,6 +24,22 @@ const orderSecret = "provider-auth-order-authority-secret";
 const authSecret = "provider-auth-callback-signing-secret";
 const clientId = "provider-auth-security-client";
 const clientSecret = "provider-auth-security-client-secret";
+const keyA = generateKeyPairSync("rsa", { modulusLength: 2048 });
+const keyB = generateKeyPairSync("rsa", { modulusLength: 2048 });
+const rogueKey = generateKeyPairSync("rsa", { modulusLength: 2048 });
+
+function exportSigningJwk(keyPair, kid) {
+  return {
+    ...keyPair.publicKey.export({ format: "jwk" }),
+    alg: "RS256",
+    kid,
+    key_ops: ["verify"],
+    use: "sig",
+  };
+}
+
+const publicKeyA = exportSigningJwk(keyA, "key-a");
+const publicKeyB = exportSigningJwk(keyB, "key-b");
 
 if (!existsSync(serverFile)) {
   throw new Error("Standalone build is missing. Run `npm run build` first.");
@@ -33,19 +55,33 @@ function signToken(payload, secret) {
   return `${encodedPayload}.${signature}`;
 }
 
-function buildIdToken({ issuer, subject, nonce }) {
-  return [
-    base64UrlJson({ alg: "RS256", typ: "JWT" }),
-    base64UrlJson({
-      iss: issuer,
-      sub: subject,
-      aud: clientId,
-      nonce,
-      exp: Math.floor(Date.now() / 1000) + 300,
-      iat: Math.floor(Date.now() / 1000),
-    }),
-    "test-signature",
-  ].join(".");
+function buildIdToken({ issuer, subject, nonce, scenario }) {
+  const header = base64UrlJson({
+    alg: scenario.alg,
+    kid: scenario.kid,
+    typ: "JWT",
+  });
+  const payload = base64UrlJson({
+    iss: issuer,
+    sub: subject,
+    aud: clientId,
+    nonce,
+    exp: Math.floor(Date.now() / 1000) + 300,
+    iat: Math.floor(Date.now() / 1000),
+    ...scenario.claimOverrides,
+  });
+  const signingInput = `${header}.${payload}`;
+  const signature = scenario.alg === "RS256"
+    ? createSign("RSA-SHA256")
+        .update(signingInput)
+        .end()
+        .sign(scenario.signingKey)
+        .toString("base64url")
+    : createHmac("sha256", "algorithm-confusion-secret")
+        .update(signingInput)
+        .digest("base64url");
+
+  return `${signingInput}.${signature}`;
 }
 
 function sendJson(response, status, payload) {
@@ -79,13 +115,47 @@ async function removeDatabaseFiles() {
 }
 
 let activeSubject = "customer-subject-01";
-let wrongNonce = false;
+let nextTokenScenario = {
+  alg: "RS256",
+  claimOverrides: {},
+  kid: "key-a",
+  omitIdToken: false,
+  signingKey: keyA.privateKey,
+  wrongNonce: false,
+};
+let publishedJwks = [publicKeyA];
+let jwksFailure = false;
+let jwksFetchCount = 0;
+let profileFetchCount = 0;
 const authorizationCodes = new Map();
 const accessTokens = new Map();
 let providerBaseUrl = "";
 
+function setNextTokenScenario(overrides = {}) {
+  nextTokenScenario = {
+    alg: "RS256",
+    claimOverrides: {},
+    kid: "key-a",
+    omitIdToken: false,
+    signingKey: keyA.privateKey,
+    wrongNonce: false,
+    ...overrides,
+  };
+}
+
 const provider = createServer(async (request, response) => {
   const url = new URL(request.url, providerBaseUrl);
+  if (request.method === "GET" && url.pathname === "/jwks") {
+    jwksFetchCount += 1;
+    if (jwksFailure) {
+      sendJson(response, 503, { error: "JWKS temporarily unavailable." });
+      return;
+    }
+    response.setHeader("Cache-Control", "public, max-age=300");
+    sendJson(response, 200, { keys: publishedJwks });
+    return;
+  }
+
   if (request.method === "GET" && url.pathname === "/authorize") {
     const state = url.searchParams.get("state");
     const nonce = url.searchParams.get("nonce");
@@ -99,9 +169,9 @@ const provider = createServer(async (request, response) => {
       nonce,
       codeChallenge,
       subject: activeSubject,
-      wrongNonce,
+      tokenScenario: { ...nextTokenScenario },
     });
-    wrongNonce = false;
+    setNextTokenScenario();
     response.writeHead(307, {
       Location: `${appBaseUrl}/api/providers/auth?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state)}`,
     });
@@ -127,19 +197,26 @@ const provider = createServer(async (request, response) => {
     authorizationCodes.delete(code);
     const accessToken = randomBytes(24).toString("base64url");
     accessTokens.set(accessToken, record.subject);
-    sendJson(response, 200, {
+    const tokenResponse = {
       access_token: accessToken,
       token_type: "Bearer",
-      id_token: buildIdToken({
+    };
+    if (!record.tokenScenario.omitIdToken) {
+      tokenResponse.id_token = buildIdToken({
         issuer: providerBaseUrl,
         subject: record.subject,
-        nonce: record.wrongNonce ? `${record.nonce}-wrong` : record.nonce,
-      }),
-    });
+        nonce: record.tokenScenario.wrongNonce
+          ? `${record.nonce}-wrong`
+          : record.nonce,
+        scenario: record.tokenScenario,
+      });
+    }
+    sendJson(response, 200, tokenResponse);
     return;
   }
 
   if (request.method === "GET" && url.pathname === "/profile") {
+    profileFetchCount += 1;
     const accessToken = request.headers.authorization?.replace(/^Bearer\s+/i, "") ?? "";
     const subject = accessTokens.get(accessToken);
     if (!subject) {
@@ -178,6 +255,7 @@ const app = spawn(process.execPath, [serverFile], {
     AUTH_PROVIDER_CALLBACK_SECRET: authSecret,
     AUTH_PROVIDER_LABEL: "Provider auth security test",
     AUTH_PROVIDER_ISSUER: providerBaseUrl,
+    AUTH_PROVIDER_JWKS_URL: `${providerBaseUrl}/jwks`,
     AUTH_PROVIDER_AUTHORIZE_URL: `${providerBaseUrl}/authorize`,
     AUTH_PROVIDER_TOKEN_URL: `${providerBaseUrl}/token`,
     AUTH_PROVIDER_PROFILE_URL: `${providerBaseUrl}/profile`,
@@ -283,6 +361,18 @@ async function completeAuth(authorizeUrl) {
   return { callbackUrl, callbackResponse };
 }
 
+function assertAuthFailure(authResult, locale = "en") {
+  assert.equal(authResult.callbackResponse.status, 307);
+  assert.equal(
+    new URL(authResult.callbackResponse.headers.get("location"), appBaseUrl).pathname,
+    `/${locale}/track-order`,
+  );
+  assert.doesNotMatch(
+    authResult.callbackResponse.headers.get("set-cookie") ?? "",
+    /cozmateks-customer-account=/,
+  );
+}
+
 try {
   await waitForApp();
   const { order, customerKey } = seedOrder();
@@ -300,21 +390,130 @@ try {
   assert.equal(binding.issuer, providerBaseUrl);
   assert.equal(binding.subject, "customer-subject-01");
   assert.equal(binding.customer_key, customerKey);
+  assert.equal(jwksFetchCount, 1, "The first signed token must fetch JWKS once.");
 
   const replay = await fetch(firstAuth.callbackUrl, { redirect: "manual" });
   assert.equal(replay.status, 307);
   assert.equal(new URL(replay.headers.get("location"), appBaseUrl).pathname, "/ar/track-order");
   assert.doesNotMatch(replay.headers.get("set-cookie") ?? "", /cozmateks-customer-account=/);
 
+  const cachedKeyAuth = await completeAuth(await beginAuth(order.orderNumber, customerKey));
+  assert.equal(
+    new URL(cachedKeyAuth.callbackResponse.headers.get("location"), appBaseUrl).pathname,
+    "/en/account/orders",
+  );
+  assert.equal(jwksFetchCount, 1, "A fresh JWKS cache must avoid a second fetch.");
+
+  const profileBeforeInvalidSignature = profileFetchCount;
+  setNextTokenScenario({ signingKey: rogueKey.privateKey });
+  const invalidSignatureAuth = await completeAuth(await beginAuth(order.orderNumber, customerKey));
+  assertAuthFailure(invalidSignatureAuth);
+  assert.equal(jwksFetchCount, 1, "A known kid with a bad signature must not force-refresh JWKS.");
+  assert.equal(
+    profileFetchCount,
+    profileBeforeInvalidSignature,
+    "An invalid signature must fail before the profile endpoint is called.",
+  );
+
   activeSubject = "customer-subject-02";
   const conflictingAuth = await completeAuth(await beginAuth(order.orderNumber, customerKey));
-  assert.equal(new URL(conflictingAuth.callbackResponse.headers.get("location"), appBaseUrl).pathname, "/en/track-order");
+  assertAuthFailure(conflictingAuth);
   assert.equal(verificationDatabase.prepare("SELECT COUNT(*) AS count FROM authority_customer_identities").get().count, 1);
 
   activeSubject = "customer-subject-01";
-  wrongNonce = true;
+  setNextTokenScenario({ wrongNonce: true });
   const wrongNonceAuth = await completeAuth(await beginAuth(order.orderNumber, customerKey));
-  assert.equal(new URL(wrongNonceAuth.callbackResponse.headers.get("location"), appBaseUrl).pathname, "/en/track-order");
+  assertAuthFailure(wrongNonceAuth);
+
+  publishedJwks = [publicKeyB];
+  setNextTokenScenario({ kid: "key-b", signingKey: keyB.privateKey });
+  const rotatedKeyAuth = await completeAuth(await beginAuth(order.orderNumber, customerKey));
+  assert.equal(
+    new URL(rotatedKeyAuth.callbackResponse.headers.get("location"), appBaseUrl).pathname,
+    "/en/account/orders",
+  );
+  assert.equal(jwksFetchCount, 2, "An unseen kid must refresh JWKS exactly once.");
+
+  setNextTokenScenario({ kid: "key-b", signingKey: keyB.privateKey });
+  const cachedRotatedKeyAuth = await completeAuth(await beginAuth(order.orderNumber, customerKey));
+  assert.equal(
+    new URL(cachedRotatedKeyAuth.callbackResponse.headers.get("location"), appBaseUrl).pathname,
+    "/en/account/orders",
+  );
+  assert.equal(jwksFetchCount, 2, "The rotated key must be cached after refresh.");
+
+  setNextTokenScenario({
+    claimOverrides: { aud: [clientId, "secondary-audience"] },
+    kid: "key-b",
+    signingKey: keyB.privateKey,
+  });
+  const missingAuthorizedPartyAuth = await completeAuth(await beginAuth(order.orderNumber, customerKey));
+  assertAuthFailure(missingAuthorizedPartyAuth);
+
+  setNextTokenScenario({
+    claimOverrides: {
+      aud: [clientId, "secondary-audience"],
+      azp: clientId,
+    },
+    kid: "key-b",
+    signingKey: keyB.privateKey,
+  });
+  const multiAudienceAuth = await completeAuth(await beginAuth(order.orderNumber, customerKey));
+  assert.equal(
+    new URL(multiAudienceAuth.callbackResponse.headers.get("location"), appBaseUrl).pathname,
+    "/en/account/orders",
+  );
+
+  for (const claimOverrides of [
+    { exp: Math.floor(Date.now() / 1000) - 120 },
+    { iat: Math.floor(Date.now() / 1000) + 120 },
+    { nbf: Math.floor(Date.now() / 1000) + 120 },
+    { iss: `${providerBaseUrl}/wrong-issuer` },
+  ]) {
+    setNextTokenScenario({
+      claimOverrides,
+      kid: "key-b",
+      signingKey: keyB.privateKey,
+    });
+    const invalidClaimsAuth = await completeAuth(await beginAuth(order.orderNumber, customerKey));
+    assertAuthFailure(invalidClaimsAuth);
+  }
+  assert.equal(jwksFetchCount, 2, "Invalid signed claims must use the trusted cached key.");
+
+  setNextTokenScenario({ kid: "unknown-key", signingKey: keyB.privateKey });
+  const unknownKidAuth = await completeAuth(await beginAuth(order.orderNumber, customerKey));
+  assertAuthFailure(unknownKidAuth);
+  assert.equal(jwksFetchCount, 3, "An unknown kid must get only one forced refresh.");
+
+  setNextTokenScenario({ alg: "HS256", kid: "key-b", signingKey: keyB.privateKey });
+  const algorithmConfusionAuth = await completeAuth(await beginAuth(order.orderNumber, customerKey));
+  assertAuthFailure(algorithmConfusionAuth);
+  assert.equal(jwksFetchCount, 3, "An unsupported alg must fail before JWKS lookup.");
+
+  jwksFailure = true;
+  setNextTokenScenario({ kid: "unpublished-key", signingKey: rogueKey.privateKey });
+  const unavailableJwksAuth = await completeAuth(await beginAuth(order.orderNumber, customerKey));
+  assertAuthFailure(unavailableJwksAuth);
+  assert.equal(jwksFetchCount, 4, "A failed forced refresh must remain bounded to one request.");
+  jwksFailure = false;
+
+  setNextTokenScenario({ kid: "key-b", signingKey: keyB.privateKey });
+  const retainedCacheAuth = await completeAuth(await beginAuth(order.orderNumber, customerKey));
+  assert.equal(
+    new URL(retainedCacheAuth.callbackResponse.headers.get("location"), appBaseUrl).pathname,
+    "/en/account/orders",
+  );
+  assert.equal(jwksFetchCount, 4, "A failed refresh must not discard the last trusted JWKS cache.");
+
+  const profileBeforeMissingIdToken = profileFetchCount;
+  setNextTokenScenario({ omitIdToken: true });
+  const missingIdTokenAuth = await completeAuth(await beginAuth(order.orderNumber, customerKey));
+  assertAuthFailure(missingIdTokenAuth);
+  assert.equal(
+    profileFetchCount,
+    profileBeforeMissingIdToken,
+    "OIDC must not fall back to an unsigned profile when id_token is missing.",
+  );
 
   const states = verificationDatabase.prepare(`
     SELECT COUNT(*) AS total,
@@ -325,7 +524,7 @@ try {
   verificationDatabase.close();
   verificationDatabase = null;
 
-  console.log("Provider auth PKCE, nonce, replay, and durable issuer-subject binding checks passed.");
+  console.log("Provider auth JWKS signature, rotation, PKCE, nonce, replay, and durable issuer-subject binding checks passed.");
 } finally {
   verificationDatabase?.close();
   verificationDatabase = null;

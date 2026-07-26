@@ -50,28 +50,6 @@ jobs:
       - name: Validate Hostinger release shell
         run: bash -n deploy/hostinger/deploy-release.sh
 
-      - name: Run every non-browser project gate
-        run: |
-          node <<'NODE'
-          const { spawnSync } = require("node:child_process");
-          const { scripts = {} } = require("./package.json");
-          const browserTests = new Set([
-            "test:home-3d",
-            "test:category-cinematic",
-            "test:full-browser",
-            "test:live-commerce",
-          ]);
-          const tests = Object.keys(scripts)
-            .filter((name) => name.startsWith("test:") && !browserTests.has(name))
-            .sort();
-
-          for (const test of tests) {
-            console.log(`\n[CI] ${test}`);
-            const result = spawnSync("npm", ["run", test], { stdio: "inherit" });
-            if (result.status !== 0) process.exit(result.status ?? 1);
-          }
-          NODE
-
       - name: Setup Python
         uses: actions/setup-python@v6
         with:
@@ -82,41 +60,8 @@ jobs:
           python -m pip install --disable-pip-version-check playwright==1.60.0
           python -m playwright install --with-deps chromium
 
-      - name: Start standalone preview for browser regression
-        run: |
-          mkdir -p .artifacts
-          HOSTNAME=127.0.0.1 \
-          PORT=3056 \
-          NODE_ENV=production \
-          APP_ENV=development \
-          COZMATEKS_PROJECT_ROOT="$GITHUB_WORKSPACE" \
-          PUBLIC_COMMERCE_ENABLED=false \
-          node .next/standalone/server.js > .artifacts/ci-server.log 2>&1 &
-          echo "$!" > .artifacts/ci-server.pid
-          for attempt in $(seq 1 45); do
-            if curl --fail --silent --show-error http://127.0.0.1:3056/api/health >/dev/null; then
-              exit 0
-            fi
-            sleep 1
-          done
-          cat .artifacts/ci-server.log
-          exit 1
-
-      - name: Run reference-system browser regressions
-        run: |
-          npm run test:home-3d
-          npm run test:category-cinematic
-          npm run test:full-browser
-
-      - name: Stop standalone preview
-        if: always()
-        run: |
-          if [ -f .artifacts/ci-server.pid ]; then
-            kill "$(cat .artifacts/ci-server.pid)" 2>/dev/null || true
-          fi
-
-      - name: Run isolated live-commerce browser QA
-        run: npm run test:live-commerce
+      - name: Run every project gate
+        run: npm run test:all
 
       - name: Upload validation evidence
         if: always()
