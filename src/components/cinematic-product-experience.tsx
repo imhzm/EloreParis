@@ -209,7 +209,7 @@ export function CinematicProductExperience({
         </div>
       ) : null}
 
-      <section className={styles.overview} aria-labelledby="product-title">
+      <section className={styles.overview}>
         <div className={styles.gallery}>
           <div className={styles.mainMedia}>
             {selectedMedia ? (
@@ -241,7 +241,7 @@ export function CinematicProductExperience({
           ) : null}
         </div>
 
-        <aside className={styles.purchase} id="purchase" aria-labelledby="product-title">
+        <div className={styles.purchase} id="purchase" aria-labelledby="product-title">
           <p className={styles.eyebrow} lang="en">{text.productTruth}</p>
           <p className={styles.brand}>{product.brand}</p>
           <h1 id="product-title">{product.name}</h1>
@@ -299,7 +299,7 @@ export function CinematicProductExperience({
           <p className={styles.shipping}>{product.shippingNote}</p>
           <p className={styles.status} role="status" aria-live="polite">{status}</p>
           <TrackedLink href={collectionHref} className={styles.collectionLink} analyticsLabel={`${product.slug}_collection`} analyticsSurface="product_reference">{text.collection}</TrackedLink>
-        </aside>
+        </div>
       </section>
 
       <section className={styles.facts} aria-labelledby="product-details-title">
@@ -356,7 +356,7 @@ export function CinematicProductExperience({
         </section>
       ) : null}
 
-      <section className={styles.details} aria-label={text.details}>
+      <section className={styles.details}>
         <details open>
           <summary>{text.formula}</summary>
           <div><p>{text.formulaBody}</p><p className={styles.inci} lang="en" dir="ltr">{product.ingredientsInci ?? "—"}</p></div>

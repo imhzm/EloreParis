@@ -191,7 +191,7 @@ export function LocalizedDiscoveryDetail({ locale, kind, record, detailCopy, hub
           ))}
         </ol>
 
-        <aside className={styles.watchPanel} aria-labelledby="watch-title">
+        <div className={styles.watchPanel} aria-labelledby="watch-title">
           <div className={styles.watchCopy} data-discovery-column="copy">
             <p className={styles.eyebrow} lang="en">{copy.watchEyebrow}</p>
             <h2 id="watch-title">
@@ -207,7 +207,7 @@ export function LocalizedDiscoveryDetail({ locale, kind, record, detailCopy, hub
               </li>
             ))}
           </ol>
-        </aside>
+        </div>
       </section>
 
       <section className={styles.relatedSection} aria-labelledby="related-title">

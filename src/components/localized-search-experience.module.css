@@ -58,6 +58,18 @@
   letter-spacing: 0.18em;
 }
 
+:lang(ar) .eyebrow {
+  letter-spacing: normal;
+}
+
+.popular .eyebrow {
+  color: var(--gold-600);
+}
+
+.resultsHead .eyebrow {
+  color: var(--gold-600);
+}
+
 .heroCopy h1,
 .sectionHeader h2,
 .resultsHead h2,

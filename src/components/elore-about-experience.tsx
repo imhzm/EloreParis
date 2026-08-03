@@ -72,7 +72,7 @@ export function EloreAboutExperience({ locale, record }: { locale: Locale; recor
         </div>
       </header>
 
-      <main className={styles.canvas}>
+      <section className={styles.canvas}>
         <section className={styles.storyGrid} aria-labelledby="about-feature-title">
           <article className={styles.featureCard}>
             <div className={styles.featureCopy}>
@@ -150,7 +150,7 @@ export function EloreAboutExperience({ locale, record }: { locale: Locale; recor
           <div><p className={styles.eyebrow}>CLARITY</p><h2 id="about-faq-title">{copy.questions}</h2></div>
           <div>{record.faqs.map(([question, answer]) => <details key={question}><summary>{question}</summary><p>{answer}</p></details>)}</div>
         </section>
-      </main>
+      </section>
 
       <section className={styles.closing} aria-labelledby="about-closing-title">
         <Image src="/elore-assets/transition-burgundy-satin-concept-1672w.avif" alt="" fill sizes="100vw" />

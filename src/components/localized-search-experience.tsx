@@ -144,7 +144,7 @@ export function LocalizedSearchExperience({
             <div>
               <h3>{copy.zeroTitle}</h3>
               <p>{copy.zeroBody}</p>
-              <nav aria-label={copy.popularEyebrow}>
+              <nav aria-label={`${copy.popularEyebrow} · ${copy.zeroTitle}`}>
                 {popular.slice(0, 3).map((item) => (
                   <TrackedLink
                     key={item.slug}

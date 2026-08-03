@@ -342,6 +342,32 @@ The active pack is now `Pack 06: Launch and compliance closure`, while `Pack 04:
     all 39 gates pass, and the re-run audit reports 1,767/1,768 clean page
     loads (the single residual was a mid-animation measurement on one
     viewport, confirmed 40×40 on re-probe).
+  - Accessibility audit slice: a new `scripts/a11y-audit.py` diagnostic runs
+    axe-core 4.11.2 (vendored in node_modules) over every public route at
+    320/390/768/1440 in both locales and records violations to
+    `.artifacts/a11y-audit/findings.json`; it neutralizes
+    `content-visibility:auto` before each run so axe measures real
+    backgrounds. Genuine defects fixed:
+    - The global 404 lost its `<title>` when it became locale-aware — a
+      server metadata wrapper was restored around the client document, and the
+      document now also sets `document.title` after hydration.
+    - Landmarks: the about page rendered a second `<main>` (now `<section>`);
+      complementary `aside`s nested inside `main` were converted to `div`s on
+      the PDP purchase panel, customer orders, discovery detail pages, journal
+      articles, track-order, and the collection grid; two search `<nav>`s
+      shared one label (now distinct); duplicate region names were removed
+      from the PDP details section and the collection listing; the skip link
+      moved inside the `<header>` landmark.
+    - Color contrast: champagne `#c7a36d` eyebrows on light surfaces moved to
+      `--gold-600` `#7b532a` (about feature/ritual/gift/ingredients/faq, home
+      gifting, search popular/results headers); PDP `--muted-500` `#765f58`
+      text moved to `#6a524b` (subtitle, variant labels, shipping, INCI); the
+      ritual stepper's inactive 48% white text rose to 72%.
+    - Verified: axe audit down to a single measurement artifact (axe cannot
+      see image-backed heroes; the about hero eyebrow sits on the dark hero
+      image, ~7:1 in reality — confirmed by geometry probe); device-matrix
+      audit now reports 1,768/1,768 clean page loads; all 39 gates, lint and
+      tsc pass.
   - Next operator actions remain: install the SSH identity on the server,
     apply the updated `/etc/elore-paris/elore-paris.env` contract, run
     `deploy/hostinger/deploy-release.sh 8a89cbf…`, then record the release

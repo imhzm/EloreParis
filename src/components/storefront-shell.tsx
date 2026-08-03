@@ -43,8 +43,6 @@ export function StorefrontShell({
 
   return (
     <div className={styles.shell}>
-      <a className={styles.skipLink} href="#main-content">{copy.skip}</a>
-
       <div className={styles.topRibbon}>
         <span>{copy.market}</span>
         <span>{copy.tagline}</span>
@@ -56,6 +54,8 @@ export function StorefrontShell({
           with logical properties, so the market control sits at the reading
           start in both directions rather than being pinned to one edge. */}
       <header className={styles.header}>
+        <a className={styles.skipLink} href="#main-content">{copy.skip}</a>
+
         <div className={styles.headerBar}>
           <div className={styles.marketControl}>
             {/* SAR is shown, not offered: the catalogue authority constrains

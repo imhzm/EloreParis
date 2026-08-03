@@ -177,14 +177,14 @@ export function CustomerOrdersSurface({ locale, orders }: Props) {
           ) : <div className={styles.inlineNotice}>{text.empty}</div>}
         </article>
 
-        <aside className={styles.summaryCard}>
+        <div className={styles.summaryCard}>
           <p className={styles.sectionTitle}>{text.routes}</p>
           <h2>{text.routesTitle}</h2>
           <div className={styles.actionColumn}>
             <TrackedLink href={localizePath(locale, "/track-order")} className={styles.primaryLink} analyticsLabel="customer_orders_to_track_order" analyticsSurface="customer_orders_empty_state" analyticsDestinationType="order_tracking">{text.trackAnother}</TrackedLink>
             <TrackedLink href={localizePath(locale, "/shop")} className={styles.secondaryLink} analyticsLabel="customer_orders_to_shop" analyticsSurface="customer_orders_empty_state" analyticsDestinationType="collection_hub">{text.shop}</TrackedLink>
           </div>
-        </aside>
+        </div>
       </section>
     </div>
   );

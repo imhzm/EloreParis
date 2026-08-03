@@ -47,7 +47,7 @@ function JournalCard({
           <b>{String(index + 1).padStart(2, "0")}</b>
         </span>
         <span className={styles.storyBody}>
-          <small>{record.category} · {record.readingLabel}</small>
+          <small>{record.category} Â· {record.readingLabel}</small>
           <h3>{record.title.replace("\n", " ")}</h3>
           <span>{record.summary}</span>
         </span>
@@ -87,7 +87,7 @@ export function LocalizedJournalHub({ locale, records, copy: controlledCopy, int
               priority
               sizes="(max-width: 880px) 100vw, 42vw"
             />
-            <span>ÉDIT</span>
+            <span>Ã‰DIT</span>
           </div>
         </div>
       </section>
@@ -103,7 +103,7 @@ export function LocalizedJournalHub({ locale, records, copy: controlledCopy, int
         </div>
         <div className={styles.featuredCopy} data-journal-frame data-journal-featured>
           <p className={styles.eyebrow}>{featured.eyebrow}</p>
-          <small>{featured.category} · {featured.readingLabel}</small>
+          <small>{featured.category} Â· {featured.readingLabel}</small>
           <h2 id="journal-featured-title"><MultilineTitle value={featured.title} /></h2>
           <p>{featured.summary}</p>
           <ul>{featured.takeaways.map((item) => <li key={item}>{item}</li>)}</ul>
@@ -192,7 +192,7 @@ export function LocalizedJournalArticle({ locale, record, relatedArticles, copy:
           </div>
           <div className={styles.articleHeroCopy} data-article-meta>
             <p className={styles.eyebrow}>{record.eyebrow}</p>
-            <small>{record.category} · {record.readingLabel}</small>
+            <small>{record.category} Â· {record.readingLabel}</small>
             <h1 id="article-title"><MultilineTitle value={record.title} /></h1>
             <p>{record.summary}</p>
             <TrackedLink
@@ -209,7 +209,7 @@ export function LocalizedJournalArticle({ locale, record, relatedArticles, copy:
       </header>
 
       <div className={styles.articleLayout}>
-        <aside className={styles.articleRail}>
+        <div className={styles.articleRail}>
           <nav className={styles.toc} data-article-toc aria-label={copy.chapters}>
             <p>{copy.chapters}</p>
             <a href="#article-answer">{copy.answer}</a>
@@ -220,7 +220,7 @@ export function LocalizedJournalArticle({ locale, record, relatedArticles, copy:
             ))}
             <a href="#article-questions">{copy.questions}</a>
           </nav>
-        </aside>
+        </div>
 
         <div className={styles.articleBody}>
           <section className={styles.answer} id="article-answer" data-article-scene aria-labelledby="article-answer-title">

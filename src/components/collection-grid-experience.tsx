@@ -43,27 +43,27 @@ const PAGE_SIZE = 12;
 
 const copy = {
   ar: {
-    sortLabel: "ترتيب حسب",
-    sort: { featured: "المختار", "price-asc": "السعر: من الأقل", "price-desc": "السعر: من الأعلى" } as Record<SortKey, string>,
-    count: (shown: number, total: number) => `عرض ${shown} من ${total} ${total === 1 ? "منتج" : "منتجًا"}`,
-    more: "عرض المزيد",
-    added: "تمت الإضافة إلى السلة.",
-    emptyTitle: "لم تُعتمد منتجات لهذه المجموعة بعد.",
-    emptyBody: "نعرض المنتجات فور اعتمادها ببياناتها الموثّقة. تصفّحي بقية المتجر في هذه الأثناء.",
-    emptyCta: "العودة إلى المتجر",
-    page: (n: number) => `صفحة ${n}`,
-    filters: "تصفية النتائج",
-    clear: "مسح الكل",
-    noMatches: "لا توجد منتجات معتمدة تطابق هذه الاختيارات.",
+    sortLabel: "ØªØ±ØªÙŠØ¨ Ø­Ø³Ø¨",
+    sort: { featured: "Ø§Ù„Ù…Ø®ØªØ§Ø±", "price-asc": "Ø§Ù„Ø³Ø¹Ø±: Ù…Ù† Ø§Ù„Ø£Ù‚Ù„", "price-desc": "Ø§Ù„Ø³Ø¹Ø±: Ù…Ù† Ø§Ù„Ø£Ø¹Ù„Ù‰" } as Record<SortKey, string>,
+    count: (shown: number, total: number) => `Ø¹Ø±Ø¶ ${shown} Ù…Ù† ${total} ${total === 1 ? "Ù…Ù†ØªØ¬" : "Ù…Ù†ØªØ¬Ù‹Ø§"}`,
+    more: "Ø¹Ø±Ø¶ Ø§Ù„Ù…Ø²ÙŠØ¯",
+    added: "ØªÙ…Øª Ø§Ù„Ø¥Ø¶Ø§ÙØ© Ø¥Ù„Ù‰ Ø§Ù„Ø³Ù„Ø©.",
+    emptyTitle: "Ù„Ù… ØªÙØ¹ØªÙ…Ø¯ Ù…Ù†ØªØ¬Ø§Øª Ù„Ù‡Ø°Ù‡ Ø§Ù„Ù…Ø¬Ù…ÙˆØ¹Ø© Ø¨Ø¹Ø¯.",
+    emptyBody: "Ù†Ø¹Ø±Ø¶ Ø§Ù„Ù…Ù†ØªØ¬Ø§Øª ÙÙˆØ± Ø§Ø¹ØªÙ…Ø§Ø¯Ù‡Ø§ Ø¨Ø¨ÙŠØ§Ù†Ø§ØªÙ‡Ø§ Ø§Ù„Ù…ÙˆØ«Ù‘Ù‚Ø©. ØªØµÙÙ‘Ø­ÙŠ Ø¨Ù‚ÙŠØ© Ø§Ù„Ù…ØªØ¬Ø± ÙÙŠ Ù‡Ø°Ù‡ Ø§Ù„Ø£Ø«Ù†Ø§Ø¡.",
+    emptyCta: "Ø§Ù„Ø¹ÙˆØ¯Ø© Ø¥Ù„Ù‰ Ø§Ù„Ù…ØªØ¬Ø±",
+    page: (n: number) => `ØµÙØ­Ø© ${n}`,
+    filters: "ØªØµÙÙŠØ© Ø§Ù„Ù†ØªØ§Ø¦Ø¬",
+    clear: "Ù…Ø³Ø­ Ø§Ù„ÙƒÙ„",
+    noMatches: "Ù„Ø§ ØªÙˆØ¬Ø¯ Ù…Ù†ØªØ¬Ø§Øª Ù…Ø¹ØªÙ…Ø¯Ø© ØªØ·Ø§Ø¨Ù‚ Ù‡Ø°Ù‡ Ø§Ù„Ø§Ø®ØªÙŠØ§Ø±Ø§Øª.",
     facetGroups: {
-      tags: "الخصائص",
-      concerns: "الاحتياج",
-      routines: "الطقس",
-      fragrance: "البصمة العطرية",
-      availability: "التوفر",
+      tags: "Ø§Ù„Ø®ØµØ§Ø¦Øµ",
+      concerns: "Ø§Ù„Ø§Ø­ØªÙŠØ§Ø¬",
+      routines: "Ø§Ù„Ø·Ù‚Ø³",
+      fragrance: "Ø§Ù„Ø¨ØµÙ…Ø© Ø§Ù„Ø¹Ø·Ø±ÙŠØ©",
+      availability: "Ø§Ù„ØªÙˆÙØ±",
     } as Record<FacetGroup, string>,
-    inStock: "متاح الآن",
-    giftEligible: "مناسب للإهداء",
+    inStock: "Ù…ØªØ§Ø­ Ø§Ù„Ø¢Ù†",
+    giftEligible: "Ù…Ù†Ø§Ø³Ø¨ Ù„Ù„Ø¥Ù‡Ø¯Ø§Ø¡",
   },
   en: {
     sortLabel: "Sort by",
@@ -233,7 +233,7 @@ export function CollectionGridExperience({ locale, slug, hero, editorial, produc
           </div>
         </section>
       ) : (
-        <section className={styles.listing} data-catalog-state="available" aria-label={hero.title}>
+        <section className={styles.listing} data-catalog-state="available">
           <div className={styles.toolbar}>
             <p className={styles.resultCount} aria-live="polite">{text.count(shown.length, sorted.length)}</p>
             <label className={styles.sort}>
@@ -250,7 +250,7 @@ export function CollectionGridExperience({ locale, slug, hero, editorial, produc
             <div className={styles.activeFilters} aria-label={text.filters}>
               {selectedFacets.map((token) => {
                 const option = facets.flatMap((facet) => facet.options).find((candidate) => candidate.token === token);
-                return <button key={token} type="button" onClick={() => toggleFacet(token)}>{option?.label ?? token}<span aria-hidden="true">×</span></button>;
+                return <button key={token} type="button" onClick={() => toggleFacet(token)}>{option?.label ?? token}<span aria-hidden="true">Ã—</span></button>;
               })}
               <button type="button" className={styles.clearFilters} onClick={() => { setSelectedFacets([]); setPage(1); }}>{text.clear}</button>
             </div>
@@ -258,7 +258,7 @@ export function CollectionGridExperience({ locale, slug, hero, editorial, produc
 
           <div className={styles.catalogLayout}>
             {facets.length ? (
-              <aside className={styles.filters} aria-labelledby="catalog-filter-title">
+              <div className={styles.filters} aria-labelledby="catalog-filter-title">
                 <div className={styles.filterHeading}>
                   <h2 id="catalog-filter-title">{text.filters}</h2>
                   {selectedFacets.length ? <button type="button" onClick={() => { setSelectedFacets([]); setPage(1); }}>{text.clear}</button> : null}
@@ -279,7 +279,7 @@ export function CollectionGridExperience({ locale, slug, hero, editorial, produc
                     ))}
                   </fieldset>
                 ))}
-              </aside>
+              </div>
             ) : null}
 
             <div className={styles.results}>

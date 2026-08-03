@@ -295,7 +295,7 @@
 .giftingShade { position: absolute; z-index: -1; inset: 0; background: linear-gradient(90deg, rgba(18, 3, 5, 0.88), rgba(37, 8, 12, 0.44) 55%, transparent); }
 [dir="rtl"] .giftingShade { transform: scaleX(-1); }
 .giftingCopy { width: min(44rem, 52vw); display: grid; gap: 1.25rem; margin-inline-start: clamp(1.25rem, 8vw, 9rem); color: var(--ivory-50); }
-.giftingCopy .eyebrow { color: var(--gold-400); }
+.giftingCopy .eyebrow { color: var(--gold-600); }
 
 .editorial {
   width: min(calc(100% - 2rem), var(--container-max));

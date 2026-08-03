@@ -27,52 +27,52 @@ type TrackOrderSurfaceProps = {
 
 const copy = {
   ar: {
-    heroTitle: "تتبّعي الحالة الحالية بمرجع واضح بدل الرسائل المبهمة.",
-    heroBody: "استخدمي مرجع الطلب وآخر أربعة أرقام من الجوال لعرض آخر حالة متاحة بأمان.",
-    needTitle: "ما الذي تحتاجينه؟",
-    needValue: "مرجع الطلب أو جلسة التتبع الحالية",
-    needBody: "يقلل ذلك الاعتماد على المعلومات الشخصية الكاملة ويحافظ على وضوح التتبع.",
-    scopeTitle: "متابعة واضحة وآمنة للطلب",
-    scopeBody: "نعرض المعلومات المتاحة للعميل فقط، ونفصل بوضوح بين الحالة المؤكدة وما زال قيد المراجعة.",
-    lookupTitle: "البحث عن الطلب",
-    lookupBody: "يمكنك العودة إلى الحالة الحالية متى كان مرجع الطلب متاحًا لديك.",
-    orderReference: "مرجع الطلب",
-    phoneLastFour: "آخر 4 أرقام من الجوال (اختياري على نفس الجهاز)",
-    searching: "جاري البحث...",
-    showStatus: "عرض الحالة الحالية",
-    shippingPolicy: "مراجعة سياسة الشحن",
-    supportTitle: "قبل التتبع أو بعده",
-    supportingReference: "مرجع مساند",
-    currentStatus: "الحالة الحالية",
-    currentStatusFor: "الحالة الحالية للطلب",
-    complete: "مكتمل",
-    upcoming: "قادم",
-    guardrailsTitle: "حافظي على متابعة الطلب الحالي",
-    continuationTitle: "إذا احتجتِ مزيدًا من السياق، اختاري مسارًا واحدًا فقط",
-    noRoutes: "لا توجد روابط إضافية مطلوبة الآن. ابقي على مسار التتبع حتى تتضح الخطوة التالية.",
-    orderSummary: "ملخص الطلب",
-    trackingSummary: "الملخص المرتبط بالتتبع",
-    labels: ["منطقة الخدمة", "الشحن", "الدفع", "الناقل المقترح", "حالة المزوّد", "مرجع الدفع", "مرجع التسوية", "مرجع الشحن", "رقم التتبع", "الإجمالي التقديري", "طريقة المتابعة"],
-    pending: "قيد الانتظار",
-    noManualReview: "لا توجد مراجعة يدوية إضافية مطلوبة لهذا الطلب حاليًا.",
-    noNotifications: "لا توجد رسالة تشغيلية جديدة لهذا الطلب الآن.",
-    completePayment: "إكمال الدفع",
-    myOrders: "عرض طلباتي",
-    anotherDevice: "فتح طلباتي على جهاز آخر",
-    missingReference: "أدخلي مرجع الطلب لإظهار الحالة الحالية.",
-    notFound: "لم يتم العثور على طلب مطابق لهذه البيانات.",
-    oneDecision: "تتبّع قرار واحد",
-    oneRoute: "تتبّع مسار واحد",
-    multipleRoutes: "تتبّع متعدد المسارات",
-    oneDecisionBody: "راجعي حالة التنفيذ أولًا، ثم استخدمي رابط دعم واحدًا فقط عند الحاجة.",
-    oneRouteBody: "تابعي الطلب من الرابط الأقرب إلى نفس مسار الشراء.",
-    multipleRoutesBody: "ركزي على الحالة التشغيلية الحالية قبل فتح أي مسار تسوق جديد.",
-    statusLabel: "الحالة الحالية",
-    fulfillmentLabel: "مسار التنفيذ",
-    followupLabel: "طريقة المتابعة",
-    clearFulfillment: "مسار التنفيذ الحالي واضح للمتابعة.",
-    codYes: "الدفع عند الاستلام متاح",
-    codNo: "الدفع عند الاستلام غير متاح",
+    heroTitle: "ØªØªØ¨Ù‘Ø¹ÙŠ Ø§Ù„Ø­Ø§Ù„Ø© Ø§Ù„Ø­Ø§Ù„ÙŠØ© Ø¨Ù…Ø±Ø¬Ø¹ ÙˆØ§Ø¶Ø­ Ø¨Ø¯Ù„ Ø§Ù„Ø±Ø³Ø§Ø¦Ù„ Ø§Ù„Ù…Ø¨Ù‡Ù…Ø©.",
+    heroBody: "Ø§Ø³ØªØ®Ø¯Ù…ÙŠ Ù…Ø±Ø¬Ø¹ Ø§Ù„Ø·Ù„Ø¨ ÙˆØ¢Ø®Ø± Ø£Ø±Ø¨Ø¹Ø© Ø£Ø±Ù‚Ø§Ù… Ù…Ù† Ø§Ù„Ø¬ÙˆØ§Ù„ Ù„Ø¹Ø±Ø¶ Ø¢Ø®Ø± Ø­Ø§Ù„Ø© Ù…ØªØ§Ø­Ø© Ø¨Ø£Ù…Ø§Ù†.",
+    needTitle: "Ù…Ø§ Ø§Ù„Ø°ÙŠ ØªØ­ØªØ§Ø¬ÙŠÙ†Ù‡ØŸ",
+    needValue: "Ù…Ø±Ø¬Ø¹ Ø§Ù„Ø·Ù„Ø¨ Ø£Ùˆ Ø¬Ù„Ø³Ø© Ø§Ù„ØªØªØ¨Ø¹ Ø§Ù„Ø­Ø§Ù„ÙŠØ©",
+    needBody: "ÙŠÙ‚Ù„Ù„ Ø°Ù„Ùƒ Ø§Ù„Ø§Ø¹ØªÙ…Ø§Ø¯ Ø¹Ù„Ù‰ Ø§Ù„Ù…Ø¹Ù„ÙˆÙ…Ø§Øª Ø§Ù„Ø´Ø®ØµÙŠØ© Ø§Ù„ÙƒØ§Ù…Ù„Ø© ÙˆÙŠØ­Ø§ÙØ¸ Ø¹Ù„Ù‰ ÙˆØ¶ÙˆØ­ Ø§Ù„ØªØªØ¨Ø¹.",
+    scopeTitle: "Ù…ØªØ§Ø¨Ø¹Ø© ÙˆØ§Ø¶Ø­Ø© ÙˆØ¢Ù…Ù†Ø© Ù„Ù„Ø·Ù„Ø¨",
+    scopeBody: "Ù†Ø¹Ø±Ø¶ Ø§Ù„Ù…Ø¹Ù„ÙˆÙ…Ø§Øª Ø§Ù„Ù…ØªØ§Ø­Ø© Ù„Ù„Ø¹Ù…ÙŠÙ„ ÙÙ‚Ø·ØŒ ÙˆÙ†ÙØµÙ„ Ø¨ÙˆØ¶ÙˆØ­ Ø¨ÙŠÙ† Ø§Ù„Ø­Ø§Ù„Ø© Ø§Ù„Ù…Ø¤ÙƒØ¯Ø© ÙˆÙ…Ø§ Ø²Ø§Ù„ Ù‚ÙŠØ¯ Ø§Ù„Ù…Ø±Ø§Ø¬Ø¹Ø©.",
+    lookupTitle: "Ø§Ù„Ø¨Ø­Ø« Ø¹Ù† Ø§Ù„Ø·Ù„Ø¨",
+    lookupBody: "ÙŠÙ…ÙƒÙ†Ùƒ Ø§Ù„Ø¹ÙˆØ¯Ø© Ø¥Ù„Ù‰ Ø§Ù„Ø­Ø§Ù„Ø© Ø§Ù„Ø­Ø§Ù„ÙŠØ© Ù…ØªÙ‰ ÙƒØ§Ù† Ù…Ø±Ø¬Ø¹ Ø§Ù„Ø·Ù„Ø¨ Ù…ØªØ§Ø­Ù‹Ø§ Ù„Ø¯ÙŠÙƒ.",
+    orderReference: "Ù…Ø±Ø¬Ø¹ Ø§Ù„Ø·Ù„Ø¨",
+    phoneLastFour: "Ø¢Ø®Ø± 4 Ø£Ø±Ù‚Ø§Ù… Ù…Ù† Ø§Ù„Ø¬ÙˆØ§Ù„ (Ø§Ø®ØªÙŠØ§Ø±ÙŠ Ø¹Ù„Ù‰ Ù†ÙØ³ Ø§Ù„Ø¬Ù‡Ø§Ø²)",
+    searching: "Ø¬Ø§Ø±ÙŠ Ø§Ù„Ø¨Ø­Ø«...",
+    showStatus: "Ø¹Ø±Ø¶ Ø§Ù„Ø­Ø§Ù„Ø© Ø§Ù„Ø­Ø§Ù„ÙŠØ©",
+    shippingPolicy: "Ù…Ø±Ø§Ø¬Ø¹Ø© Ø³ÙŠØ§Ø³Ø© Ø§Ù„Ø´Ø­Ù†",
+    supportTitle: "Ù‚Ø¨Ù„ Ø§Ù„ØªØªØ¨Ø¹ Ø£Ùˆ Ø¨Ø¹Ø¯Ù‡",
+    supportingReference: "Ù…Ø±Ø¬Ø¹ Ù…Ø³Ø§Ù†Ø¯",
+    currentStatus: "Ø§Ù„Ø­Ø§Ù„Ø© Ø§Ù„Ø­Ø§Ù„ÙŠØ©",
+    currentStatusFor: "Ø§Ù„Ø­Ø§Ù„Ø© Ø§Ù„Ø­Ø§Ù„ÙŠØ© Ù„Ù„Ø·Ù„Ø¨",
+    complete: "Ù…ÙƒØªÙ…Ù„",
+    upcoming: "Ù‚Ø§Ø¯Ù…",
+    guardrailsTitle: "Ø­Ø§ÙØ¸ÙŠ Ø¹Ù„Ù‰ Ù…ØªØ§Ø¨Ø¹Ø© Ø§Ù„Ø·Ù„Ø¨ Ø§Ù„Ø­Ø§Ù„ÙŠ",
+    continuationTitle: "Ø¥Ø°Ø§ Ø§Ø­ØªØ¬ØªÙ Ù…Ø²ÙŠØ¯Ù‹Ø§ Ù…Ù† Ø§Ù„Ø³ÙŠØ§Ù‚ØŒ Ø§Ø®ØªØ§Ø±ÙŠ Ù…Ø³Ø§Ø±Ù‹Ø§ ÙˆØ§Ø­Ø¯Ù‹Ø§ ÙÙ‚Ø·",
+    noRoutes: "Ù„Ø§ ØªÙˆØ¬Ø¯ Ø±ÙˆØ§Ø¨Ø· Ø¥Ø¶Ø§ÙÙŠØ© Ù…Ø·Ù„ÙˆØ¨Ø© Ø§Ù„Ø¢Ù†. Ø§Ø¨Ù‚ÙŠ Ø¹Ù„Ù‰ Ù…Ø³Ø§Ø± Ø§Ù„ØªØªØ¨Ø¹ Ø­ØªÙ‰ ØªØªØ¶Ø­ Ø§Ù„Ø®Ø·ÙˆØ© Ø§Ù„ØªØ§Ù„ÙŠØ©.",
+    orderSummary: "Ù…Ù„Ø®Øµ Ø§Ù„Ø·Ù„Ø¨",
+    trackingSummary: "Ø§Ù„Ù…Ù„Ø®Øµ Ø§Ù„Ù…Ø±ØªØ¨Ø· Ø¨Ø§Ù„ØªØªØ¨Ø¹",
+    labels: ["Ù…Ù†Ø·Ù‚Ø© Ø§Ù„Ø®Ø¯Ù…Ø©", "Ø§Ù„Ø´Ø­Ù†", "Ø§Ù„Ø¯ÙØ¹", "Ø§Ù„Ù†Ø§Ù‚Ù„ Ø§Ù„Ù…Ù‚ØªØ±Ø­", "Ø­Ø§Ù„Ø© Ø§Ù„Ù…Ø²ÙˆÙ‘Ø¯", "Ù…Ø±Ø¬Ø¹ Ø§Ù„Ø¯ÙØ¹", "Ù…Ø±Ø¬Ø¹ Ø§Ù„ØªØ³ÙˆÙŠØ©", "Ù…Ø±Ø¬Ø¹ Ø§Ù„Ø´Ø­Ù†", "Ø±Ù‚Ù… Ø§Ù„ØªØªØ¨Ø¹", "Ø§Ù„Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„ØªÙ‚Ø¯ÙŠØ±ÙŠ", "Ø·Ø±ÙŠÙ‚Ø© Ø§Ù„Ù…ØªØ§Ø¨Ø¹Ø©"],
+    pending: "Ù‚ÙŠØ¯ Ø§Ù„Ø§Ù†ØªØ¸Ø§Ø±",
+    noManualReview: "Ù„Ø§ ØªÙˆØ¬Ø¯ Ù…Ø±Ø§Ø¬Ø¹Ø© ÙŠØ¯ÙˆÙŠØ© Ø¥Ø¶Ø§ÙÙŠØ© Ù…Ø·Ù„ÙˆØ¨Ø© Ù„Ù‡Ø°Ø§ Ø§Ù„Ø·Ù„Ø¨ Ø­Ø§Ù„ÙŠÙ‹Ø§.",
+    noNotifications: "Ù„Ø§ ØªÙˆØ¬Ø¯ Ø±Ø³Ø§Ù„Ø© ØªØ´ØºÙŠÙ„ÙŠØ© Ø¬Ø¯ÙŠØ¯Ø© Ù„Ù‡Ø°Ø§ Ø§Ù„Ø·Ù„Ø¨ Ø§Ù„Ø¢Ù†.",
+    completePayment: "Ø¥ÙƒÙ…Ø§Ù„ Ø§Ù„Ø¯ÙØ¹",
+    myOrders: "Ø¹Ø±Ø¶ Ø·Ù„Ø¨Ø§ØªÙŠ",
+    anotherDevice: "ÙØªØ­ Ø·Ù„Ø¨Ø§ØªÙŠ Ø¹Ù„Ù‰ Ø¬Ù‡Ø§Ø² Ø¢Ø®Ø±",
+    missingReference: "Ø£Ø¯Ø®Ù„ÙŠ Ù…Ø±Ø¬Ø¹ Ø§Ù„Ø·Ù„Ø¨ Ù„Ø¥Ø¸Ù‡Ø§Ø± Ø§Ù„Ø­Ø§Ù„Ø© Ø§Ù„Ø­Ø§Ù„ÙŠØ©.",
+    notFound: "Ù„Ù… ÙŠØªÙ… Ø§Ù„Ø¹Ø«ÙˆØ± Ø¹Ù„Ù‰ Ø·Ù„Ø¨ Ù…Ø·Ø§Ø¨Ù‚ Ù„Ù‡Ø°Ù‡ Ø§Ù„Ø¨ÙŠØ§Ù†Ø§Øª.",
+    oneDecision: "ØªØªØ¨Ù‘Ø¹ Ù‚Ø±Ø§Ø± ÙˆØ§Ø­Ø¯",
+    oneRoute: "ØªØªØ¨Ù‘Ø¹ Ù…Ø³Ø§Ø± ÙˆØ§Ø­Ø¯",
+    multipleRoutes: "ØªØªØ¨Ù‘Ø¹ Ù…ØªØ¹Ø¯Ø¯ Ø§Ù„Ù…Ø³Ø§Ø±Ø§Øª",
+    oneDecisionBody: "Ø±Ø§Ø¬Ø¹ÙŠ Ø­Ø§Ù„Ø© Ø§Ù„ØªÙ†ÙÙŠØ° Ø£ÙˆÙ„Ù‹Ø§ØŒ Ø«Ù… Ø§Ø³ØªØ®Ø¯Ù…ÙŠ Ø±Ø§Ø¨Ø· Ø¯Ø¹Ù… ÙˆØ§Ø­Ø¯Ù‹Ø§ ÙÙ‚Ø· Ø¹Ù†Ø¯ Ø§Ù„Ø­Ø§Ø¬Ø©.",
+    oneRouteBody: "ØªØ§Ø¨Ø¹ÙŠ Ø§Ù„Ø·Ù„Ø¨ Ù…Ù† Ø§Ù„Ø±Ø§Ø¨Ø· Ø§Ù„Ø£Ù‚Ø±Ø¨ Ø¥Ù„Ù‰ Ù†ÙØ³ Ù…Ø³Ø§Ø± Ø§Ù„Ø´Ø±Ø§Ø¡.",
+    multipleRoutesBody: "Ø±ÙƒØ²ÙŠ Ø¹Ù„Ù‰ Ø§Ù„Ø­Ø§Ù„Ø© Ø§Ù„ØªØ´ØºÙŠÙ„ÙŠØ© Ø§Ù„Ø­Ø§Ù„ÙŠØ© Ù‚Ø¨Ù„ ÙØªØ­ Ø£ÙŠ Ù…Ø³Ø§Ø± ØªØ³ÙˆÙ‚ Ø¬Ø¯ÙŠØ¯.",
+    statusLabel: "Ø§Ù„Ø­Ø§Ù„Ø© Ø§Ù„Ø­Ø§Ù„ÙŠØ©",
+    fulfillmentLabel: "Ù…Ø³Ø§Ø± Ø§Ù„ØªÙ†ÙÙŠØ°",
+    followupLabel: "Ø·Ø±ÙŠÙ‚Ø© Ø§Ù„Ù…ØªØ§Ø¨Ø¹Ø©",
+    clearFulfillment: "Ù…Ø³Ø§Ø± Ø§Ù„ØªÙ†ÙÙŠØ° Ø§Ù„Ø­Ø§Ù„ÙŠ ÙˆØ§Ø¶Ø­ Ù„Ù„Ù…ØªØ§Ø¨Ø¹Ø©.",
+    codYes: "Ø§Ù„Ø¯ÙØ¹ Ø¹Ù†Ø¯ Ø§Ù„Ø§Ø³ØªÙ„Ø§Ù… Ù…ØªØ§Ø­",
+    codNo: "Ø§Ù„Ø¯ÙØ¹ Ø¹Ù†Ø¯ Ø§Ù„Ø§Ø³ØªÙ„Ø§Ù… ØºÙŠØ± Ù…ØªØ§Ø­",
   },
   en: {
     heroTitle: "Follow the current status with a clear reference.",
@@ -339,11 +339,11 @@ export function TrackOrderSurface({ initialOrderNumber = "", locale }: TrackOrde
     match && fulfillmentPlan
       ? locale === "ar"
         ? [
-            "ابدئي دائمًا بمرجع الطلب وآخر 4 أرقام من الجوال قبل الانتقال إلى أي قناة دعم أخرى.",
+            "Ø§Ø¨Ø¯Ø¦ÙŠ Ø¯Ø§Ø¦Ù…Ù‹Ø§ Ø¨Ù…Ø±Ø¬Ø¹ Ø§Ù„Ø·Ù„Ø¨ ÙˆØ¢Ø®Ø± 4 Ø£Ø±Ù‚Ø§Ù… Ù…Ù† Ø§Ù„Ø¬ÙˆØ§Ù„ Ù‚Ø¨Ù„ Ø§Ù„Ø§Ù†ØªÙ‚Ø§Ù„ Ø¥Ù„Ù‰ Ø£ÙŠ Ù‚Ù†Ø§Ø© Ø¯Ø¹Ù… Ø£Ø®Ø±Ù‰.",
             fulfillmentPlan.requiresManualReview
-              ? "بما أن الطلب يحتاج مراجعة، تابعي الحالة الحالية أولًا بدل إضافة عناصر جديدة أو إعادة فتح الدفع."
-              : "طالما لا توجد مراجعة يدوية، فالأولوية هي مراقبة التقدم التشغيلي بدل تعديل قرار الشراء.",
-            `الإجمالي الحالي ${match.totalEstimate} ر.س، لذلك يجب أن تدعم أي خطوة لاحقة نفس الطلب.`,
+              ? "Ø¨Ù…Ø§ Ø£Ù† Ø§Ù„Ø·Ù„Ø¨ ÙŠØ­ØªØ§Ø¬ Ù…Ø±Ø§Ø¬Ø¹Ø©ØŒ ØªØ§Ø¨Ø¹ÙŠ Ø§Ù„Ø­Ø§Ù„Ø© Ø§Ù„Ø­Ø§Ù„ÙŠØ© Ø£ÙˆÙ„Ù‹Ø§ Ø¨Ø¯Ù„ Ø¥Ø¶Ø§ÙØ© Ø¹Ù†Ø§ØµØ± Ø¬Ø¯ÙŠØ¯Ø© Ø£Ùˆ Ø¥Ø¹Ø§Ø¯Ø© ÙØªØ­ Ø§Ù„Ø¯ÙØ¹."
+              : "Ø·Ø§Ù„Ù…Ø§ Ù„Ø§ ØªÙˆØ¬Ø¯ Ù…Ø±Ø§Ø¬Ø¹Ø© ÙŠØ¯ÙˆÙŠØ©ØŒ ÙØ§Ù„Ø£ÙˆÙ„ÙˆÙŠØ© Ù‡ÙŠ Ù…Ø±Ø§Ù‚Ø¨Ø© Ø§Ù„ØªÙ‚Ø¯Ù… Ø§Ù„ØªØ´ØºÙŠÙ„ÙŠ Ø¨Ø¯Ù„ ØªØ¹Ø¯ÙŠÙ„ Ù‚Ø±Ø§Ø± Ø§Ù„Ø´Ø±Ø§Ø¡.",
+            `Ø§Ù„Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„Ø­Ø§Ù„ÙŠ ${match.totalEstimate} Ø±.Ø³ØŒ Ù„Ø°Ù„Ùƒ ÙŠØ¬Ø¨ Ø£Ù† ØªØ¯Ø¹Ù… Ø£ÙŠ Ø®Ø·ÙˆØ© Ù„Ø§Ø­Ù‚Ø© Ù†ÙØ³ Ø§Ù„Ø·Ù„Ø¨.`,
           ]
         : [
             "Start with the order reference and last four mobile digits before using another support channel.",
@@ -358,7 +358,7 @@ export function TrackOrderSurface({ initialOrderNumber = "", locale }: TrackOrde
       ? null
       : {
           href: matchedCollections[0].href,
-          label: locale === "ar" ? `العودة إلى ${matchedCollections[0].title}` : "Return to the collection",
+          label: locale === "ar" ? `Ø§Ù„Ø¹ÙˆØ¯Ø© Ø¥Ù„Ù‰ ${matchedCollections[0].title}` : "Return to the collection",
           productName: matchedCollections[0].title,
         };
   const resultRoute = trackingRoutes[0] ?? fallbackCollectionRoute;
@@ -441,7 +441,7 @@ export function TrackOrderSurface({ initialOrderNumber = "", locale }: TrackOrde
           </div>
         </form>
 
-        <aside className={styles.summaryCard}>
+        <div className={styles.summaryCard}>
           <p className={styles.sectionTitle}>Support</p>
           <h2>{text.supportTitle}</h2>
           <div className={styles.linkList}>
@@ -458,7 +458,7 @@ export function TrackOrderSurface({ initialOrderNumber = "", locale }: TrackOrde
               </TrackedLink>
             ))}
           </div>
-        </aside>
+        </div>
       </section>
 
       {match && fulfillmentPlan ? (
@@ -557,7 +557,7 @@ export function TrackOrderSurface({ initialOrderNumber = "", locale }: TrackOrde
             </div>
           </article>
 
-          <aside className={styles.summaryCard}>
+          <div className={styles.summaryCard}>
             <p className={styles.sectionTitle}>{text.orderSummary}</p>
             <h2>{text.trackingSummary}</h2>
 
@@ -571,7 +571,7 @@ export function TrackOrderSurface({ initialOrderNumber = "", locale }: TrackOrde
               <div className={styles.referenceRow}><span>{text.labels[6]}</span><strong className={styles.referenceValue}>{match.providerBindings.payment.settlementReference ?? text.pending}</strong></div>
               <div className={styles.referenceRow}><span>{text.labels[7]}</span><strong className={styles.referenceValue}>{match.providerBindings.shipping.bookingReference ?? text.pending}</strong></div>
               <div className={styles.referenceRow}><span>{text.labels[8]}</span><strong className={styles.referenceValue}>{match.providerBindings.shipping.trackingNumber ?? text.pending}</strong></div>
-              <div className={styles.referenceRow}><span>{text.labels[9]}</span><strong className={styles.referenceValue}>{locale === "ar" ? `${match.totalEstimate} ر.س` : `SAR ${match.totalEstimate}`}</strong></div>
+              <div className={styles.referenceRow}><span>{text.labels[9]}</span><strong className={styles.referenceValue}>{locale === "ar" ? `${match.totalEstimate} Ø±.Ø³` : `SAR ${match.totalEstimate}`}</strong></div>
               <div className={styles.referenceRow}><span>{text.labels[10]}</span><strong className={styles.referenceValue}>{trackingModeTitle}</strong></div>
             </div>
 
@@ -670,7 +670,7 @@ export function TrackOrderSurface({ initialOrderNumber = "", locale }: TrackOrde
                 </TrackedLink>
               ))}
             </div>
-          </aside>
+          </div>
         </section>
       ) : null}
     </div>
