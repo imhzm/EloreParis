@@ -368,6 +368,17 @@ The active pack is now `Pack 06: Launch and compliance closure`, while `Pack 04:
       image, ~7:1 in reality — confirmed by geometry probe); device-matrix
       audit now reports 1,768/1,768 clean page loads; all 39 gates, lint and
       tsc pass.
+  - Cleanup slice: tracked `scripts/__pycache__/*.pyc` removed and gitignored,
+    `tmp/` scratch artifacts untracked and gitignored, the merged
+    `codex/luxury-commerce-rollout` branch deleted locally and remotely, the
+    repeated `#6a524b` PDP literals consolidated into a new `--muted-600`
+    token, and `DEPLOYMENT-RUNBOOK.md` blockers synced with the current
+    hardening reality (JWKS/OIDC/replay/throttling are implemented and
+    gate-verified in-repo; the live server still runs pre-rollout `e9623cb`).
+    SSH probe: the dedicated key fingerprint matches the runbook
+    (`SHA256:cpyRenLtRBLrMT7cp47lr1CdGINTaL6TTIKv12YAcg4`) but the server
+    rejects it (`Permission denied (publickey)`) — installing it on the
+    server remains the single operator step before the release deploy.
   - Next operator actions remain: install the SSH identity on the server,
     apply the updated `/etc/elore-paris/elore-paris.env` contract, run
     `deploy/hostinger/deploy-release.sh 8a89cbf…`, then record the release
