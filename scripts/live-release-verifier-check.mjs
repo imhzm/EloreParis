@@ -11,6 +11,8 @@ const responseMap = new Map([
     service: "elore-paris-storefront",
     hostingProvider: "hostinger_vps",
     commitReference: commit,
+    publicReleaseApproved: true,
+    searchIndexingEnabled: true,
   }), { status: 200, headers: { "Content-Type": "application/json" } })],
   [`${baseUrl}/`, new Response(null, { status: 308, headers: { Location: `${baseUrl}/ar` } })],
   [`${baseUrl}/ar`, new Response(html, { status: 200, headers: {
@@ -51,6 +53,44 @@ assert.deepEqual(evidence.summary, {
   assetChecks: 1,
   apiChecks: 1,
 });
+
+const preReleaseResponses = new Map(responseMap);
+preReleaseResponses.set(`${baseUrl}/api/health`, new Response(JSON.stringify({
+  status: "ok",
+  service: "elore-paris-storefront",
+  hostingProvider: "hostinger_vps",
+  commitReference: commit,
+  publicReleaseApproved: false,
+  searchIndexingEnabled: false,
+}), { status: 200, headers: { "Content-Type": "application/json" } }));
+preReleaseResponses.set(`${baseUrl}/ar`, new Response(
+  '<html lang="ar-SA"><script src="/_next/static/chunks/app.js"></script></html>',
+  { status: 200, headers: {
+    "Content-Security-Policy": "default-src 'self'",
+    "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+    "X-Content-Type-Options": "nosniff",
+  } },
+));
+preReleaseResponses.set(`${baseUrl}/en`, new Response('<html lang="en-SA"></html>', { status: 200 }));
+preReleaseResponses.set(`${baseUrl}/robots.txt`, new Response("User-agent: *\nDisallow: /\n", { status: 200 }));
+preReleaseResponses.set(`${baseUrl}/sitemap.xml`, new Response("<urlset></urlset>", { status: 200 }));
+preReleaseResponses.set(`${baseUrl}/api/ops/session`, new Response(null, { status: 503 }));
+preReleaseResponses.set(`${baseUrl}/api/ops/release/package`, new Response(null, { status: 503 }));
+const preReleaseFetch = async (url) => {
+  const response = preReleaseResponses.get(String(url));
+  if (!response) throw new Error(`Unexpected URL: ${url}`);
+  return response.clone();
+};
+
+const preReleaseEvidence = await buildLiveReleaseEvidence({
+  baseUrl,
+  expectedCommit: commit,
+  authorityDatabasePath,
+  fetchImpl: preReleaseFetch,
+  generatedAt: new Date("2026-07-26T12:05:00.000Z"),
+});
+assert.ok(preReleaseEvidence.checks.every((check) => check.status === "passed"));
+assert.ok(preReleaseEvidence.notes.some((note) => note.includes("fail-closed")));
 
 await assert.rejects(
   buildLiveReleaseEvidence({

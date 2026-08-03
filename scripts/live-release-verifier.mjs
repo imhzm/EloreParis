@@ -52,6 +52,18 @@ function resolvesTo(requestUrl, location, expectedUrl) {
   }
 }
 
+function hasHtmlLanguage(html, primaryLanguage) {
+  const languagePattern = new RegExp(
+    `<html[^>]+lang=["']${primaryLanguage}(?:-[a-z0-9]+)*["']`,
+    "i",
+  );
+  return languagePattern.test(html);
+}
+
+function isProtectedStatus(status) {
+  return status === 401 || status === 403 || status === 503;
+}
+
 async function boundedText(response, maximumBytes = 2_000_000) {
   const declaredLength = Number(response.headers.get("content-length") ?? "0");
   if (Number.isFinite(declaredLength) && declaredLength > maximumBytes) {
@@ -75,6 +87,7 @@ export async function buildLiveReleaseEvidence({
   const commitReference = assertCommit(expectedCommit);
   assertPersistentAuthorityDatabasePath(authorityDatabasePath);
   const checkResults = [];
+  let releaseState = null;
 
   async function check(id, title, category, requestUrl, validate) {
     let passed = false;
@@ -97,10 +110,21 @@ export async function buildLiveReleaseEvidence({
   await check("api-health", "Runtime health and immutable commit", "api", `${canonicalUrl}/api/health`, async (response) => {
     if (response.status !== 200) return false;
     const payload = await response.json();
+    if (
+      typeof payload?.publicReleaseApproved !== "boolean" ||
+      typeof payload?.searchIndexingEnabled !== "boolean"
+    ) {
+      return false;
+    }
+    releaseState = {
+      publicReleaseApproved: payload.publicReleaseApproved,
+      searchIndexingEnabled: payload.searchIndexingEnabled,
+    };
     return payload?.status === "ok" &&
       payload?.service === "elore-paris-storefront" &&
       payload?.hostingProvider === "hostinger_vps" &&
-      payload?.commitReference === commitReference;
+      payload?.commitReference === commitReference &&
+      (!payload.searchIndexingEnabled || payload.publicReleaseApproved);
   });
   await check("root-locale", "Root locale redirect", "public", `${canonicalUrl}/`, (response) =>
     [307, 308].includes(response.status) &&
@@ -110,24 +134,36 @@ export async function buildLiveReleaseEvidence({
   await check("arabic-home", "Arabic storefront and security headers", "public", `${canonicalUrl}/ar`, async (response) => {
     arabicHomeHtml = response.status === 200 ? await boundedText(response) : "";
     return response.status === 200 &&
-      /<html[^>]+lang="ar"/i.test(arabicHomeHtml) &&
+      hasHtmlLanguage(arabicHomeHtml, "ar") &&
       response.headers.get("x-content-type-options") === "nosniff" &&
       Boolean(response.headers.get("content-security-policy")) &&
       /max-age=31536000/i.test(response.headers.get("strict-transport-security") ?? "");
   });
   await check("english-home", "English storefront", "public", `${canonicalUrl}/en`, async (response) =>
-    response.status === 200 && /<html[^>]+lang="en"/i.test(await boundedText(response)));
-  await check("robots", "Production robots policy", "public", `${canonicalUrl}/robots.txt`, async (response) =>
-    response.status === 200 && (await boundedText(response, 100_000)).includes(`${canonicalUrl}/sitemap.xml`));
-  await check("sitemap", "Production sitemap", "public", `${canonicalUrl}/sitemap.xml`, async (response) =>
-    response.status === 200 && (await boundedText(response)).includes(canonicalUrl));
+    response.status === 200 && hasHtmlLanguage(await boundedText(response), "en"));
+  await check("robots", "Release-aware robots policy", "public", `${canonicalUrl}/robots.txt`, async (response) => {
+    if (response.status !== 200 || !releaseState) return false;
+    const body = await boundedText(response, 100_000);
+    if (releaseState.searchIndexingEnabled) {
+      return body.includes(`${canonicalUrl}/sitemap.xml`);
+    }
+    return /^Disallow:\s*\/$/im.test(body) && !body.includes(`${canonicalUrl}/sitemap.xml`);
+  });
+  await check("sitemap", "Release-aware sitemap", "public", `${canonicalUrl}/sitemap.xml`, async (response) => {
+    if (response.status !== 200 || !releaseState) return false;
+    const body = await boundedText(response);
+    if (releaseState.searchIndexingEnabled) {
+      return body.includes(canonicalUrl);
+    }
+    return !/<(?:url|loc)>/i.test(body);
+  });
   await check("www-redirect", "WWW canonical redirect", "public", "https://www.elore-paris.com/", (response) =>
     [301, 308].includes(response.status) &&
     resolvesTo("https://www.elore-paris.com/", response.headers.get("location"), `${canonicalUrl}/`));
   await check("ops-session-protected", "Ops session endpoint protection", "protected", `${canonicalUrl}/api/ops/session`, (response) =>
-    response.status === 401 || response.status === 403);
+    isProtectedStatus(response.status));
   await check("release-api-protected", "Release API protection", "protected", `${canonicalUrl}/api/ops/release/package`, (response) =>
-    response.status === 401 || response.status === 403);
+    isProtectedStatus(response.status));
   await check("internal-worker-hidden", "Internal worker route hidden", "protected", `${canonicalUrl}/api/internal/outbox-drain`, (response) =>
     response.status === 404);
 
@@ -161,6 +197,9 @@ export async function buildLiveReleaseEvidence({
     notes: [
       "Generated automatically from the switched Hostinger runtime.",
       "Authority storage was verified under the persistent Hostinger application state directory.",
+      releaseState?.searchIndexingEnabled
+        ? "Public indexing was verified against the approved release state."
+        : "Pre-release indexing remained fail-closed while the public release gate was disabled.",
       "Approval remains fail-closed when any check, commit, URL, or freshness contract drifts.",
     ],
   };
