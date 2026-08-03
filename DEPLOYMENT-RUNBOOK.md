@@ -173,6 +173,15 @@ then add `--overwrite`. The tool preserves the displaced database as a timestamp
 - Approved brand/business/legal file is pending.
 - Real product imagery and safety/catalog facts are incomplete.
 - VAT/invoice policy and provider contracts are not approved.
-- Distributed throttling, webhook replay protection, OAuth identity binding, and broader automated coverage remain in progress.
-- The persistent SSH public key has not yet been installed on the server.
-- Hostinger configuration files are prepared locally but have not been applied to the live server.
+- Provider-side hardening is implemented in-repo and gate-verified (ops login
+  throttling with durable storage, webhook replay protection, provider callback
+  HMAC, OAuth/JWKS signature verification, PKCE, nonce and replay guards, and
+  durable issuer-subject binding) — the remaining work is provider certification
+  and production cutover, not code.
+- The persistent SSH public key is present locally
+  (`C:\Users\h REDA\.ssh\elore_paris_hostinger_ed25519`); server-side
+  installation and the updated release contract must be applied before the next
+  release deploy.
+- The live server currently runs the pre-rollout commit `e9623cb` with the old
+  environment contract; the current release contract (outbox worker secret,
+  env gates, canonical-domain live verifier) has not been applied yet.
