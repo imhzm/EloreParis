@@ -74,7 +74,8 @@
   --gold-600: #7b532a;
   --gold-accent: var(--gold-600);
   --ink-900: #1c1011;
-  --muted-500: #765f58;
+--muted-500: #765f58;
+--muted-600: #6a524b;
 
   --elore-ivory: var(--ivory-50);
   --elore-warm-white: #ffffff;

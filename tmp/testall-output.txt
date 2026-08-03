@@ -1,0 +1,70 @@
+﻿
+> elore-paris@0.1.0 test:all
+> node scripts/run-all-checks.mjs
+
+Running 39 project checks in deterministic order.
+Γû▓ Next.js 16.2.12
+- Local:         http://127.0.0.1:3056
+- Network:       http://127.0.0.1:3056
+Γ£ô Ready in 0ms
+node.exe : (node:36908) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+At C:\Program Files\nodejs\npm.ps1:29 char:3
++   & $NODE_EXE $NPM_CLI_JS $args
++   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ((node:36908) Ex...nge at any time:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+(Use `node --trace-warnings ...` to show where the warning was created)
+Started the isolated browser-test runtime at http://127.0.0.1:3056.
+
+> test:authority-backup
+
+> elore-paris@0.1.0 test:authority-backup
+> node scripts/authority-db-backup-check.mjs
+
+(node:28996) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+Isolated SQLite backup, checksum, restore, and overwrite-safety checks passed.
+
+> test:boundaries
+
+> elore-paris@0.1.0 test:boundaries
+> node scripts/localized-boundary-check.mjs
+
+Localized loading/error accessibility and disclosure checks passed.
+
+> test:browser-regression
+
+> elore-paris@0.1.0 test:browser-regression
+> python scripts/browser-regression.py
+
+{"status": "passed", "viewports": ["compact", "mobile", "tablet", "desktop"], "output": "D:\\REDA\\EloreParis\\.artifacts\\browser-regression"}
+
+> test:catalog-authority
+
+> elore-paris@0.1.0 test:catalog-authority
+> node scripts/catalog-authority-check.mjs
+
+(node:9112) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+file:///D:/REDA/EloreParis/scripts/catalog-authority-check.mjs:680
+  `).run(new Date(0).toISOString(), orderBody.order.orderNumber);
+     ^
+
+Error: database is locked
+    at file:///D:/REDA/EloreParis/scripts/catalog-authority-check.mjs:680:6 {
+  code: 'ERR_SQLITE_ERROR',
+  errcode: 5,
+  errstr: 'database is locked'
+}
+
+Node.js v22.17.1
+file:///D:/REDA/EloreParis/scripts/run-all-checks.mjs:127
+      throw new Error(`${scriptName} failed with exit code ${result.status ?? "unknown"}.`);
+            ^
+
+Error: test:catalog-authority failed with exit code 1.
+    at file:///D:/REDA/EloreParis/scripts/run-all-checks.mjs:127:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+
+Node.js v22.17.1

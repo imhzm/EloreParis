@@ -143,7 +143,7 @@
 
 .subtitle {
   margin: 0;
-  color: #6a524b;
+  color: var(--muted-600);
   font-size: 1rem;
   line-height: 1.65;
 }
@@ -229,7 +229,7 @@
 }
 
 .variantList small {
-  color: #6a524b;
+  color: var(--muted-600);
 }
 
 .quantityRow {
@@ -329,7 +329,7 @@
   margin: 0;
   padding-block-start: 0.8rem;
   border-block-start: 1px solid rgba(37, 8, 12, 0.12);
-  color: #6a524b;
+  color: var(--muted-600);
   font-size: 0.82rem;
   line-height: 1.58;
 }
@@ -549,7 +549,7 @@
   padding: 1rem;
   border-radius: var(--radius-control);
   background: var(--sand-100);
-  color: #6a524b;
+  color: var(--muted-600);
   overflow-wrap: anywhere;
 }
 
