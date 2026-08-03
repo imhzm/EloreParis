@@ -1,4 +1,0 @@
-interface:
-  display_name: "Release Train"
-  short_description: "Coordinate releases with rollback discipline"
-  default_prompt: "Use -train to prepare this change for release and rollback readiness."

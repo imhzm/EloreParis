@@ -285,3 +285,35 @@ For Codex-native repository behavior, place this policy in `AGENTS.md` at the ac
 `Agent.md` can remain the master template, but `AGENTS.md` is the file name Codex will follow automatically inside repositories.
 
 This file already uses `AGENTS.md`, so Codex can treat `$skywave` as the default control layer here.
+
+<!-- BEGIN:skywave-project-agents -->
+# EloreParis — Agent Instructions
+
+## Control Layer
+
+SkyWave is the default control layer here. Engage it automatically for any non-trivial task.
+
+- Master: `D:\REDA\skills\skywave\SKILL.md`
+- Project registry (verified stacks, real commands, gates, deploy models): `D:\REDA\skills\skywave\references\project-registry.md`
+- Specialist skills, one at a time after selecting: `D:\REDA\skills\<skill-name>\SKILL.md`
+
+Never load the whole library. One planning skill, one or two implementation skills, one validation skill.
+
+## This Project
+
+**Read `CLAUDE.md` in this directory before planning work.** It records this repo's plan of record, real commands, required gates, domain invariants, and deploy/rollback path. It is not optional context — it exists because those details are what an agent gets wrong here.
+
+## Non-Negotiables
+
+1. Inspect before editing. The code wins over the prompt and over any doc.
+2. This repo's own check scripts define correctness. Do not substitute or bypass them.
+3. Smallest correct change; preserve the existing architecture.
+4. Phases of five files or fewer.
+5. Continue the existing roadmap or tracker; never start a parallel plan.
+6. Run the real checks before claiming anything works. Name what did not run.
+7. Report with file references, verification results, risks, and roadmap position.
+
+Answer in Arabic; keep code, commands, and paths in Latin script.
+
+Confirm before anything irreversible: production deploy, migration, deletion, force push, live-network operation. Never hardcode or log secrets.
+<!-- END:skywave-project-agents -->
