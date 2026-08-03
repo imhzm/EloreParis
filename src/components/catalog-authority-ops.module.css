@@ -14,18 +14,18 @@
   display: grid;
   gap: 7px;
   padding: 20px;
-  border: 1px dashed rgba(117, 226, 199, 0.36);
+  border: 1px dashed rgba(199, 163, 109, 0.36);
   border-radius: 22px;
   color: rgba(255, 250, 242, 0.76);
-  background: rgba(117, 226, 199, 0.06);
+  background: rgba(199, 163, 109, 0.06);
   cursor: pointer;
   transition: border-color 180ms ease, background 180ms ease;
 }
 
 .filePicker:hover,
 .filePicker:focus-within {
-  border-color: rgba(117, 226, 199, 0.72);
-  background: rgba(117, 226, 199, 0.1);
+  border-color: rgba(199, 163, 109, 0.72);
+  background: rgba(199, 163, 109, 0.1);
 }
 
 .filePicker input {
@@ -70,7 +70,7 @@
   display: grid;
   gap: 18px;
   padding: clamp(18px, 3vw, 26px);
-  border: 1px solid rgba(117, 226, 199, 0.16);
+  border: 1px solid rgba(199, 163, 109, 0.16);
   border-radius: 24px;
   background: rgba(255, 250, 242, 0.045);
 }
@@ -100,9 +100,9 @@
 }
 
 .active {
-  border-color: rgba(117, 226, 199, 0.38);
-  color: #9ef0dc;
-  background: rgba(117, 226, 199, 0.1);
+  border-color: rgba(220, 196, 185, 0.38);
+  color: #eadbd3;
+  background: rgba(220, 196, 185, 0.1);
 }
 
 .retired {
@@ -119,7 +119,7 @@
 }
 
 .counts strong {
-  color: #9ef0dc;
+  color: #e8cf9e;
   font-size: 1.45rem;
 }
 

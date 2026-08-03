@@ -1,7 +1,7 @@
 .page {
   --commerce-ink: #1c1011;
   --commerce-deep: #1c0a10;
-  --commerce-mint: #c7a36d;
+  --commerce-gold: #c7a36d;
   --commerce-cream: #f8f5f2;
   --commerce-line: rgba(199, 163, 109, 0.18);
   display: grid;
@@ -14,10 +14,10 @@
 }
 
 .opsDashboard {
-  --ops-panel: rgba(2, 24, 23, 0.72);
-  --ops-panel-strong: rgba(2, 18, 18, 0.88);
+  --ops-panel: rgba(42, 13, 20, 0.72);
+  --ops-panel-strong: rgba(28, 10, 16, 0.88);
   --ops-border: rgba(199, 163, 109, 0.18);
-  --ops-accent: var(--commerce-mint);
+  --ops-accent: var(--commerce-gold);
   --ops-accent-rgb: 212, 175, 55;
   --ops-text-soft: rgba(255, 250, 242, 0.72);
   isolation: isolate;
@@ -80,7 +80,7 @@
   background:
     radial-gradient(circle at 88% 10%, rgba(var(--ops-accent-rgb), 0.18), transparent 52%),
     var(--ops-panel);
-  box-shadow: 0 26px 68px rgba(0, 12, 12, 0.28);
+  box-shadow: 0 26px 68px rgba(24, 6, 10, 0.28);
 }
 
 .opsDashboard .statusSummaryCard::after {
@@ -145,19 +145,19 @@
   border-radius: 24px;
   background:
     radial-gradient(circle at 92% 0%, rgba(var(--ops-accent-rgb), 0.12), transparent 42%),
-    rgba(2, 24, 23, 0.84);
-  box-shadow: 0 22px 60px rgba(0, 12, 12, 0.24);
+    rgba(42, 13, 20, 0.84);
+  box-shadow: 0 22px 60px rgba(24, 6, 10, 0.24);
   backdrop-filter: blur(22px);
 }
 
-.opsOrders .filterBar { background: rgba(2, 24, 23, 0.84); }
+.opsOrders .filterBar { background: rgba(42, 13, 20, 0.84); }
 
 :is(.opsOrders, .opsCatalog, .opsFulfillment, .opsNotifications, .opsRelease, .opsAudit) .emptyCard {
   min-height: 0;
   padding: 28px;
   border: 1px dashed rgba(var(--ops-accent-rgb), 0.28);
   border-radius: 24px;
-  background: rgba(2, 24, 23, 0.6);
+  background: rgba(42, 13, 20, 0.6);
   box-shadow: none;
 }
 
@@ -170,7 +170,7 @@
 }
 
 :is(.opsOrders, .opsCatalog, .opsFulfillment, .opsNotifications, .opsRelease, .opsAudit) .emptyCard .eyebrow {
-  color: var(--commerce-mint);
+  color: var(--commerce-gold);
 }
 
 :is(.opsOrders, .opsCatalog, .opsFulfillment, .opsNotifications, .opsContent, .opsRelease, .opsAudit) .lineItem {
@@ -178,7 +178,7 @@
   background:
     radial-gradient(circle at 96% 0%, rgba(var(--ops-accent-rgb), 0.1), transparent 44%),
     rgba(28, 16, 17, 0.72);
-  box-shadow: 0 22px 60px rgba(0, 12, 12, 0.22);
+  box-shadow: 0 22px 60px rgba(24, 6, 10, 0.22);
 }
 
 .opsOrders .lineItem { background: rgba(3, 29, 28, 0.74); }
@@ -207,8 +207,8 @@
   padding: 16px;
   border: 1px solid var(--ops-border);
   border-radius: 22px;
-  background: rgba(2, 24, 23, 0.82);
-  box-shadow: 0 22px 60px rgba(0, 12, 12, 0.24);
+  background: rgba(42, 13, 20, 0.82);
+  box-shadow: 0 22px 60px rgba(24, 6, 10, 0.24);
   backdrop-filter: blur(22px);
 }
 
@@ -282,7 +282,7 @@
   background:
     radial-gradient(circle at 100% 0%, rgba(var(--ops-accent-rgb), 0.13), transparent 42%),
     rgba(255, 250, 242, 0.06);
-  box-shadow: 0 22px 64px rgba(0, 12, 12, 0.2);
+  box-shadow: 0 22px 64px rgba(24, 6, 10, 0.2);
 }
 
 .adminCommandCard {
@@ -449,7 +449,7 @@
 .opsRelease > .mainCard {
   background:
     radial-gradient(circle at 100% 0%, rgba(var(--ops-accent-rgb), 0.12), transparent 38%),
-    rgba(2, 24, 23, 0.78);
+    rgba(42, 13, 20, 0.78);
 }
 
 .opsDashboard .hero {
@@ -533,7 +533,7 @@
   overflow: hidden;
   border: 1px solid rgba(var(--ops-accent-rgb), 0.18);
   border-radius: 20px;
-  background: rgba(0, 11, 12, 0.34);
+  background: rgba(24, 6, 10, 0.34);
 }
 
 .orderDisclosureSummary {
@@ -577,7 +577,7 @@
 }
 
 .orderDisclosure[open] .orderDisclosureHint::before {
-  content: "إخفاء التفاصيل";
+  content: "Ø¥Ø®ÙØ§Ø¡ Ø§Ù„ØªÙØ§ØµÙŠÙ„";
   font-size: 0.82rem;
 }
 
@@ -764,8 +764,8 @@
   text-transform: uppercase;
 }
 
-/* These labels carry the checkout's Arabic — الاسم الكامل, بيانات الاستلام,
-   البريد الإلكتروني — and letter-spacing severs the cursive joins, so the words
+/* These labels carry the checkout's Arabic â€” Ø§Ù„Ø§Ø³Ù… Ø§Ù„ÙƒØ§Ù…Ù„, Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„Ø§Ø³ØªÙ„Ø§Ù…,
+   Ø§Ù„Ø¨Ø±ÙŠØ¯ Ø§Ù„Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠ â€” and letter-spacing severs the cursive joins, so the words
    render as loose disconnected glyphs on the primary conversion surface.
    uppercase is inert for Arabic. Scoped to :lang(ar) so Latin labels keep both.
    Same guard bento already uses. */
@@ -797,7 +797,7 @@
 .hero .eyebrow,
 .noticeCard p { color: rgba(255, 250, 242, 0.7); }
 
-.hero .eyebrow { color: var(--commerce-mint); }
+.hero .eyebrow { color: var(--commerce-gold); }
 
 .summary,
 .hero p,
@@ -1139,15 +1139,15 @@
 .summaryCard {
   border-color: var(--commerce-line);
   background: rgba(255, 250, 242, 0.96);
-  box-shadow: 0 28px 90px rgba(0, 12, 12, 0.24);
+  box-shadow: 0 28px 90px rgba(24, 6, 10, 0.24);
 }
 
 .opsDashboard :is(.mainCard, .summaryCard) {
   border-color: var(--ops-border);
   background:
     radial-gradient(circle at 100% 0%, rgba(var(--ops-accent-rgb), 0.1), transparent 36%),
-    rgba(2, 24, 23, 0.76);
-  box-shadow: 0 30px 100px rgba(0, 12, 12, 0.32);
+    rgba(42, 13, 20, 0.76);
+  box-shadow: 0 30px 100px rgba(24, 6, 10, 0.32);
 }
 
 .opsDashboard :is(.mainCard h2, .summaryCard h2, .lineHead h3, .timelineItem strong, .authMethodHeader h3) {
@@ -1600,8 +1600,8 @@
   .linkList a { transition: none; }
 }
 
-/* KPI overview row for the /ops landing — the clean business-overview cards adapted
-   from the ksa-pharmacy dashboard, rebuilt for ÉLORÉ's real data + dark ops theme. */
+/* KPI overview row for the /ops landing â€” the clean business-overview cards adapted
+   from the ksa-pharmacy dashboard, rebuilt for Ã‰LORÃ‰'s real data + dark ops theme. */
 .opsDashboard .kpiOverview {
   padding: 0 max(24px, calc((100vw - 1180px) / 2)) clamp(28px, 4vw, 44px);
 }

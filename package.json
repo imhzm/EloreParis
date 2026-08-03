@@ -47,6 +47,7 @@
     "test:social-card": "node scripts/social-card-check.mjs",
     "test:browser-regression": "python scripts/browser-regression.py",
     "test:ops-dashboard": "python scripts/ops-dashboard-regression.py",
+    "test:ops-teal": "python scripts/ops-teal-probe.py",
     "test:site-content-browser": "python scripts/site-content-browser-check.py",
     "test:release-evidence": "node scripts/release-evidence-policy-check.mjs",
     "test:live-release-verifier": "node scripts/live-release-verifier-check.mjs",

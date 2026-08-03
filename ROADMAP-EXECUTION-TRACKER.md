@@ -309,6 +309,16 @@ The active pack is now `Pack 06: Launch and compliance closure`, while `Pack 04:
     (`active_catalog_publication_missing` — expected while the catalog is
     unapproved). The new release contract (outbox worker secret, env gates,
     canonical-domain live verifier) has not been applied to the server yet.
+  - UI/UX slice: the last off-brand teal tokens were purged from the internal
+    ops surfaces (`order-flow.module.css` panels/shadows moved from teal-black
+    `rgba(2,24,23…)` to burgundy `rgba(42,13,20…)`, the misleading
+    `--commerce-mint` token was renamed to `--commerce-gold`, and
+    `catalog-authority-ops.module.css` file picker / import cards / status
+    badges moved to the champagne/blush family). A new permanent gate
+    `test:ops-teal` (`scripts/ops-teal-probe.py`) samples computed styles
+    across `/ops`, `/ops/orders`, `/ops/catalog`, `/ops/fulfillment`,
+    `/ops/release`, `/ops/audit`, and `/ops-access` and fails on any
+    green-dominant dark color, so the teal cannot return unnoticed.
   - Next operator actions remain: install the SSH identity on the server,
     apply the updated `/etc/elore-paris/elore-paris.env` contract, run
     `deploy/hostinger/deploy-release.sh 8a89cbf…`, then record the release
