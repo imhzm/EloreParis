@@ -19,7 +19,7 @@ Use this file before [PROJECT-TRACKER.md](PROJECT-TRACKER.md) when the question 
 
 ## Snapshot
 
-- Last updated: `2026-05-21`
+- Last updated: `2026-08-03`
 - Source strategy: [roadmap.md](roadmap.md)
 - Supporting trackers: [PROJECT-TRACKER.md](PROJECT-TRACKER.md), [DELIVERY-BACKLOG.md](DELIVERY-BACKLOG.md), [ROADMAP-OPERATING-PLAYBOOK.md](ROADMAP-OPERATING-PLAYBOOK.md), [ROADMAP-DELIVERY-CONTROL-CENTER.md](ROADMAP-DELIVERY-CONTROL-CENTER.md)
 - Project classification: `public-facing ecommerce storefront with internal ops/admin surfaces`
@@ -289,6 +289,32 @@ The active pack is now `Pack 06: Launch and compliance closure`, while `Pack 04:
   - earlier second-window drift checks in haircare after initial stability confirmation
   - narrower repeat-order volume controls when refill urgency is high but usage variance remains
 - The next active slice is now `Pack 03 / Storefront conversion depth`.
+
+### Pack 06 milestone status
+
+- `2026-08-03` — Pack 06 verification slice (no code percentages changed):
+  - Gate race fixed: `test:catalog-authority` polling now waits for the outbox
+    reschedule (`pending`) instead of breaking inside the post-response
+    `processing` window (`scripts/catalog-authority-check.mjs`).
+  - Live release verifier now fails closed on `publicReleaseApproved` and
+    `searchIndexingEnabled` (`scripts/live-release-verifier*.mjs`), with
+    pre-release evidence coverage.
+  - Production build validated locally under the exact Hostinger env contract
+    (APP_ENV=production, HOSTING_PROVIDER=hostinger_vps,
+    NEXT_PUBLIC_SITE_URL=https://elore-paris.com, all gates `false`,
+    DEPLOYMENT_COMMIT_SHA=8a89cbf) — standalone assets prepared cleanly.
+  - Live probe of https://elore-paris.com/api/health: the server is live on
+    Hostinger but still runs the pre-rollout commit `e9623cb` with all public
+    gates `false` and `catalogAuthority.ready=false`
+    (`active_catalog_publication_missing` — expected while the catalog is
+    unapproved). The new release contract (outbox worker secret, env gates,
+    canonical-domain live verifier) has not been applied to the server yet.
+  - Next operator actions remain: install the SSH identity on the server,
+    apply the updated `/etc/elore-paris/elore-paris.env` contract, run
+    `deploy/hostinger/deploy-release.sh 8a89cbf…`, then record the release
+    decision; owner approvals (catalog/business/legal data, provider
+    credentials, VAT policy) remain hard blockers before any gate flips to
+    `true`.
 
 ### Mandatory outputs for Pack 01
 
