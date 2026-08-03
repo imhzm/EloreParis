@@ -52,6 +52,11 @@
   text-transform: uppercase;
 }
 
+:lang(ar) .eyebrow {
+  letter-spacing: normal;
+  text-transform: none;
+}
+
 .heroCopy h1 {
   max-width: 12ch;
   margin: 0;
@@ -471,6 +476,10 @@
   color: var(--ritual-gold);
   font-size: 0.62rem;
   letter-spacing: 0.08em;
+}
+
+:lang(ar) .answerSummary small {
+  letter-spacing: normal;
 }
 
 .answerSummary strong {

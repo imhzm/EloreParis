@@ -517,7 +517,7 @@ try {
     quoteRaceResponses.map((response) => response.json()),
   );
   assert.equal(quoteRaceBodies[0].quote.quoteId, quoteRaceBodies[1].quote.quoteId);
-  const quoteReuseDatabase = new DatabaseSync(databasePath);
+  const quoteReuseDatabase = new DatabaseSync(databasePath, { timeout: 10_000 });
   assert.equal(
     quoteReuseDatabase.prepare(`
       SELECT COUNT(*) AS count
@@ -586,7 +586,7 @@ try {
   assert.equal(orderBody.order.lines[0].catalogTruth.mappingStatus, "pending");
   assert.equal("shippingWeightSnapshot" in orderBody.order, false);
   assert.equal("itemWeightGrams" in orderBody.order.lines[0].catalogTruth, false);
-  const orderTruthDatabase = new DatabaseSync(databasePath);
+  const orderTruthDatabase = new DatabaseSync(databasePath, { timeout: 10_000 });
   const persistedOrderRow = orderTruthDatabase.prepare(`
     SELECT payload_json
     FROM authority_orders
@@ -640,7 +640,7 @@ try {
   let failedNotificationOutbox = null;
   let queuedNotification = null;
   while (Date.now() < notificationFailureDeadline) {
-    const notificationDatabase = new DatabaseSync(databasePath);
+    const notificationDatabase = new DatabaseSync(databasePath, { timeout: 10_000 });
     failedNotificationOutbox = notificationDatabase.prepare(`
       SELECT status, attempts, next_attempt_at
       FROM authority_outbox
@@ -672,7 +672,7 @@ try {
   assert.equal(notificationRequests.length, 1);
 
   notificationProviderAvailable = true;
-  const releaseNotificationRetryDatabase = new DatabaseSync(databasePath);
+  const releaseNotificationRetryDatabase = new DatabaseSync(databasePath, { timeout: 10_000 });
   releaseNotificationRetryDatabase.prepare(`
     UPDATE authority_outbox
     SET next_attempt_at = ?
@@ -698,7 +698,7 @@ try {
     failed: 0,
   });
 
-  const recoveredNotificationDatabase = new DatabaseSync(databasePath);
+  const recoveredNotificationDatabase = new DatabaseSync(databasePath, { timeout: 10_000 });
   const recoveredNotificationOutbox = recoveredNotificationDatabase.prepare(`
     SELECT status, attempts
     FROM authority_outbox
@@ -772,7 +772,7 @@ try {
   assert.deepEqual(await wrongSessionRecoveryResponse.json(), { state: "unknown" });
 
   const inProgressKey = "qa-in-progress-attempt-0001";
-  const recoveryDatabase = new DatabaseSync(databasePath);
+  const recoveryDatabase = new DatabaseSync(databasePath, { timeout: 10_000 });
   recoveryDatabase.prepare(`
     INSERT INTO authority_order_idempotency (
       checkout_session_id, idempotency_key, request_hash, state,
@@ -904,7 +904,7 @@ try {
   assert.equal(shippingRequests.length, 0);
   await confirmCodOrder(raceWinner.body.order.orderNumber);
 
-  const shipmentSnapshotDatabase = new DatabaseSync(databasePath);
+  const shipmentSnapshotDatabase = new DatabaseSync(databasePath, { timeout: 10_000 });
   const confirmedOrderRow = shipmentSnapshotDatabase.prepare(`
     SELECT payload_json FROM authority_orders WHERE order_number = ?
   `).get(orderBody.order.orderNumber);
@@ -939,7 +939,7 @@ try {
     "Shipping booking must fail before calling a provider when verified weights are absent",
   );
 
-  const tamperedShipmentDatabase = new DatabaseSync(databasePath);
+  const tamperedShipmentDatabase = new DatabaseSync(databasePath, { timeout: 10_000 });
   const tamperedWeightedOrder = structuredClone(confirmedWeightedOrder);
   tamperedWeightedOrder.shippingWeightSnapshot.totalWeightGrams += 1;
   tamperedShipmentDatabase.prepare(`
@@ -961,7 +961,7 @@ try {
   assert.equal(tamperedShipmentResponse.status, 409);
   assert.equal(shippingRequests.length, 0);
 
-  const mismatchedLineDatabase = new DatabaseSync(databasePath);
+  const mismatchedLineDatabase = new DatabaseSync(databasePath, { timeout: 10_000 });
   const mismatchedLineOrder = structuredClone(confirmedWeightedOrder);
   mismatchedLineOrder.lines[0].sku = "QA-TAMPERED-SKU";
   mismatchedLineDatabase.prepare(`
@@ -983,7 +983,7 @@ try {
   assert.equal(mismatchedLineResponse.status, 409);
   assert.equal(shippingRequests.length, 0);
 
-  const restoreShipmentDatabase = new DatabaseSync(databasePath);
+  const restoreShipmentDatabase = new DatabaseSync(databasePath, { timeout: 10_000 });
   restoreShipmentDatabase.prepare(`
     UPDATE authority_orders SET payload_json = ? WHERE order_number = ?
   `).run(JSON.stringify(confirmedWeightedOrder), orderBody.order.orderNumber);
@@ -1185,7 +1185,7 @@ try {
   assert.equal(mismatchedCurrencyCallback.status, 409);
   assert.equal((await mismatchedCurrencyCallback.json()).code, "payment_currency_mismatch");
 
-  const rejectedPaymentDatabase = new DatabaseSync(databasePath);
+  const rejectedPaymentDatabase = new DatabaseSync(databasePath, { timeout: 10_000 });
   assert.equal(
     rejectedPaymentDatabase.prepare(`
       SELECT status FROM authority_orders WHERE order_number = ?
@@ -1291,7 +1291,7 @@ try {
   assert.equal(expiryOutboxState.succeeded, 10);
   assert.equal(paymentRequests.length, 2);
 
-  const maintenanceDatabase = new DatabaseSync(databasePath);
+  const maintenanceDatabase = new DatabaseSync(databasePath, { timeout: 10_000 });
   maintenanceDatabase.prepare(`
     UPDATE authority_inventory_reservations
     SET expires_at = ?
@@ -1340,7 +1340,7 @@ try {
   await new Promise((resolve) => paymentMock.close(resolve));
 }
 
-const database = new DatabaseSync(databasePath);
+const database = new DatabaseSync(databasePath, { timeout: 10_000 });
 try {
   assert.equal(database.prepare("PRAGMA integrity_check").get().integrity_check, "ok");
   assert.deepEqual(database.prepare("PRAGMA foreign_key_check").all(), []);

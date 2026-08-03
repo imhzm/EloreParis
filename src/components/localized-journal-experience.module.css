@@ -12,6 +12,10 @@
   letter-spacing: 0.17em;
 }
 
+:lang(ar) .eyebrow {
+  letter-spacing: normal;
+}
+
 .featured .eyebrow,
 .directory .eyebrow,
 .lanes .eyebrow,

@@ -32,6 +32,11 @@
   letter-spacing: 0.08em;
 }
 
+:lang(ar) .link,
+:lang(ar) .current {
+  letter-spacing: normal;
+}
+
 .link {
   color: rgba(243, 240, 234, 0.62);
   text-decoration: none;

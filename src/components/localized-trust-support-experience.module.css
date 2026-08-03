@@ -52,6 +52,11 @@
   text-transform: uppercase;
 }
 
+:lang(ar) .eyebrow {
+  letter-spacing: normal;
+  text-transform: none;
+}
+
 .brand .hero .eyebrow,
 .faq .hero .eyebrow,
 .directorySection .eyebrow,

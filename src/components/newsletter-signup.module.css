@@ -183,20 +183,20 @@
 
 .dismissButton {
   position: absolute;
-  top: 16px;
+  top: 12px;
   /* A dismiss sits in the far corner — the left in Arabic, the right in English.
      `left: 16px` put it in the far corner of the Arabic panel and directly over
      the start of the English one. */
-  inset-inline-end: 16px;
+  inset-inline-end: 12px;
   z-index: 2;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   padding: 0;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
+  border-radius: 12px;
   background: rgba(255, 255, 255, 0.06);
   color: rgba(255, 244, 236, 0.5);
   cursor: pointer;

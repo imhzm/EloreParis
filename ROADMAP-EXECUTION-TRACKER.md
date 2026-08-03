@@ -319,6 +319,29 @@ The active pack is now `Pack 06: Launch and compliance closure`, while `Pack 04:
     across `/ops`, `/ops/orders`, `/ops/catalog`, `/ops/fulfillment`,
     `/ops/release`, `/ops/audit`, and `/ops-access` and fails on any
     green-dominant dark color, so the teal cannot return unnoticed.
+  - Device-matrix audit slice: a new `scripts/device-matrix-audit.py`
+    diagnostic sweeps every public route (from the real sitemap-shape route
+    list) across 17 viewports (320–2560, touch + desktop) in AR and EN and
+    checks real page overflow, visible text clipping, tap targets,
+    Arabic letter-spacing, missing image alt/dimensions, duplicate ids, empty
+    links, lang/dir, and console/network failures. Findings from the first
+    full sweep (1,768 page loads) were triaged; the genuine defects were
+    fixed:
+    - Arabic `letter-spacing` was breaking glyph joins on eyebrow labels
+      (about, trust/support, journal, rituals builder, wishlist, breadcrumb,
+      global 404) — neutralized via `:lang(ar)` overrides, following the
+      existing `cart-surface` pattern.
+    - The global 404 rendered `ar-SA`/`rtl` for `/en/*` URLs — now
+      locale-aware and hydration-safe (`src/app/global-not-found.tsx`).
+    - Tap targets: newsletter dismiss grew 32→40px, shop product-detail links
+      got a 2.6rem minimum hit area.
+    - `test:catalog-authority` was flaky under load (`database is locked`
+      racing the post-response outbox drain) — all 13 check-side SQLite
+      connections now use a 10s busy timeout instead of failing instantly.
+  - Verification: production Hostinger-contract build clean, lint + tsc clean,
+    all 39 gates pass, and the re-run audit reports 1,767/1,768 clean page
+    loads (the single residual was a mid-animation measurement on one
+    viewport, confirmed 40×40 on re-probe).
   - Next operator actions remain: install the SSH identity on the server,
     apply the updated `/etc/elore-paris/elore-paris.env` contract, run
     `deploy/hostinger/deploy-release.sh 8a89cbf…`, then record the release

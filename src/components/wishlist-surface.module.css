@@ -16,6 +16,11 @@
   text-transform: uppercase;
 }
 
+:lang(ar) .eyebrow {
+  letter-spacing: normal;
+  text-transform: none;
+}
+
 .hero {
   position: relative;
   min-height: clamp(28rem, 48vw, 42rem);

@@ -25,6 +25,12 @@
   text-transform: uppercase;
 }
 
+:lang(ar) .eyebrow,
+:lang(ar) .meta {
+  letter-spacing: normal;
+  text-transform: none;
+}
+
 .title {
   max-width: 12ch;
   color: var(--aubergine-ink);

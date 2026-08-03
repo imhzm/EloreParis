@@ -354,9 +354,13 @@
 }
 
 .productDetails > a {
+  display: inline-flex;
+  align-items: center;
   width: fit-content;
+  min-height: 2.6rem;
   margin-top: 0.25rem;
-  padding-bottom: 0.12rem;
+  padding-block: 0.35rem;
+  padding-inline: 0.2rem;
   border-bottom: 1px solid var(--elore-champagne);
   color: var(--elore-rosewood);
   font-size: 0.8rem;

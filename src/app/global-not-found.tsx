@@ -1,24 +1,31 @@
-import type { Metadata } from "next";
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { fontVariables } from "@/lib/fonts";
 import { localeConfig } from "@/lib/i18n";
-import { previewNoindexRobots } from "@/lib/seo";
-import { getSiteUrl } from "@/lib/site-content";
 import styles from "./fallback.module.css";
 import "./globals.css";
 
-export const metadata: Metadata = {
-  // This file sits at the app root, above both route groups, so it inherits no
-  // metadataBase from a layout and has to declare its own — otherwise the
-  // this page must resolve its own absolute metadata URLs.
-  metadataBase: new URL(getSiteUrl()),
-  title: "الصفحة غير موجودة | ÉLORÉ PARIS",
-  robots: previewNoindexRobots,
-  // A 404 does not advertise a social preview.
-  openGraph: { images: [] },
-};
-
-const language = localeConfig.ar;
+const notFoundCopy = {
+  ar: {
+    eyebrow: "404 | الصفحة غير موجودة",
+    title: "الصفحة المطلوبة غير موجودة داخل المسار الحالي.",
+    summary:
+      "قد يكون الرابط قديمًا أو غير متاح في هذه النسخة. ابدئي من الصفحة الرئيسية للوصول إلى المسار الصحيح.",
+    home: "العودة إلى الرئيسية",
+    search: "البحث داخل المتجر",
+  },
+  en: {
+    eyebrow: "404 | PAGE NOT FOUND",
+    title: "This page is not available at this route.",
+    summary:
+      "The link may be outdated or unavailable in this build. Start from the homepage to reach the correct route.",
+    home: "Return home",
+    search: "Search the store",
+  },
+} as const;
 
 /**
  * The global not-found, for URLs that match no route at all.
@@ -29,12 +36,26 @@ const language = localeConfig.ar;
  * CartProvider, which is why it deliberately does not use StorefrontShell: the
  * header's cart badge calls useCart and would throw here.
  *
- * Nearly every real 404 is a bad slug beneath /ar or /en and is caught by
- * `(storefront)/[locale]/not-found.tsx`, which does get the full shell. This is
- * the last resort for an unmatched, locale-less path, so it stays deliberately
- * small and routes the visitor into the Arabic market entry point.
+ * It is a client component so the document language and direction follow the
+ * URL prefix (`/en/*` gets `en-SA`/`ltr`, everything else stays on the Arabic
+ * market entry point).
  */
 export default function GlobalNotFound() {
+  const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      setMounted(true);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, []);
+  // The global boundary sits above every route tree, so the server render has
+  // no pathname. Keep the first paint deterministic (Arabic market entry) and
+  // switch language/direction only after hydration to avoid error #418.
+  const locale = mounted && pathname?.split("/")[1] === "en" ? "en" : "ar";
+  const language = localeConfig[locale];
+  const copy = notFoundCopy[locale];
+
   return (
     <html
       lang={language.htmlLang}
@@ -44,24 +65,19 @@ export default function GlobalNotFound() {
       <body>
         <main className={styles.page}>
           <div className={styles.card}>
-            <p className={styles.eyebrow}>404 | Not Found</p>
-            <h1 className={styles.title}>
-              الصفحة المطلوبة غير موجودة داخل المسار الحالي.
-            </h1>
-            <p className={styles.summary}>
-              قد يكون الرابط قديمًا أو غير متاح في هذه النسخة. ابدئي من الصفحة
-              الرئيسية للوصول إلى المسار الصحيح.
-            </p>
+            <p className={styles.eyebrow}>{copy.eyebrow}</p>
+            <h1 className={styles.title}>{copy.title}</h1>
+            <p className={styles.summary}>{copy.summary}</p>
 
             {/* Crossing from this root into the storefront root is a full page
                 load either way; Link simply keeps prefetch and the router in
                 charge of it. */}
             <div className={styles.actions}>
-              <Link className={styles.primaryAction} href="/ar">
-                العودة إلى الرئيسية
+              <Link className={styles.primaryAction} href={`/${locale}`}>
+                {copy.home}
               </Link>
-              <Link className={styles.secondaryAction} href="/ar/search">
-                البحث داخل المتجر
+              <Link className={styles.secondaryAction} href={`/${locale}/search`}>
+                {copy.search}
               </Link>
             </div>
           </div>
