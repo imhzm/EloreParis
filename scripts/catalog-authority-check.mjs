@@ -655,7 +655,13 @@ try {
     queuedNotification = notificationRow
       ? JSON.parse(notificationRow.payload_json)
       : null;
-    if (failedNotificationOutbox?.attempts >= 1 && queuedNotification) break;
+    if (
+      failedNotificationOutbox?.status === "pending" &&
+      failedNotificationOutbox?.attempts >= 1 &&
+      queuedNotification
+    ) {
+      break;
+    }
     await new Promise((resolve) => setTimeout(resolve, 50));
   }
   assert.ok(failedNotificationOutbox);
