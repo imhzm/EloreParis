@@ -154,6 +154,19 @@ export function StorefrontShell({
         </div>
         <div className={styles.footerBottom}>
           <span>© ÉLORÉ PARIS</span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+            <span>تم التصميم بكل</span>
+            <span style={{ color: "#ef4444" }}>❤️</span>
+            <span>بواسطة</span>
+            <a
+              href="https://www.skywaveads.com"
+              target="_blank"
+              rel="follow"
+              style={{ color: "inherit", textDecoration: "underline", textUnderlineOffset: "4px", fontWeight: 600 }}
+            >
+              Sky Wave
+            </a>
+          </span>
           <span lang="en">Saudi Arabia · SAR</span>
           <TrackedLink href={languageHref ?? copy.languageHref} analyticsLabel="footer_language_switch" analyticsSurface="footer_meta" lang={locale === "ar" ? "en" : "ar"}>{copy.languageLabel}</TrackedLink>
           <span>{copy.footerTagline}</span>
