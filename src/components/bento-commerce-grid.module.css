@@ -320,18 +320,30 @@
 /* ---- interaction ------------------------------------------------------- */
 
 @media (hover: hover) and (pointer: fine) {
-  .category:hover .media,
-  .mediaCard:hover .media {
-    transform: scale(1.035);
+  .card {
+    transition: transform var(--motion-card), box-shadow var(--motion-card);
   }
 
-  .textAction:hover .arrow,
+  .card:hover {
+    box-shadow: 0 12px 30px rgba(37, 8, 12, 0.12);
+  }
+
+  .category:hover .media,
+  .mediaCard:hover .media {
+    transform: scale(1.045);
+  }
+
   .category:hover .arrow {
+    transform: scale(1.08);
+    background: var(--elore-champagne);
+    box-shadow: 0 12px 28px rgba(28, 16, 17, 0.25);
+  }
+
+  .textAction:hover .arrow {
     transform: translateX(3px);
   }
 
-  [dir="rtl"] .textAction:hover .arrow,
-  [dir="rtl"] .category:hover .arrow {
+  [dir="rtl"] .textAction:hover .arrow {
     transform: translateX(-3px);
   }
 }
