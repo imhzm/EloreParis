@@ -561,4 +561,10 @@
   .secondaryButton {
     width: 100%;
   }
+  .heroFloatingBadge {
+    position: static;
+    margin-top: 1rem;
+    margin-inline: auto;
+    width: fit-content;
+  }
 }

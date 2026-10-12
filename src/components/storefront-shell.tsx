@@ -129,7 +129,7 @@ export function StorefrontShell({
 
       <footer className={styles.footer}>
         <div className={styles.footerBrand}>
-          <Image src="/elore-assets/logo-horizontal-ivory.png" alt="ÉLORÉ PARIS" width={260} height={82} />
+          <Image src="/elore-assets/logo-horizontal-gold.png" alt="ÉLORÉ PARIS" width={260} height={82} />
           <p>{copy.footerBody}</p>
           <span>{copy.footerStatus}</span>
           <TrackedLink href={localizePath(locale, "/about")} className={styles.footerBrandLink} analyticsEvent="navigation_click" analyticsLabel="footer_about" analyticsSurface="footer_brand">{copy.aboutLabel}</TrackedLink>
