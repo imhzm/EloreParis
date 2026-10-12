@@ -34,46 +34,54 @@ export function EloreReferenceHome({ locale, content, bentoContent, serviceStrip
 
   const flacons: FlaconItem[] = [
     {
-      id: "amber-royal",
-      name: isAr ? "عنبر ملكي — Amber Royal" : "Amber Royal Extrait",
-      category: isAr ? "Extrait de Parfum (تركيز 30%)" : "Extrait de Parfum (30% Conc.)",
-      notes: isAr ? "نوتات: عنبر ملكي نقي · زعفران كشميري · عود معتق" : "Notes: Royal Amber · Kashmiri Saffron · Aged Oud",
-      size: "100 ml",
-      price: "680 SAR",
-      badge: isAr ? "الأكثر تميزاً" : "Iconic Scent",
+      id: "perfumes-collection",
+      name: isAr ? "العطور الفاخرة — Parfums" : "Parfums Collection",
+      category: isAr ? "قسم العطور · PERFUMES" : "PERFUMES · HAUTE PARFUMERIE",
+      notes: isAr
+        ? "توليفات عطرية متوازنة تُعرض بهرم عطري واضح وبيانات موثقة قبل الشراء."
+        : "Balanced olfactory compositions presented with clear note hierarchy and verified details.",
+      size: isAr ? "تصور تحريري" : "Editorial Concept",
+      price: isAr ? "حسب الاعتماد" : "Verified Catalogue",
+      badge: isAr ? "قسم العطور" : "Perfumes",
       image: "/elore-assets/perfume-amber-flacon-editorial-concept-1672x941.avif",
-      href: "/shop",
+      href: "/shop/perfumes",
     },
     {
-      id: "oud-parisien",
-      name: isAr ? "عود باريسي — Oud Parisien" : "Oud Parisien Extrait",
-      category: isAr ? "Extrait de Parfum" : "Extrait de Parfum",
-      notes: isAr ? "نوتات: عود طبيعي مدخن · خشب الصندل · بخور فاخر" : "Notes: Smoked Natural Oud · Sandalwood · Royal Incense",
-      size: "100 ml",
-      price: "740 SAR",
-      badge: isAr ? "إصدار حصري" : "Exclusive Edition",
+      id: "signature-rituals",
+      name: isAr ? "طقوس العطور والحضور — Rituals" : "Signature Scent Rituals",
+      category: isAr ? "مسارات الاختيار · RITUALS" : "RITUALS · BY INTENTION",
+      notes: isAr
+        ? "رتّبي خطوات العطر والعناية بهدوء، وابدئي من الإحساس والمناسبة التي تبحثين عنها."
+        : "Compose your fragrance and care steps calmly around occasion, climate, and mood.",
+      size: isAr ? "مسار استكشاف" : "Discovery Route",
+      price: isAr ? "استكشاف المسار" : "Explore Rituals",
+      badge: isAr ? "طقوس خاصة" : "Ritual Edit",
       image: "/elore-assets/hero-perfume-ritual-desktop-v3.avif",
-      href: "/shop",
+      href: "/rituals",
     },
     {
-      id: "rose-de-soir",
-      name: isAr ? "ورد المساء — Rose de Soir" : "Rose de Soir Eau de Parfum",
-      category: isAr ? "Eau de Parfum" : "Eau de Parfum",
-      notes: isAr ? "نوتات: ورد دمشقي نادر · مسك أبيض نقي · لمسات البرغموت" : "Notes: Rare Damask Rose · Pure White Musk · Bergamot",
-      size: "100 ml",
-      price: "590 SAR",
-      badge: isAr ? "نفحات أنثوية" : "Floral Harmony",
+      id: "evening-bodycare",
+      name: isAr ? "العناية بالجسم والمساء — Bodycare" : "Evening & Body Care",
+      category: isAr ? "العناية بالجسم · BODYCARE" : "BODYCARE · TEXTURE EDIT",
+      notes: isAr
+        ? "قوام غني ولمسة هادئة مصممة لتكمل حضور العطر وتناسب أجواء المناسبات."
+        : "Rich textures and calm finishes designed to layer effortlessly with evening scent.",
+      size: isAr ? "قسم العناية" : "Body Care",
+      price: isAr ? "حسب الاعتماد" : "Verified Catalogue",
+      badge: isAr ? "العناية بالجسم" : "Bodycare",
       image: "/elore-assets/saudi-evening-ritual-concept-1672x941.avif",
-      href: "/shop",
+      href: "/shop/bodycare",
     },
     {
-      id: "coffret-de-luxe",
-      name: isAr ? "طقوس الإهداء الفاخرة — Coffret de Luxe" : "Coffret de Luxe Ritual Set",
-      category: isAr ? "مجموعة الهدايا الملكية" : "Royal Gifting Coffret",
-      notes: isAr ? "طقم ثلاثي فاخر مع تغليف الحرير والشمع وختم إيلور باريس" : "Curated Trio with Silk Wrap, Wax Seal & Gift Card",
-      size: isAr ? "طقم متكامل" : "Full Set",
-      price: "890 SAR",
-      badge: isAr ? "هدية مثالية" : "Prestige Gift",
+      id: "beauty-sets",
+      name: isAr ? "مجموعات الجمال والإهداء — Beauty Sets" : "Beauty & Gifting Sets",
+      category: isAr ? "عالم الهدايا · BEAUTY SETS" : "BEAUTY SETS · L'ART D'OFFRIR",
+      notes: isAr
+        ? "اختيارات مدروسة للمناسبة والميزانية، مع تفاصيل تقديم هادئة تجعل الهدية جزءًا من التجربة."
+        : "Considered selections for the occasion, with calm presentation details that elevate gifting.",
+      size: isAr ? "قسم الهدايا" : "Gifting Edit",
+      price: isAr ? "حسب الاعتماد" : "Verified Catalogue",
+      badge: isAr ? "الأطقم والهدايا" : "Beauty Sets",
       image: "/elore-assets/gifting-ribbon-ritual-concept-1536w.avif",
       href: "/shop/beauty-sets",
     },
@@ -87,87 +95,87 @@ export function EloreReferenceHome({ locale, content, bentoContent, serviceStrip
           <div className={styles.heroContent}>
             <span className={styles.eyebrowBadge}>
               <span style={{ color: "#C5A059" }}>✦</span>
-              {isAr ? "العطور الباريسية الراقية · HAUTE PARFUMERIE" : "PARISIAN HAUTE PARFUMERIE"}
+              {isAr ? "PARISIAN RITUAL · SAUDI RELEVANCE" : "PARISIAN RITUAL · SAUDI RELEVANCE"}
             </span>
 
             <h1 id="hero-perfume-title" className={styles.heroTitle}>
               {isAr ? (
                 <>
-                  عنبر ملكي
+                  جمالٌ يُروى كتجربة.
                   <br />
-                  <span style={{ color: "#653846", fontWeight: 400 }}>Amber Royal Extrait</span>
+                  <span style={{ color: "#653846", fontWeight: 400 }}>ÉLORÉ PARIS · دار العطور والجمال</span>
                 </>
               ) : (
                 <>
-                  Amber Royal
+                  Beauty, told as an experience.
                   <br />
-                  <span style={{ color: "#653846", fontWeight: 400 }}>Extrait de Parfum</span>
+                  <span style={{ color: "#653846", fontWeight: 400 }}>ÉLORÉ PARIS · Maison de Beauté</span>
                 </>
               )}
             </h1>
 
             <p className={styles.heroLead}>
               {isAr
-                ? "توليفة نادرة مستوحاة من فخامة البلاط الباريسي، تجمع بين دفء العنبر النقي والزعفران الملكي ولمسات الباتشولي المدخن، مع تركيز استثنائي وثبات يتجاوز 24 ساعة."
-                : "A rare olfactory creation inspired by Parisian luxury courts. Combining pure warm amber, royal saffron, and smoked patchouli with an extraordinary 24-hour longevity."}
+                ? "نحوّل لحظاتك اليومية إلى طقوس فاخرة من الجمال والحنين. اكتشفي فنّ العطور والعناية عبر فئات واضحة وبيانات موثقة دون ضجيج أو وعود غير معتمدة."
+                : "We turn your everyday moments into luxurious rituals of beauty and nostalgia. Discover the art of fragrance and care with verified clarity."}
             </p>
 
-            {/* Olfactory Notes Card */}
+            {/* Olfactory & Product Truth Architecture Card */}
             <div className={styles.olfactoryCard}>
               <div className={styles.olfactoryHeader}>
-                <span>{isAr ? "الهرم العطري — Pyramide Olfactive" : "Olfactory Pyramid"}</span>
-                <span style={{ color: "#C5A059" }}>100 ml · 30% Vol</span>
+                <span>{isAr ? "هندسة العرض العطري — Pyramide & Vérité" : "Olfactory & Product Truth Architecture"}</span>
+                <span style={{ color: "#C5A059" }}>{isAr ? "شفافية البيانات قبل الشراء" : "Verified Data First"}</span>
               </div>
               <div className={styles.olfactoryNotesList}>
                 <div className={styles.olfactoryNoteItem}>
-                  <span className={styles.olfactoryNoteLabel}>{isAr ? "القمة" : "Top Notes"}</span>
-                  <span className={styles.olfactoryNoteValue}>{isAr ? "برغموت إيطالي، زعفران" : "Calabrian Bergamot, Saffron"}</span>
+                  <span className={styles.olfactoryNoteLabel}>{isAr ? "الافتتاحية" : "Top Profile"}</span>
+                  <span className={styles.olfactoryNoteValue}>{isAr ? "توصيف واضح للنفحات العليا والإحساس الأول" : "Clear articulation of opening notes & impression"}</span>
                 </div>
                 <div className={styles.olfactoryNoteItem}>
-                  <span className={styles.olfactoryNoteLabel}>{isAr ? "القلب" : "Heart Notes"}</span>
-                  <span className={styles.olfactoryNoteValue}>{isAr ? "ورد دمشقي، ياسمين" : "Damask Rose, French Jasmine"}</span>
+                  <span className={styles.olfactoryNoteLabel}>{isAr ? "القلب والقوام" : "Heart & Texture"}</span>
+                  <span className={styles.olfactoryNoteValue}>{isAr ? "تفاصيل القوام والمكونات الأساسية وطريقة الاستخدام" : "Core botanical profile, texture & ritual guidance"}</span>
                 </div>
                 <div className={styles.olfactoryNoteItem}>
-                  <span className={styles.olfactoryNoteLabel}>{isAr ? "القاعدة" : "Base Notes"}</span>
-                  <span className={styles.olfactoryNoteValue}>{isAr ? "عنبر ملكي، عود، صندل" : "Royal Amber, Oud, Sandalwood"}</span>
+                  <span className={styles.olfactoryNoteLabel}>{isAr ? "القاعدة والاعتماد" : "Base & Approval"}</span>
+                  <span className={styles.olfactoryNoteValue}>{isAr ? "تظهر الأسعار والعبوات فور اكتمال الاعتماد الرسمي" : "Published only with verified label, imagery & price"}</span>
                 </div>
               </div>
             </div>
 
-            {/* Price & Actions */}
+            {/* Primary Discovery Actions */}
             <div className={styles.heroActionsBar}>
               <div className={styles.heroPriceTag}>
-                <span className={styles.heroPriceValue}>680 {isAr ? "ر.س" : "SAR"}</span>
-                <span className={styles.heroPriceNote}>{isAr ? "شامل الضريبة والشحن الفاخر المجاني" : "Inc. VAT & Complimentary White-Glove Delivery"}</span>
+                <span className={styles.heroPriceValue}>{isAr ? "كتالوج معتمد" : "Verified Edit"}</span>
+                <span className={styles.heroPriceNote}>{isAr ? "مشهد تحريري مفاهيمي · لا يعرض أسعارًا غير معتمدة" : "Conceptual editorial display · No unverified SKU pricing"}</span>
               </div>
 
               <TrackedLink
                 href={href("/shop")}
                 className={styles.primaryButton}
-                analyticsLabel="hero_order_amber_royal"
+                analyticsLabel="hero_explore_shop"
                 analyticsSurface="hero_stage"
               >
-                <span>{isAr ? "اطلب العطر الآن" : "Order Flacon Now"}</span>
+                <span>{isAr ? "اكتشفي المجموعة" : "Explore the Collection"}</span>
                 <span>←</span>
               </TrackedLink>
 
               <TrackedLink
-                href={href("/shop")}
+                href={href("/rituals/builder")}
                 className={styles.secondaryButton}
-                analyticsLabel="hero_explore_collection"
+                analyticsLabel="hero_build_routine"
                 analyticsSurface="hero_stage"
               >
-                {isAr ? "استكشف المجموعة الكاملة" : "Explore Full Collection"}
+                {isAr ? "ابني روتينك" : "Build Your Routine"}
               </TrackedLink>
             </div>
           </div>
 
-          {/* Authentic Perfume Flacon on Limestone Pedestal */}
+          {/* Authentic Perfume Flacon Concept Asset on Limestone Pedestal */}
           <div className={styles.heroMediaStage}>
             <div className={styles.heroPedestal}>
               <Image
                 src="/elore-assets/perfume-amber-flacon-editorial-concept-1672x941.avif"
-                alt={isAr ? "زجاجة عطر عنبر ملكي إيلور باريس على قاعدة حجرية" : "Éloré Paris Amber Royal Flacon on Limestone"}
+                alt={isAr ? "دراسة تحريرية مفاهيمية لقارورة عطر على قاعدة حجرية" : "Conceptual editorial study of an amber flacon on stone"}
                 fill
                 priority
                 sizes="(max-width: 840px) 100vw, 540px"
@@ -175,15 +183,15 @@ export function EloreReferenceHome({ locale, content, bentoContent, serviceStrip
               />
               <div className={styles.heroFloatingBadge}>
                 <span style={{ color: "#C5A059" }}>✦</span>
-                <span>{isAr ? "زجاجة كريستال فاخرة مصنوعة في فرنسا" : "Handcrafted French Crystal Flacon"}</span>
+                <span>{isAr ? "مشهد تحريري مفاهيمي · ÉLORÉ PARIS" : "Conceptual Editorial Scene · ÉLORÉ PARIS"}</span>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 2. HAUTE PARFUMERIE CRAFT & STANDARDS STRIP */}
-      <section className={styles.craftStrip} aria-label={isAr ? "معايير العطور الفاخرة" : "Haute Parfumerie Standards"}>
+      {/* 2. BRAND PROOF & EDITORIAL STANDARDS STRIP */}
+      <section className={styles.craftStrip} aria-label={isAr ? "ثقة تبدأ مما يمكن إثباته" : "Trust built on what can be verified"}>
         <div className={styles.craftContainer}>
           <div className={styles.craftItem}>
             <div className={styles.craftIcon}>
@@ -192,8 +200,8 @@ export function EloreReferenceHome({ locale, content, bentoContent, serviceStrip
               </svg>
             </div>
             <div>
-              <h3 className={styles.craftTitle}>{isAr ? "زيوت عطرية نقية من غراس" : "Pure Grasse Oils"}</h3>
-              <p className={styles.craftText}>{isAr ? "مكونات طبيعية مقطرة بأعلى معايير العطور الفرنسية" : "100% natural essences distilled in Grasse, France"}</p>
+              <h3 className={styles.craftTitle}>{isAr ? "صور أوضح" : "Clearer Imagery"}</h3>
+              <p className={styles.craftText}>{isAr ? "نعرض القوام والدرجة من دون مؤثرات تغيّر الحقيقة" : "Textures and tones shown without distorting filters"}</p>
             </div>
           </div>
 
@@ -205,8 +213,8 @@ export function EloreReferenceHome({ locale, content, bentoContent, serviceStrip
               </svg>
             </div>
             <div>
-              <h3 className={styles.craftTitle}>{isAr ? "ثبات يتجاوز 24 ساعة" : "24h+ Long-Lasting"}</h3>
-              <p className={styles.craftText}>{isAr ? "تركيز Extrait de Parfum عالي الكثافة وفائق الانتشار" : "High-density Extrait de Parfum with remarkable sillage"}</p>
+              <h3 className={styles.craftTitle}>{isAr ? "معلومة عملية" : "Practical Guidance"}</h3>
+              <p className={styles.craftText}>{isAr ? "طريقة استخدام مختصرة ومفهومة قبل اتخاذ القرار" : "Concise, clear usage rituals before you decide"}</p>
             </div>
           </div>
 
@@ -220,8 +228,8 @@ export function EloreReferenceHome({ locale, content, bentoContent, serviceStrip
               </svg>
             </div>
             <div>
-              <h3 className={styles.craftTitle}>{isAr ? "شحن فاخر مجاني ومؤمن" : "Complimentary Delivery"}</h3>
-              <p className={styles.craftText}>{isAr ? "توصيل سريع ومؤمن لكافة مناطق المملكة العربية السعودية" : "Fast, secured delivery across the Kingdom of Saudi Arabia"}</p>
+              <h3 className={styles.craftTitle}>{isAr ? "اختيار أقل ضجيجًا" : "Quieter Selection"}</h3>
+              <p className={styles.craftText}>{isAr ? "تصنيف مدروس بدل رف رقمي مزدحم بلا توجيه" : "Considered curation instead of a crowded shelf"}</p>
             </div>
           </div>
 
@@ -234,26 +242,26 @@ export function EloreReferenceHome({ locale, content, bentoContent, serviceStrip
               </svg>
             </div>
             <div>
-              <h3 className={styles.craftTitle}>{isAr ? "عينة تجربة مجانية مرفقة" : "Complimentary Sample"}</h3>
-              <p className={styles.craftText}>{isAr ? "جرب العطر أولاً مع إمكانية الإرجاع السهل للزجاجة المغلقة" : "Sample first with effortless return on sealed flacon"}</p>
+              <h3 className={styles.craftTitle}>{isAr ? "ادعاءات منضبطة" : "Disciplined Claims"}</h3>
+              <p className={styles.craftText}>{isAr ? "لا أرقام أو نتائج أو وعود بلا مصدر يمكن مراجعته" : "No unverified prices, promises, or unsupported claims"}</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 3. SIGNATURE FLACON COLLECTION SHOWCASE */}
+      {/* 3. AUTHENTIC COLLECTION & RITUAL SHOWCASE */}
       <section className={styles.gallerySection} aria-labelledby="flacon-collection-title">
         <div className={styles.sectionHeader}>
           <span className={styles.sectionEyebrow}>
-            {isAr ? "المجموعة الحصرية · COLLECTION PRIVÉE" : "COLLECTION PRIVÉE"}
+            {isAr ? "أبواب المتجر · THE ÉLORÉ EDIT" : "THE ÉLORÉ EDIT"}
           </span>
           <h2 id="flacon-collection-title" className={styles.sectionTitle}>
-            {isAr ? "روائع العطور الباريسية الفاخرة" : "Masterpieces of Parisian Haute Parfumerie"}
+            {isAr ? "ابدئي من الفئة أو الطقس الأقرب لك" : "Begin with the Category or Ritual Closest to You"}
           </h2>
           <p className={styles.sectionLead}>
             {isAr
-              ? "قوارير أيقونية مصاغة بحرفية متناهية، تعكس حضورًا فخمًا وتوقيعًا عطريًا لا يُنسى."
-              : "Iconic flacons composed with sublime craftsmanship, delivering magnetic presence and unforgettable signatures."}
+              ? "مسارات هادئة لاستكشاف العطور، العناية بالجسم، ومجموعات الإهداء. تظهر المنتجات الفردية فور اعتماد بياناتها وصورها الرسمية."
+              : "Calm pathways across perfumes, bodycare, and gifting sets. Individual products appear only once their official data and imagery are approved."}
           </p>
         </div>
 
@@ -284,7 +292,7 @@ export function EloreReferenceHome({ locale, content, bentoContent, serviceStrip
                 <div className={styles.flaconCardFooter}>
                   <span className={styles.flaconPrice}>{flacon.price}</span>
                   <span className={styles.flaconCtaButton}>
-                    <span>{isAr ? "تسوق العطر" : "Discover"}</span>
+                    <span>{isAr ? "استكشفي القسم" : "Explore"}</span>
                     <span>←</span>
                   </span>
                 </div>
@@ -294,13 +302,13 @@ export function EloreReferenceHome({ locale, content, bentoContent, serviceStrip
         </div>
       </section>
 
-      {/* 4. THE ART OF GIFTING (LE COFFRET DE LUXE) */}
+      {/* 4. THE ART OF GIFTING (L'ART D'OFFRIR) */}
       <section className={styles.giftingSection} aria-labelledby="gifting-experience-title">
         <div className={styles.giftingCard}>
           <div className={styles.giftingMedia}>
             <Image
               src="/elore-assets/gifting-ribbon-ritual-concept-1536w.avif"
-              alt={isAr ? "طقس تغليف الهدايا الملكية إيلور باريس" : "Éloré Paris Royal Gifting Ritual"}
+              alt={isAr ? "صورة مفاهيمية لتغليف الهدايا من إيلور باريس" : "Éloré Paris Gifting Presentation Concept"}
               fill
               sizes="(max-width: 840px) 100vw, 50vw"
             />
@@ -308,15 +316,15 @@ export function EloreReferenceHome({ locale, content, bentoContent, serviceStrip
 
           <div className={styles.giftingBody}>
             <span className={styles.giftingEyebrow}>
-              {isAr ? "فن الإهداء الباريسي · L'ART D'OFFRIR" : "THE ART OF GIFTING"}
+              {isAr ? "فن الإهداء · THE ART OF GIFTING" : "THE ART OF GIFTING"}
             </span>
             <h2 id="gifting-experience-title" className={styles.giftingTitle}>
-              {isAr ? "هدية تليق بأرقى المناسبات" : "A Gift Befitting the Finest Occasions"}
+              {isAr ? "هدية جميلة في كل تفصيلة." : "A Beautiful Gift in Every Detail."}
             </h2>
             <p className={styles.giftingText}>
               {isAr
-                ? "كل زجاجة عطر من إيلور باريس تصلكم في صندوق فاخر محاط بشريط حريري فرنسي، ومختومة بالشمع الملكي مع بطاقة إهداء مخصصة، لتكون الهدية الأبهى لمن تحبون."
-                : "Every Éloré Paris flacon arrives in a luxury presentation box wrapped in French silk ribbon, sealed with royal wax, and accompanied by a bespoke gold-foiled card."}
+                ? "اختيارات مدروسة للمناسبة والميزانية، مع تفاصيل تقديم هادئة تجعل لحظة الهدية جزءًا من التجربة."
+                : "Considered selections for the occasion and budget, with calm presentation details that make the gifting moment part of the experience."}
             </p>
             <div>
               <TrackedLink
@@ -325,7 +333,7 @@ export function EloreReferenceHome({ locale, content, bentoContent, serviceStrip
                 analyticsLabel="gifting_explore_sets"
                 analyticsSurface="gifting_card"
               >
-                <span>{isAr ? "استكشف أطقم الهدايا" : "Explore Gift Sets"}</span>
+                <span>{isAr ? "اكتشفي عالم الهدايا" : "Discover Gifting"}</span>
                 <span>←</span>
               </TrackedLink>
             </div>
@@ -337,7 +345,7 @@ export function EloreReferenceHome({ locale, content, bentoContent, serviceStrip
       {serviceStrip ? <div>{serviceStrip}</div> : null}
 
       {/* 5. NEWSLETTER SIGNUP */}
-      <section className={styles.newsletterSection} aria-label={isAr ? "النادي العطري الخاص" : "Haute Parfumerie Club"}>
+      <section className={styles.newsletterSection} aria-label={isAr ? "رسائل جمال تستحق وقتك" : "Beauty notes worth your time"}>
         <NewsletterSignup locale={locale} />
       </section>
     </div>
