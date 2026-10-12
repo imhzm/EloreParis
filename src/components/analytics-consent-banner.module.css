@@ -150,55 +150,47 @@
 
 @media (max-width: 720px) {
   .banner {
-    inset-inline: 12px;
+    inset-inline: 10px;
     width: auto;
-    bottom: max(10px, env(safe-area-inset-bottom));
-    padding: 10px 14px;
-    border-radius: 14px;
-    gap: 8px;
-    max-height: 140px;
+    bottom: max(8px, env(safe-area-inset-bottom));
+    padding: 8px 12px;
+    border-radius: 12px;
+    gap: 6px;
+    max-height: 80px;
   }
 
   .content {
     align-items: center;
-    gap: 8px;
+    gap: 6px;
   }
 
   .iconWrap {
-    width: 24px;
-    height: 24px;
-    margin-top: 0;
-  }
-
-  .iconWrap svg {
-    width: 14px;
-    height: 14px;
+    display: none;
   }
 
   .headerRow {
-    gap: 4px;
+    gap: 6px;
   }
 
   .title {
-    font-size: 0.84rem;
+    font-size: 0.8rem;
+    font-weight: 700;
   }
 
   .description {
-    font-size: 0.72rem;
-    line-height: 1.35;
-    white-space: normal;
+    display: none;
   }
 
   .actions {
     display: flex;
     gap: 6px;
-    margin-top: 2px;
+    margin-top: 0;
   }
 
   .actions button {
-    min-height: 34px;
-    padding: 5px 10px;
-    font-size: 0.74rem;
+    min-height: 28px;
+    padding: 3px 8px;
+    font-size: 0.72rem;
   }
 }
 

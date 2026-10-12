@@ -319,8 +319,6 @@
 .main { min-height: 60vh; }
 
 .footer {
-  content-visibility: auto;
-  contain-intrinsic-size: 400px;
   display: grid;
   grid-template-columns: 1.5fr repeat(3, 1fr);
   gap: 44px;
