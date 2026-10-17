@@ -86,6 +86,7 @@ export function StorefrontShell({
               width={260}
               height={82}
               sizes="(max-width: 700px) 132px, 230px"
+              unoptimized
             />
           </TrackedLink>
 
@@ -129,7 +130,7 @@ export function StorefrontShell({
 
       <footer className={styles.footer}>
         <div className={styles.footerBrand}>
-          <Image src="/elore-assets/logo-horizontal-gold.png" alt="ÉLORÉ PARIS" width={260} height={82} />
+          <Image src="/elore-assets/logo-horizontal-gold.png" alt="ÉLORÉ PARIS" width={260} height={82} unoptimized />
           <p>{copy.footerBody}</p>
           <span>{copy.footerStatus}</span>
           <TrackedLink href={localizePath(locale, "/about")} className={styles.footerBrandLink} analyticsEvent="navigation_click" analyticsLabel="footer_about" analyticsSurface="footer_brand">{copy.aboutLabel}</TrackedLink>
@@ -175,3 +176,4 @@ export function StorefrontShell({
     </div>
   );
 }
+

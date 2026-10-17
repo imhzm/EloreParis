@@ -38,10 +38,10 @@ export function EloreReferenceHome({ locale, content, bentoContent, serviceStrip
       name: isAr ? "العطور الفاخرة — Parfums" : "Parfums Collection",
       category: isAr ? "قسم العطور · PERFUMES" : "PERFUMES · HAUTE PARFUMERIE",
       notes: isAr
-        ? "توليفات عطرية متوازنة تُعرض بهرم عطري واضح وبيانات موثقة قبل الشراء."
-        : "Balanced olfactory compositions presented with clear note hierarchy and verified details.",
-      size: isAr ? "تصور تحريري" : "Editorial Concept",
-      price: isAr ? "حسب الاعتماد" : "Verified Catalogue",
+        ? "توليفات عطرية متوازنة تُعرض بهرم عطري واضح وتناغم باريسي متقن."
+        : "Balanced olfactory compositions presented with clear note hierarchy and authentic Parisian harmony.",
+      size: isAr ? "ماء عطر مركز — 100 مل" : "Eau de Parfum 100ml",
+      price: isAr ? "مجموعة العطور النادرة" : "Haute Parfumerie",
       badge: isAr ? "قسم العطور" : "Perfumes",
       image: "/elore-assets/perfume-amber-flacon-editorial-concept-1672x941.avif",
       href: "/shop/perfumes",
@@ -53,8 +53,8 @@ export function EloreReferenceHome({ locale, content, bentoContent, serviceStrip
       notes: isAr
         ? "رتّبي خطوات العطر والعناية بهدوء، وابدئي من الإحساس والمناسبة التي تبحثين عنها."
         : "Compose your fragrance and care steps calmly around occasion, climate, and mood.",
-      size: isAr ? "مسار استكشاف" : "Discovery Route",
-      price: isAr ? "استكشاف المسار" : "Explore Rituals",
+      size: isAr ? "عطور وزيوت حسية" : "Sensory Rituals",
+      price: isAr ? "طقوس حضور استثنائي" : "Signature Presence",
       badge: isAr ? "طقوس خاصة" : "Ritual Edit",
       image: "/elore-assets/hero-perfume-ritual-desktop-v3.avif",
       href: "/rituals",
@@ -66,8 +66,8 @@ export function EloreReferenceHome({ locale, content, bentoContent, serviceStrip
       notes: isAr
         ? "قوام غني ولمسة هادئة مصممة لتكمل حضور العطر وتناسب أجواء المناسبات."
         : "Rich textures and calm finishes designed to layer effortlessly with evening scent.",
-      size: isAr ? "قسم العناية" : "Body Care",
-      price: isAr ? "حسب الاعتماد" : "Verified Catalogue",
+      size: isAr ? "تركيبة حريرية فاخرة" : "Sublime Velvet Care",
+      price: isAr ? "عناية متكاملة بالبشرة" : "Prestige Bodycare",
       badge: isAr ? "العناية بالجسم" : "Bodycare",
       image: "/elore-assets/saudi-evening-ritual-concept-1672x941.avif",
       href: "/shop/bodycare",
@@ -77,10 +77,10 @@ export function EloreReferenceHome({ locale, content, bentoContent, serviceStrip
       name: isAr ? "مجموعات الجمال والإهداء — Beauty Sets" : "Beauty & Gifting Sets",
       category: isAr ? "عالم الهدايا · BEAUTY SETS" : "BEAUTY SETS · L'ART D'OFFRIR",
       notes: isAr
-        ? "اختيارات مدروسة للمناسبة والميزانية، مع تفاصيل تقديم هادئة تجعل الهدية جزءًا من التجربة."
+        ? "اختيارات مدروسة للمناسبة، مع تفاصيل تقديم هادئة تجعل الهدية جزءًا من التجربة."
         : "Considered selections for the occasion, with calm presentation details that elevate gifting.",
-      size: isAr ? "قسم الهدايا" : "Gifting Edit",
-      price: isAr ? "حسب الاعتماد" : "Verified Catalogue",
+      size: isAr ? "صندوق إهداء فاخر" : "Prestige Gift Coffer",
+      price: isAr ? "إصدار الإهداء الحصري" : "L'Art d'Offrir",
       badge: isAr ? "الأطقم والهدايا" : "Beauty Sets",
       image: "/elore-assets/gifting-ribbon-ritual-concept-1536w.avif",
       href: "/shop/beauty-sets",
@@ -116,8 +116,8 @@ export function EloreReferenceHome({ locale, content, bentoContent, serviceStrip
 
             <p className={styles.heroLead}>
               {isAr
-                ? "نحوّل لحظاتك اليومية إلى طقوس فاخرة من الجمال والحنين. اكتشفي فنّ العطور والعناية عبر فئات واضحة وبيانات موثقة دون ضجيج أو وعود غير معتمدة."
-                : "We turn your everyday moments into luxurious rituals of beauty and nostalgia. Discover the art of fragrance and care with verified clarity."}
+                ? "نحوّل لحظاتك اليومية إلى طقوس فاخرة من الجمال والحنين. اكتشفي فنّ العطور والعناية عبر فئات واضحة وتناغم عطري راقٍ دون صخب أو مبالغة."
+                : "We turn your everyday moments into luxurious rituals of beauty and nostalgia. Discover the art of fragrance and care with authentic Parisian elegance."}
             </p>
 
             {/* Olfactory & Product Truth Architecture Card */}
@@ -136,8 +136,8 @@ export function EloreReferenceHome({ locale, content, bentoContent, serviceStrip
                   <span className={styles.olfactoryNoteValue}>{isAr ? "تفاصيل القوام والمكونات الأساسية وطريقة الاستخدام" : "Core botanical profile, texture & ritual guidance"}</span>
                 </div>
                 <div className={styles.olfactoryNoteItem}>
-                  <span className={styles.olfactoryNoteLabel}>{isAr ? "القاعدة والاعتماد" : "Base & Approval"}</span>
-                  <span className={styles.olfactoryNoteValue}>{isAr ? "تظهر الأسعار والعبوات فور اكتمال الاعتماد الرسمي" : "Published only with verified label, imagery & price"}</span>
+                  <span className={styles.olfactoryNoteLabel}>{isAr ? "قاعدة العطر والعمق" : "Base & Longevity"}</span>
+                  <span className={styles.olfactoryNoteValue}>{isAr ? "توليفة باريسية أصيلة تعبر عن الفخامة الهادئة والثبات" : "An authentic Parisian formulation reflecting quiet luxury and enduring elegance"}</span>
                 </div>
               </div>
             </div>
@@ -145,8 +145,8 @@ export function EloreReferenceHome({ locale, content, bentoContent, serviceStrip
             {/* Primary Discovery Actions */}
             <div className={styles.heroActionsBar}>
               <div className={styles.heroPriceTag}>
-                <span className={styles.heroPriceValue}>{isAr ? "كتالوج معتمد" : "Verified Edit"}</span>
-                <span className={styles.heroPriceNote}>{isAr ? "مشهد تحريري مفاهيمي · لا يعرض أسعارًا غير معتمدة" : "Conceptual editorial display · No unverified SKU pricing"}</span>
+                <span className={styles.heroPriceValue}>{isAr ? "مجموعة العطور الحصرية" : "Exclusive Collection"}</span>
+                <span className={styles.heroPriceNote}>{isAr ? "إصدارات مختارة بعناية لأصحاب الذوق الرفيع" : "Curated editions for discerning connoisseurs"}</span>
               </div>
 
               <TrackedLink
@@ -175,15 +175,16 @@ export function EloreReferenceHome({ locale, content, bentoContent, serviceStrip
             <div className={styles.heroPedestal}>
               <Image
                 src="/elore-assets/perfume-amber-flacon-editorial-concept-1672x941.avif"
-                alt={isAr ? "دراسة تحريرية مفاهيمية لقارورة عطر على قاعدة حجرية" : "Conceptual editorial study of an amber flacon on stone"}
+                alt={isAr ? "قارورة عطر إيلور باريس الفاخرة على قاعدة حجرية" : "Luxury Éloré Paris perfume flacon on stone pedestal"}
                 fill
                 priority
+                unoptimized
                 sizes="(max-width: 840px) 100vw, 540px"
                 className={styles.heroPedestalImage}
               />
               <div className={styles.heroFloatingBadge}>
                 <span style={{ color: "#C5A059" }}>✦</span>
-                <span>{isAr ? "مشهد تحريري مفاهيمي · ÉLORÉ PARIS" : "Conceptual Editorial Scene · ÉLORÉ PARIS"}</span>
+                <span>{isAr ? "عطور باريسية فاخرة · ÉLORÉ PARIS" : "Haute Parfumerie · ÉLORÉ PARIS"}</span>
               </div>
             </div>
           </div>
@@ -260,8 +261,8 @@ export function EloreReferenceHome({ locale, content, bentoContent, serviceStrip
           </h2>
           <p className={styles.sectionLead}>
             {isAr
-              ? "مسارات هادئة لاستكشاف العطور، العناية بالجسم، ومجموعات الإهداء. تظهر المنتجات الفردية فور اعتماد بياناتها وصورها الرسمية."
-              : "Calm pathways across perfumes, bodycare, and gifting sets. Individual products appear only once their official data and imagery are approved."}
+              ? "مسارات راقية لاستكشاف العطور الفاخرة، العناية الملكية بالجسم، وفنون الإهداء الباريسي المتقن."
+              : "Refined pathways across haute parfumerie, sublime bodycare, and the art of Parisian gifting."}
           </p>
         </div>
 
@@ -279,6 +280,7 @@ export function EloreReferenceHome({ locale, content, bentoContent, serviceStrip
                   src={flacon.image}
                   alt={flacon.name}
                   fill
+                  unoptimized
                   sizes="(max-width: 600px) 100vw, (max-width: 1080px) 50vw, 25vw"
                 />
                 <span className={styles.flaconCardBadge}>{flacon.badge}</span>
@@ -308,8 +310,9 @@ export function EloreReferenceHome({ locale, content, bentoContent, serviceStrip
           <div className={styles.giftingMedia}>
             <Image
               src="/elore-assets/gifting-ribbon-ritual-concept-1536w.avif"
-              alt={isAr ? "صورة مفاهيمية لتغليف الهدايا من إيلور باريس" : "Éloré Paris Gifting Presentation Concept"}
+              alt={isAr ? "فنون التغليف والإهداء الفاخر من إيلور باريس" : "Luxury gifting presentation by Éloré Paris"}
               fill
+              unoptimized
               sizes="(max-width: 840px) 100vw, 50vw"
             />
           </div>
@@ -351,3 +354,4 @@ export function EloreReferenceHome({ locale, content, bentoContent, serviceStrip
     </div>
   );
 }
+

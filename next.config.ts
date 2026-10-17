@@ -25,6 +25,7 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   experimental: {},
   images: {
+    contentDispositionType: "inline",
     formats: ["image/avif", "image/webp"],
     remotePatterns: [
       { protocol: "https", hostname: "elore-paris.s3.amazonaws.com" },

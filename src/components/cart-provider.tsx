@@ -66,7 +66,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const locale = pathname === "/en" || pathname.startsWith("/en/") ? "en" : "ar";
   const catalogLoadError = locale === "en"
     ? "Unable to load the approved product catalog."
-    : "تعذر تحميل كتالوج المنتجات المعتمد.";
+    : "تعذر تحميل تشكيلة المنتجات، يرجى إعادة المحاولة.";
 
   useEffect(() => {
     try {

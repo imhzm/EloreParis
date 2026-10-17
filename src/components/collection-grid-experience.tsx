@@ -54,7 +54,7 @@ const copy = {
     page: (n: number) => `صفحة ${n}`,
     filters: "تصفية النتائج",
     clear: "مسح الكل",
-    noMatches: "لا توجد منتجات معتمدة تطابق هذه الاختيارات.",
+    noMatches: "لا توجد عطور مطابقة لهذه التفضيلات حالياً.",
     facetGroups: {
       tags: "الخصائص",
       concerns: "الاحتياج",
